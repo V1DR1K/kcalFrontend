@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vitality Peak - Agregar Alimento</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "primary-fixed": "#6ffbbe",
+                    "surface-dim": "#d0dbed",
+                    "secondary-fixed-dim": "#ffb690",
+                    "surface-tint": "#006c49",
+                    "primary-fixed-dim": "#4edea3",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#bbcabf",
+                    "inverse-surface": "#27313f",
+                    "on-secondary-container": "#5c2400",
+                    "primary": "#006c49",
+                    "surface-container": "#e6eeff",
+                    "tertiary": "#006591",
+                    "primary-container": "#10b981",
+                    "on-secondary": "#ffffff",
+                    "surface-variant": "#3c4a42",
+                    "on-primary-fixed-variant": "#005236",
+                    "on-tertiary-fixed": "#001e2f",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#fd761a",
+                    "tertiary-fixed": "#c9e6ff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#003d59",
+                    "on-surface": "#e2e2e6",
+                    "secondary": "#9d4300",
+                    "on-surface-variant": "#c4c7c5",
+                    "outline": "#8e918f",
+                    "surface-container-highest": "#333537",
+                    "secondary-fixed": "#ffdbca",
+                    "on-primary-container": "#00422b",
+                    "on-error-container": "#93000a",
+                    "inverse-primary": "#4edea3",
+                    "surface-container-lowest": "#0f1113",
+                    "tertiary-container": "#23acf1",
+                    "on-secondary-fixed-variant": "#783200",
+                    "surface-container-low": "#1a1c1e",
+                    "tertiary-fixed-dim": "#89ceff",
+                    "surface-container-high": "#282a2c",
+                    "surface": "#121c2a",
+                    "on-background": "#e2e2e6",
+                    "background": "#121c2a",
+                    "on-secondary-fixed": "#341100",
+                    "on-tertiary-fixed-variant": "#004c6e",
+                    "on-primary-fixed": "#002113"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "xs": "4px",
+                    "gutter": "20px",
+                    "lg": "24px",
+                    "container-margin-desktop": "40px",
+                    "sm": "12px",
+                    "xl": "32px",
+                    "container-margin-mobile": "16px",
+                    "md": "16px",
+                    "xxl": "48px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-interaction:active {
+            transform: scale(0.98);
+            transition: transform 0.1s;
+        }
+        .modal-blur {
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+<!-- Top App Bar -->
+<header class="bg-surface-container-lowest/80 backdrop-blur-md border-b border-outline-variant/10 flex justify-between items-center w-full px-container-margin-mobile md:px-container-margin-desktop h-16 fixed top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-bold text-primary-fixed-dim">NutriTrack Pro</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant p-2 rounded-full hover:bg-surface-container-high transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant p-2 rounded-full hover:bg-surface-container-high transition-colors">account_circle</button>
+</div>
+</header>
+<!-- Side Navigation (Desktop) -->
+<aside class="hidden md:flex h-full w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant/10 flex-col p-md gap-base pt-20">
+<nav class="flex flex-col gap-xs">
+<a class="flex items-center gap-4 p-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 p-3 text-primary-fixed-dim font-bold bg-primary-container/20 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-md text-label-md">Search</span>
+</a>
+<a class="flex items-center gap-4 p-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-md text-label-md">History</span>
+</a>
+<a class="flex items-center gap-4 p-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+<a class="flex items-center gap-4 p-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pt-20 pb-24 md:pb-8 md:pl-64 min-h-screen px-container-margin-mobile md:px-container-margin-desktop flex items-center justify-center bg-black/40 modal-blur">
+<!-- Modal Container (Dark Mode Focused) -->
+<div class="bg-surface-container-low w-full max-w-2xl rounded-xl shadow-[0px_20px_50px_rgba(0,0,0,0.5)] overflow-hidden border border-outline-variant/10 animate-in fade-in zoom-in duration-300">
+<!-- Food Header Section -->
+<div class="relative h-48 w-full">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A macro close-up photograph of a perfectly grilled chicken breast, seasoned with herbs and sitting on a clean white plate." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBjDT6VzQVq_ixS8NCWfrvzsSiLwwTEyC8HbKObSDO0kgL5Vh4z2idkrJ0nbPVmxR2jC0u82yz1UZcvC5y8MkEzaRqXUVkwwpolYXtwmudrV1bYKV-k_Tt99HBMPoyChcZWVqyEoUH2C1_BriMb-c1kbzNrIJVBzGhXoRpN8HlC4lxA-RN6zwGItH0uEHAC3DftWHOfIUp3Zl-eRDfahnik0AFPl6kpdK7XiQWsw4XxRvF-UOvzIPQXsJhd5OzpFzuk2fJ8L7Uj7EM')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/40 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-lg text-on-surface">
+<h1 class="font-headline-md text-headline-md font-bold">Pechuga de Pollo</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Vitality Peak Premium Select</p>
+</div>
+<button class="absolute top-4 right-4 bg-black/40 hover:bg-black/60 p-2 rounded-full text-white backdrop-blur-sm transition-colors" onclick="history.back()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Content Body -->
+<div class="p-lg grid grid-cols-1 md:grid-cols-2 gap-xl">
+<!-- Left: Form Controls -->
+<div class="flex flex-col gap-lg">
+<!-- Meal Selection -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Momento del Día</label>
+<select class="w-full bg-surface-container-high border-none rounded-lg p-3 text-on-surface font-body-md focus:ring-2 focus:ring-primary-container transition-shadow shadow-sm appearance-none" id="meal-select">
+<option>Desayuno</option>
+<option selected="">Almuerzo</option>
+<option>Cena</option>
+<option>Snack / Otros</option>
+</select>
+</div>
+<!-- Quantity and Unit -->
+<div class="grid grid-cols-2 gap-md">
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Cantidad</label>
+<input class="w-full bg-surface-container-high border-none rounded-lg p-3 text-on-surface font-body-md focus:ring-2 focus:ring-primary-container shadow-sm" id="qty-input" type="number" value="150"/>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Unidad</label>
+<select class="w-full bg-surface-container-high border-none rounded-lg p-3 text-on-surface font-body-md focus:ring-2 focus:ring-primary-container shadow-sm appearance-none" id="unit-select">
+<option selected="">gramos (g)</option>
+<option>mililitros (ml)</option>
+<option>unidades</option>
+<option>porción</option>
+</select>
+</div>
+</div>
+<!-- Macro Chips -->
+<div class="flex flex-wrap gap-2 mt-2">
+<span class="px-3 py-1 bg-primary-container/20 text-primary-fixed-dim font-label-sm text-label-sm rounded-full uppercase">Alta en Proteína</span>
+<span class="px-3 py-1 bg-surface-variant/30 text-on-surface-variant font-label-sm text-label-sm rounded-full uppercase">Keto Friendly</span>
+</div>
+</div>
+<!-- Right: Live Calculation & Visualization -->
+<div class="flex flex-col justify-center items-center bg-surface-container-highest/30 rounded-xl p-lg border border-outline-variant/10">
+<div class="text-center mb-6">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Estimado</span>
+<div class="flex items-baseline justify-center gap-1">
+<span class="font-display-lg text-display-lg text-primary-fixed-dim" id="kcal-display">248</span>
+<span class="font-headline-md text-headline-md text-on-surface-variant">Kcal</span>
+</div>
+</div>
+<!-- Bento-style Macro Grid -->
+<div class="grid grid-cols-3 gap-base w-full">
+<div class="bg-surface-container-high rounded-lg p-3 text-center shadow-sm border border-outline-variant/5">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Proteína</span>
+<span class="block font-title-lg text-title-lg text-on-surface" id="prot-display">46g</span>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary-container h-full w-[85%] rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
+</div>
+</div>
+<div class="bg-surface-container-high rounded-lg p-3 text-center shadow-sm border border-outline-variant/5">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Carbs</span>
+<span class="block font-title-lg text-title-lg text-on-surface" id="carb-display">0g</span>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-tertiary-container h-full w-[5%] rounded-full shadow-[0_0_8px_rgba(35,172,241,0.4)]"></div>
+</div>
+</div>
+<div class="bg-surface-container-high rounded-lg p-3 text-center shadow-sm border border-outline-variant/5">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Grasas</span>
+<span class="block font-title-lg text-title-lg text-on-surface" id="fat-display">5.4g</span>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-secondary-container h-full w-[25%] rounded-full shadow-[0_0_8px_rgba(253,118,26,0.4)]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Actions Footer -->
+<div class="p-lg flex flex-col md:flex-row gap-md border-t border-outline-variant/10">
+<button class="flex-1 px-6 py-4 rounded-xl border border-outline text-on-surface font-title-lg text-title-lg hover:bg-surface-container-high transition-colors active-interaction" onclick="history.back()">
+                    Cancelar
+                </button>
+<button class="flex-1 px-6 py-4 rounded-xl bg-primary-container text-on-primary-container font-title-lg text-title-lg shadow-lg hover:brightness-110 active-interaction transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">add_circle</span>
+                    Agregar al día
+                </button>
+</div>
+</div>
+</main>
+<!-- Bottom Nav (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe bg-surface-container-lowest border-t border-outline-variant/10 z-50 rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary-fixed-dim font-bold hover:bg-surface-container-high p-2 rounded-lg scale-90" href="#">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-sm text-label-sm">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-label-sm text-label-sm">Trends</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Account</span>
+</a>
+</nav>
+<script>
+        const qtyInput = document.getElementById('qty-input');
+        const unitSelect = document.getElementById('unit-select');
+        const kcalDisp = document.getElementById('kcal-display');
+        const protDisp = document.getElementById('prot-display');
+        const carbDisp = document.getElementById('carb-display');
+        const fatDisp = document.getElementById('fat-display');
+
+        const BASE_KCAL = 165;
+        const BASE_PROT = 31;
+        const BASE_CARB = 0;
+        const BASE_FAT = 3.6;
+
+        function updateNutrition() {
+            let qty = parseFloat(qtyInput.value) || 0;
+            const ratio = qty / 100;
+
+            const finalKcal = Math.round(BASE_KCAL * ratio);
+            const finalProt = Math.round(BASE_PROT * ratio);
+            const finalCarb = (BASE_CARB * ratio).toFixed(1);
+            const finalFat = (BASE_FAT * ratio).toFixed(1);
+
+            kcalDisp.innerText = finalKcal;
+            protDisp.innerText = `${finalProt}g`;
+            carbDisp.innerText = `${finalCarb}g`;
+            fatDisp.innerText = `${finalFat}g`;
+        }
+
+        qtyInput.addEventListener('input', updateNutrition);
+        unitSelect.addEventListener('change', updateNutrition);
+
+        document.querySelectorAll('.active-interaction').forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.classList.add('scale-95'));
+            btn.addEventListener('mouseup', () => btn.classList.remove('scale-95'));
+            btn.addEventListener('mouseleave', () => btn.classList.remove('scale-95'));
+        });
+    </script>
+</body></html>

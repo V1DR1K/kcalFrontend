@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Vite: abrir en navegador",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://127.0.0.1:5173/",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "npm: dev"
+    }
+  ]
+}

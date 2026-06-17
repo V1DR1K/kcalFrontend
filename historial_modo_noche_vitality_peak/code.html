@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Historial y Calendario | NutriTrack Pro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#4edea3",
+                    "surface-variant": "#3c4a42",
+                    "on-surface": "#eaf1ff",
+                    "surface-dim": "#0e1511",
+                    "surface-container-highest": "#343b36",
+                    "on-tertiary-fixed-variant": "#004c6e",
+                    "inverse-surface": "#eaf1ff",
+                    "surface-bright": "#343b36",
+                    "on-surface-variant": "#bbcabf",
+                    "error": "#ffb4ab",
+                    "on-tertiary-fixed": "#001e2f",
+                    "on-secondary-fixed-variant": "#783200",
+                    "on-tertiary-container": "#c9e6ff",
+                    "on-primary": "#003924",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary-fixed": "#341100",
+                    "primary": "#4edea3",
+                    "secondary-fixed-dim": "#ffb690",
+                    "tertiary-fixed": "#c9e6ff",
+                    "surface-container-high": "#282f2a",
+                    "on-primary-fixed": "#002113",
+                    "tertiary": "#89ceff",
+                    "surface-tint": "#4edea3",
+                    "outline-variant": "#3c4a42",
+                    "on-primary-container": "#6ffbbe",
+                    "surface-container-low": "#161d19",
+                    "primary-container": "#005236",
+                    "inverse-on-surface": "#121c2a",
+                    "primary-fixed": "#6ffbbe",
+                    "surface-container-lowest": "#09100c",
+                    "surface-container": "#1d2420",
+                    "on-background": "#eaf1ff",
+                    "outline": "#869389",
+                    "background": "#0e1511",
+                    "tertiary-container": "#004c6e",
+                    "error-container": "#93000a",
+                    "tertiary-fixed-dim": "#89ceff",
+                    "secondary": "#ffb690",
+                    "secondary-fixed": "#ffdbca",
+                    "surface": "#0e1511",
+                    "on-tertiary": "#00344d",
+                    "on-primary-fixed-variant": "#005236",
+                    "primary-fixed-dim": "#4edea3",
+                    "on-secondary-container": "#ffdbca",
+                    "on-error": "#690005",
+                    "secondary-container": "#783200",
+                    "on-secondary": "#552100"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.5rem",
+                    "lg": "0.75rem",
+                    "xl": "1rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "xs": "4px",
+                    "gutter": "20px",
+                    "lg": "24px",
+                    "container-margin-desktop": "40px",
+                    "sm": "12px",
+                    "xl": "32px",
+                    "container-margin-mobile": "16px",
+                    "md": "16px",
+                    "xxl": "48px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #0e1511;
+            font-family: 'Hanken Grotesk', sans-serif;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+        .card-shadow {
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-day {
+            outline: 2px solid #4edea3;
+            outline-offset: -2px;
+        }
+    </style>
+</head>
+<body class="text-on-surface bg-background">
+<!-- Desktop Side Navigation -->
+<aside class="hidden md:flex flex-col p-md gap-base h-full w-64 fixed left-0 top-0 bg-surface-container-low border-r border-outline-variant z-40">
+<div class="mb-xl px-2">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">NutriTrack Pro</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Premium Fitness</p>
+</div>
+<nav class="flex flex-col gap-xs">
+<a class="flex items-center gap-sm px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-sm px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-md text-label-md">Search</span>
+</a>
+<a class="flex items-center gap-sm px-4 py-3 text-primary font-bold bg-primary-container/20 rounded-lg group" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-label-md text-label-md">History</span>
+</a>
+<a class="flex items-center gap-sm px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+<a class="flex items-center gap-sm px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto p-4 flex items-center gap-sm bg-surface-container-highest rounded-xl">
+<div class="w-10 h-10 rounded-full bg-cover bg-center border border-outline-variant" data-alt="A professional headshot of a smiling, fit individual" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCMhSD2q4JnoltpAKMnlz-SiNtS2ldtqQBrWFy9WkcqqZB04OdXxPydwEs_FpAR_p88c5CtgL5QYAHAZ2eeZuc1jSymjNjRsiQwIkPmQyJFdZlzWbAdKnTGC92P4WYe94YkX4uOrgE5BgkwpplvXdT41rmiEH39LyOj62wX82fTfQEoFdRqS4aAIJqCxxBGc2kndHFDSSDGEKUJiCf_P5IX4q-BvKqYyuVc_MriVzJFLE97Lh5ruPSmvytXORhR3gVSCyEgE-aIy7o')"></div>
+<div>
+<p class="font-label-md text-label-md font-bold text-on-surface">Alex Rivera</p>
+<p class="text-[10px] uppercase tracking-wider text-primary font-bold">Elite Member</p>
+</div>
+</div>
+</aside>
+<!-- Top AppBar (Mobile Only) -->
+<header class="md:hidden flex justify-between items-center w-full px-container-margin-mobile h-16 bg-surface-container-low border-b border-outline-variant fixed top-0 left-0 z-40">
+<div class="font-headline-md text-headline-md font-bold text-primary">NutriTrack Pro</div>
+<div class="flex gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant">account_circle</span>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="pt-20 pb-24 md:pt-10 md:pb-10 md:ml-64 px-container-margin-mobile md:px-container-margin-desktop min-h-screen">
+<div class="max-w-[1200px] mx-auto">
+<header class="mb-lg flex flex-col md:flex-row md:items-end justify-between gap-base">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-on-surface">Historial y Calendario</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Monitorea tu progreso nutricional día a día.</p>
+</div>
+<div class="flex items-center bg-surface-container-high card-shadow rounded-full px-base py-xs border border-outline-variant">
+<button class="p-2 hover:bg-surface-container-highest rounded-full transition-colors active:scale-90 duration-150 text-on-surface">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<span class="px-xl font-title-lg text-title-lg min-w-[140px] text-center text-on-surface">Mayo 2024</span>
+<button class="p-2 hover:bg-surface-container-highest rounded-full transition-colors active:scale-90 duration-150 text-on-surface">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Calendar Section (Large) -->
+<div class="lg:col-span-8 bg-surface-container-low p-md md:p-xl rounded-xl card-shadow border border-outline-variant">
+<div class="calendar-grid mb-md">
+<div class="text-center font-label-sm text-label-sm text-outline uppercase py-2">Dom</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase py-2">Lun</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase py-2">Mar</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase py-2">Mié</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase py-2">Jue</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase py-2">Vie</div>
+<div class="text-center font-label-sm text-label-sm text-outline uppercase py-2">Sáb</div>
+</div>
+<div class="calendar-grid gap-xs md:gap-sm">
+<!-- Day 1-3 (Empty slots) -->
+<div class="h-20 md:h-28 rounded-lg bg-surface-container-lowest opacity-20"></div>
+<div class="h-20 md:h-28 rounded-lg bg-surface-container-lowest opacity-20"></div>
+<div class="h-20 md:h-28 rounded-lg bg-surface-container-lowest opacity-20"></div>
+<!-- Day 1 -->
+<div class="h-20 md:h-28 rounded-lg border border-outline-variant p-2 flex flex-col justify-between hover:border-primary hover:bg-surface-container-highest transition-colors cursor-pointer group bg-surface-container">
+<span class="font-label-md text-label-md text-on-surface-variant">1</span>
+<div class="flex flex-col gap-1">
+<div class="h-1.5 w-full bg-primary-container rounded-full" title="Metas cumplidas"></div>
+<div class="text-[10px] font-bold text-primary">1,850 Kcal</div>
+</div>
+</div>
+<!-- Day 2 -->
+<div class="h-20 md:h-28 rounded-lg border border-outline-variant p-2 flex flex-col justify-between hover:border-primary hover:bg-surface-container-highest transition-colors cursor-pointer bg-surface-container">
+<span class="font-label-md text-label-md text-on-surface-variant">2</span>
+<div class="flex flex-col gap-1">
+<div class="h-1.5 w-full bg-error-container rounded-full" title="Excedido"></div>
+<div class="text-[10px] font-bold text-error">2,420 Kcal</div>
+</div>
+</div>
+<!-- Day 3 (Success/Active) -->
+<div class="h-20 md:h-28 rounded-lg border border-primary p-2 flex flex-col justify-between hover:bg-surface-container-highest transition-colors cursor-pointer active-day bg-primary-container/10">
+<span class="font-label-md text-label-md font-bold text-primary">3</span>
+<div class="flex flex-col gap-1">
+<div class="h-1.5 w-full bg-primary-container rounded-full"></div>
+<div class="text-[10px] font-bold text-primary">1,910 Kcal</div>
+</div>
+</div>
+<!-- More days simulated -->
+<script>
+                        const grid = document.querySelector('.calendar-grid:last-child');
+                        for(let i=4; i<=30; i++) {
+                            const isGreen = Math.random() > 0.3;
+                            const day = document.createElement('div');
+                            day.className = "h-20 md:h-28 rounded-lg border border-outline-variant p-2 flex flex-col justify-between hover:border-primary hover:bg-surface-container-highest transition-colors cursor-pointer bg-surface-container";
+                            day.innerHTML = `
+                                <span class="font-label-md text-label-md text-on-surface-variant">${i}</span>
+                                <div class="w-2 h-2 rounded-full ${isGreen ? 'bg-primary' : 'bg-error'} mx-auto"></div>
+                            `;
+                            grid.appendChild(day);
+                        }
+                    </script>
+</div>
+</div>
+<!-- Day Detail & Stats (Sidebar inside Bento) -->
+<div class="lg:col-span-4 flex flex-col gap-lg">
+<!-- Selected Day Detail -->
+<div class="bg-surface-container-low p-md rounded-xl card-shadow border border-outline-variant">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-title-lg text-title-lg text-on-surface">Resumen del Día</h3>
+<span class="font-label-md text-label-md text-primary font-bold">Viernes, 3 May</span>
+</div>
+<div class="flex items-center justify-center py-lg">
+<div class="relative w-40 h-40">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-highest" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-width="12"></circle>
+<circle class="text-primary" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-dasharray="440" stroke-dashoffset="88" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-display-lg text-headline-lg text-on-surface">1,910</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Kcal Consumidas</span>
+</div>
+</div>
+</div>
+<div class="space-y-md">
+<div class="flex flex-col gap-xs">
+<div class="flex justify-between font-label-md text-label-md text-on-surface">
+<span>Proteínas</span>
+<span class="font-bold">145g / 160g</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[90%] rounded-full"></div>
+</div>
+</div>
+<div class="flex flex-col gap-xs">
+<div class="flex justify-between font-label-md text-label-md text-on-surface">
+<span>Carbohidratos</span>
+<span class="font-bold">180g / 200g</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[85%] rounded-full"></div>
+</div>
+</div>
+<div class="flex flex-col gap-xs">
+<div class="flex justify-between font-label-md text-label-md text-on-surface">
+<span>Grasas</span>
+<span class="font-bold">55g / 65g</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary-container w-[80%] rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Performance Badge -->
+<div class="bg-primary/10 p-md rounded-xl border border-primary/20 flex items-center gap-md">
+<div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div>
+<p class="font-label-md text-label-md font-bold text-primary">Racha de Consistencia</p>
+<p class="text-[12px] text-on-surface-variant">Has cumplido tus metas 5 días seguidos esta semana.</p>
+</div>
+</div>
+<!-- Visual Accent -->
+<div class="h-40 rounded-xl overflow-hidden relative card-shadow border border-outline-variant">
+<div class="absolute inset-0 bg-gradient-to-br from-surface-dim/90 to-primary-container/60 z-10"></div>
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A lush, vibrant overhead shot of healthy green vegetables" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCYXrf_IgpdEv13Gg2OubBtjTIrEYU4WMdmZSJ2Ph1_1YhJm2hl4cv7n_c-ZIJZy1E9rWgwb0ncImzLxQFwoJIaE-V3ZdYxgkmrlerrLzjE4X2166SvYWfW0dQXXBX11_f224f0Bx-7MbC-ABYUvqyiricB61A7dhReEdUhVK_Ut2JMHH5pzIff5N4RdV8AnkM-lhtq-bdIP0AaQ7ti1G1XHCGCX-VKIwCBtOc_grTHdWqOPoQurhaQ6UaWrX84BHNJHbTCLwnLutg')"></div>
+<div class="absolute inset-0 z-20 flex flex-col justify-end p-md text-on-surface">
+<h4 class="font-title-lg text-title-lg leading-tight">Tu Mejor Mes</h4>
+<p class="font-label-sm text-label-sm opacity-90 text-on-surface-variant">Mayo presenta un 12% más de adherencia que Abril.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe bg-surface-container-low border-t border-outline-variant shadow-[0px_-4px_20px_rgba(0,0,0,0.2)] z-50">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest p-2 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest p-2 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-sm text-label-sm">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary font-bold hover:bg-surface-container-highest p-2 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="font-label-sm text-label-sm">Trends</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest p-2 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Account</span>
+</a>
+</nav>
+<script>
+    // Simple Interaction for Calendar Selection
+    document.querySelectorAll('.calendar-grid:last-child > div').forEach(day => {
+        day.addEventListener('click', function() {
+            document.querySelectorAll('.calendar-grid:last-child > div').forEach(d => {
+                d.classList.remove('active-day', 'bg-primary-container/10');
+                if(!d.classList.contains('border-primary')) {
+                     d.classList.add('border-outline-variant');
+                }
+            });
+            this.classList.add('active-day', 'bg-primary-container/10');
+            this.classList.remove('border-outline-variant');
+        });
+    });
+</script>
+</body></html>

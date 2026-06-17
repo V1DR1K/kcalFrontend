@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vitality Peak - Prototipos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0e1511;
+        --surface: #161d19;
+        --surface-strong: #1f2a24;
+        --text: #e1e3df;
+        --muted: #bbcabf;
+        --line: #3c4a42;
+        --primary: #4edea3;
+        --primary-ink: #003924;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, system-ui, sans-serif;
+      }
+
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 48px 0;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        align-items: end;
+        margin-bottom: 32px;
+      }
+
+      h1 {
+        margin: 0;
+        color: var(--primary);
+        font-family: "Hanken Grotesk", Inter, sans-serif;
+        font-size: clamp(32px, 6vw, 56px);
+        line-height: 1;
+      }
+
+      p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 14px;
+        white-space: nowrap;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+      }
+
+      a {
+        display: grid;
+        gap: 12px;
+        min-height: 164px;
+        padding: 18px;
+        border: 1px solid color-mix(in srgb, var(--line), transparent 25%);
+        border-radius: 8px;
+        background: var(--surface);
+        color: inherit;
+        text-decoration: none;
+        transition:
+          border-color 160ms ease,
+          transform 160ms ease,
+          background 160ms ease;
+      }
+
+      a:hover {
+        transform: translateY(-2px);
+        border-color: var(--primary);
+        background: var(--surface-strong);
+      }
+
+      img {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: #09100c;
+      }
+
+      h2 {
+        margin: 0;
+        color: var(--text);
+        font-family: "Hanken Grotesk", Inter, sans-serif;
+        font-size: 22px;
+        line-height: 1.2;
+      }
+
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 16px;
+        border-radius: 8px;
+        background: var(--primary);
+        color: var(--primary-ink);
+        font-weight: 700;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 28px 0;
+        }
+
+        header {
+          display: block;
+        }
+
+        .badge {
+          margin-top: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Vitality Peak</h1>
+          <p>Indice local para revisar las pantallas exportadas desde Google Stitch.</p>
+        </div>
+        <span class="badge">Vite + HTML estatico</span>
+      </header>
+
+      <section class="grid" aria-label="Pantallas disponibles">
+        <a href="/iniciar_sesi_n_modo_noche_vitality_peak/code.html">
+          <img src="/iniciar_sesi_n_modo_noche_vitality_peak/screen.png" alt="Vista previa de inicio de sesion" />
+          <h2>Iniciar sesion</h2>
+          <span class="cta">Abrir pantalla</span>
+        </a>
+        <a href="/registro_de_usuario_modo_noche_vitality_peak/code.html">
+          <img src="/registro_de_usuario_modo_noche_vitality_peak/screen.png" alt="Vista previa de registro de usuario" />
+          <h2>Registro de usuario</h2>
+          <span class="cta">Abrir pantalla</span>
+        </a>
+        <a href="/dashboard_diario_modo_noche_vitality_peak/code.html">
+          <img src="/dashboard_diario_modo_noche_vitality_peak/screen.png" alt="Vista previa del dashboard diario" />
+          <h2>Dashboard diario</h2>
+          <span class="cta">Abrir pantalla</span>
+        </a>
+        <a href="/buscador_de_alimentos_modo_noche_vitality_peak/code.html">
+          <img src="/buscador_de_alimentos_modo_noche_vitality_peak/screen.png" alt="Vista previa del buscador de alimentos" />
+          <h2>Buscador de alimentos</h2>
+          <span class="cta">Abrir pantalla</span>
+        </a>
+        <a href="/configurar_alimento_modo_noche_vitality_peak/code.html">
+          <img src="/configurar_alimento_modo_noche_vitality_peak/screen.png" alt="Vista previa de configurar alimento" />
+          <h2>Configurar alimento</h2>
+          <span class="cta">Abrir pantalla</span>
+        </a>
+        <a href="/esc_ner_de_c_digo_modo_noche_vitality_peak/code.html">
+          <img src="/esc_ner_de_c_digo_modo_noche_vitality_peak/screen.png" alt="Vista previa del escaner de codigo" />
+          <h2>Escaner de codigo</h2>
+          <span class="cta">Abrir pantalla</span>
+        </a>
+        <a href="/historial_modo_noche_vitality_peak/code.html">
+          <img src="/historial_modo_noche_vitality_peak/screen.png" alt="Vista previa del historial" />
+          <h2>Historial</h2>
+          <span class="cta">Abrir pantalla</span>
+        </a>
+        <a href="/mi_perfil_modo_noche_vitality_peak/code.html">
+          <img src="/mi_perfil_modo_noche_vitality_peak/screen.png" alt="Vista previa de mi perfil" />
+          <h2>Mi perfil</h2>
+          <span class="cta">Abrir pantalla</span>
+        </a>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Perfil de Usuario - Vitality Peak</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#4edea3",
+                    "surface-variant": "#3c4a42",
+                    "on-surface": "#e1e3df",
+                    "surface-dim": "#0e1511",
+                    "surface-container-highest": "#3c4a42",
+                    "on-tertiary-fixed-variant": "#004c6e",
+                    "inverse-surface": "#e1e3df",
+                    "surface-bright": "#343b36",
+                    "on-surface-variant": "#bbcabf",
+                    "error": "#ffb4ab",
+                    "on-tertiary-fixed": "#001e2f",
+                    "on-secondary-fixed-variant": "#783200",
+                    "on-tertiary-container": "#c9e6ff",
+                    "on-primary": "#003924",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary-fixed": "#341100",
+                    "primary": "#4edea3",
+                    "secondary-fixed-dim": "#ffb690",
+                    "tertiary-fixed": "#c9e6ff",
+                    "surface-container-high": "#272f2a",
+                    "on-primary-fixed": "#002113",
+                    "tertiary": "#89ceff",
+                    "surface-tint": "#4edea3",
+                    "outline-variant": "#3c4a42",
+                    "on-primary-container": "#6ffbbe",
+                    "surface-container-low": "#161d19",
+                    "primary-container": "#005236",
+                    "inverse-on-surface": "#0e1511",
+                    "primary-fixed": "#6ffbbe",
+                    "surface-container-lowest": "#09100c",
+                    "surface-container": "#1e2621",
+                    "on-background": "#e1e3df",
+                    "outline": "#8b938c",
+                    "background": "#0e1511",
+                    "tertiary-container": "#004c6e",
+                    "error-container": "#93000a",
+                    "tertiary-fixed-dim": "#89ceff",
+                    "secondary": "#ffb690",
+                    "secondary-fixed": "#ffdbca",
+                    "surface": "#0e1511",
+                    "on-tertiary": "#00344e",
+                    "on-primary-fixed-variant": "#005236",
+                    "primary-fixed-dim": "#4edea3",
+                    "on-secondary-container": "#ffdbca",
+                    "on-error": "#690005",
+                    "secondary-container": "#783200",
+                    "on-secondary": "#542100"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "16px",
+                    "xxl": "48px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "sm": "12px",
+                    "gutter": "20px",
+                    "lg": "24px",
+                    "container-margin-mobile": "16px",
+                    "container-margin-desktop": "40px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "label-md": ["Inter"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0e1511;
+            color: #e1e3df;
+        }
+        .glass-card {
+            background: rgba(30, 38, 33, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-x-hidden bg-surface dark">
+<!-- SIDEBAR NAVIGATION -->
+<aside class="hidden md:flex flex-col p-md gap-base h-full w-64 fixed left-0 top-0 bg-surface-container-low border-r border-outline-variant z-40">
+<div class="mb-xxl px-base">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">NutriTrack Pro</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Premium Fitness</p>
+</div>
+<nav class="flex-1 flex flex-col gap-xs">
+<a class="flex items-center gap-base p-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-base p-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-md text-label-md">Search</span>
+</a>
+<a class="flex items-center gap-base p-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-md text-label-md">History</span>
+</a>
+<!-- Active State: Profile -->
+<a class="flex items-center gap-base p-md text-primary font-bold bg-primary-container/20 rounded-lg scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+<a class="flex items-center gap-base p-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-base flex items-center gap-sm pt-md border-t border-outline-variant">
+<img class="w-10 h-10 rounded-full border-2 border-primary" data-alt="A portrait of a healthy user with a vibrant background, professional fitness aesthetic, high-key lighting, focused on vitality and health. Minimalist modern style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcQEljQro4xnid0AOtFsl848NcKx8a0LBnLuzLxfYlwU7j3nM7gjKcRnVqFEL20ipPIh2ippHjYMjT70NYBh_ebxOTxBFzQijdFUW38dBQp7jHWeKFjqgAaY1DTXEpF4lru4_V8aU2wZkZJ7W3FAUjhIWBEWu9-vEOTaMHY6qYAlXUsD0OHLpl81ltca6Sl6CE_GJGp12QXu8mgYQWABniWzIbsU36rtSMLt9SgQZis20MUpttwBUEL_SPmSOaRqGEfrNDN6JjxZc"/>
+<div>
+<p class="font-label-md text-label-md font-bold text-on-surface">Ricardo Mendoza</p>
+<p class="text-[11px] text-on-surface-variant">Premium Member</p>
+</div>
+</div>
+</aside>
+<!-- MAIN CONTENT CANVAS -->
+<main class="md:ml-64 pb-24 md:pb-8 min-h-screen bg-surface">
+<!-- TOP APP BAR -->
+<header class="flex justify-between items-center w-full px-container-margin-mobile md:px-container-margin-desktop h-16 bg-surface-container-low border-b border-outline-variant sticky top-0 z-30">
+<div class="flex items-center gap-md">
+<h2 class="font-headline-md text-headline-md font-bold text-primary md:hidden">NutriTrack Pro</h2>
+<h2 class="hidden md:block font-headline-md text-headline-md font-bold text-primary">Mi Perfil</h2>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-base rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-100 text-primary">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-base rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-100 text-primary">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<div class="px-container-margin-mobile md:px-container-margin-desktop mt-lg">
+<!-- SECTION 1: PROFILE HEADER -->
+<section class="flex flex-col md:flex-row items-center gap-lg bg-surface-container-low p-xl rounded-xl border border-outline-variant mb-lg relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-tertiary"></div>
+<div class="relative">
+<img class="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-surface-container" data-alt="A confident smiling man in athletic wear, bright natural morning light, modern airy studio setting, soft shadows, vibrant green and teal color accents, premium editorial look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCr_84lJDTRPlnd4YfjpbJZtxJNGYiQYO-q2Qz0dvZvqraFzgW0gH3fUm769AzVwRvg7InqDGCtuGrwSDJDYQB-augCyQoXJnwVPCpYUjzjwexpemKAk-A1iw7cZGnjM0i6gGvHChXcUljXNhX07T9rw8gRfNb1nhlLkwiwIH2OljTweqZp_liYiE54NjXK9LW7t1p3uoi_9vexTMp4Q-9M_7tHzDNIB__3282Tw5PmW4SCbX7XnsyGCBslpXhSB7PJsVUOpslqeb0"/>
+<button class="absolute bottom-1 right-1 bg-primary text-on-primary p-xs rounded-full shadow-lg hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+<div class="text-center md:text-left">
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface">Ricardo Mendoza</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">ricardo.mendoza@email.com</p>
+<div class="mt-base flex flex-wrap justify-center md:justify-start gap-xs">
+<span class="px-base py-xs bg-primary-container text-primary rounded-full font-label-sm text-label-sm">PREMIUM</span>
+<span class="px-base py-xs bg-tertiary-container text-tertiary rounded-full font-label-sm text-label-sm">ESTILO: KETO</span>
+</div>
+</div>
+<div class="md:ml-auto hidden md:block">
+<button class="bg-primary text-on-primary px-xl py-md rounded-xl font-label-md text-label-md hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-xs">
+<span class="material-symbols-outlined">share</span>
+                    Compartir Progreso
+                </button>
+</div>
+</section>
+<!-- SECTION 2: PERSONAL DATA GRID -->
+<section class="mb-lg">
+<h4 class="font-title-lg text-title-lg mb-md text-on-surface">Datos Personales</h4>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Weight -->
+<div class="bg-surface-container-low p-md rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="flex items-center justify-between mb-xs">
+<span class="material-symbols-outlined text-primary opacity-70 group-hover:opacity-100 transition-opacity">weight</span>
+<span class="text-[10px] text-on-surface-variant font-bold">PESO</span>
+</div>
+<p class="font-headline-md text-headline-md font-bold text-on-surface">75 <span class="text-label-md font-medium text-on-surface-variant">kg</span></p>
+</div>
+<!-- Height -->
+<div class="bg-surface-container-low p-md rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="flex items-center justify-between mb-xs">
+<span class="material-symbols-outlined text-primary opacity-70 group-hover:opacity-100 transition-opacity">height</span>
+<span class="text-[10px] text-on-surface-variant font-bold">ALTURA</span>
+</div>
+<p class="font-headline-md text-headline-md font-bold text-on-surface">180 <span class="text-label-md font-medium text-on-surface-variant">cm</span></p>
+</div>
+<!-- Age -->
+<div class="bg-surface-container-low p-md rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="flex items-center justify-between mb-xs">
+<span class="material-symbols-outlined text-primary opacity-70 group-hover:opacity-100 transition-opacity">calendar_month</span>
+<span class="text-[10px] text-on-surface-variant font-bold">EDAD</span>
+</div>
+<p class="font-headline-md text-headline-md font-bold text-on-surface">28 <span class="text-label-md font-medium text-on-surface-variant">años</span></p>
+</div>
+<!-- Activity -->
+<div class="bg-surface-container-low p-md rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="flex items-center justify-between mb-xs">
+<span class="material-symbols-outlined text-primary opacity-70 group-hover:opacity-100 transition-opacity">fitness_center</span>
+<span class="text-[10px] text-on-surface-variant font-bold">ACTIVIDAD</span>
+</div>
+<p class="font-label-md text-label-md font-bold text-on-surface uppercase tracking-tight">Muy Activo</p>
+</div>
+</div>
+</section>
+<!-- SECTION 3: GOALS SUMMARY -->
+<section class="mb-lg">
+<div class="bg-surface-container-low p-xl rounded-xl border border-outline-variant">
+<div class="flex justify-between items-center mb-lg">
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface">Objetivo de Peso</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Pérdida progresiva de grasa</p>
+</div>
+<div class="text-right">
+<span class="font-headline-md text-headline-md font-bold text-primary">-4.2kg</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant">REDUCCIÓN TOTAL</p>
+</div>
+</div>
+<div class="relative w-full h-4 bg-surface-container-high rounded-full mb-base overflow-hidden">
+<div class="absolute top-0 left-0 h-full bg-primary rounded-full transition-all duration-1000" style="width: 65%;"></div>
+</div>
+<div class="flex justify-between font-label-md text-label-md text-on-surface-variant">
+<span>Inicio: 79.2kg</span>
+<span class="font-bold text-on-surface">Meta: 72.0kg</span>
+</div>
+</div>
+</section>
+<!-- SECTION 4 & 5: SETTINGS & LOGOUT -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<!-- Settings Links -->
+<div class="lg:col-span-2 bg-surface-container-low rounded-xl border border-outline-variant overflow-hidden">
+<div class="p-lg border-b border-outline-variant">
+<h4 class="font-title-lg text-title-lg text-on-surface">Configuración</h4>
+</div>
+<div class="divide-y divide-outline-variant">
+<a class="flex items-center justify-between p-lg hover:bg-surface-container transition-colors group" href="#">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary">person_edit</span>
+<span class="font-body-md text-body-md text-on-surface">Editar Perfil</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-lg hover:bg-surface-container transition-colors group" href="#">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary">notifications_active</span>
+<span class="font-body-md text-body-md text-on-surface">Notificaciones</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-lg hover:bg-surface-container transition-colors group" href="#">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary">lock</span>
+<span class="font-body-md text-body-md text-on-surface">Privacidad y Seguridad</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-lg hover:bg-surface-container transition-colors group" href="#">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-tertiary">workspace_premium</span>
+<span class="font-body-md text-body-md text-on-surface">Gestionar Plan Premium</span>
+</div>
+<span class="material-symbols-outlined text-tertiary group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- Logout/Danger Zone -->
+<div class="flex flex-col gap-md">
+<div class="bg-error-container/10 p-xl rounded-xl border border-error/20 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-error text-[48px] mb-base">logout</span>
+<h4 class="font-title-lg text-title-lg text-error mb-xs">Cerrar Sesión</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-xl">Tus datos seguirán sincronizados en la nube.</p>
+<button class="w-full bg-error text-on-error py-md rounded-xl font-bold active:scale-95 transition-transform hover:brightness-110">
+                        Confirmar Salida
+                    </button>
+</div>
+<div class="bg-surface-container-high p-lg rounded-xl flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">App Version</span>
+<span class="font-label-sm text-label-sm font-bold text-on-surface">v4.2.0-PRO</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- MOBILE BOTTOM NAVIGATION -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe bg-surface-container-low border-t border-outline-variant z-50 rounded-t-xl shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface px-4 py-1 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] uppercase font-bold tracking-tighter">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface px-4 py-1 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="text-[10px] uppercase font-bold tracking-tighter">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface px-4 py-1 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="text-[10px] uppercase font-bold tracking-tighter">Trends</span>
+</a>
+<!-- Active Tab -->
+<a class="flex flex-col items-center justify-center text-primary px-4 py-1 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-[10px] uppercase font-bold tracking-tighter">Account</span>
+</a>
+</nav>
+<script>
+    // Micro-interactions and effects
+    document.querySelectorAll('.active\\:scale-95').forEach(button => {
+        button.addEventListener('touchstart', () => {
+            button.classList.add('scale-95');
+        });
+        button.addEventListener('touchend', () => {
+            button.classList.remove('scale-95');
+        });
+    });
+
+    // Progress bar animation
+    window.addEventListener('load', () => {
+        const progressBar = document.querySelector('.bg-primary.rounded-full');
+        if (progressBar) {
+            const width = progressBar.style.width;
+            progressBar.style.width = '0%';
+            setTimeout(() => {
+                progressBar.style.width = width;
+            }, 300);
+        }
+    });
+</script>
+</body></html>
