@@ -4,19 +4,20 @@
   "private": true,
   "description": "Frontend React de KazaFitness, producto de KazaDesarrollos.",
   "scripts": {
-    "dev": "vite --host localhost",
-    "dev:lan": "vite --host 0.0.0.0",
+    "dev": "vite",
+    "dev:lan": "vite",
     "start": "npm run dev",
     "preview": "vite preview --host localhost",
     "preview:lan": "vite preview --host 0.0.0.0",
     "build": "vite build"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^5.1.1",
-    "vite": "^8.0.16",
     "react": "^19.2.1",
     "react-dom": "^19.2.1"
   },
   "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "vite": "^8.0.16"
   }
 }

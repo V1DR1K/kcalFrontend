@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 const APP_NAME = "KazaFitness";
 const TOKEN_KEY = "kazaFitness.token";
 const USER_KEY = "kazaFitness.user";
