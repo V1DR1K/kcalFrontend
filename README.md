@@ -1,6 +1,6 @@
 # kcalFrontend
 
-Frontend React de **Vitality Peak** construido con Vite.
+Frontend React de **KazaFitness**, producto de **KazaDesarrollos**, construido con Vite.
 
 ## Estructura
 
@@ -35,6 +35,51 @@ Abrir la URL que muestra Vite, normalmente:
 http://localhost:5173/
 ```
 
+## Como correrlo desde el celular en la misma WiFi
+
+1. Buscar la IP local de tu PC:
+
+```powershell
+ipconfig
+```
+
+Usar la IPv4 de tu adaptador WiFi, por ejemplo `192.168.0.25`.
+
+2. Levantar el backend escuchando en la red:
+
+```powershell
+cd C:\Users\Tomas\Desktop\Proyectos\KCALS\kcalBackend
+$env:SERVER_ADDRESS="0.0.0.0"
+.\mvnw.cmd spring-boot:run
+```
+
+3. Crear o actualizar `.env` en `kcalFrontend`:
+
+```text
+VITE_API_BASE_URL=http://TU_IP_LOCAL:8081
+```
+
+Ejemplo:
+
+```text
+VITE_API_BASE_URL=http://192.168.0.25:8081
+```
+
+4. Levantar el frontend para LAN:
+
+```powershell
+cd C:\Users\Tomas\Desktop\Proyectos\KCALS\kcalFrontend
+npm run dev:lan
+```
+
+5. Abrir desde el celular:
+
+```text
+http://TU_IP_LOCAL:5173
+```
+
+Si no carga, revisar el Firewall de Windows y permitir los puertos `5173` y `8081`.
+
 ## Backend
 
 La integracion espera el backend en:
@@ -52,7 +97,7 @@ VITE_API_BASE_URL=http://localhost:8081
 Credenciales demo:
 
 ```text
-Email: alex@vitality.com
+Email: alex@kazadesarrollos.com
 Password: password123
 ```
 
@@ -85,8 +130,10 @@ El backend debe permitir CORS desde Vite, por ejemplo `http://127.0.0.1:5173`.
 
 ```bash
 npm run dev
+npm run dev:lan
 npm run build
 npm run preview
+npm run preview:lan
 ```
 
 ## Desde Visual Studio Code

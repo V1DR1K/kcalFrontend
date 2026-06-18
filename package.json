@@ -1,12 +1,14 @@
 {
-  "name": "kcal-frontend",
+  "name": "kaza-fitness-frontend",
   "version": "0.1.0",
   "private": true,
-  "description": "Frontend React de Vitality Peak.",
+  "description": "Frontend React de KazaFitness, producto de KazaDesarrollos.",
   "scripts": {
     "dev": "vite --host localhost",
+    "dev:lan": "vite --host 0.0.0.0",
     "start": "npm run dev",
     "preview": "vite preview --host localhost",
+    "preview:lan": "vite preview --host 0.0.0.0",
     "build": "vite build"
   },
   "dependencies": {
