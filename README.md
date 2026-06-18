@@ -1,13 +1,14 @@
 # kcalFrontend
 
-Proyecto armado a partir de pantallas HTML exportadas desde Google Stitch para **Vitality Peak**.
+Frontend React de **Vitality Peak** construido con Vite.
 
-## Estructura actual
+## Estructura
 
-- `index.html`: indice local para navegar las pantallas.
-- `*/code.html`: prototipos HTML originales exportados desde Stitch.
-- `*/screen.png`: capturas de referencia de cada pantalla.
-- `vitality_peak*/DESIGN.md`: guias visuales exportadas.
+- `src/main.jsx`: aplicacion React, vistas y cliente HTTP.
+- `src/styles.css`: estilos base de la app.
+- `index.html`: punto de montaje de Vite.
+- `*/code.html` y `*/screen.png`: prototipos originales de Google Stitch conservados como referencia.
+- `.env.example`: ejemplo de configuracion para la URL del backend.
 
 ## Requisitos
 
@@ -31,7 +32,7 @@ npm run dev
 Abrir la URL que muestra Vite, normalmente:
 
 ```text
-http://127.0.0.1:5173/
+http://localhost:5173/
 ```
 
 ## Backend
@@ -40,6 +41,12 @@ La integracion espera el backend en:
 
 ```text
 http://localhost:8081
+```
+
+Si necesitás cambiarlo, crea un archivo `.env` con:
+
+```text
+VITE_API_BASE_URL=http://localhost:8081
 ```
 
 Credenciales demo:
@@ -74,12 +81,16 @@ Si el backend corre en otro host, se puede configurar antes de cargar las pantal
 
 El backend debe permitir CORS desde Vite, por ejemplo `http://127.0.0.1:5173`.
 
+## Scripts
+
+```bash
+npm run dev
+npm run build
+npm run preview
+```
+
 ## Desde Visual Studio Code
 
 1. Abrir la carpeta del repositorio.
 2. Ejecutar la tarea `npm: dev` desde `Terminal > Run Task`.
-3. Usar `Run and Debug > Vite: abrir en navegador` para abrir la app.
-
-## Nota
-
-Las pantallas siguen usando Tailwind, Google Fonts y Material Symbols desde CDN, por lo que necesitan conexion a internet para verse iguales al export original.
+3. Abrir `http://localhost:5173/`.

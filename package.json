@@ -2,13 +2,19 @@
   "name": "kcal-frontend",
   "version": "0.1.0",
   "private": true,
-  "description": "Prototipos HTML de Vitality Peak exportados desde Google Stitch.",
+  "description": "Frontend React de Vitality Peak.",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite --host localhost",
     "start": "npm run dev",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host localhost",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.1.1",
+    "vite": "^8.0.16",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
   },
   "devDependencies": {
-    "vite": "^8.0.16"
   }
 }
