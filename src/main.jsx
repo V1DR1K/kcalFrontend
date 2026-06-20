@@ -29,6 +29,16 @@ const CATEGORY_OPTIONS = [
   { value: "FAT", label: "Grasas" },
   { value: "OTHER", label: "Otros" },
 ];
+const CATEGORY_ART = {
+  PROTEIN: "/category-assets/protein.webp",
+  DAIRY: "/category-assets/dairy.webp",
+  FRUIT: "/category-assets/fruit.webp",
+  VEGETABLE: "/category-assets/vegetable.webp",
+  CEREAL: "/category-assets/cereal.webp",
+  FAT: "/category-assets/fat.webp",
+  OTHER: "/category-assets/other.webp",
+};
+const RECIPE_ART = "/category-assets/recipe.webp";
 const UNIT_OPTIONS = [
   { value: "GRAM", label: "Gramos" },
   { value: "MILLILITER", label: "Mililitros" },
@@ -68,11 +78,12 @@ function macroValue(item, key) {
 
 async function request(path, options = {}) {
   const token = localStorage.getItem(TOKEN_KEY);
+  const isFormData = options.body instanceof FormData;
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       Accept: "application/json",
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
@@ -134,6 +145,7 @@ function App() {
   const [toast, setToast] = useState(null);
   const [user, setUser] = useState(getSavedUser);
   const [selectedFoodId, setSelectedFoodId] = useState(null);
+  const [prefillBarcode, setPrefillBarcode] = useState("");
 
   const api = useMemo(() => ({
     request,
@@ -164,11 +176,11 @@ function App() {
         <Shell user={user} page={page} setPage={setPage} logout={logout}>
           {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
           {page === "foods" && <Foods api={api} user={user} setPage={setPage} setSelectedFoodId={setSelectedFoodId} />}
-          {page === "create" && <CreateCatalog api={api} />}
+          {page === "create" && <CreateCatalog api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={() => setPrefillBarcode("")} />}
           {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
-          {page === "scanner" && <Scanner api={api} setPage={setPage} setSelectedFoodId={setSelectedFoodId} />}
+          {page === "scanner" && <Scanner api={api} setPage={setPage} setSelectedFoodId={setSelectedFoodId} setPrefillBarcode={setPrefillBarcode} />}
           {page === "history" && <History api={api} />}
-          {page === "profile" && <Profile api={api} />}
+          {page === "profile" && <Profile api={api} logout={logout} />}
         </Shell>
       ) : (
         <AuthScreen page={page} setPage={setPage} saveSession={saveSession} notify={api.notify} />
@@ -343,6 +355,11 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
   const [preview, setPreview] = useState(null);
   const recents = readRecents(user);
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, []);
+  useEffect(() => {
     const id = window.setTimeout(async () => {
       const params = new URLSearchParams({ size: "20" });
       if (query) params.set("q", query);
@@ -376,15 +393,19 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
       <section className="picker-modal">
         <header><div><span>{mealType.label}</span><h2>Agregar comida</h2></div><button className="icon-button" onClick={onClose}><span className="material-symbols-outlined">close</span></button></header>
         <div className="tabs"><button className={tab === "FOOD" ? "selected" : ""} onClick={() => { setTab("FOOD"); setSelected(null); }}>Alimentos</button><button className={tab === "RECIPE" ? "selected" : ""} onClick={() => { setTab("RECIPE"); setSelected(null); }}>Recetas</button></div>
-        <div className="search-wrap"><span className="material-symbols-outlined">search</span><input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : "recetas"}...`} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
-        {tab === "FOOD" && <CategoryChips category={category} setCategory={setCategory} />}
-        <QuickItems title="Usados recientemente" items={recents.items.filter((item) => item.type === tab)} onPick={setSelected} />
-        <div className="picker-results">
-          {results.map((item) => <CatalogRow key={`${tab}:${item.id}`} item={{ ...item, type: tab }} onPick={setSelected} />)}
+        <div className="picker-tools">
+          <div className="search-wrap"><span className="material-symbols-outlined">search</span><input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : "recetas"}...`} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+          {tab === "FOOD" && <CategoryChips category={category} setCategory={setCategory} />}
+        </div>
+        <div className="picker-scroll">
+          <QuickItems title="Usados recientemente" items={recents.items.filter((item) => item.type === tab)} onPick={setSelected} />
+          <div className="picker-results">
+            {results.map((item) => <CatalogRowWithImage key={`${tab}:${item.id}`} item={{ ...item, type: tab }} onPick={setSelected} />)}
+          </div>
         </div>
         {selected && (
           <div className="selected-editor">
-            <strong>{selected.name}</strong>
+            <div className="selected-heading"><FoodThumb item={selected} compact /><strong>{selected.name}</strong></div>
             <div className="split"><Input label={selected.type === "RECIPE" ? "Gramos ingeridos" : "Gramos"} type="number" value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} /><div className="preview mini">{formatNumber(preview?.calories)} kcal</div></div>
             <small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small>
             <button className="primary" onClick={add}>Agregar a {mealType.label}</button>
@@ -452,39 +473,57 @@ function CatalogRow({ item, onPick }) {
 function CatalogCard({ item, onAdd }) {
   return (
     <article className="food-card">
-      <div className="food-thumb"><span className="material-symbols-outlined">{item.type === "RECIPE" ? "restaurant_menu" : "nutrition"}</span></div>
+      <FoodThumb item={item} />
       <div><h3>{item.name}</h3><p>{item.type === "RECIPE" ? `${formatNumber(item.totalWeightGrams)}g totales` : item.brand || categoryLabel(item.category)}</p></div>
       <strong>{item.calories} kcal</strong>
-      {item.type === "FOOD" && <button className="icon-button" onClick={onAdd}><span className="material-symbols-outlined">add</span></button>}
+      {item.type === "FOOD" && <button className="icon-button add-food" onClick={onAdd} aria-label={`Agregar ${item.name}`}><span className="material-symbols-outlined">add</span></button>}
     </article>
   );
 }
 
-function CreateCatalog({ api }) {
+function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode }) {
   const [tab, setTab] = useState("FOOD");
   return (
     <section className="page narrow">
       <Header title="Crear" eyebrow="Catalogo global" />
       <div className="tabs"><button className={tab === "FOOD" ? "selected" : ""} onClick={() => setTab("FOOD")}>Alimento</button><button className={tab === "RECIPE" ? "selected" : ""} onClick={() => setTab("RECIPE")}>Receta</button></div>
-      {tab === "FOOD" ? <CreateFoodForm api={api} /> : <CreateRecipeForm api={api} />}
+      {tab === "FOOD" ? <CreateFoodForm api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} /> : <CreateRecipeForm api={api} />}
     </section>
   );
 }
 
-function CreateFoodForm({ api }) {
+function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
   async function submit(event) {
     event.preventDefault();
-    const data = Object.fromEntries(new FormData(event.currentTarget));
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
     try {
-      await api.request("/api/foods", { method: "POST", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity || 100), calories: Number(data.calories), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), tags: data.tags ? data.tags.split(",").map((tag) => tag.trim()).filter(Boolean) : [] }) });
+      const food = await api.request("/api/foods", { method: "POST", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity || 100), calories: Number(data.calories), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), tags: data.tags ? data.tags.split(",").map((tag) => tag.trim()).filter(Boolean) : [] }) });
+      const image = formData.get("image");
+      if (image?.size) {
+        const upload = new FormData();
+        upload.append("image", image);
+        await api.request(`/api/foods/${food.id}/image`, { method: "POST", body: upload });
+      }
       api.notify("Alimento creado.");
-      event.currentTarget.reset();
+      form.reset();
+      clearPrefillBarcode?.();
     } catch (error) {
       api.notify("No se pudo crear el alimento.", "error");
       console.error(error);
     }
   }
-  return <Panel title="Nuevo alimento"><form className="form-grid" onSubmit={submit}><Input name="name" label="Nombre" required /><Input name="brand" label="Marca" /><Input name="barcode" label="Codigo de barras opcional" /><Select name="category" label="Categoria" options={CATEGORY_OPTIONS} /><Input name="baseQuantity" label="Base gramos/ml/unidad" type="number" defaultValue="100" required /><div className="split"><Input name="calories" label="Kcal" type="number" required /><Input name="proteinGrams" label="Proteinas g" type="number" step="0.1" required /></div><div className="split"><Input name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" required /><Input name="fatGrams" label="Grasas g" type="number" step="0.1" required /></div><Input name="tags" label="Tags separados por coma" /><button className="primary">Crear alimento</button></form></Panel>;
+  return <Panel title="Nuevo alimento"><form className="form-grid" onSubmit={submit}><Input name="name" label="Nombre" required /><Input name="brand" label="Marca" /><Input name="barcode" label="Codigo de barras opcional" defaultValue={prefillBarcode || ""} /><Select name="category" label="Categoria" options={CATEGORY_OPTIONS} /><Input name="baseQuantity" label="Base gramos/ml/unidad" type="number" defaultValue="100" required /><div className="split"><Input name="calories" label="Kcal" type="number" required /><Input name="proteinGrams" label="Proteinas g" type="number" step="0.1" required /></div><div className="split"><Input name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" required /><Input name="fatGrams" label="Grasas g" type="number" step="0.1" required /></div><Input name="tags" label="Tags separados por coma" /><Input name="image" label="Foto del producto" type="file" accept="image/jpeg,image/png,image/webp" /><button className="primary">Crear alimento</button></form></Panel>;
+}
+
+function CatalogRowWithImage({ item, onPick }) {
+  return <button className="catalog-row catalog-row-image" onClick={() => onPick(item)}><FoodThumb item={item} compact /><span className="catalog-copy"><strong>{item.name}</strong><small>{item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></span><span className="material-symbols-outlined row-action">chevron_right</span></button>;
+}
+
+function FoodThumb({ item, compact = false, hero = false }) {
+  const fallback = item?.type === "RECIPE" ? RECIPE_ART : CATEGORY_ART[item?.category] || CATEGORY_ART.OTHER;
+  return <div className={`food-thumb ${compact ? "compact" : ""} ${hero ? "hero" : ""}`}><img src={item?.imageUrl || fallback} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallback; }} alt="" /></div>;
 }
 
 function CreateRecipeForm({ api }) {
@@ -516,14 +555,14 @@ function CreateRecipeForm({ api }) {
     }
   }
   return (
-    <Panel title="Nueva receta">
-      <form className="form-grid" onSubmit={submit}>
+    <Panel title="Nueva receta" className="recipe-panel">
+      <form className="form-grid recipe-form" onSubmit={submit}>
         <Input name="name" label="Nombre" required /><Input name="description" label="Descripcion opcional" /><Input name="totalWeightGrams" label="Peso total en gramos" type="number" required onChange={() => setIngredients([...ingredients])} />
         <div className="search-wrap"><span className="material-symbols-outlined">search</span><input className="search" placeholder="Buscar ingredientes..." value={query} onChange={(event) => setQuery(event.target.value)} /></div>
         <div className="picker-results">{foods.map((food) => <button type="button" className="catalog-row" key={food.id} onClick={() => setIngredients([...ingredients, { foodId: food.id, quantity: 100, unit: "GRAM", name: food.name }])}><span>{food.name}</span><small>{food.calories} kcal / 100g</small></button>)}</div>
         <div className="ingredient-list">{ingredients.map((item, index) => <label className="ingredient-row" key={`${item.foodId}:${index}`}><span>{item.name}</span><input type="number" value={item.quantity} onChange={(event) => setIngredients(ingredients.map((ingredient, i) => i === index ? { ...ingredient, quantity: Number(event.target.value) } : ingredient))} /><button type="button" onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}>Quitar</button></label>)}</div>
         <div className="preview mini">{formatNumber(preview?.calories)} kcal · P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</div>
-        <button className="primary">Crear receta</button>
+        <button className="primary recipe-submit" disabled={!ingredients.length}>Crear receta</button>
       </form>
     </Panel>
   );
@@ -546,10 +585,10 @@ function ConfigureFood({ api, setPage, foodId, user }) {
     api.notify("Alimento agregado.");
     setPage("dashboard");
   }
-  return <section className="page narrow"><Header title="Configurar alimento" /><Panel title={food?.name || "Porcion"}><div className="split"><Input label="Cantidad" value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} type="number" /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={UNIT_OPTIONS} /></div><label className="field"><span>Comida</span><select value={mealType} onChange={(event) => setMealType(event.target.value)}>{mealTypes.map((meal) => <option key={meal.code} value={meal.code}>{meal.label}</option>)}</select></label><div className="preview">{formatNumber(preview?.calories)} kcal</div><button className="primary" disabled={!foodId} onClick={add}>Agregar al dia</button></Panel></section>;
+  return <section className="page narrow configure-page"><button className="back-button configure-back" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><Header title="Configurar alimento" /><Panel className="configure-panel"><div className="configure-food-heading"><FoodThumb item={{ ...food, type: "FOOD" }} hero /><div><span>Porción</span><h2>{food?.name || "Cargando..."}</h2><small>{food?.brand || categoryLabel(food?.category)}</small></div></div><div className="split configure-fields"><Input label="Cantidad" value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} type="number" min="0" /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={UNIT_OPTIONS} /></div><label className="field"><span>Comida</span><select value={mealType} onChange={(event) => setMealType(event.target.value)}>{mealTypes.map((meal) => <option key={meal.code} value={meal.code}>{meal.label}</option>)}</select></label><div className="preview configure-preview"><strong>{formatNumber(preview?.calories)} kcal</strong><small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small></div><button className="primary configure-submit" disabled={!foodId || quantity <= 0} onClick={add}>Agregar al día</button></Panel></section>;
 }
 
-function Scanner({ api, setPage, setSelectedFoodId }) {
+function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode }) {
   const [barcode, setBarcode] = useState("7790000000059");
   const [food, setFood] = useState(null);
   const [cameraOn, setCameraOn] = useState(false);
@@ -596,7 +635,7 @@ function Scanner({ api, setPage, setSelectedFoodId }) {
       api.notify("No encontramos ese codigo.", "error");
     }
   }
-  return <section className="scanner-page"><button className="back-button" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><div className="scanner-stage"><video ref={videoRef} muted playsInline />{!cameraOn && <div className="scanner-fallback" />}<div className="scan-frame"><i /><i /><i /><i /><div className="scan-line" /><span className="material-symbols-outlined">barcode_scanner</span></div><p>{status}</p></div><section className={`scanner-result ${food ? "show" : ""}`}>{food ? <><div><strong>{food.name}</strong><span>{food.calories} kcal / 100g</span></div><button className="primary" onClick={() => { setSelectedFoodId(food.id); setPage("configure"); }}>Agregar</button></> : <><button className="manual-toggle" onClick={() => setManualOpen((value) => !value)}><span>Codigo manual</span><span className="material-symbols-outlined">{manualOpen ? "expand_more" : "chevron_right"}</span></button>{manualOpen && <div className="manual-panel"><input value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="Ingresar codigo" /><button className="secondary" onClick={() => search()}>Buscar</button></div>}<button className="primary" onClick={() => setCameraOn((value) => !value)}>{cameraOn ? "Pausar camara" : "Usar camara"}</button></>}</section></section>;
+  return <section className="scanner-page"><button className="back-button" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><div className="scanner-stage"><video ref={videoRef} muted playsInline />{!cameraOn && <div className="scanner-fallback" />}<div className="scan-frame"><i /><i /><i /><i /><div className="scan-line" /><span className="material-symbols-outlined">barcode_scanner</span></div><p>{status}</p></div><section className={`scanner-result ${food ? "show" : ""}`}>{food ? <><div><strong>{food.name}</strong><span>{food.calories} kcal / 100g</span></div><button className="primary" onClick={() => { setSelectedFoodId(food.id); setPage("configure"); }}>Agregar</button></> : <><button className="manual-toggle" onClick={() => setManualOpen((value) => !value)}><span>Codigo manual</span><span className="material-symbols-outlined">{manualOpen ? "expand_more" : "chevron_right"}</span></button>{manualOpen && <div className="manual-panel"><input value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="Ingresar codigo" /><button className="secondary" onClick={() => search()}>Buscar</button></div>}<button className="secondary" onClick={() => { setPrefillBarcode?.(barcode); setPage("create"); }}>Registrar producto</button><button className="primary" onClick={() => setCameraOn((value) => !value)}>{cameraOn ? "Pausar camara" : "Usar camara"}</button></>}</section></section>;
 }
 
 function History({ api }) {
@@ -605,7 +644,7 @@ function History({ api }) {
   return <section className="page"><Header title="Historial" /><div className="grid two"><Panel title="Promedio"><p className="big">{formatNumber(data?.averageCalories)} kcal</p></Panel><Panel title="Objetivos cumplidos"><p className="big">{data?.completedGoalDays || 0} dias</p></Panel></div><div className="calendar-grid">{(data?.days || []).map((day) => <span key={day.date} className={day.goalReached ? "done" : ""}>{new Date(`${day.date}T00:00:00`).getDate()}</span>)}</div></section>;
 }
 
-function Profile({ api }) {
+function Profile({ api, logout }) {
   const [profile, setProfile] = useState(null);
   const [plans, setPlans] = useState([]);
   const [presets, setPresets] = useState([]);
@@ -627,11 +666,13 @@ function Profile({ api }) {
       </Panel>
       <NutritionPlanManager api={api} presets={presets} plans={plans} onChanged={loadPlans} />
       <NutritionTutorial />
+      <Panel title="Cuenta" className="account-panel"><p>Podés cerrar tu sesión de forma segura en este dispositivo.</p><button className="danger-button" onClick={() => { if (window.confirm("¿Querés cerrar sesión?")) logout(); }}><span className="material-symbols-outlined">logout</span>Cerrar sesión</button></Panel>
     </section>
   );
 }
 
 function NutritionPlanManager({ api, presets, plans, onChanged }) {
+  const [selectedPreset, setSelectedPreset] = useState(null);
   const [form, setForm] = useState({
     name: "Plan manual",
     dailyCalories: 2200,
@@ -650,7 +691,16 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
   function setField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
   }
+  function setMacro(field, value) {
+    setSelectedPreset(null);
+    setForm((current) => {
+      const otherFields = ["proteinPercent", "carbsPercent", "fatPercent"].filter((key) => key !== field);
+      const remaining = Math.max(0, 100 - otherFields.reduce((sum, key) => sum + Number(current[key] || 0), 0));
+      return { ...current, [field]: Math.min(remaining, Math.max(0, Number(value))) };
+    });
+  }
   function applyPreset(preset) {
+    setSelectedPreset(preset.key);
     setForm((current) => ({
       ...current,
       name: preset.name,
@@ -689,7 +739,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     <Panel title="Plan alimenticio">
       <div className="preset-grid">
         {presets.map((preset) => (
-          <button className="preset-card" key={preset.key} onClick={() => applyPreset(preset)}>
+          <button type="button" className={`preset-card ${selectedPreset === preset.key ? "selected" : ""}`} key={preset.key} onClick={() => applyPreset(preset)}>
             <strong>{preset.name}</strong>
             <span>{preset.description}</span>
             <small>{preset.proteinPercent}% P / {preset.carbsPercent}% C / {preset.fatPercent}% G</small>
@@ -697,22 +747,19 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
         ))}
       </div>
       <form className="form-grid nutrition-plan-form" onSubmit={submit}>
-        <Input label="Nombre del plan" value={form.name} onChange={(event) => setField("name", event.target.value)} required />
-        <Input label="Calorias diarias" type="number" value={form.dailyCalories} onChange={(event) => setField("dailyCalories", event.target.value)} required />
+        <div className="plan-intro"><strong>Ajustá tu distribución</strong><span>Elegí un objetivo y afiná los porcentajes sin superar el 100%.</span></div>
         <div className="macro-editor">
-          <Input label="Proteinas %" type="number" value={form.proteinPercent} onChange={(event) => setField("proteinPercent", event.target.value)} required />
-          <Input label="Carbohidratos %" type="number" value={form.carbsPercent} onChange={(event) => setField("carbsPercent", event.target.value)} required />
-          <Input label="Grasas %" type="number" value={form.fatPercent} onChange={(event) => setField("fatPercent", event.target.value)} required />
+          <MacroControl label="Proteínas" value={form.proteinPercent} grams={grams.protein} onChange={(value) => setMacro("proteinPercent", value)} tone="protein" />
+          <MacroControl label="Carbohidratos" value={form.carbsPercent} grams={grams.carbs} onChange={(value) => setMacro("carbsPercent", value)} tone="carbs" />
+          <MacroControl label="Grasas" value={form.fatPercent} grams={grams.fat} onChange={(value) => setMacro("fatPercent", value)} tone="fat" />
         </div>
+        <div className="macro-distribution" aria-label="Distribución de macronutrientes"><span className="protein" style={{ width: `${form.proteinPercent}%` }} /><span className="carbs" style={{ width: `${form.carbsPercent}%` }} /><span className="fat" style={{ width: `${form.fatPercent}%` }} /></div>
         <div className={`macro-total ${Math.round(total * 10) / 10 === 100 ? "ok" : "bad"}`}>
           <strong>Total {formatNumber(total, 1)}%</strong>
-          <span>{grams.protein}g proteinas / {grams.carbs}g carbs / {grams.fat}g grasas</span>
+          <span>{Math.max(0, 100 - total)}% disponible · {grams.protein}g proteínas / {grams.carbs}g carbs / {grams.fat}g grasas</span>
         </div>
-        <div className="split">
-          <Input label="Fecha inicio" type="date" value={form.startDate} onChange={(event) => setField("startDate", event.target.value)} required />
-          <Input label="Fecha fin opcional" type="date" value={form.endDate} onChange={(event) => setField("endDate", event.target.value)} />
-        </div>
-        <button className="primary">Guardar nuevo plan</button>
+        <details className="plan-details"><summary>Detalles del plan</summary><div className="form-grid"><Input label="Nombre del plan" value={form.name} onChange={(event) => setField("name", event.target.value)} required /><Input label="Calorías diarias" type="number" value={form.dailyCalories} onChange={(event) => setField("dailyCalories", event.target.value)} required /><div className="split"><Input label="Fecha inicio" type="date" value={form.startDate} onChange={(event) => setField("startDate", event.target.value)} required /><Input label="Fecha fin opcional" type="date" value={form.endDate} onChange={(event) => setField("endDate", event.target.value)} /></div></div></details>
+        <button className="primary" disabled={Math.round(total * 10) / 10 !== 100}>Guardar nuevo plan</button>
       </form>
       <div className="plan-history">
         <h3>Historial de planes</h3>
@@ -726,6 +773,10 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
       </div>
     </Panel>
   );
+}
+
+function MacroControl({ label, value, grams, onChange, tone }) {
+  return <label className={`macro-control ${tone}`}><span><strong>{label}</strong><small>{grams}g</small></span><output>{formatNumber(value, 1)}%</output><input type="range" min="0" max="100" step="0.5" value={value} onChange={(event) => onChange(event.target.value)} /></label>;
 }
 
 function NutritionTutorial() {
@@ -748,7 +799,7 @@ function NutritionTutorial() {
 function Header({ title, eyebrow, action }) {
   return <header className="page-header"><div><span>{eyebrow || APP_NAME}</span><h1>{title}</h1></div>{action}</header>;
 }
-function Panel({ title, children }) { return <section className="panel"><h2>{title}</h2>{children}</section>; }
+function Panel({ title, children, className = "" }) { return <section className={`panel ${className}`}>{title && <h2>{title}</h2>}{children}</section>; }
 function Macro({ macro }) {
   const percent = macro.goal ? Math.min(100, Math.round((macro.consumed / macro.goal) * 100)) : 0;
   return <section className="macro-card"><h3>{macro.label}</h3><p className="big">{formatNumber(macro.consumed)}g</p><div className="bar"><span style={{ width: `${percent}%` }} /></div><small>{formatNumber(macro.goal)}g objetivo</small></section>;

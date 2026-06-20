@@ -30,7 +30,10 @@ body {
     radial-gradient(circle at 100% 100%, rgb(137 206 255 / 7%), transparent 34rem),
     var(--background);
   color: var(--text);
+  overflow-x: hidden;
 }
+
+img { display: block; max-width: 100%; }
 
 button,
 input,
@@ -583,31 +586,38 @@ select:focus,
 
 .date-nav {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  padding-top: 18px;
 }
 
 .date-nav label {
-  display: grid;
-  gap: 3px;
+  position: relative;
+  display: flex;
+  align-items: center;
   min-width: 150px;
   color: var(--text);
   font-weight: 800;
 }
 
 .date-nav label span {
+  position: absolute;
+  left: 0;
+  top: -18px;
   color: var(--muted);
   font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .date-nav input {
-  min-height: 40px;
+  min-height: 46px;
 }
 
 .today-button {
-  min-height: 40px;
+  min-height: 46px;
 }
 
 .meal-macros {
@@ -689,8 +699,17 @@ select:focus,
   border-radius: 18px;
   background: var(--surface-low);
   box-shadow: var(--shadow);
-  animation: result-in 220ms ease-out;
+  animation: modal-in 220ms ease-out;
 }
+
+.picker-tools,
+.picker-scroll {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+}
+
+.picker-scroll { overflow: auto; overscroll-behavior: contain; }
 
 .picker-modal > header,
 .picker-modal footer {
@@ -723,6 +742,16 @@ select:focus,
   color: var(--text);
   text-align: left;
 }
+
+.catalog-row-image {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.catalog-copy { display: grid; gap: 4px; min-width: 0; }
+.catalog-copy strong,
+.catalog-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-action { color: var(--muted); }
 
 .catalog-row:hover {
   border-color: var(--primary);
@@ -764,6 +793,8 @@ select:focus,
   background: rgb(0 82 54 / 18%);
 }
 
+.selected-heading { display: flex; align-items: center; gap: 10px; }
+
 .mini {
   padding: 12px;
   font-size: 18px;
@@ -802,6 +833,10 @@ select:focus,
   background-color: var(--surface-high);
 }
 
+.food-thumb img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.food-thumb.compact { width: 48px; height: 48px; }
+.food-thumb.hero { width: 96px; height: 96px; border-radius: 20px; flex: 0 0 auto; }
+
 .food-card p {
   margin: 0;
 }
@@ -818,6 +853,36 @@ select:focus,
 .icon-button:hover {
   background: var(--primary);
   color: var(--on-primary);
+}
+
+.add-food {
+  width: 52px;
+  min-height: 52px;
+  border: 1px solid rgb(78 222 163 / 35%);
+  background: rgb(78 222 163 / 16%);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+}
+
+.configure-food-heading { display: flex; align-items: center; gap: 18px; }
+.configure-food-heading h2 { margin: 3px 0; }
+.configure-food-heading span { color: var(--primary); font-weight: 800; }
+.configure-panel { display: grid; gap: 20px; }
+.configure-preview { display: grid; gap: 5px; }
+.configure-preview strong { font-size: inherit; }
+.configure-preview small { font-size: 14px; }
+
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid rgb(255 180 171 / 45%);
+  border-radius: 12px;
+  background: rgb(255 180 171 / 10%);
+  color: var(--error);
+  font-weight: 800;
 }
 
 .preview {
@@ -1111,10 +1176,47 @@ select:focus,
   border-color: var(--primary);
 }
 
+.preset-card.selected {
+  border-color: var(--primary);
+  background: rgb(0 82 54 / 28%);
+  box-shadow: inset 0 0 0 1px rgb(78 222 163 / 28%);
+}
+
+.plan-intro { display: grid; gap: 4px; }
+.plan-intro span { color: var(--muted); }
+
 .macro-editor {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.macro-control {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.macro-control > span { display: grid; gap: 3px; }
+.macro-control output { font-size: 20px; font-weight: 900; color: var(--primary); }
+.macro-control input { grid-column: 1 / -1; width: 100%; accent-color: var(--primary); }
+.macro-distribution { display: flex; width: 100%; height: 12px; overflow: hidden; border-radius: 999px; background: var(--surface-high); }
+.macro-distribution span { min-width: 0; transition: width 180ms ease; }
+.macro-distribution .protein { background: #4edea3; }
+.macro-distribution .carbs { background: #89ceff; }
+.macro-distribution .fat { background: #ffd166; }
+.plan-details { border: 1px solid var(--outline); border-radius: 12px; background: var(--surface); }
+.plan-details summary { padding: 14px; cursor: pointer; font-weight: 800; }
+.plan-details > .form-grid { padding: 0 14px 14px; }
+
+button:disabled { cursor: not-allowed; opacity: .5; }
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .macro-total {
@@ -1251,7 +1353,7 @@ select:focus,
   .auth-page {
     width: min(100% - 28px, 760px);
     padding-top: 26px;
-    padding-bottom: 120px;
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
   }
 
   .dashboard-hero,
@@ -1284,7 +1386,7 @@ select:focus,
     position: fixed;
     left: 12px;
     right: 12px;
-    bottom: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
     z-index: 10;
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -1327,8 +1429,51 @@ select:focus,
   }
 
   .picker-modal {
-    max-height: 92vh;
-    border-radius: 18px 18px 0 0;
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 0;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+    overflow: hidden;
+  }
+
+  .modal-backdrop { padding: 0; place-items: stretch; }
+  .picker-modal > header { position: relative; z-index: 2; }
+  .picker-modal .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .picker-modal .chips::-webkit-scrollbar { display: none; }
+  .picker-results { max-height: none; overflow: visible; }
+  .picker-modal footer { padding-top: 2px; }
+
+  .configure-page {
+    width: 100%;
+    min-height: calc(100dvh - 92px);
+    margin-top: -26px;
+    padding: max(18px, env(safe-area-inset-top)) 16px calc(104px + env(safe-area-inset-bottom));
+  }
+  .configure-page .page-header { margin-bottom: 14px; }
+  .configure-back { margin-bottom: 10px; }
+  .configure-panel { min-height: calc(100dvh - 190px); align-content: start; padding-bottom: 86px; }
+  .configure-submit {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    z-index: 9;
+    min-height: 56px;
+    box-shadow: 0 12px 30px rgb(0 0 0 / 45%);
+  }
+
+  .recipe-panel { padding: 16px; }
+  .recipe-form { min-height: 60dvh; padding-bottom: 74px; }
+  .recipe-form .picker-results { max-height: 34dvh; overflow: auto; overscroll-behavior: contain; }
+  .recipe-submit {
+    position: sticky;
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    z-index: 5;
+    min-height: 54px;
+    box-shadow: 0 10px 28px rgb(0 0 0 / 40%);
   }
 
   .ingredient-row {
@@ -1344,6 +1489,7 @@ select:focus,
 
   .date-nav {
     justify-content: stretch;
+    width: 100%;
   }
 
   .date-nav label {
@@ -1372,6 +1518,24 @@ select:focus,
   .macro-editor {
     grid-template-columns: 1fr;
   }
+
+  .content { width: 100%; padding-left: 14px; padding-right: 14px; }
+  .food-grid { grid-template-columns: 1fr; gap: 12px; }
+  .food-card { grid-template-columns: 72px minmax(0, 1fr) auto; gap: 12px; padding: 12px; }
+  .food-card > strong { grid-column: 2; justify-self: start; font-size: 14px; color: var(--muted); }
+  .food-card .add-food { grid-column: 3; grid-row: 1 / span 2; }
+  .configure-food-heading { align-items: flex-start; }
+  .configure-food-heading .food-thumb.hero { width: 82px; height: 82px; }
+  .configure-preview { padding: 18px; font-size: 34px; }
+  .picker-modal { gap: 11px; padding-left: 14px; padding-right: 14px; }
+  .picker-modal .tabs { width: 100%; }
+  .picker-modal .tabs button { flex: 1; }
+  .picker-modal footer button { flex: 1; }
+  .selected-editor { padding: 12px; }
+  .selected-editor .split { gap: 8px; }
+  .preset-grid { grid-template-columns: 1fr; }
+  .preset-card { min-height: auto; }
+  .account-panel .danger-button { width: 100%; }
 
   .scanner-stage {
     padding-top: 82px;
