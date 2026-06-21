@@ -642,6 +642,7 @@ select:focus,
 
 .meal-item {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 10px 0;
@@ -700,6 +701,41 @@ select:focus,
   background: var(--surface-low);
   box-shadow: var(--shadow);
   animation: modal-in 220ms ease-out;
+}
+
+.meal-item > span {
+  flex: 1;
+}
+
+.remove-log {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+}
+
+.remove-log:hover {
+  background: rgb(255 180 171 / 12%);
+  color: var(--danger);
+}
+
+.remove-log .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.water-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .picker-tools,
@@ -1010,6 +1046,20 @@ select:focus,
 .scan-frame > span {
   color: rgb(225 227 223 / 78%);
   font-size: 82px;
+}
+
+.scan-frame.recognized {
+  border-color: var(--primary);
+  background: rgb(8 45 30 / 42%);
+  box-shadow: 0 0 0 999px rgb(0 0 0 / 42%), 0 0 52px rgb(78 222 163 / 42%);
+}
+
+.scan-frame.recognized > span {
+  color: var(--primary);
+}
+
+.scan-frame.recognized .scan-line {
+  display: none;
 }
 
 .scan-line {

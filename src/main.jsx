@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserMultiFormatReader } from "@zxing/browser";
 import "./styles.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
@@ -90,6 +91,9 @@ async function request(path, options = {}) {
   });
   if (!response.ok) {
     const text = await response.text();
+    if (response.status === 401 || response.status === 403) {
+      window.dispatchEvent(new Event("kazaFitness:session-expired"));
+    }
     throw new Error(text || `HTTP ${response.status}`);
   }
   return response.status === 204 ? null : response.json();
@@ -168,6 +172,15 @@ function App() {
     setUser(null);
     setPage("login");
   }
+
+  useEffect(() => {
+    const expireSession = () => {
+      logout();
+      api.notify("Tu sesion vencio. Volve a ingresar.", "error");
+    };
+    window.addEventListener("kazaFitness:session-expired", expireSession);
+    return () => window.removeEventListener("kazaFitness:session-expired", expireSession);
+  }, [api]);
 
   const authenticated = Boolean(localStorage.getItem(TOKEN_KEY));
   return (
@@ -305,13 +318,22 @@ function Dashboard({ api, user, setPage }) {
       </div>
       <div className="meal-grid">
         {mealTypes.map((mealType) => (
-          <MealCard key={mealType.code} mealType={mealType} meal={mealByCode.get(mealType.code)} onAdd={() => setPickerMeal(mealType)} />
+          <MealCard key={mealType.code} mealType={mealType} meal={mealByCode.get(mealType.code)} onAdd={() => setPickerMeal(mealType)} onDelete={(log) => {
+            if (!window.confirm(`Eliminar ${log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name} del registro?`)) return;
+            api.request(`/api/nutrition/food-logs/${log.id}`, { method: "DELETE" }).then(() => {
+              api.notify("Registro eliminado.");
+              load();
+            }).catch(() => api.notify("No se pudo eliminar el registro.", "error"));
+          }} />
         ))}
       </div>
       <div className="grid two">
         <Panel title="Agua">
           <p className="big">{formatNumber(data?.waterConsumedLiters, 1)}L / {formatNumber(data?.waterGoalLiters, 1)}L</p>
-          <button className="secondary" onClick={() => api.request("/api/nutrition/water-logs", { method: "POST", body: JSON.stringify({ liters: 0.5, logDate: selectedDate }) }).then(() => { api.notify("Hidratacion registrada."); load(); })}>Sumar 0.5L</button>
+          <div className="water-actions">
+            <button className="secondary" disabled={!Number(data?.waterConsumedLiters)} onClick={() => api.request(`/api/nutrition/water-logs/latest?date=${selectedDate}`, { method: "DELETE" }).then(() => { api.notify("Ultimo registro de agua eliminado."); load(); }).catch(() => api.notify("No hay agua para descontar.", "error"))}>Deshacer</button>
+            <button className="secondary" onClick={() => api.request("/api/nutrition/water-logs", { method: "POST", body: JSON.stringify({ liters: 0.5, logDate: selectedDate }) }).then(() => { api.notify("Hidratacion registrada."); load(); })}>Sumar 0.5L</button>
+          </div>
         </Panel>
         <Panel title="Accesos rapidos"><RecentMeals user={user} api={api} date={selectedDate} onDone={load} /></Panel>
       </div>
@@ -334,13 +356,13 @@ function DateNavigator({ date, setDate }) {
   );
 }
 
-function MealCard({ mealType, meal, onAdd }) {
+function MealCard({ mealType, meal, onAdd, onDelete }) {
   const items = meal?.items || [];
   return (
     <article className="meal-card">
       <header><div><span>{mealType.label}</span><strong>{meal?.calories || 0} kcal</strong></div><button className="icon-button" onClick={onAdd}><span className="material-symbols-outlined">add</span></button></header>
       <div className="meal-macros"><small>P {formatNumber(meal?.proteinGrams, 1)}g</small><small>C {formatNumber(meal?.carbsGrams, 1)}g</small><small>G {formatNumber(meal?.fatGrams, 1)}g</small></div>
-      {items.length ? items.map((log) => <div className="meal-item" key={log.id}><span>{log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name}</span><strong>{log.calories} kcal</strong></div>) : <p className="empty-state">Todavia no registraste nada.</p>}
+      {items.length ? items.map((log) => <div className="meal-item" key={log.id}><span>{log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name}</span><strong>{log.calories} kcal</strong><button className="remove-log" aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDelete(log)}><span className="material-symbols-outlined">delete</span></button></div>) : <p className="empty-state">Todavia no registraste nada.</p>}
     </article>
   );
 }
@@ -585,57 +607,74 @@ function ConfigureFood({ api, setPage, foodId, user }) {
     api.notify("Alimento agregado.");
     setPage("dashboard");
   }
-  return <section className="page narrow configure-page"><button className="back-button configure-back" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><Header title="Configurar alimento" /><Panel className="configure-panel"><div className="configure-food-heading"><FoodThumb item={{ ...food, type: "FOOD" }} hero /><div><span>Porción</span><h2>{food?.name || "Cargando..."}</h2><small>{food?.brand || categoryLabel(food?.category)}</small></div></div><div className="split configure-fields"><Input label="Cantidad" value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} type="number" min="0" /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={UNIT_OPTIONS} /></div><label className="field"><span>Comida</span><select value={mealType} onChange={(event) => setMealType(event.target.value)}>{mealTypes.map((meal) => <option key={meal.code} value={meal.code}>{meal.label}</option>)}</select></label><div className="preview configure-preview"><strong>{formatNumber(preview?.calories)} kcal</strong><small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small></div><button className="primary configure-submit" disabled={!foodId || quantity <= 0} onClick={add}>Agregar al día</button></Panel></section>;
+  return <section className="page narrow configure-page"><button className="back-button configure-back" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><Header title="Configurar alimento" /><Panel className="configure-panel"><div className="configure-food-heading"><FoodThumb item={{ ...food, type: "FOOD" }} hero /><div><span>Porción</span><h2>{food?.name || "Cargando..."}</h2><small>{food?.brand || categoryLabel(food?.category)}</small></div></div><div className="split configure-fields"><Input label="Cantidad" value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} type="number" min="0" /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={UNIT_OPTIONS} /></div><label className="field"><span>Comida</span><select value={mealType} onChange={(event) => setMealType(event.target.value)}>{mealTypes.map((meal) => <option key={meal.code} value={meal.code}>{meal.label}</option>)}</select></label><div className="preview configure-preview"><strong>{formatNumber(preview?.calories)} kcal</strong><small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small></div><button className="primary configure-submit" disabled={!foodId || quantity <= 0} onClick={add}>Agregar producto</button></Panel></section>;
 }
 
 function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode }) {
-  const [barcode, setBarcode] = useState("7790000000059");
+  const [barcode, setBarcode] = useState("");
   const [food, setFood] = useState(null);
   const [cameraOn, setCameraOn] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [status, setStatus] = useState("Alinea el codigo dentro del marco");
   const videoRef = useRef(null);
-  const streamRef = useRef(null);
+  const scannerControlsRef = useRef(null);
   useEffect(() => {
     if (!cameraOn) return undefined;
     let cancelled = false;
-    let timer;
     async function startCamera() {
       try {
         if (!navigator.mediaDevices?.getUserMedia) return setStatus("Tu navegador no permite usar camara aca. Usa ingreso manual.");
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        streamRef.current = stream;
-        if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
         setStatus("Escaneando codigo de barras...");
-        if (!("BarcodeDetector" in window)) return setStatus("Camara activa. Si no detecta automaticamente, ingresa el codigo abajo.");
-        const detector = new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] });
-        const scan = async () => {
-          if (cancelled || !videoRef.current) return;
-          const codes = await detector.detect(videoRef.current).catch(() => []);
-          if (codes.length) { setBarcode(codes[0].rawValue); setCameraOn(false); await search(codes[0].rawValue); return; }
-          timer = window.setTimeout(scan, 450);
-        };
-        scan();
+        const reader = new BrowserMultiFormatReader();
+        scannerControlsRef.current = await reader.decodeFromConstraints(
+          { video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+          videoRef.current,
+          async (result, _error, controls) => {
+            if (!result || cancelled) return;
+            cancelled = true;
+            controls.stop();
+            const detectedBarcode = result.getText();
+            setBarcode(detectedBarcode);
+            setStatus("Codigo reconocido. Buscando producto...");
+            api.notify("Codigo reconocido. Ya podes dejar de apuntar la camara.");
+            navigator.vibrate?.([80, 40, 80]);
+            await search(detectedBarcode, true);
+          },
+        );
       } catch (error) {
         setStatus("No se pudo acceder a la camara. Revisa permisos o usa ingreso manual.");
         console.error(error);
       }
     }
     startCamera();
-    return () => { cancelled = true; window.clearTimeout(timer); streamRef.current?.getTracks().forEach((track) => track.stop()); };
+    return () => {
+      cancelled = true;
+      scannerControlsRef.current?.stop();
+      scannerControlsRef.current = null;
+    };
   }, [cameraOn]);
-  async function search(code = barcode) {
+  async function search(code = barcode, scanned = false) {
+    const cleanCode = String(code || "").trim();
+    if (!cleanCode) {
+      setStatus("Ingresa un codigo de barras.");
+      return;
+    }
     try {
-      const found = await api.request(`/api/foods/barcode/${code}`);
+      const found = await api.request(`/api/foods/barcode/${encodeURIComponent(cleanCode)}`);
       setFood(found);
-      setStatus("Producto encontrado.");
+      setStatus("Producto encontrado. Ajusta la porcion antes de agregarlo.");
+      setCameraOn(false);
+      setSelectedFoodId(found.id);
+      api.notify(`${found.name} reconocido. Revisa la porcion antes de agregarlo.`);
+      window.setTimeout(() => setPage("configure"), scanned ? 500 : 0);
     } catch (error) {
       setFood(null);
+      setCameraOn(false);
       setStatus("No encontramos ese codigo en el catalogo.");
       api.notify("No encontramos ese codigo.", "error");
     }
   }
-  return <section className="scanner-page"><button className="back-button" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><div className="scanner-stage"><video ref={videoRef} muted playsInline />{!cameraOn && <div className="scanner-fallback" />}<div className="scan-frame"><i /><i /><i /><i /><div className="scan-line" /><span className="material-symbols-outlined">barcode_scanner</span></div><p>{status}</p></div><section className={`scanner-result ${food ? "show" : ""}`}>{food ? <><div><strong>{food.name}</strong><span>{food.calories} kcal / 100g</span></div><button className="primary" onClick={() => { setSelectedFoodId(food.id); setPage("configure"); }}>Agregar</button></> : <><button className="manual-toggle" onClick={() => setManualOpen((value) => !value)}><span>Codigo manual</span><span className="material-symbols-outlined">{manualOpen ? "expand_more" : "chevron_right"}</span></button>{manualOpen && <div className="manual-panel"><input value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="Ingresar codigo" /><button className="secondary" onClick={() => search()}>Buscar</button></div>}<button className="secondary" onClick={() => { setPrefillBarcode?.(barcode); setPage("create"); }}>Registrar producto</button><button className="primary" onClick={() => setCameraOn((value) => !value)}>{cameraOn ? "Pausar camara" : "Usar camara"}</button></>}</section></section>;
+  return <section className="scanner-page"><button className="back-button" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><div className="scanner-stage"><video ref={videoRef} muted playsInline />{!cameraOn && <div className="scanner-fallback" />}<div className={`scan-frame ${status.startsWith("Codigo reconocido") ? "recognized" : ""}`}><i /><i /><i /><i /><div className="scan-line" /><span className="material-symbols-outlined">{status.startsWith("Codigo reconocido") ? "check_circle" : "barcode_scanner"}</span></div><p aria-live="polite">{status}</p></div><section className={`scanner-result ${food ? "show" : ""}`}>{food ? <><div><strong>{food.name}</strong><span>{food.calories} kcal / 100g</span></div><button className="primary" onClick={() => { setSelectedFoodId(food.id); setPage("configure"); }}>Configurar porcion</button></> : <><button className="manual-toggle" onClick={() => setManualOpen((value) => !value)}><span>Codigo manual</span><span className="material-symbols-outlined">{manualOpen ? "expand_more" : "chevron_right"}</span></button>{manualOpen && <div className="manual-panel"><input inputMode="numeric" value={barcode} onChange={(event) => setBarcode(event.target.value.replace(/\D/g, ""))} placeholder="Ingresar codigo" /><button className="secondary" onClick={() => search()}>Buscar</button></div>}<button className="secondary" onClick={() => { setPrefillBarcode?.(barcode); setPage("create"); }}>Registrar producto</button><button className="primary" onClick={() => setCameraOn((value) => !value)}>{cameraOn ? "Pausar camara" : "Usar camara"}</button></>}</section></section>;
 }
 
 function History({ api }) {
