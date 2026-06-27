@@ -382,6 +382,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
   const [category, setCategory] = useState("");
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [selectedPreparations, setSelectedPreparations] = useState([]);
   const [quantity, setQuantity] = useState("150");
   const [preview, setPreview] = useState(null);
   const recents = readRecents(user);
@@ -400,6 +401,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
     }, 250);
     return () => window.clearTimeout(id);
   }, [api, tab, query, category]);
+  useEffect(() => {
+    if (!selected || selected.type !== "FOOD") return setSelectedPreparations([]);
+    api.request(`/api/foods/${selected.id}/preparations`).then(setSelectedPreparations).catch(() => setSelectedPreparations([]));
+  }, [api, selected?.id, selected?.type]);
   useEffect(() => {
     const numericQuantity = Number(quantity);
     if (!selected || !Number.isFinite(numericQuantity) || numericQuantity <= 0) return setPreview(null);
@@ -432,14 +437,15 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
           {tab === "FOOD" && <CategoryChips category={category} setCategory={setCategory} />}
         </div>
         <div className="picker-scroll">
-          <QuickItems title="Usados recientemente" items={recents.items.filter((item) => item.type === tab)} onPick={setSelected} />
+          <QuickItems title="Usados recientemente" items={groupFoodVariants(recents.items.filter((item) => item.type === tab))} onPick={setSelected} />
           <div className="picker-results">
-            {results.map((item) => <CatalogRowWithImage key={`${tab}:${item.id}`} item={{ ...item, type: tab }} onPick={setSelected} />)}
+            {groupFoodVariants(results).map((item) => <CatalogRowWithImage key={`${tab}:${item.preparationGroup || item.id}`} item={{ ...item, type: tab }} onPick={setSelected} />)}
           </div>
         </div>
         {selected && (
           <div className="selected-editor">
             <div className="selected-heading"><FoodThumb item={selected} compact /><div><strong>{selected.name}</strong><PreparationBadge food={selected} /></div></div>
+            {selectedPreparations.length > 1 && <Select label="Peso del alimento" value={String(selected.id)} onChange={(event) => { const option = selectedPreparations.find((item) => item.id === Number(event.target.value)); if (option) setSelected({ ...option, type: "FOOD" }); }} options={selectedPreparations.map((item) => ({ value: String(item.id), label: preparationLabel(item.preparation) }))} />}
             <div className="split"><Input label={selected.type === "RECIPE" ? "Gramos ingeridos" : "Gramos"} type="number" inputMode="decimal" min="0" value={quantity} onChange={(event) => setQuantity(event.target.value)} /><div className="preview mini">{formatNumber(preview?.calories)} kcal</div></div>
             <small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small>
             <button className="primary" disabled={Number(quantity) <= 0} onClick={add}>Agregar a {mealType.label}</button>
@@ -488,9 +494,9 @@ function Foods({ api, user, setPage, setSelectedFoodId }) {
       <div className="tabs"><button className={tab === "FOOD" ? "selected" : ""} onClick={() => setTab("FOOD")}>Alimentos</button><button className={tab === "RECIPE" ? "selected" : ""} onClick={() => setTab("RECIPE")}>Recetas</button></div>
       <div className="search-wrap"><span className="material-symbols-outlined">search</span><input className="search" placeholder="Buscar..." value={query} onChange={(event) => setQuery(event.target.value)} /></div>
       {tab === "FOOD" && <CategoryChips category={category} setCategory={setCategory} />}
-      <QuickItems title="Accesos rapidos" items={readRecents(user).items.filter((item) => item.type === tab)} onPick={(item) => { if (item.type === "FOOD") { setSelectedFoodId(item.id); setPage("configure"); } }} />
+      <QuickItems title="Accesos rapidos" items={groupFoodVariants(readRecents(user).items.filter((item) => item.type === tab))} onPick={(item) => { if (item.type === "FOOD") { setSelectedFoodId(item.id); setPage("configure"); } }} />
       <div className="food-grid">
-        {foods.map((item) => <CatalogCard key={`${tab}:${item.id}`} item={{ ...item, type: tab }} onAdd={() => { if (tab === "FOOD") { setSelectedFoodId(item.id); setPage("configure"); } }} />)}
+        {groupFoodVariants(foods).map((item) => <CatalogCard key={`${tab}:${item.preparationGroup || item.id}`} item={{ ...item, type: tab }} onAdd={() => { if (tab === "FOOD") { setSelectedFoodId(item.id); setPage("configure"); } }} />)}
       </div>
     </section>
   );
@@ -502,6 +508,16 @@ function CategoryChips({ category, setCategory }) {
 
 function CatalogRow({ item, onPick }) {
   return <button className="catalog-row" onClick={() => onPick(item)}><span>{item.name}</span><PreparationBadge food={item} /><small>{item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></button>;
+}
+
+function groupFoodVariants(items) {
+  const grouped = new Map();
+  for (const item of items || []) {
+    const key = item.preparationGroup ? `preparation:${item.preparationGroup}` : `item:${item.type || "FOOD"}:${item.id}`;
+    const current = grouped.get(key);
+    if (!current || (item.preparation === "COOKED" && current.preparation !== "COOKED")) grouped.set(key, item);
+  }
+  return [...grouped.values()];
 }
 
 function CatalogCard({ item, onAdd }) {
