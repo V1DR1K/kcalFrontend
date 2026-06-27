@@ -30,6 +30,12 @@ const CATEGORY_OPTIONS = [
   { value: "FAT", label: "Grasas" },
   { value: "OTHER", label: "Otros" },
 ];
+const PREPARATION_OPTIONS = [
+  { value: "RAW", label: "Crudo/a" },
+  { value: "COOKED", label: "Cocido/a" },
+  { value: "AS_SOLD", label: "Según envase / como se vende" },
+  { value: "UNSPECIFIED", label: "Sin especificar" },
+];
 const CATEGORY_ART = {
   PROTEIN: "/category-assets/protein.webp",
   DAIRY: "/category-assets/dairy.webp",
@@ -362,7 +368,10 @@ function MealCard({ mealType, meal, onAdd, onDelete }) {
     <article className="meal-card">
       <header><div><span>{mealType.label}</span><strong>{meal?.calories || 0} kcal</strong></div><button className="icon-button" onClick={onAdd}><span className="material-symbols-outlined">add</span></button></header>
       <div className="meal-macros"><small>P {formatNumber(meal?.proteinGrams, 1)}g</small><small>C {formatNumber(meal?.carbsGrams, 1)}g</small><small>G {formatNumber(meal?.fatGrams, 1)}g</small></div>
-      {items.length ? items.map((log) => <div className="meal-item" key={log.id}><span>{log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name}</span><strong>{log.calories} kcal</strong><button className="remove-log" aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDelete(log)}><span className="material-symbols-outlined">delete</span></button></div>) : <p className="empty-state">Todavia no registraste nada.</p>}
+      {items.length ? items.map((log) => {
+        const item = log.itemType === "RECIPE" ? { ...log.recipe, type: "RECIPE" } : { ...log.food, type: "FOOD" };
+        return <div className="meal-item" key={log.id}><FoodThumb item={item} compact /><span>{item.name}</span><strong>{log.calories} kcal</strong><button className="remove-log" aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDelete(log)}><span className="material-symbols-outlined">delete</span></button></div>;
+      }) : <p className="empty-state">Todavia no registraste nada.</p>}
     </article>
   );
 }
@@ -373,7 +382,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
   const [category, setCategory] = useState("");
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [quantity, setQuantity] = useState(150);
+  const [quantity, setQuantity] = useState("150");
   const [preview, setPreview] = useState(null);
   const recents = readRecents(user);
   useEffect(() => {
@@ -392,18 +401,21 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
     return () => window.clearTimeout(id);
   }, [api, tab, query, category]);
   useEffect(() => {
-    if (!selected) return setPreview(null);
+    const numericQuantity = Number(quantity);
+    if (!selected || !Number.isFinite(numericQuantity) || numericQuantity <= 0) return setPreview(null);
     if (selected.type === "FOOD") {
-      api.request("/api/foods/preview", { method: "POST", body: JSON.stringify({ foodId: selected.id, quantity, unit: "GRAM" }) }).then(setPreview).catch(console.error);
+      api.request("/api/foods/preview", { method: "POST", body: JSON.stringify({ foodId: selected.id, quantity: numericQuantity, unit: "GRAM" }) }).then(setPreview).catch(console.error);
     } else {
-      const ratio = Number(quantity) / Number(selected.totalWeightGrams || 1);
+      const ratio = numericQuantity / Number(selected.totalWeightGrams || 1);
       setPreview({ calories: Math.round(selected.calories * ratio), proteinGrams: selected.proteinGrams * ratio, carbsGrams: selected.carbsGrams * ratio, fatGrams: selected.fatGrams * ratio });
     }
   }, [api, selected, quantity]);
   async function add() {
+    const numericQuantity = Number(quantity);
+    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0) return;
     const log = await api.request("/api/nutrition/meal-logs", {
       method: "POST",
-      body: JSON.stringify({ itemType: selected.type, itemId: selected.id, mealType: mealType.code, quantity, unit: "GRAM", logDate: selectedDate }),
+      body: JSON.stringify({ itemType: selected.type, itemId: selected.id, mealType: mealType.code, quantity: numericQuantity, unit: "GRAM", logDate: selectedDate }),
     });
     rememberItem(user, selected);
     rememberMeal(user, mealType.code, log);
@@ -427,10 +439,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
         </div>
         {selected && (
           <div className="selected-editor">
-            <div className="selected-heading"><FoodThumb item={selected} compact /><strong>{selected.name}</strong></div>
-            <div className="split"><Input label={selected.type === "RECIPE" ? "Gramos ingeridos" : "Gramos"} type="number" value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} /><div className="preview mini">{formatNumber(preview?.calories)} kcal</div></div>
+            <div className="selected-heading"><FoodThumb item={selected} compact /><div><strong>{selected.name}</strong><PreparationBadge food={selected} /></div></div>
+            <div className="split"><Input label={selected.type === "RECIPE" ? "Gramos ingeridos" : "Gramos"} type="number" inputMode="decimal" min="0" value={quantity} onChange={(event) => setQuantity(event.target.value)} /><div className="preview mini">{formatNumber(preview?.calories)} kcal</div></div>
             <small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small>
-            <button className="primary" onClick={add}>Agregar a {mealType.label}</button>
+            <button className="primary" disabled={Number(quantity) <= 0} onClick={add}>Agregar a {mealType.label}</button>
           </div>
         )}
         <footer><button className="secondary" onClick={() => setPage("scanner")}>Escanear</button><button className="secondary" onClick={() => setPage("create")}>Crear nuevo</button></footer>
@@ -489,14 +501,14 @@ function CategoryChips({ category, setCategory }) {
 }
 
 function CatalogRow({ item, onPick }) {
-  return <button className="catalog-row" onClick={() => onPick(item)}><span>{item.name}</span><small>{item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></button>;
+  return <button className="catalog-row" onClick={() => onPick(item)}><span>{item.name}</span><PreparationBadge food={item} /><small>{item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></button>;
 }
 
 function CatalogCard({ item, onAdd }) {
   return (
     <article className="food-card">
       <FoodThumb item={item} />
-      <div><h3>{item.name}</h3><p>{item.type === "RECIPE" ? `${formatNumber(item.totalWeightGrams)}g totales` : item.brand || categoryLabel(item.category)}</p></div>
+      <div><h3>{item.name}</h3><p>{item.type === "RECIPE" ? `${formatNumber(item.totalWeightGrams)}g totales` : item.brand || categoryLabel(item.category)}</p>{item.type === "FOOD" && <PreparationBadge food={item} />}</div>
       <strong>{item.calories} kcal</strong>
       {item.type === "FOOD" && <button className="icon-button add-food" onClick={onAdd} aria-label={`Agregar ${item.name}`}><span className="material-symbols-outlined">add</span></button>}
     </article>
@@ -521,7 +533,7 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
     try {
-      const food = await api.request("/api/foods", { method: "POST", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity || 100), calories: Number(data.calories), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), tags: data.tags ? data.tags.split(",").map((tag) => tag.trim()).filter(Boolean) : [] }) });
+      const food = await api.request("/api/foods", { method: "POST", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity || 100), calories: Number(data.calories), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), preparation: data.preparation, servingName: data.servingName || null, servingWeightGrams: data.servingWeightGrams ? Number(data.servingWeightGrams) : null, tags: data.tags ? data.tags.split(",").map((tag) => tag.trim()).filter(Boolean) : [] }) });
       const image = formData.get("image");
       if (image?.size) {
         const upload = new FormData();
@@ -536,16 +548,23 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
       console.error(error);
     }
   }
-  return <Panel title="Nuevo alimento"><form className="form-grid" onSubmit={submit}><Input name="name" label="Nombre" required /><Input name="brand" label="Marca" /><Input name="barcode" label="Codigo de barras opcional" defaultValue={prefillBarcode || ""} /><Select name="category" label="Categoria" options={CATEGORY_OPTIONS} /><Input name="baseQuantity" label="Base gramos/ml/unidad" type="number" defaultValue="100" required /><div className="split"><Input name="calories" label="Kcal" type="number" required /><Input name="proteinGrams" label="Proteinas g" type="number" step="0.1" required /></div><div className="split"><Input name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" required /><Input name="fatGrams" label="Grasas g" type="number" step="0.1" required /></div><Input name="tags" label="Tags separados por coma" /><Input name="image" label="Foto del producto" type="file" accept="image/jpeg,image/png,image/webp" /><button className="primary">Crear alimento</button></form></Panel>;
+  return <Panel title="Nuevo alimento"><form className="form-grid" onSubmit={submit}><Input name="name" label="Nombre" required /><Input name="brand" label="Marca" /><Input name="barcode" label="Codigo de barras opcional" defaultValue={prefillBarcode || ""} /><Select name="category" label="Categoria" options={CATEGORY_OPTIONS} /><Select name="preparation" label="Estado al medir" options={PREPARATION_OPTIONS} /><Input name="baseQuantity" label="Base nutricional en gramos" type="number" defaultValue="100" required /><div className="split"><Input name="servingName" label="Nombre de unidad (opcional)" placeholder="Ej: galletita, taza" /><Input name="servingWeightGrams" label="Gramos por unidad" type="number" step="0.1" min="0" /></div><div className="split"><Input name="calories" label="Kcal" type="number" required /><Input name="proteinGrams" label="Proteinas g" type="number" step="0.1" required /></div><div className="split"><Input name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" required /><Input name="fatGrams" label="Grasas g" type="number" step="0.1" required /></div><Input name="tags" label="Tags separados por coma" /><Input name="image" label="Foto del producto" type="file" accept="image/jpeg,image/png,image/webp" /><button className="primary">Crear alimento</button></form></Panel>;
 }
 
 function CatalogRowWithImage({ item, onPick }) {
-  return <button className="catalog-row catalog-row-image" onClick={() => onPick(item)}><FoodThumb item={item} compact /><span className="catalog-copy"><strong>{item.name}</strong><small>{item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></span><span className="material-symbols-outlined row-action">chevron_right</span></button>;
+  return <button className="catalog-row catalog-row-image" onClick={() => onPick(item)}><FoodThumb item={item} compact /><span className="catalog-copy"><strong>{item.name}</strong><PreparationBadge food={item} /><small>{item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></span><span className="material-symbols-outlined row-action">chevron_right</span></button>;
 }
 
 function FoodThumb({ item, compact = false, hero = false }) {
   const fallback = item?.type === "RECIPE" ? RECIPE_ART : CATEGORY_ART[item?.category] || CATEGORY_ART.OTHER;
   return <div className={`food-thumb ${compact ? "compact" : ""} ${hero ? "hero" : ""}`}><img src={item?.imageUrl || fallback} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallback; }} alt="" /></div>;
+}
+
+function PreparationBadge({ food, showUnknown = false }) {
+  if (!food || food.type === "RECIPE") return null;
+  const option = PREPARATION_OPTIONS.find(({ value }) => value === food.preparation);
+  if (!option || (!showUnknown && food.preparation === "UNSPECIFIED")) return null;
+  return <small className={`preparation-badge preparation-${food.preparation.toLowerCase()}`} title={food.preparationSource || undefined}>{option.label}</small>;
 }
 
 function CreateRecipeForm({ api }) {
@@ -591,7 +610,7 @@ function CreateRecipeForm({ api }) {
 }
 
 function ConfigureFood({ api, setPage, foodId, user }) {
-  const [quantity, setQuantity] = useState(150);
+  const [quantity, setQuantity] = useState("150");
   const [unit, setUnit] = useState("GRAM");
   const [mealType, setMealType] = useState("LUNCH");
   const [mealTypes, setMealTypes] = useState(DEFAULT_MEALS);
@@ -599,15 +618,31 @@ function ConfigureFood({ api, setPage, foodId, user }) {
   const [preview, setPreview] = useState(null);
   useEffect(() => { api.request("/api/nutrition/meal-types").then(setMealTypes).catch(() => setMealTypes(DEFAULT_MEALS)); }, [api]);
   useEffect(() => { if (foodId) api.request(`/api/foods/${foodId}`).then(setFood).catch(console.error); }, [api, foodId]);
-  useEffect(() => { if (foodId) api.request("/api/foods/preview", { method: "POST", body: JSON.stringify({ foodId, quantity, unit }) }).then(setPreview).catch(console.error); }, [api, foodId, quantity, unit]);
+  useEffect(() => {
+    const numericQuantity = Number(quantity);
+    if (!foodId || !Number.isFinite(numericQuantity) || numericQuantity <= 0) {
+      setPreview(null);
+      return;
+    }
+    const quantityInGrams = unit === "SERVING" ? numericQuantity * Number(food?.servingWeightGrams || 0) : numericQuantity;
+    if (quantityInGrams <= 0) return setPreview(null);
+    api.request("/api/foods/preview", { method: "POST", body: JSON.stringify({ foodId, quantity: quantityInGrams, unit: "GRAM" }) }).then(setPreview).catch(console.error);
+  }, [api, food, foodId, quantity, unit]);
   async function add() {
-    const log = await api.request("/api/nutrition/meal-logs", { method: "POST", body: JSON.stringify({ itemType: "FOOD", itemId: foodId, mealType, quantity, unit, logDate: today() }) });
+    const numericQuantity = Number(quantity);
+    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0) return;
+    const quantityInGrams = unit === "SERVING" ? numericQuantity * Number(food?.servingWeightGrams || 0) : numericQuantity;
+    if (quantityInGrams <= 0) return;
+    const log = await api.request("/api/nutrition/meal-logs", { method: "POST", body: JSON.stringify({ itemType: "FOOD", itemId: foodId, mealType, quantity: quantityInGrams, unit: "GRAM", logDate: today() }) });
     if (food) rememberItem(user, { ...food, type: "FOOD" });
     rememberMeal(user, mealType, log);
     api.notify("Alimento agregado.");
     setPage("dashboard");
   }
-  return <section className="page narrow configure-page"><button className="back-button configure-back" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><Header title="Configurar alimento" /><Panel className="configure-panel"><div className="configure-food-heading"><FoodThumb item={{ ...food, type: "FOOD" }} hero /><div><span>Porción</span><h2>{food?.name || "Cargando..."}</h2><small>{food?.brand || categoryLabel(food?.category)}</small></div></div><div className="split configure-fields"><Input label="Cantidad" value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} type="number" min="0" /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={UNIT_OPTIONS} /></div><label className="field"><span>Comida</span><select value={mealType} onChange={(event) => setMealType(event.target.value)}>{mealTypes.map((meal) => <option key={meal.code} value={meal.code}>{meal.label}</option>)}</select></label><div className="preview configure-preview"><strong>{formatNumber(preview?.calories)} kcal</strong><small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small></div><button className="primary configure-submit" disabled={!foodId || quantity <= 0} onClick={add}>Agregar producto</button></Panel></section>;
+  const configureUnitOptions = food?.servingWeightGrams
+    ? [{ value: "GRAM", label: "Gramos" }, { value: "SERVING", label: `${food.servingName || "Porción"} (${formatNumber(food.servingWeightGrams, 1)} g)` }]
+    : [{ value: "GRAM", label: "Gramos" }];
+  return <section className="page narrow configure-page"><button className="back-button configure-back" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><Header title="Configurar alimento" /><Panel className="configure-panel"><div className="configure-food-heading"><FoodThumb item={{ ...food, type: "FOOD" }} hero /><div><span>Porción</span><h2>{food?.name || "Cargando..."}</h2><small>{food?.brand || categoryLabel(food?.category)}</small><PreparationBadge food={food} showUnknown /></div></div><div className="split configure-fields"><Input label="Cantidad" value={quantity} onChange={(event) => setQuantity(event.target.value)} type="number" inputMode="decimal" min="0" /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={configureUnitOptions} /></div><label className="field"><span>Comida</span><select value={mealType} onChange={(event) => setMealType(event.target.value)}>{mealTypes.map((meal) => <option key={meal.code} value={meal.code}>{meal.label}</option>)}</select></label><div className="preview configure-preview"><strong>{formatNumber(preview?.calories)} kcal</strong><small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small></div><button className="primary configure-submit" disabled={!foodId || Number(quantity) <= 0} onClick={add}>Agregar producto</button></Panel></section>;
 }
 
 function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode }) {

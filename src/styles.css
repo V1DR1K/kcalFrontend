@@ -789,6 +789,27 @@ button:disabled {
 .catalog-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-action { color: var(--muted); }
 
+.preparation-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 5px;
+  padding: 3px 8px;
+  border: 1px solid rgb(78 222 163 / 35%);
+  border-radius: 999px;
+  background: rgb(0 82 54 / 24%);
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.preparation-unspecified {
+  border-color: var(--outline);
+  background: var(--surface-high);
+  color: var(--muted);
+}
+
 .catalog-row:hover {
   border-color: var(--primary);
 }
@@ -1504,13 +1525,10 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   }
   .configure-page .page-header { margin-bottom: 14px; }
   .configure-back { margin-bottom: 10px; }
-  .configure-panel { min-height: calc(100dvh - 190px); align-content: start; padding-bottom: 86px; }
+  .configure-panel { min-height: auto; align-content: start; padding-bottom: 20px; }
   .configure-submit {
-    position: fixed;
-    left: 16px;
-    right: 16px;
-    bottom: calc(92px + env(safe-area-inset-bottom));
-    z-index: 9;
+    position: static;
+    width: 100%;
     min-height: 56px;
     box-shadow: 0 12px 30px rgb(0 0 0 / 45%);
   }
@@ -1562,7 +1580,66 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   }
 
   .meal-card {
-    min-height: 200px;
+    gap: 10px;
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .meal-card header {
+    align-items: center;
+  }
+
+  .meal-card header strong {
+    font-size: 23px;
+  }
+
+  .meal-card header span {
+    font-size: 13px;
+  }
+
+  .meal-card .icon-button {
+    width: 40px;
+    min-height: 40px;
+  }
+
+  .meal-macros {
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .meal-macros small {
+    min-width: 0;
+    min-height: 34px;
+    padding: 4px 9px;
+    font-size: 12px;
+  }
+
+  .meal-item {
+    gap: 8px;
+    padding: 8px 0 0;
+    font-size: 13px;
+  }
+
+  .meal-item .food-thumb.compact {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    flex: 0 0 auto;
+  }
+
+  .meal-item > strong {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .meal-item .remove-log {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 auto;
+  }
+
+  .meal-item .remove-log .material-symbols-outlined {
+    font-size: 18px;
   }
 
   .macro-editor {
