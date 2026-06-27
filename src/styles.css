@@ -969,7 +969,7 @@ button:disabled {
   animation: fade-in 220ms ease-out;
 }
 
-.back-button {
+.scanner-page > .back-button {
   position: absolute;
   top: 22px;
   left: 22px;
@@ -1524,7 +1524,15 @@ button:disabled { cursor: not-allowed; opacity: .5; }
     padding: max(18px, env(safe-area-inset-top)) 16px calc(104px + env(safe-area-inset-bottom));
   }
   .configure-page .page-header { margin-bottom: 14px; }
-  .configure-back { margin-bottom: 10px; }
+  .configure-back {
+    position: static;
+    justify-self: start;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 10px;
+    white-space: nowrap;
+  }
   .configure-panel { min-height: auto; align-content: start; padding-bottom: 20px; }
   .configure-submit {
     position: static;

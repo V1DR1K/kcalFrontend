@@ -567,6 +567,10 @@ function PreparationBadge({ food, showUnknown = false }) {
   return <small className={`preparation-badge preparation-${food.preparation.toLowerCase()}`} title={food.preparationSource || undefined}>{option.label}</small>;
 }
 
+function preparationLabel(preparation) {
+  return PREPARATION_OPTIONS.find(({ value }) => value === preparation)?.label || "Sin especificar";
+}
+
 function CreateRecipeForm({ api }) {
   const [query, setQuery] = useState("");
   const [foods, setFoods] = useState([]);
@@ -610,6 +614,7 @@ function CreateRecipeForm({ api }) {
 }
 
 function ConfigureFood({ api, setPage, foodId, user }) {
+  const [activeFoodId, setActiveFoodId] = useState(foodId);
   const [quantity, setQuantity] = useState("150");
   const [unit, setUnit] = useState("GRAM");
   const [mealType, setMealType] = useState("LUNCH");
@@ -617,23 +622,25 @@ function ConfigureFood({ api, setPage, foodId, user }) {
   const [food, setFood] = useState(null);
   const [preview, setPreview] = useState(null);
   useEffect(() => { api.request("/api/nutrition/meal-types").then(setMealTypes).catch(() => setMealTypes(DEFAULT_MEALS)); }, [api]);
-  useEffect(() => { if (foodId) api.request(`/api/foods/${foodId}`).then(setFood).catch(console.error); }, [api, foodId]);
+  useEffect(() => { setActiveFoodId(foodId); }, [foodId]);
+  useEffect(() => { if (activeFoodId) api.request(`/api/foods/${activeFoodId}`).then(setFood).catch(console.error); }, [api, activeFoodId]);
+  useEffect(() => { if (foodId) api.request(`/api/foods/${foodId}/preparations`).then(setPreparationOptions).catch(() => setPreparationOptions([])); }, [api, foodId]);
   useEffect(() => {
     const numericQuantity = Number(quantity);
-    if (!foodId || !Number.isFinite(numericQuantity) || numericQuantity <= 0) {
+    if (!activeFoodId || !Number.isFinite(numericQuantity) || numericQuantity <= 0) {
       setPreview(null);
       return;
     }
     const quantityInGrams = unit === "SERVING" ? numericQuantity * Number(food?.servingWeightGrams || 0) : numericQuantity;
     if (quantityInGrams <= 0) return setPreview(null);
-    api.request("/api/foods/preview", { method: "POST", body: JSON.stringify({ foodId, quantity: quantityInGrams, unit: "GRAM" }) }).then(setPreview).catch(console.error);
-  }, [api, food, foodId, quantity, unit]);
+    api.request("/api/foods/preview", { method: "POST", body: JSON.stringify({ foodId: activeFoodId, quantity: quantityInGrams, unit: "GRAM" }) }).then(setPreview).catch(console.error);
+  }, [activeFoodId, api, food, quantity, unit]);
   async function add() {
     const numericQuantity = Number(quantity);
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0) return;
     const quantityInGrams = unit === "SERVING" ? numericQuantity * Number(food?.servingWeightGrams || 0) : numericQuantity;
     if (quantityInGrams <= 0) return;
-    const log = await api.request("/api/nutrition/meal-logs", { method: "POST", body: JSON.stringify({ itemType: "FOOD", itemId: foodId, mealType, quantity: quantityInGrams, unit: "GRAM", logDate: today() }) });
+    const log = await api.request("/api/nutrition/meal-logs", { method: "POST", body: JSON.stringify({ itemType: "FOOD", itemId: activeFoodId, mealType, quantity: quantityInGrams, unit: "GRAM", logDate: today() }) });
     if (food) rememberItem(user, { ...food, type: "FOOD" });
     rememberMeal(user, mealType, log);
     api.notify("Alimento agregado.");
@@ -642,12 +649,14 @@ function ConfigureFood({ api, setPage, foodId, user }) {
   const configureUnitOptions = food?.servingWeightGrams
     ? [{ value: "GRAM", label: "Gramos" }, { value: "SERVING", label: `${food.servingName || "Porción"} (${formatNumber(food.servingWeightGrams, 1)} g)` }]
     : [{ value: "GRAM", label: "Gramos" }];
-  return <section className="page narrow configure-page"><button className="back-button configure-back" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><Header title="Configurar alimento" /><Panel className="configure-panel"><div className="configure-food-heading"><FoodThumb item={{ ...food, type: "FOOD" }} hero /><div><span>Porción</span><h2>{food?.name || "Cargando..."}</h2><small>{food?.brand || categoryLabel(food?.category)}</small><PreparationBadge food={food} showUnknown /></div></div><div className="split configure-fields"><Input label="Cantidad" value={quantity} onChange={(event) => setQuantity(event.target.value)} type="number" inputMode="decimal" min="0" /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={configureUnitOptions} /></div><label className="field"><span>Comida</span><select value={mealType} onChange={(event) => setMealType(event.target.value)}>{mealTypes.map((meal) => <option key={meal.code} value={meal.code}>{meal.label}</option>)}</select></label><div className="preview configure-preview"><strong>{formatNumber(preview?.calories)} kcal</strong><small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small></div><button className="primary configure-submit" disabled={!foodId || Number(quantity) <= 0} onClick={add}>Agregar producto</button></Panel></section>;
+  const preparationSelectOptions = preparationOptions.map((option) => ({ value: String(option.id), label: preparationLabel(option.preparation) }));
+  return <section className="page narrow configure-page"><button className="back-button configure-back" onClick={() => setPage("foods")}><span className="material-symbols-outlined">arrow_back</span>Alimentos</button><Header title="Configurar alimento" /><Panel className="configure-panel"><div className="configure-food-heading"><FoodThumb item={{ ...food, type: "FOOD" }} hero /><div><span>Porción</span><h2>{food?.name || "Cargando..."}</h2><small>{food?.brand || categoryLabel(food?.category)}</small><PreparationBadge food={food} showUnknown /></div></div>{preparationSelectOptions.length > 1 && <Select label="Peso del alimento" value={String(activeFoodId)} onChange={(event) => { setActiveFoodId(Number(event.target.value)); setUnit("GRAM"); }} options={preparationSelectOptions} />}<div className="split configure-fields"><Input label="Cantidad" value={quantity} onChange={(event) => setQuantity(event.target.value)} type="number" inputMode="decimal" min="0" /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={configureUnitOptions} /></div><label className="field"><span>Comida</span><select value={mealType} onChange={(event) => setMealType(event.target.value)}>{mealTypes.map((meal) => <option key={meal.code} value={meal.code}>{meal.label}</option>)}</select></label><div className="preview configure-preview"><strong>{formatNumber(preview?.calories)} kcal</strong><small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small></div><button className="primary configure-submit" disabled={!activeFoodId || Number(quantity) <= 0} onClick={add}>Agregar producto</button></Panel></section>;
 }
 
 function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode }) {
   const [barcode, setBarcode] = useState("");
   const [food, setFood] = useState(null);
+  const [preparationOptions, setPreparationOptions] = useState([]);
   const [cameraOn, setCameraOn] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [status, setStatus] = useState("Alinea el codigo dentro del marco");
