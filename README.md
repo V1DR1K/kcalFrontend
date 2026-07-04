@@ -116,15 +116,21 @@ Endpoints consumidos:
 - `GET /api/profile`
 - `POST /api/nutrition/water-logs`
 
-Si el backend corre en otro host, se puede configurar antes de cargar las pantallas:
+El backend debe permitir CORS desde Vite, por ejemplo `http://127.0.0.1:5173`.
 
-```html
-<script>
-  window.VITALITY_API_BASE_URL = "http://localhost:8081";
-</script>
+## Producción
+
+La app usa rutas `/api` del mismo origen por defecto, una configuración segura detrás de un proxy inverso. Si frontend y API se publican en dominios distintos, definir `VITE_API_BASE_URL` al compilar:
+
+```powershell
+$env:VITE_API_BASE_URL="https://api.ejemplo.com"
+npm ci
+npm run build
 ```
 
-El backend debe permitir CORS desde Vite, por ejemplo `http://127.0.0.1:5173`.
+El contenido estático listo para publicar queda en `dist/`. Las credenciales demo sólo se completan automáticamente en modo desarrollo y no forman parte del bundle de producción.
+
+Para HTTPS local opcional se puede definir `VITE_DEV_HTTPS=true`; normalmente conviene usar HTTP local y terminar TLS en la infraestructura de producción.
 
 ## Scripts
 
