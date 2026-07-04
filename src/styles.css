@@ -658,7 +658,10 @@ summary:focus-visible {
   gap: 12px;
   padding: 10px 0;
   border-top: 1px solid rgb(60 74 66 / 55%);
+  cursor: grab;
+  user-select: none;
 }
+.meal-item:active { cursor: grabbing; }
 
 .empty-state {
   margin: 0;
@@ -718,20 +721,11 @@ summary:focus-visible {
   flex: 1;
 }
 
-.drag-handle {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 40px;
-  padding: 0;
-  border: 0;
-  background: transparent;
+.drag-indicator {
   color: var(--muted);
-  cursor: grab;
-  touch-action: none;
+  font-size: 20px;
+  pointer-events: none;
 }
-.drag-handle:active { cursor: grabbing; color: var(--primary); }
-.mobile-move { display: none; }
 
 .remove-log,
 .edit-log {
@@ -1719,9 +1713,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
     font-size: 18px;
   }
 
-  .meal-item { flex-wrap: wrap; }
-  .drag-handle { display: none; }
-  .mobile-move { display: block; order: 10; width: 100%; min-height: 40px; margin-top: 2px; font-size: 13px; }
+  .meal-item { touch-action: pan-y; }
 
   .macro-editor {
     grid-template-columns: 1fr;
