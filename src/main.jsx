@@ -296,6 +296,7 @@ function Dashboard({ api, user, setPage }) {
   const [pickerMeal, setPickerMeal] = useState(null);
   const [editingLog, setEditingLog] = useState(null);
   const [deletingLogId, setDeletingLogId] = useState(null);
+  const [movingLogId, setMovingLogId] = useState(null);
   const [waterSaving, setWaterSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState(today());
   const load = (date = selectedDate) => {
@@ -343,7 +344,19 @@ function Dashboard({ api, user, setPage }) {
       </div>
       <div className="meal-grid">
         {mealTypes.map((mealType) => (
-          <MealCard key={mealType.code} mealType={mealType} meal={mealByCode.get(mealType.code)} deletingLogId={deletingLogId} onAdd={() => setPickerMeal(mealType)} onEdit={setEditingLog} onDelete={async (log) => {
+          <MealCard key={mealType.code} mealType={mealType} meal={mealByCode.get(mealType.code)} deletingLogId={deletingLogId} movingLogId={movingLogId} onAdd={() => setPickerMeal(mealType)} onEdit={setEditingLog} onMove={async (log, targetMealType) => {
+            if (movingLogId || log.mealType === targetMealType) return;
+            setMovingLogId(log.id);
+            try {
+              await api.request(`/api/nutrition/food-logs/${log.id}`, { method: "PUT", body: JSON.stringify({ mealType: targetMealType, quantity: log.quantity, unit: log.unit || "GRAM", logDate: log.logDate }) });
+              api.notify("Alimento movido.");
+              await load();
+            } catch (error) {
+              api.notify(error.message || "No se pudo mover el alimento.", "error");
+            } finally {
+              setMovingLogId(null);
+            }
+          }} onDelete={async (log) => {
             if (deletingLogId) return;
             if (!window.confirm(`Eliminar ${log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name} del registro?`)) return;
             setDeletingLogId(log.id);
@@ -351,8 +364,8 @@ function Dashboard({ api, user, setPage }) {
               await api.request(`/api/nutrition/food-logs/${log.id}`, { method: "DELETE" });
               api.notify("Registro eliminado.");
               await load();
-            } catch {
-              api.notify("No se pudo eliminar el registro.", "error");
+            } catch (error) {
+              api.notify(error.message || "No se pudo eliminar el registro.", "error");
             } finally {
               setDeletingLogId(null);
             }
@@ -389,15 +402,16 @@ function DateNavigator({ date, setDate }) {
   );
 }
 
-function MealCard({ mealType, meal, deletingLogId, onAdd, onEdit, onDelete }) {
+function MealCard({ mealType, meal, deletingLogId, movingLogId, onAdd, onEdit, onDelete, onMove }) {
   const items = meal?.items || [];
+  const [dragOver, setDragOver] = useState(false);
   return (
-    <article className="meal-card">
+    <article className={`meal-card ${dragOver ? "drag-over" : ""}`} data-meal-type={mealType.code} onDragOver={(event) => { event.preventDefault(); setDragOver(true); }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragOver(false); }} onDrop={(event) => { event.preventDefault(); setDragOver(false); try { const log = JSON.parse(event.dataTransfer.getData("application/json")); onMove(log, mealType.code); } catch { /* gesto cancelado */ } }}>
       <header><div><span>{mealType.label}</span><strong>{meal?.calories || 0} kcal</strong></div><button className="icon-button" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><span className="material-symbols-outlined">add</span></button></header>
       <div className="meal-macros"><small>P {formatNumber(meal?.proteinGrams, 1)}g</small><small>C {formatNumber(meal?.carbsGrams, 1)}g</small><small>G {formatNumber(meal?.fatGrams, 1)}g</small></div>
       {items.length ? items.map((log) => {
         const item = log.itemType === "RECIPE" ? { ...log.recipe, type: "RECIPE" } : { ...log.food, type: "FOOD" };
-        return <div className="meal-item" key={log.id}><FoodThumb item={item} compact /><span>{item.name}</span><strong>{log.calories} kcal</strong><button className="edit-log" disabled={Boolean(deletingLogId)} aria-label="Editar registro" title="Editar registro" onClick={() => onEdit(log)}><span className="material-symbols-outlined">edit</span></button><button className="remove-log" disabled={Boolean(deletingLogId)} aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDelete(log)}><span className="material-symbols-outlined">{deletingLogId === log.id ? "progress_activity" : "delete"}</span></button></div>;
+        return <div className={`meal-item ${movingLogId === log.id ? "moving" : ""}`} key={log.id}><button className="drag-handle" draggable disabled={Boolean(deletingLogId || movingLogId)} aria-label={`Mover ${item.name} a otra comida`} title="Arrastrar a otra comida" onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("application/json", JSON.stringify(log)); }}><span className="material-symbols-outlined">drag_indicator</span></button><FoodThumb item={item} compact /><span>{item.name}</span><strong>{log.calories} kcal</strong><button className="edit-log" disabled={Boolean(deletingLogId || movingLogId)} aria-label="Editar registro" title="Editar registro" onClick={() => onEdit(log)}><span className="material-symbols-outlined">edit</span></button><button className="remove-log" disabled={Boolean(deletingLogId || movingLogId)} aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDelete(log)}><span className="material-symbols-outlined">{deletingLogId === log.id ? "progress_activity" : "delete"}</span></button><select className="mobile-move" value={log.mealType} disabled={Boolean(deletingLogId || movingLogId)} aria-label={`Mover ${item.name} a otra comida`} onChange={(event) => onMove(log, event.target.value)}>{DEFAULT_MEALS.map((option) => <option key={option.code} value={option.code}>{option.label}</option>)}</select></div>;
       }) : <p className="empty-state">Todavia no registraste nada.</p>}
     </article>
   );
@@ -490,8 +504,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
           <div className="selected-editor">
             <div className="selected-heading"><FoodThumb item={selected} compact /><div><strong>{selected.name}</strong><PreparationBadge food={selected} /></div></div>
             {selectedPreparations.length > 1 && <Select label="Peso del alimento" value={String(selected.id)} onChange={(event) => { const option = selectedPreparations.find((item) => item.id === Number(event.target.value)); if (option) { setSelected({ ...option, type: "FOOD" }); setUnit("GRAM"); } }} options={selectedPreparations.map((item) => ({ value: String(item.id), label: preparationLabel(item.preparation) }))} />}
-            <div className="selected-controls"><Input label={selected.type === "RECIPE" ? "Gramos ingeridos" : "Cantidad"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={selectedUnitOptions} /><div className="preview mini">{formatNumber(preview?.calories)} kcal</div></div>
-            <small>P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g</small>
+            <div className="selected-controls"><Input label={selected.type === "RECIPE" ? "Gramos ingeridos" : "Cantidad"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={selectedUnitOptions} /></div>
+            <div className="nutrition-preview" aria-label="Resumen nutricional"><span><small>Kcal</small><strong>{formatNumber(preview?.calories)}</strong></span><span><small>Proteínas</small><strong>{formatNumber(preview?.proteinGrams, 1)}g</strong></span><span><small>Carbos</small><strong>{formatNumber(preview?.carbsGrams, 1)}g</strong></span><span><small>Grasas</small><strong>{formatNumber(preview?.fatGrams, 1)}g</strong></span></div>
             <button className="primary" disabled={adding || Number(quantity) <= 0} onClick={add}>{adding ? "Agregando…" : `Agregar a ${mealType.label}`}</button>
           </div>
         )}
@@ -575,7 +589,7 @@ function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
       setSaving(false);
     }
   }
-  return <div className="modal-backdrop compact-modal"><form className="edit-log-modal" role="dialog" aria-modal="true" aria-labelledby="edit-log-title" onSubmit={submit}><header><div><span>Editar registro</span><h2 id="edit-log-title">{item?.name}</h2></div><button type="button" className="icon-button" onClick={onClose} aria-label="Cerrar"><span className="material-symbols-outlined">close</span></button></header><Input label={log.itemType === "RECIPE" ? "Gramos ingeridos" : "Cantidad en gramos"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} /><Select label="Comida" value={mealType} onChange={(event) => setMealType(event.target.value)} options={mealTypes.map((meal) => ({ value: meal.code, label: meal.label }))} /><div className="modal-actions"><button type="button" className="secondary" onClick={onClose}>Cancelar</button><button className="primary" disabled={saving || Number(quantity) <= 0}>{saving ? "Guardando…" : "Guardar cambios"}</button></div></form></div>;
+  return <div className="modal-backdrop compact-modal"><form className="edit-log-modal" role="dialog" aria-modal="true" aria-labelledby="edit-log-title" onSubmit={submit}><header><div><span>Editar registro</span><h2 id="edit-log-title">{item?.name}</h2></div><button type="button" className="icon-button" onClick={onClose} aria-label="Cerrar"><span className="material-symbols-outlined">close</span></button></header><Input autoFocus onFocus={(event) => event.currentTarget.select()} onClick={(event) => event.currentTarget.select()} label={log.itemType === "RECIPE" ? "Gramos ingeridos" : "Cantidad en gramos"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} /><Select label="Comida" value={mealType} onChange={(event) => setMealType(event.target.value)} options={mealTypes.map((meal) => ({ value: meal.code, label: meal.label }))} /><div className="modal-actions"><button type="button" className="secondary" onClick={onClose}>Cancelar</button><button className="primary" disabled={saving || Number(quantity) <= 0}>{saving ? "Guardando…" : "Guardar cambios"}</button></div></form></div>;
 }
 
 function CatalogStatus({ children, error = false }) {

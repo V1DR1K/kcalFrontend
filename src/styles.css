@@ -592,6 +592,8 @@ select:focus,
   justify-content: flex-end;
   padding-top: 18px;
 }
+.meal-card.drag-over { border-color: var(--primary); background: rgb(0 82 54 / 32%); box-shadow: 0 0 0 3px rgb(78 222 163 / 16%); }
+.meal-item.moving { opacity: .45; }
 
 button:focus-visible,
 a:focus-visible,
@@ -715,6 +717,21 @@ summary:focus-visible {
 .meal-item > span {
   flex: 1;
 }
+
+.drag-handle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+.drag-handle:active { cursor: grabbing; color: var(--primary); }
+.mobile-move { display: none; }
 
 .remove-log,
 .edit-log {
@@ -896,7 +913,11 @@ button:disabled {
 }
 
 .selected-heading { display: flex; align-items: center; gap: 10px; }
-.selected-controls { display: grid; grid-template-columns: minmax(110px, .7fr) minmax(150px, 1fr) auto; gap: 10px; align-items: end; }
+.selected-controls { display: grid; grid-template-columns: minmax(110px, .7fr) minmax(150px, 1fr); gap: 10px; align-items: end; }
+.nutrition-preview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.nutrition-preview span { display: grid; gap: 2px; min-width: 0; padding: 10px; border: 1px solid var(--outline); border-radius: 10px; background: var(--surface-high); text-align: center; }
+.nutrition-preview small { color: var(--muted); font-size: 11px; }
+.nutrition-preview strong { color: var(--text); font-size: 17px; font-variant-numeric: tabular-nums; }
 
 .mini {
   padding: 12px;
@@ -1698,6 +1719,10 @@ button:disabled { cursor: not-allowed; opacity: .5; }
     font-size: 18px;
   }
 
+  .meal-item { flex-wrap: wrap; }
+  .drag-handle { display: none; }
+  .mobile-move { display: block; order: 10; width: 100%; min-height: 40px; margin-top: 2px; font-size: 13px; }
+
   .macro-editor {
     grid-template-columns: 1fr;
   }
@@ -1718,6 +1743,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .selected-editor { padding: 12px; }
   .selected-editor .split { gap: 8px; }
   .selected-controls { grid-template-columns: 1fr; }
+  .nutrition-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .preset-grid { grid-template-columns: 1fr; }
   .preset-card { min-height: auto; }
   .account-panel .danger-button { width: 100%; }
