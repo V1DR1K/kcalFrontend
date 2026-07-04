@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 const APP_NAME = "KazaFitness";
 const TOKEN_KEY = "kazaFitness.token";
 const USER_KEY = "kazaFitness.user";
+const REGISTRATION_ENABLED = import.meta.env.VITE_REGISTRATION_ENABLED === "true";
 const DEFAULT_MEALS = [
   { code: "BREAKFAST", label: "Desayuno" },
   { code: "LUNCH", label: "Almuerzo" },
@@ -240,7 +241,7 @@ function Shell({ children, user, page, setPage, logout }) {
 }
 
 function AuthScreen({ page, setPage, saveSession, notify }) {
-  const isRegister = page === "register";
+  const isRegister = REGISTRATION_ENABLED && page === "register";
   const [loading, setLoading] = useState(false);
   async function submit(event) {
     event.preventDefault();
@@ -281,7 +282,7 @@ function AuthScreen({ page, setPage, saveSession, notify }) {
           )}
           <button className="primary" disabled={loading}>{loading ? "Procesando..." : isRegister ? "Crear cuenta" : "Ingresar"}</button>
         </form>
-        <button className="link-button" onClick={() => setPage(isRegister ? "login" : "register")}>{isRegister ? "Ya tengo cuenta" : "Crear una cuenta nueva"}</button>
+        {REGISTRATION_ENABLED && <button className="link-button" onClick={() => setPage(isRegister ? "login" : "register")}>{isRegister ? "Ya tengo cuenta" : "Crear una cuenta nueva"}</button>}
       </section>
     </main>
   );
