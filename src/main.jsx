@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import { request as apiRequest } from "./services/http";
 
+/* Feature pages remain here temporarily; shared infrastructure lives in dedicated modules. */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 const APP_NAME = "KazaFitness";
 const TOKEN_KEY = "kazaFitness.token";
@@ -164,7 +166,7 @@ function App() {
   const [prefillBarcode, setPrefillBarcode] = useState("");
 
   const api = useMemo(() => ({
-    request,
+    request: apiRequest,
     notify(message, tone = "success") {
       setToast({ message, tone });
       window.setTimeout(() => setToast(null), 3500);
