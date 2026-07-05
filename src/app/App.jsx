@@ -159,6 +159,7 @@ function Dashboard({ api, user, setPage }) {
           }} />
         ))}
       </div>
+      <PastMealsPreview api={api} targetDate={selectedDate} mealTypes={mealTypes} onCopied={load} />
       <div className="grid two">
         <Panel title="Agua">
           <p className="big">{formatNumber(data?.waterConsumedLiters, 1)}L / {formatNumber(data?.waterGoalLiters, 1)}L</p>
@@ -187,6 +188,23 @@ function DateNavigator({ date, setDate }) {
       <button className="secondary today-button" onClick={() => setDate(today())}>Hoy</button>
     </div>
   );
+}
+
+function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
+  const [sourceDate, setSourceDate] = useState(() => shiftDate(targetDate, -1));
+  const [source, setSource] = useState(null);
+  const [status, setStatus] = useState({});
+  const [loading, setLoading] = useState(false);
+  useEffect(() => { setSourceDate(shiftDate(targetDate, -1)); setSource(null); setStatus({}); }, [targetDate]);
+  async function preview() { setLoading(true); setStatus({}); try { setSource(await api.request(`/api/nutrition/dashboard?date=${sourceDate}`)); } catch { api.notify("No se pudo cargar ese dia.", "error"); } finally { setLoading(false); } }
+  async function copyMeal(mealType, items) {
+    setStatus((current) => ({ ...current, [mealType]: "copying" }));
+    try {
+      for (const log of items) await api.request("/api/nutrition/meal-logs", { method: "POST", body: JSON.stringify({ itemType: log.itemType, itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id, mealType, quantity: log.quantity, unit: log.unit || "GRAM", logDate: targetDate }) });
+      setStatus((current) => ({ ...current, [mealType]: "copied" })); api.notify("Comida copiada respetando su horario."); await onCopied();
+    } catch { setStatus((current) => ({ ...current, [mealType]: "error" })); api.notify("No se pudo copiar la comida completa.", "error"); }
+  }
+  return <Panel title="Copiar comidas de otro dia" className="past-meals-panel"><div className="past-meals-tools"><Input label="Dia de origen" type="date" max={shiftDate(targetDate, -1)} value={sourceDate} onChange={(event) => { setSourceDate(event.target.value); setSource(null); setStatus({}); }} /><button className="secondary" disabled={loading || !sourceDate} onClick={preview}>{loading ? "Buscando..." : "Vista previa"}</button></div>{source && <div className="past-meals-grid">{mealTypes.map((type) => { const meal = source.meals?.find((item) => item.mealType === type.code); const items = meal?.items || []; const state = status[type.code]; if (!items.length || state === "dismissed") return null; return <article className={`ghost-meal ${state || ""}`} key={type.code}><header><div><span>{type.label} · {readableDate(sourceDate)}</span><strong>{meal.calories} kcal</strong></div><div className="ghost-actions"><button className="copy-accept" disabled={state === "copying" || state === "copied"} aria-label={`Copiar ${type.label}`} onClick={() => copyMeal(type.code, items)}><span className="material-symbols-outlined">{state === "copied" ? "check_circle" : "check"}</span></button><button className="copy-reject" disabled={state === "copying" || state === "copied"} aria-label={`No copiar ${type.label}`} onClick={() => setStatus((current) => ({ ...current, [type.code]: "dismissed" }))}><span className="material-symbols-outlined">close</span></button></div></header>{items.map((log) => <div className="ghost-item" key={log.id}><span>{log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name}</span><small>{formatNumber(log.quantity, 1)}g · {log.calories} kcal</small></div>)}</article>; })}</div>}</Panel>;
 }
 
 function MealCard({ mealType, meal, deletingLogId, movingLogId, onAdd, onEdit, onDelete, onMove }) {
@@ -289,7 +307,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
         </div>
         {selected && (
           <div className="selected-editor">
-            <div className="selected-heading"><FoodThumb item={selected} compact /><div><strong>{selected.name}</strong><PreparationBadge food={selected} /></div></div>
+            <div className="selected-heading"><FoodThumb item={selected} compact /><div><strong>{selected.name}</strong><PreparationBadge food={selected} /></div><button className="icon-button selected-close" aria-label="Cerrar alimento seleccionado" onClick={() => { setSelected(null); setPreview(null); }}><span className="material-symbols-outlined">close</span></button></div>
             {selectedPreparations.length > 1 && <Select label="Peso del alimento" value={String(selected.id)} onChange={(event) => { const option = selectedPreparations.find((item) => item.id === Number(event.target.value)); if (option) { setSelected({ ...option, type: "FOOD" }); setUnit("GRAM"); } }} options={selectedPreparations.map((item) => ({ value: String(item.id), label: preparationLabel(item.preparation) }))} />}
             <div className="selected-controls"><Input selectOnFocus label={selected.type === "RECIPE" ? "Gramos ingeridos" : "Cantidad"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={selectedUnitOptions} /></div>
             <div className="nutrition-preview" aria-label="Resumen nutricional"><span><small>Kcal</small><strong>{formatNumber(preview?.calories)}</strong></span><span><small>Proteínas</small><strong>{formatNumber(preview?.proteinGrams, 1)}g</strong></span><span><small>Carbos</small><strong>{formatNumber(preview?.carbsGrams, 1)}g</strong></span><span><small>Grasas</small><strong>{formatNumber(preview?.fatGrams, 1)}g</strong></span></div>
