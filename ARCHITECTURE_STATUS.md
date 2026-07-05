@@ -12,6 +12,6 @@ Completed on 2026-07-05:
 - Verified frontend production build and the complete backend integration suite.
 - Added a Playwright authentication smoke test and Chromium execution to CI.
 
-Remaining screens in `main.jsx` are intentionally treated as legacy migration scope. New functionality must be created under `src/features/<domain>`; existing screens should move when behavior changes, avoiding a risky all-at-once rewrite.
+The entrypoint is now limited to mounting React. Application composition lives under `src/app`, while configuration, formatting, browser persistence, HTTP, catalog pagination and reusable UI infrastructure are separate modules. New functionality must be created under `src/features/<domain>`.
 
 Verification: `npm test && npm run build`.
