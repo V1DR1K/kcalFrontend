@@ -10,6 +10,7 @@ Completed on 2026-07-05:
 - Added page-query and deduplication unit tests.
 - Added `npm test` to CI before the production build.
 - Verified frontend production build and the complete backend integration suite.
+- Added a Playwright authentication smoke test and Chromium execution to CI.
 
 Remaining screens in `main.jsx` are intentionally treated as legacy migration scope. New functionality must be created under `src/features/<domain>`; existing screens should move when behavior changes, avoiding a risky all-at-once rewrite.
 
