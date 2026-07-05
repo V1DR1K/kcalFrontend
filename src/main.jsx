@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 import { request as apiRequest } from "./services/http";
+import { usePagedCatalog } from "./features/catalog/usePagedCatalog";
+import { InfiniteSentinel } from "./components/InfiniteSentinel";
 
 /* Feature pages remain here temporarily; shared infrastructure lives in dedicated modules. */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
@@ -618,59 +620,6 @@ function groupFoodVariants(items) {
     if (!current || (item.preparation === "COOKED" && current.preparation !== "COOKED")) grouped.set(key, item);
   }
   return [...grouped.values()];
-}
-
-function usePagedCatalog({ api, endpoint, query = "", category = "", pageSize = 20 }) {
-  const [state, setState] = useState({ items: [], page: -1, hasNext: true, initialLoading: true, loadingMore: false, error: "", failedPage: null });
-  const requestRef = useRef(null);
-
-  const fetchPage = useCallback(async (page, replace) => {
-    if (requestRef.current) return;
-    const controller = new AbortController();
-    requestRef.current = controller;
-    setState((current) => ({ ...current, initialLoading: replace, loadingMore: !replace, error: "", failedPage: null }));
-    try {
-      const params = new URLSearchParams({ page: String(page), size: String(pageSize) });
-      if (query.trim()) params.set("q", query.trim());
-      if (category) params.set("category", category);
-      const data = await api.request(`${endpoint}?${params}`, { signal: controller.signal });
-      const incoming = data.items || [];
-      setState((current) => {
-        const merged = replace ? incoming : [...current.items, ...incoming];
-        const unique = [...new Map(merged.map((item) => [item.id, item])).values()];
-        return { items: unique, page: data.page ?? page, hasNext: data.hasNext ?? page + 1 < Number(data.totalPages || 0), initialLoading: false, loadingMore: false, error: "", failedPage: null };
-      });
-    } catch (error) {
-      if (error.name !== "AbortError") setState((current) => ({ ...current, initialLoading: false, loadingMore: false, error: "No se pudieron cargar los alimentos.", failedPage: page }));
-    } finally {
-      if (requestRef.current === controller) requestRef.current = null;
-    }
-  }, [api, category, endpoint, pageSize, query]);
-
-  useEffect(() => {
-    requestRef.current?.abort();
-    requestRef.current = null;
-    setState({ items: [], page: -1, hasNext: true, initialLoading: true, loadingMore: false, error: "", failedPage: null });
-    const timer = window.setTimeout(() => fetchPage(0, true), 250);
-    return () => { window.clearTimeout(timer); requestRef.current?.abort(); requestRef.current = null; };
-  }, [fetchPage]);
-
-  const loadNext = useCallback(() => {
-    if (!state.initialLoading && !state.loadingMore && state.hasNext && !requestRef.current) fetchPage(state.page + 1, false);
-  }, [fetchPage, state.hasNext, state.initialLoading, state.loadingMore, state.page]);
-
-  return { ...state, loadNext, retry: () => fetchPage(state.failedPage ?? 0, !state.items.length) };
-}
-
-function InfiniteSentinel({ enabled, onLoad }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!enabled || !ref.current) return undefined;
-    const observer = new IntersectionObserver((entries) => { if (entries[0]?.isIntersecting) onLoad(); }, { rootMargin: "240px" });
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [enabled, onLoad]);
-  return <div className="infinite-sentinel" ref={ref} aria-hidden="true" />;
 }
 
 function CatalogCard({ item, onAdd }) {

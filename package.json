@@ -2,6 +2,7 @@
   "name": "kaza-fitness-frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Frontend React de KazaFitness, producto de KazaDesarrollos.",
   "scripts": {
     "dev": "vite",
@@ -9,7 +10,8 @@
     "start": "npm run dev",
     "preview": "vite preview --host localhost",
     "preview:lan": "vite preview --host 0.0.0.0",
-    "build": "vite build"
+    "build": "vite build",
+    "test": "node --test"
   },
   "dependencies": {
     "@zxing/browser": "^0.2.0",
