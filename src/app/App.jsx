@@ -111,6 +111,7 @@ function Dashboard({ api, user, setPage }) {
   }, [selectedDate]);
   const macros = data?.macros || [];
   const mealByCode = new Map((data?.meals || []).map((meal) => [meal.mealType, meal]));
+  const recentMeals = readRecents(user).meals || [];
   if (loading && !data) {
     return (
       <section className="page">
@@ -222,8 +223,7 @@ function Dashboard({ api, user, setPage }) {
           />
         ))}
       </div>
-      <PastMealsPreview api={api} targetDate={selectedDate} mealTypes={mealTypes} onCopied={load} />
-      <div className="grid two">
+      <div className={`grid ${recentMeals.length ? "two" : ""}`}>
         <Panel title="Agua">
           <p className="big">
             {formatNumber(data?.waterConsumedLiters, 1)}L / {formatNumber(data?.waterGoalLiters, 1)}L
@@ -275,10 +275,11 @@ function Dashboard({ api, user, setPage }) {
             </button>
           </div>
         </Panel>
-        <Panel title="Accesos rapidos">
+        {Boolean(recentMeals.length) && <Panel title="Comidas recientes">
           <RecentMeals user={user} api={api} date={selectedDate} onDone={load} />
-        </Panel>
+        </Panel>}
       </div>
+      <PastMealsPreview api={api} targetDate={selectedDate} mealTypes={mealTypes} onCopied={load} />
       {pickerMeal && (
         <FoodPicker
           api={api}
@@ -325,8 +326,8 @@ function DateNavigator({ date, setDate }) {
       <button className="icon-button" aria-label="Día siguiente" onClick={() => setDate(shiftDate(date, 1))}>
         <span className="material-symbols-outlined">chevron_right</span>
       </button>
-      <button className="secondary today-button" onClick={() => setDate(today())}>
-        Hoy
+      <button className="secondary today-button" aria-label="Ir a hoy" onClick={() => setDate(today())}>
+        <span className="material-symbols-outlined">today</span><span className="today-label">Hoy</span>
       </button>
     </div>
   );
@@ -377,7 +378,9 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
     }
   }
   return (
-    <Panel title="Copiar comidas de otro dia" className="past-meals-panel">
+    <details className="panel past-meals-panel">
+      <summary><span className="material-symbols-outlined">content_copy</span><span><strong>Copiar comidas de otro día</strong><small>Reutilizá un día anterior sin cargar todo de nuevo</small></span><span className="material-symbols-outlined chevron">expand_more</span></summary>
+      <div className="past-meals-content">
       <div className="past-meals-tools">
         <Input
           label="Dia de origen"
@@ -442,7 +445,8 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
           })}
         </div>
       )}
-    </Panel>
+      </div>
+    </details>
   );
 }
 
@@ -871,7 +875,7 @@ function Foods({ api, user, setPage, setSelectedFoodId }) {
             </button>
             <button className="primary pill" onClick={() => setPage("scanner")}>
               <span className="material-symbols-outlined">barcode_scanner</span>
-              Escanear codigo
+              Escanear
             </button>
           </div>
         }
