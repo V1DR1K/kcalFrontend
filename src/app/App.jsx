@@ -224,6 +224,8 @@ function MealCard({ mealType, meal, deletingLogId, movingLogId, onAdd, onEdit, o
 }
 
 function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPage }) {
+  const modalRef = useRef(null);
+  const selectedEditorRef = useRef(null);
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
@@ -245,6 +247,21 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [onClose]);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return undefined;
+    const syncViewport = () => {
+      modalRef.current?.style.setProperty("--picker-height", `${viewport.height}px`);
+      if (document.activeElement?.matches('input[type="number"]')) requestAnimationFrame(() => selectedEditorRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }));
+    };
+    syncViewport();
+    viewport.addEventListener("resize", syncViewport);
+    viewport.addEventListener("scroll", syncViewport);
+    return () => {
+      viewport.removeEventListener("resize", syncViewport);
+      viewport.removeEventListener("scroll", syncViewport);
+    };
+  }, []);
   useEffect(() => {
     if (!selected || selected.type !== "FOOD") return setSelectedPreparations([]);
     api.request(`/api/foods/${selected.id}/preparations`).then(setSelectedPreparations).catch(() => setSelectedPreparations([]));
@@ -287,7 +304,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
     : [{ value: "GRAM", label: "Gramos" }];
   return (
     <div className="modal-backdrop">
-      <section className="picker-modal" role="dialog" aria-modal="true" aria-labelledby="food-picker-title">
+      <section ref={modalRef} className="picker-modal" role="dialog" aria-modal="true" aria-labelledby="food-picker-title">
         <header><div><span>{mealType.label}</span><h2 id="food-picker-title">Agregar comida</h2></div><button className="icon-button" aria-label="Cerrar" onClick={onClose}><span className="material-symbols-outlined">close</span></button></header>
         <div className="tabs"><button className={tab === "FOOD" ? "selected" : ""} onClick={() => { setTab("FOOD"); setSelected(null); }}>Alimentos</button><button className={tab === "RECIPE" ? "selected" : ""} onClick={() => { setTab("RECIPE"); setSelected(null); }}>Recetas</button></div>
         <div className="picker-tools">
@@ -307,7 +324,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
           <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
         </div>
         {selected && (
-          <div className="selected-editor">
+          <div ref={selectedEditorRef} className="selected-editor">
             <div className="selected-heading"><FoodThumb item={selected} compact /><div><strong>{selected.name}</strong><PreparationBadge food={selected} /></div><button className="icon-button selected-close" aria-label="Cerrar alimento seleccionado" onClick={() => { setSelected(null); setPreview(null); }}><span className="material-symbols-outlined">close</span></button></div>
             {selectedPreparations.length > 1 && <Select label="Peso del alimento" value={String(selected.id)} onChange={(event) => { const option = selectedPreparations.find((item) => item.id === Number(event.target.value)); if (option) { setSelected({ ...option, type: "FOOD" }); setUnit("GRAM"); } }} options={selectedPreparations.map((item) => ({ value: String(item.id), label: preparationLabel(item.preparation) }))} />}
             <div className="selected-controls"><Input selectOnFocus label={selected.type === "RECIPE" ? "Gramos ingeridos" : "Cantidad"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={selectedUnitOptions} /></div>

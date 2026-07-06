@@ -1561,9 +1561,9 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 
   .content,
   .auth-page {
-    width: min(100% - 28px, 760px);
-    padding-top: 26px;
-    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+    width: min(100% - 24px, 760px);
+    padding-top: 20px;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 
   .dashboard-hero,
@@ -1599,11 +1599,11 @@ button:disabled { cursor: not-allowed; opacity: .5; }
     bottom: max(12px, env(safe-area-inset-bottom));
     z-index: 10;
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 4px;
-    padding: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+    gap: 2px;
+    padding: 6px;
     border: 1px solid rgb(60 74 66 / 70%);
-    border-radius: 18px;
+    border-radius: 16px;
     background: rgb(22 29 25 / 92%);
     backdrop-filter: blur(16px);
     box-shadow: var(--shadow);
@@ -1640,7 +1640,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 
   .picker-modal {
     width: 100%;
-    height: 100dvh;
+    height: var(--picker-height, 100dvh);
     max-height: none;
     padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
     border: 0;
@@ -1690,7 +1690,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
     position: sticky;
     bottom: calc(88px + env(safe-area-inset-bottom));
     z-index: 5;
-    min-height: 54px;
+    min-height: 48px;
     box-shadow: 0 10px 28px rgb(0 0 0 / 40%);
   }
 
@@ -1856,6 +1856,30 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   }
 }
 .selected-close { margin-left: auto; }
+@media (max-width: 520px) {
+  :root { font-size: 14px; }
+  .page { gap: 14px; }
+  .page-header h1 { font-size: 28px; }
+  .content { width: 100%; padding: 14px 10px calc(82px + env(safe-area-inset-bottom)); }
+  .panel { padding: 14px; }
+  .dashboard-hero,
+  .dashboard-hero-full { grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 14px; text-align: left; }
+  .dashboard-hero .macro-strip { grid-column: 1 / -1; }
+  .calorie-ring { width: 104px; }
+  .calorie-ring strong { font-size: 27px; }
+  .dashboard-hero h2 { font-size: 20px; }
+  .mobile-nav button { font-size: clamp(8px, 2.2vw, 10px); }
+  .mobile-nav button .material-symbols-outlined { font-size: clamp(18px, 4.6vw, 21px); }
+  .picker-modal { gap: 7px; padding: max(10px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom)); }
+  .picker-modal > header h2 { font-size: 20px; }
+  .picker-modal > header .icon-button { width: 40px; min-height: 40px; }
+  .picker-tools { gap: 8px; }
+  .search-wrap .search { min-height: 46px; font-size: 15px; }
+  .chips { gap: 6px; }
+  .chips button { min-height: 34px; padding: 0 12px; font-size: 12px; }
+  .selected-editor:focus-within { scroll-margin-top: 8px; }
+}
+
 .past-meals-panel { margin-top: 20px; }
 .past-meals-tools { display: flex; gap: 12px; align-items: end; }
 .past-meals-tools .field { flex: 1; }
