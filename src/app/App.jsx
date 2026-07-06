@@ -4,6 +4,7 @@ import { request as apiRequest } from "../services/http";
 import { usePagedCatalog } from "../features/catalog/usePagedCatalog";
 import { InfiniteSentinel } from "../components/InfiniteSentinel";
 import { APP_NAME, TOKEN_KEY, USER_KEY, REGISTRATION_ENABLED, DEFAULT_MEALS, navItems, CATEGORY_OPTIONS, PREPARATION_OPTIONS, CATEGORY_ART, RECIPE_ART, UNIT_OPTIONS } from "../config/app";
+import { recognizeNutrition } from "../services/nutritionOcr";
 import { today, shiftDate, readableDate, formatNumber, macroGrams, macroValue } from "../utils/format";
 import { getSavedUser, readRecents, rememberItem, rememberMeal } from "../services/recents";
 import { Shell } from "./Shell";
@@ -443,6 +444,10 @@ function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode }) {
 
 function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
   const [saving, setSaving] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [ocrStatus, setOcrStatus] = useState("");
+  const [ocrData, setOcrData] = useState(null);
+  const formRef = useRef(null);
   async function submit(event) {
     event.preventDefault();
     if (saving) return;
@@ -464,6 +469,7 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
       }
       api.notify("Alimento creado.");
       form.reset();
+      setOcrData(null);
       clearPrefillBarcode?.();
     } catch {
       api.notify("No se pudo crear el alimento. Revisá los datos.", "error");
@@ -471,7 +477,39 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
       setSaving(false);
     }
   }
-  return <Panel title="Nuevo alimento"><form className="form-grid" onSubmit={submit}><Input name="name" label="Nombre" required /><Input name="brand" label="Marca" /><Input name="barcode" label="Codigo de barras opcional" defaultValue={prefillBarcode || ""} /><Select name="category" label="Categoria" options={CATEGORY_OPTIONS} /><Select name="preparation" label="Estado al medir" options={PREPARATION_OPTIONS} /><Input name="baseQuantity" label="Base nutricional en gramos" type="number" defaultValue="100" step="0.1" min="0.1" required /><div className="split"><Input name="servingName" label="Nombre de unidad (opcional)" placeholder="Ej: galletita, taza" /><Input name="servingWeightGrams" label="Gramos por unidad" type="number" step="0.1" min="0.1" /></div><div className="split"><Input name="calories" label="Kcal" type="number" min="0" required /><Input name="proteinGrams" label="Proteinas g" type="number" step="0.1" min="0" required /></div><div className="split"><Input name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" min="0" required /><Input name="fatGrams" label="Grasas g" type="number" step="0.1" min="0" required /></div><Input name="tags" label="Tags separados por coma" /><Input name="image" label="Foto del producto" type="file" accept="image/jpeg,image/png,image/webp" /><button className="primary" disabled={saving}>{saving ? "Creando…" : "Crear alimento"}</button></form></Panel>;
+  function setField(name, value) {
+    const input = formRef.current?.querySelector(`[name="${name}"]`);
+    if (input && value != null) {
+      input.value = value;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  }
+  async function handleOcrImage(file) {
+    if (!file) return;
+    setScanning(true);
+    setOcrStatus("Procesando imagen con OCR...");
+    try {
+      const data = await recognizeNutrition(file);
+      if (data.calories != null || data.proteinGrams != null || data.carbsGrams != null || data.fatGrams != null) {
+        setOcrData(data);
+        if (data.calories != null) setField("calories", data.calories);
+        if (data.proteinGrams != null) setField("proteinGrams", data.proteinGrams);
+        if (data.carbsGrams != null) setField("carbsGrams", data.carbsGrams);
+        if (data.fatGrams != null) setField("fatGrams", data.fatGrams);
+        setOcrStatus("Datos extraídos de la tabla nutricional. Revisá los valores antes de guardar.");
+        api.notify("Tabla nutricional escaneada.");
+      } else {
+        setOcrStatus("No se pudieron reconocer los valores. Ingresalos manualmente.");
+        api.notify("No se reconoció la tabla nutricional.", "error");
+      }
+    } catch {
+      setOcrStatus("Error al procesar la imagen. Ingresalos manualmente.");
+      api.notify("Error al escanear la tabla.", "error");
+    } finally {
+      setScanning(false);
+    }
+  }
+  return <Panel title="Nuevo alimento"><form className="form-grid" ref={formRef} onSubmit={submit}>{ocrStatus && <div className={`ocr-status ${ocrData ? "ok" : "bad"}`}>{scanning ? <span className="ocr-loading" /> : null}<span>{ocrStatus}</span></div>}<div className="ocr-actions"><label className="secondary ocr-label"><span className="material-symbols-outlined">document_scanner</span>Escanear tabla nutricional<input type="file" accept="image/*" capture="environment" onChange={(event) => { setOcrStatus(""); setOcrData(null); handleOcrImage(event.currentTarget.files?.[0]); }} hidden disabled={scanning} /></label></div><Input name="name" label="Nombre" required /><Input name="brand" label="Marca" /><Input name="barcode" label="Codigo de barras opcional" defaultValue={prefillBarcode || ""} /><Select name="category" label="Categoria" options={CATEGORY_OPTIONS} /><Select name="preparation" label="Estado al medir" options={PREPARATION_OPTIONS} /><Input name="baseQuantity" label="Base nutricional en gramos" type="number" defaultValue="100" step="0.1" min="0.1" required /><div className="split"><Input name="servingName" label="Nombre de unidad (opcional)" placeholder="Ej: galletita, taza" /><Input name="servingWeightGrams" label="Gramos por unidad" type="number" step="0.1" min="0.1" /></div><div className="split"><Input name="calories" label="Kcal" type="number" min="0" required /><Input name="proteinGrams" label="Proteinas g" type="number" step="0.1" min="0" required /></div><div className="split"><Input name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" min="0" required /><Input name="fatGrams" label="Grasas g" type="number" step="0.1" min="0" required /></div><Input name="tags" label="Tags separados por coma" /><Input name="image" label="Foto del producto" type="file" accept="image/jpeg,image/png,image/webp" /><button className="primary" disabled={saving || scanning}>{saving ? "Creando…" : "Crear alimento"}</button></form></Panel>;
 }
 
 function CatalogRowWithImage({ item, onPick }) {

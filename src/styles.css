@@ -403,6 +403,43 @@ nav button.active {
   gap: 12px;
 }
 
+.ocr-actions {
+  display: flex;
+  gap: 8px;
+}
+.ocr-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.ocr-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  background: var(--surface-high);
+}
+.ocr-status.ok {
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+.ocr-status.bad {
+  border: 1px solid var(--error);
+  color: var(--error);
+}
+.ocr-loading {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--muted);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 600ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .field {
   display: grid;
   gap: 6px;
