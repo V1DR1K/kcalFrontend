@@ -68,7 +68,7 @@ export function App() {
         <Shell user={user} page={page} setPage={setPage} logout={logout}>
           {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
           {page === "foods" && <Foods api={api} user={user} setPage={setPage} setSelectedFoodId={setSelectedFoodId} />}
-          {page === "create" && <CreateCatalog api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={() => setPrefillBarcode("")} />}
+          {page === "create" && <CreateCatalog api={api} setPage={setPage} prefillBarcode={prefillBarcode} clearPrefillBarcode={() => setPrefillBarcode("")} />}
           {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
           {page === "scanner" && <Scanner api={api} setPage={setPage} setSelectedFoodId={setSelectedFoodId} setPrefillBarcode={setPrefillBarcode} />}
           {page === "history" && <History api={api} />}
@@ -177,7 +177,7 @@ function Dashboard({ api, user, setPage }) {
         </Panel>
         <Panel title="Accesos rapidos"><RecentMeals user={user} api={api} date={selectedDate} onDone={load} /></Panel>
       </div>
-      {pickerMeal && <FoodPicker api={api} user={user} mealType={pickerMeal} selectedDate={selectedDate} onClose={() => setPickerMeal(null)} onDone={() => { setPickerMeal(null); load(); }} setPage={setPage} />}
+      {pickerMeal && <FoodPicker api={api} user={user} mealType={pickerMeal} selectedDate={selectedDate} onClose={() => setPickerMeal(null)} onDone={() => { setPickerMeal(null); load(); }} onNavigate={(target) => { setPickerMeal(null); requestAnimationFrame(() => setPage(target)); }} />}
       {editingLog && <EditFoodLog api={api} log={editingLog} mealTypes={mealTypes} onClose={() => setEditingLog(null)} onDone={() => { setEditingLog(null); load(); }} />}
     </section>
   );
@@ -229,7 +229,7 @@ function MealCard({ mealType, meal, deletingLogId, movingLogId, onAdd, onEdit, o
   );
 }
 
-function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPage }) {
+function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavigate }) {
   const modalRef = useRef(null);
   const selectedEditorRef = useRef(null);
   const [tab, setTab] = useState("FOOD");
@@ -341,7 +341,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
           </section>
           </div>
         )}
-        <footer><button className="secondary" onClick={() => setPage("scanner")}>Escanear</button><button className="secondary" onClick={() => setPage("create")}>Crear nuevo</button></footer>
+        <footer><button className="secondary" onClick={() => onNavigate("scanner")}>Escanear</button><button className="secondary" onClick={() => onNavigate("create")}>Crear nuevo</button></footer>
       </section>
     </div>
   );
@@ -457,10 +457,11 @@ function CatalogCard({ item, onAdd }) {
   );
 }
 
-function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode }) {
+function CreateCatalog({ api, setPage, prefillBarcode, clearPrefillBarcode }) {
   const [tab, setTab] = useState("FOOD");
   return (
     <section className="page narrow">
+      <button className="back-button" onClick={() => setPage("dashboard")}><span className="material-symbols-outlined">arrow_back</span>Dashboard</button>
       <Header title="Crear" eyebrow="Catalogo global" />
       <div className="tabs"><button className={tab === "FOOD" ? "selected" : ""} onClick={() => setTab("FOOD")}>Alimento</button><button className={tab === "RECIPE" ? "selected" : ""} onClick={() => setTab("RECIPE")}>Receta</button></div>
       {tab === "FOOD" ? <CreateFoodForm api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} /> : <CreateRecipeForm api={api} />}
