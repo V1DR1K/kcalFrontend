@@ -184,6 +184,7 @@ nav button.active {
   gap: 22px;
   animation: fade-in 260ms ease-out;
 }
+.page > *, .panel { min-width: 0; }
 
 .narrow {
   max-width: 760px;
@@ -1325,9 +1326,14 @@ button:disabled {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
 }
+
+.calendar-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.calendar-heading h2 { margin: 0; }
+.calendar-heading span { color: var(--muted); font-size: 13px; }
+.calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; color: var(--muted); font-size: 12px; font-weight: 800; text-align: center; }
 
 .calendar-grid span {
   display: grid;
@@ -1462,6 +1468,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.calendar-grid .calendar-spacer { visibility: hidden; }
 
 @keyframes subpanel-in {
   from { opacity: 0; transform: translateY(28px) scale(.98); }
@@ -1739,7 +1746,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 
   .modal-backdrop { padding: 0; place-items: stretch; }
   .edit-log-modal { width: 100%; min-height: 100dvh; border-radius: 0; align-content: start; padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom)); }
-  .edit-log-modal .modal-actions { margin-top: auto; position: sticky; bottom: env(safe-area-inset-bottom); }
+  .edit-log-modal .modal-actions { margin-top: auto; position: static; padding-bottom: env(safe-area-inset-bottom); }
   .picker-modal > header { position: relative; z-index: 2; }
   .picker-modal .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .picker-modal .chips::-webkit-scrollbar { display: none; }
@@ -1781,14 +1788,12 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   }
 
   .recipe-panel { padding: 16px; }
-  .recipe-form { min-height: 60dvh; padding-bottom: 74px; }
+  .recipe-form { min-height: 60dvh; padding-bottom: 0; }
   .recipe-form .picker-results { max-height: 34dvh; overflow: auto; overscroll-behavior: contain; }
   .recipe-submit {
-    position: sticky;
-    bottom: calc(88px + env(safe-area-inset-bottom));
-    z-index: 5;
+    position: static;
     min-height: 48px;
-    box-shadow: 0 10px 28px rgb(0 0 0 / 40%);
+    box-shadow: none;
   }
 
   .ingredient-row {
@@ -1901,6 +1906,23 @@ button:disabled { cursor: not-allowed; opacity: .5; }
     grid-template-columns: 1fr;
   }
 
+  .history-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .history-summary .panel { min-width: 0; padding: 14px; }
+  .history-summary .panel h2 { font-size: 15px; }
+  .history-summary .panel .big { font-size: 22px; }
+  .calendar-grid, .calendar-weekdays { gap: 6px; }
+  .calendar-grid span { border-radius: 10px; font-size: 12px; }
+  .calendar-heading { align-items: start; flex-direction: column; gap: 2px; }
+
+  .panel > .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .panel > .grid.three .stat { min-width: 0; padding: 10px 8px; }
+  .panel > .grid.three .stat strong { font-size: 15px; white-space: nowrap; }
+  .panel > .grid.three .stat small { font-size: 11px; }
+  .preset-grid { display: flex; gap: 10px; overflow-x: auto; margin-right: -14px; padding: 0 14px 8px 0; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .preset-grid::-webkit-scrollbar { display: none; }
+  .preset-card { flex: 0 0 min(82%, 280px); min-height: 118px; scroll-snap-align: start; }
+  .macro-control, .macro-control input[type="range"] { min-width: 0; width: 100%; }
+
   .content { width: 100%; padding-left: 14px; padding-right: 14px; }
   .food-grid { grid-template-columns: 1fr; gap: 12px; }
   .food-card { grid-template-columns: 72px minmax(0, 1fr) auto; gap: 12px; padding: 12px; }
@@ -1964,10 +1986,12 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .my-foods-list strong, .my-foods-list small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .my-foods-list .material-symbols-outlined { color: var(--primary); }
 .edit-food-backdrop { position: fixed; top: var(--app-viewport-top, 0); right: 0; left: 0; z-index: 40; display: grid; place-items: end center; height: var(--app-viewport-height, 100dvh); min-height: 0; padding: 18px; overflow: hidden; background: rgb(0 0 0 / 65%); backdrop-filter: blur(5px); }
-.edit-food-sheet { display: grid; align-content: start; gap: 12px; width: min(600px, 100%); max-height: min(calc(var(--app-viewport-height, 100dvh) - 36px), 820px); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 18px; border: 1px solid var(--outline); border-radius: 20px; background: var(--surface-low); box-shadow: var(--shadow); }
+.edit-food-sheet { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; width: min(600px, 100%); height: min(calc(var(--app-viewport-height, 100dvh) - 36px), 820px); max-height: 100%; overflow: hidden; padding: 18px; border: 1px solid var(--outline); border-radius: 20px; background: var(--surface-low); box-shadow: var(--shadow); }
 .edit-food-sheet > header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .edit-food-sheet h2 { margin: 2px 0 0; }
-.edit-food-sheet > .primary { position: sticky; bottom: 0; z-index: 2; min-height: 52px; box-shadow: 0 -10px 24px var(--surface-low); }
+.edit-food-fields { display: grid; align-content: start; gap: 12px; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding-right: 3px; }
+.edit-food-actions { padding-top: 2px; border-top: 1px solid var(--outline); }
+.edit-food-actions .primary { width: 100%; min-height: 52px; }
 .selected-close { margin-left: auto; }
 @media (max-width: 520px) {
   :root { font-size: 14px; }
@@ -1977,7 +2001,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .panel { padding: 14px; }
   .create-tabs button { padding: 0 8px; font-size: 12px; }
   .edit-food-backdrop { padding: 0; }
-  .edit-food-sheet { width: 100%; max-height: var(--app-viewport-height, 100dvh); padding: 14px 12px max(16px, env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; }
+  .edit-food-sheet { width: 100%; height: var(--app-viewport-height, 100dvh); max-height: 100%; padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); border-radius: 0; }
   .ocr-preview { padding: 13px; }
   .ocr-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-hero,

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import "../styles.css";
 import { request as apiRequest } from "../services/http";
 import { usePagedCatalog } from "../features/catalog/usePagedCatalog";
@@ -115,7 +116,7 @@ function Dashboard({ api, user, setPage }) {
   if (loading && !data) {
     return (
       <section className="page">
-        <Header title="Dashboard diario" action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
+        <Header title="Mi día" action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
         <CatalogStatus>Cargando tu día…</CatalogStatus>
       </section>
     );
@@ -123,7 +124,7 @@ function Dashboard({ api, user, setPage }) {
   if (error && !data) {
     return (
       <section className="page">
-        <Header title="Dashboard diario" action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
+        <Header title="Mi día" action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
         <CatalogStatus error>
           {error}
           <button className="secondary" onClick={() => load(selectedDate)}>
@@ -135,7 +136,7 @@ function Dashboard({ api, user, setPage }) {
   }
   return (
     <section className="page">
-      <Header title="Dashboard diario" eyebrow={data?.plan?.name || "Plan alimenticio"} action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
+      <Header title="Mi día" eyebrow={data?.plan?.name || "Plan alimenticio"} action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
       <div className="dashboard-hero dashboard-hero-full">
         <div className="calorie-ring">
           <svg viewBox="0 0 160 160" aria-hidden="true">
@@ -584,6 +585,16 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
       .then(setSelectedPreparations)
       .catch(() => setSelectedPreparations([]));
   }, [api, selected?.id, selected?.type]);
+  useEffect(() => {
+    if (!selected) return;
+    if (selected.type === "FOOD" && selected.servingWeightGrams) {
+      setQuantity("1");
+      setUnit("SERVING");
+    } else {
+      setQuantity(selected.category === "FAT" ? "10" : "100");
+      setUnit("GRAM");
+    }
+  }, [selected?.category, selected?.id, selected?.servingWeightGrams, selected?.type]);
   useEffect(() => {
     if (!selected?.servingWeightGrams && unit === "SERVING") setUnit("GRAM");
   }, [selected, unit]);
@@ -1068,8 +1079,8 @@ function CreateCatalog({ api, setPage, prefillBarcode, clearPrefillBarcode }) {
   const [tab, setTab] = useState("FOOD");
   return (
     <section className="page narrow">
-      <button className="back-button" onClick={() => setPage("dashboard")}>
-        <span className="material-symbols-outlined">arrow_back</span>Dashboard
+      <button className="back-button" onClick={() => setPage("foods")}>
+        <span className="material-symbols-outlined">arrow_back</span>Alimentos
       </button>
       <Header title="Crear" eyebrow="Catalogo global" />
       <div className="tabs create-tabs">
@@ -1349,7 +1360,7 @@ function MyFoods({ api }) {
           ))}
         </div>
       )}
-      {editing && (
+      {editing && createPortal(
         <div
           className="edit-food-backdrop"
           onMouseDown={(event) => {
@@ -1366,24 +1377,29 @@ function MyFoods({ api }) {
                 <span className="material-symbols-outlined">close</span>
               </button>
             </header>
-            <Input name="name" label="Nombre" defaultValue={editing.name} required />
-            <Input name="brand" label="Marca" defaultValue={editing.brand || ""} />
-            <Input name="barcode" label="Código de barras" defaultValue={editing.barcode || ""} />
-            <Select name="category" label="Categoría" defaultValue={editing.category} options={CATEGORY_OPTIONS} />
-            <Input name="baseQuantity" label="Estos valores corresponden a (gramos)" type="number" min="0.1" step="0.1" defaultValue={editing.baseQuantity || 100} required />
-            <div className="split">
-              <Input name="calories" label="Kcal" type="number" min="0" defaultValue={editing.calories} required />
-              <Input name="proteinGrams" label="Proteínas g" type="number" min="0" step="0.1" defaultValue={editing.proteinGrams} required />
+            <div className="edit-food-fields">
+              <Input name="name" label="Nombre" defaultValue={editing.name} required />
+              <Input name="brand" label="Marca" defaultValue={editing.brand || ""} />
+              <Input name="barcode" label="Código de barras" defaultValue={editing.barcode || ""} />
+              <Select name="category" label="Categoría" defaultValue={editing.category} options={CATEGORY_OPTIONS} />
+              <Input name="baseQuantity" label="Estos valores corresponden a (gramos)" type="number" min="0.1" step="0.1" defaultValue={editing.baseQuantity || 100} required />
+              <div className="split">
+                <Input name="calories" label="Kcal" type="number" min="0" defaultValue={editing.calories} required />
+                <Input name="proteinGrams" label="Proteínas g" type="number" min="0" step="0.1" defaultValue={editing.proteinGrams} required />
+              </div>
+              <div className="split">
+                <Input name="carbsGrams" label="Carbohidratos g" type="number" min="0" step="0.1" defaultValue={editing.carbsGrams} required />
+                <Input name="fatGrams" label="Grasas g" type="number" min="0" step="0.1" defaultValue={editing.fatGrams} required />
+              </div>
             </div>
-            <div className="split">
-              <Input name="carbsGrams" label="Carbohidratos g" type="number" min="0" step="0.1" defaultValue={editing.carbsGrams} required />
-              <Input name="fatGrams" label="Grasas g" type="number" min="0" step="0.1" defaultValue={editing.fatGrams} required />
-            </div>
-            <button className="primary" disabled={saving}>
-              {saving ? "Guardando…" : "Guardar cambios"}
-            </button>
+            <footer className="edit-food-actions">
+              <button className="primary" disabled={saving}>
+                {saving ? "Guardando…" : "Guardar cambios"}
+              </button>
+            </footer>
           </form>
-        </div>
+        </div>,
+        document.body,
       )}
     </Panel>
   );
@@ -1586,7 +1602,16 @@ function ConfigureFood({ api, setPage, foodId, user }) {
       setFoodError("");
       api
         .request(`/api/foods/${id}`)
-        .then(setFood)
+        .then((nextFood) => {
+          setFood(nextFood);
+          if (nextFood.servingWeightGrams) {
+            setQuantity("1");
+            setUnit("SERVING");
+          } else {
+            setQuantity(nextFood.category === "FAT" ? "10" : "100");
+            setUnit("GRAM");
+          }
+        })
         .catch(() => setFoodError("No pudimos cargar este alimento."));
     },
     [api],
@@ -1914,10 +1939,14 @@ function History({ api }) {
         </CatalogStatus>
       </section>
     );
+  const currentDate = new Date();
+  const rawMonthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(currentDate);
+  const monthLabel = rawMonthLabel.charAt(0).toUpperCase() + rawMonthLabel.slice(1);
+  const leadingDays = (new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() + 6) % 7;
   return (
     <section className="page">
       <Header title="Historial" />
-      <div className="grid two">
+      <div className="grid two history-summary">
         <Panel title="Promedio">
           <p className="big">{formatNumber(data?.averageCalories)} kcal</p>
         </Panel>
@@ -1925,7 +1954,10 @@ function History({ api }) {
           <p className="big">{data?.completedGoalDays || 0} dias</p>
         </Panel>
       </div>
+      <div className="calendar-heading"><h2>{monthLabel}</h2><span>Tu constancia, día por día</span></div>
+      <div className="calendar-weekdays" aria-hidden="true">{["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day}>{day}</span>)}</div>
       <div className="calendar-grid">
+        {Array.from({ length: leadingDays }, (_, index) => <span className="calendar-spacer" key={`spacer-${index}`} />)}
         {(data?.days || []).map((day) => (
           <span key={day.date} className={day.goalReached ? "done" : ""}>
             {new Date(`${day.date}T00:00:00`).getDate()}
