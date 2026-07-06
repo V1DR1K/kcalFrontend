@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "../styles.css";
 import { request as apiRequest } from "../services/http";
 import { usePagedCatalog } from "../features/catalog/usePagedCatalog";
@@ -31,6 +31,12 @@ export function App() {
       window.setTimeout(() => setToast(null), 3500);
     },
   }), []);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [page]);
 
   function saveSession(payload) {
     localStorage.setItem(TOKEN_KEY, payload.token);
