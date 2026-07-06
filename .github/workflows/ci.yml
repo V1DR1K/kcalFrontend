@@ -43,3 +43,8 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: ssh "$VPS_USER@$VPS_HOST" "cd /opt/apps/kcals/kcalFrontend && git fetch origin main && git reset --hard '${{ github.sha }}' && cd ../kcalBackend && ./deploy-vps.sh"
+      - name: Verify production host identity
+        run: |
+          html="$(curl --fail --silent --show-error --retry 6 --retry-delay 5 https://kcals.207.180.192.171.nip.io/)"
+          grep -q '<title>KazaFitness</title>' <<<"$html"
+          ! grep -q '<title>Kaza</title>' <<<"$html"
