@@ -6,11 +6,13 @@ import { execSync } from "child_process";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const localHttps = env.VITE_DEV_HTTPS === "true";
-  let gitHash = "unknown";
+  let gitHash = process.env.GIT_HASH || "unknown";
   let buildTime = new Date().toISOString();
-  try {
-    gitHash = execSync("git rev-parse --short HEAD").toString().trim();
-  } catch {}
+  if (!process.env.GIT_HASH) {
+    try {
+      gitHash = execSync("git rev-parse --short HEAD").toString().trim();
+    } catch {}
+  }
   return {
   define: {
     __BUILD_TIME__: JSON.stringify(buildTime),
