@@ -8,15 +8,18 @@ export default defineConfig(({ mode }) => {
   const localHttps = env.VITE_DEV_HTTPS === "true";
   let gitHash = process.env.GIT_HASH || "unknown";
   let buildTime = new Date().toISOString();
+  let commitTime = process.env.COMMIT_TIME || buildTime;
   if (!process.env.GIT_HASH) {
     try {
       gitHash = execSync("git rev-parse --short HEAD").toString().trim();
+      commitTime = execSync("git show -s --format=%cI HEAD").toString().trim();
     } catch {}
   }
   return {
   define: {
     __BUILD_TIME__: JSON.stringify(buildTime),
     __GIT_HASH__: JSON.stringify(gitHash),
+    __COMMIT_TIME__: JSON.stringify(commitTime),
   },
   plugins: [localHttps ? basicSsl() : null, react()].filter(Boolean),
   server: {

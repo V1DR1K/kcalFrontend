@@ -324,12 +324,15 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, setPag
           <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
         </div>
         {selected && (
-          <div ref={selectedEditorRef} className="selected-editor">
+          <div className="selected-subpanel" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) { setSelected(null); setPreview(null); } }}>
+          <section ref={selectedEditorRef} className="selected-editor" role="dialog" aria-modal="true" aria-label={`Configurar ${selected.name}`}>
+            <span className="sheet-handle" aria-hidden="true" />
             <div className="selected-heading"><FoodThumb item={selected} compact /><div><strong>{selected.name}</strong><PreparationBadge food={selected} /></div><button className="icon-button selected-close" aria-label="Cerrar alimento seleccionado" onClick={() => { setSelected(null); setPreview(null); }}><span className="material-symbols-outlined">close</span></button></div>
             {selectedPreparations.length > 1 && <Select label="Peso del alimento" value={String(selected.id)} onChange={(event) => { const option = selectedPreparations.find((item) => item.id === Number(event.target.value)); if (option) { setSelected({ ...option, type: "FOOD" }); setUnit("GRAM"); } }} options={selectedPreparations.map((item) => ({ value: String(item.id), label: preparationLabel(item.preparation) }))} />}
             <div className="selected-controls"><Input selectOnFocus label={selected.type === "RECIPE" ? "Gramos ingeridos" : "Cantidad"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} /><Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={selectedUnitOptions} /></div>
             <div className="nutrition-preview" aria-label="Resumen nutricional"><span><small>Kcal</small><strong>{formatNumber(preview?.calories)}</strong></span><span><small>Proteínas</small><strong>{formatNumber(preview?.proteinGrams, 1)}g</strong></span><span><small>Carbos</small><strong>{formatNumber(preview?.carbsGrams, 1)}g</strong></span><span><small>Grasas</small><strong>{formatNumber(preview?.fatGrams, 1)}g</strong></span></div>
             <button className="primary" disabled={adding || Number(quantity) <= 0} onClick={add}>{adding ? "Agregando…" : `Agregar a ${mealType.label}`}</button>
+          </section>
           </div>
         )}
         <footer><button className="secondary" onClick={() => setPage("scanner")}>Escanear</button><button className="secondary" onClick={() => setPage("create")}>Crear nuevo</button></footer>
@@ -920,8 +923,11 @@ function NutritionTutorial() {
 }
 
 function Header({ title, eyebrow, action }) {
-  const buildHash = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : "dev";
-  return <header className="page-header"><div><span>{eyebrow || APP_NAME}</span><h1>{title}</h1><small className="header-build" title="Identificador de la versión instalada"><span className="material-symbols-outlined">verified</span>Versión {buildHash}</small></div>{action}</header>;
+  const commitTime = typeof __COMMIT_TIME__ !== "undefined" ? new Date(__COMMIT_TIME__) : null;
+  const versionLabel = commitTime && !Number.isNaN(commitTime.getTime())
+    ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric", hour12: false }).format(commitTime).replace(",", " ·")
+    : "Desarrollo";
+  return <header className="page-header"><div><span>{eyebrow || APP_NAME}</span><h1>{title}</h1><small className="header-build" title="Fecha y hora del commit instalado"><span className="material-symbols-outlined">verified</span>{versionLabel}</small></div>{action}</header>;
 }
 function Panel({ title, children, className = "" }) { return <section className={`panel ${className}`}>{title && <h2>{title}</h2>}{children}</section>; }
 function Macro({ macro }) {
