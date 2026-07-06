@@ -471,8 +471,9 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
       form.reset();
       setOcrData(null);
       clearPrefillBarcode?.();
-    } catch {
-      api.notify("No se pudo crear el alimento. Revisá los datos.", "error");
+    } catch (error) {
+      const details = Object.values(error.fields || {}).join(" · ");
+      api.notify(details || error.message || "No se pudo crear el alimento. Revisá los datos.", "error");
     } finally {
       setSaving(false);
     }

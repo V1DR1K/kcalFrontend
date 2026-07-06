@@ -1,11 +1,12 @@
 import React from "react";
 
 export function Input({ label, selectOnFocus = false, onFocus, ...props }) {
+  const inputMode = props.inputMode || (props.name === "barcode" ? "numeric" : props.type === "number" ? "decimal" : undefined);
   const selectValue = (event) => {
     onFocus?.(event);
     if (selectOnFocus) requestAnimationFrame(() => event.currentTarget.select());
   };
-  return <label className="field"><span>{label}</span><input {...props} onFocus={selectValue} onPointerUp={(event) => { if (selectOnFocus) { event.preventDefault(); event.currentTarget.select(); } props.onPointerUp?.(event); }} /></label>;
+  return <label className="field"><span>{label}</span><input {...props} inputMode={inputMode} onFocus={selectValue} onPointerUp={(event) => { if (selectOnFocus) { event.preventDefault(); event.currentTarget.select(); } props.onPointerUp?.(event); }} /></label>;
 }
 
 export function Select({ label, options, ...props }) {

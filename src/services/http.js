@@ -11,10 +11,15 @@ export async function request(path, options = {}) {
   });
   if (!response.ok) {
     const text = await response.text();
-    if (response.status === 401 || response.status === 403) window.dispatchEvent(new Event("kazaFitness:session-expired"));
+    if (response.status === 401) window.dispatchEvent(new Event("kazaFitness:session-expired"));
     let message = "No se pudo completar la operacion.";
-    try { message = JSON.parse(text)?.message || message; } catch { /* El backend puede responder sin JSON. */ }
-    throw new Error(message);
+    let payload = null;
+    try { payload = JSON.parse(text); message = payload?.message || message; } catch { /* El backend puede responder sin JSON. */ }
+    const error = new Error(message);
+    error.status = response.status;
+    error.code = payload?.code;
+    error.fields = payload?.fields || {};
+    throw error;
   }
   if (response.status === 204) return null;
   const contentType = response.headers.get("content-type") || "";
