@@ -202,6 +202,18 @@ nav button.active {
   letter-spacing: 0;
 }
 
+.header-build {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 7px;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.header-build .material-symbols-outlined { font-size: 15px; }
+
 .dashboard-hero,
 .panel,
 .auth-card,
@@ -1656,6 +1668,13 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .picker-modal > header { position: relative; z-index: 2; }
   .picker-modal .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .picker-modal .chips::-webkit-scrollbar { display: none; }
+  .picker-modal .selected-editor { order: 1; }
+  .picker-modal .picker-scroll { order: 2; }
+  .picker-modal footer { order: 3; }
+  .picker-modal:has(.selected-editor:focus-within) .tabs,
+  .picker-modal:has(.selected-editor:focus-within) .picker-tools,
+  .picker-modal:has(.selected-editor:focus-within) .picker-scroll,
+  .picker-modal:has(.selected-editor:focus-within) footer { display: none; }
   .picker-results { max-height: none; overflow: visible; }
   .picker-modal footer { padding-top: 2px; }
 

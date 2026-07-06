@@ -920,7 +920,8 @@ function NutritionTutorial() {
 }
 
 function Header({ title, eyebrow, action }) {
-  return <header className="page-header"><div><span>{eyebrow || APP_NAME}</span><h1>{title}</h1></div>{action}</header>;
+  const buildHash = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : "dev";
+  return <header className="page-header"><div><span>{eyebrow || APP_NAME}</span><h1>{title}</h1><small className="header-build" title="Identificador de la versión instalada"><span className="material-symbols-outlined">verified</span>Versión {buildHash}</small></div>{action}</header>;
 }
 function Panel({ title, children, className = "" }) { return <section className={`panel ${className}`}>{title && <h2>{title}</h2>}{children}</section>; }
 function Macro({ macro }) {
