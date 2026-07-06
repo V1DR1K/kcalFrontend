@@ -12,14 +12,20 @@ export const navItems = [
   { id: "profile", label: "Perfil", icon: "account_circle" }, { id: "scanner", label: "Escaner", icon: "qr_code_scanner" },
 ];
 export const CATEGORY_OPTIONS = [
-  { value: "PROTEIN", label: "Proteinas" }, { value: "DAIRY", label: "Lacteos" }, { value: "FRUIT", label: "Frutas" },
-  { value: "VEGETABLE", label: "Verduras" }, { value: "CEREAL", label: "Cereales" }, { value: "FAT", label: "Grasas" }, { value: "OTHER", label: "Otros" },
+  { value: "PROTEIN", label: "Proteinas" }, { value: "MEAT", label: "Carnes" }, { value: "DAIRY", label: "Lacteos" }, { value: "FRUIT", label: "Frutas" },
+  { value: "VEGETABLE", label: "Verduras" }, { value: "LEGUME", label: "Legumbres" }, { value: "CEREAL", label: "Cereales" }, { value: "BAKERY", label: "Panificados" },
+  { value: "BEVERAGE", label: "Bebidas" }, { value: "SWEET", label: "Golosinas" }, { value: "SNACK", label: "Snacks" }, { value: "FAT", label: "Grasas" }, { value: "OTHER", label: "Otros" },
 ];
 export const PREPARATION_OPTIONS = [
   { value: "RAW", label: "Crudo/a" }, { value: "COOKED", label: "Cocido/a" },
   { value: "AS_SOLD", label: "Segun envase / como se vende" }, { value: "UNSPECIFIED", label: "Sin especificar" },
 ];
-export const CATEGORY_ART = Object.fromEntries(["PROTEIN", "DAIRY", "FRUIT", "VEGETABLE", "CEREAL", "FAT", "OTHER"].map((key) => [key, `/category-assets/${key.toLowerCase()}.webp`]));
+export const CATEGORY_ART = {
+  PROTEIN: "/category-assets/protein.webp", MEAT: "/category-assets/protein.webp", DAIRY: "/category-assets/dairy.webp",
+  FRUIT: "/category-assets/fruit.webp", VEGETABLE: "/category-assets/vegetable.webp", LEGUME: "/category-assets/cereal.webp",
+  CEREAL: "/category-assets/cereal.webp", BAKERY: "/category-assets/cereal.webp", BEVERAGE: "/category-assets/other.webp",
+  SWEET: "/category-assets/other.webp", SNACK: "/category-assets/fat.webp", FAT: "/category-assets/fat.webp", OTHER: "/category-assets/other.webp",
+};
 export const RECIPE_ART = "/category-assets/recipe.webp";
 export const UNIT_OPTIONS = [
   { value: "GRAM", label: "Gramos" }, { value: "MILLILITER", label: "Mililitros" },

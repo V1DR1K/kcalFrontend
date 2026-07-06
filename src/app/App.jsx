@@ -528,7 +528,6 @@ function MealCard({ mealType, meal, deletingLogId, movingLogId, onAdd, onEdit, o
 
 function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavigate }) {
   const modalRef = useRef(null);
-  const selectedEditorRef = useRef(null);
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
@@ -560,22 +559,18 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return undefined;
+    let frame = 0;
     const syncViewport = () => {
-      modalRef.current?.style.setProperty("--picker-height", `${viewport.height}px`);
-      if (document.activeElement?.matches('input[type="number"]'))
-        requestAnimationFrame(() =>
-          selectedEditorRef.current?.scrollIntoView({
-            block: "start",
-            behavior: "smooth",
-          }),
-        );
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        modalRef.current?.style.setProperty("--picker-height", `${Math.round(viewport.height)}px`);
+      });
     };
     syncViewport();
     viewport.addEventListener("resize", syncViewport);
-    viewport.addEventListener("scroll", syncViewport);
     return () => {
+      cancelAnimationFrame(frame);
       viewport.removeEventListener("resize", syncViewport);
-      viewport.removeEventListener("scroll", syncViewport);
     };
   }, []);
   useEffect(() => {
@@ -662,6 +657,16 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           },
         ]
       : [{ value: "GRAM", label: "Gramos" }];
+  function changeSelectedUnit(nextUnit) {
+    if (nextUnit === unit) return;
+    const numericQuantity = Number(quantity);
+    const servingGrams = Number(selected?.servingWeightGrams);
+    if (Number.isFinite(numericQuantity) && numericQuantity > 0 && Number.isFinite(servingGrams) && servingGrams > 0) {
+      const converted = nextUnit === "GRAM" ? numericQuantity * servingGrams : numericQuantity / servingGrams;
+      setQuantity(String(Number(converted.toFixed(2))));
+    }
+    setUnit(nextUnit);
+  }
   return (
     <div className="modal-backdrop">
       <section ref={modalRef} className="picker-modal" role="dialog" aria-modal="true" aria-labelledby="food-picker-title">
@@ -733,7 +738,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
               }
             }}
           >
-            <section ref={selectedEditorRef} className="selected-editor" role="dialog" aria-modal="true" aria-label={`Configurar ${selected.name}`}>
+            <section className="selected-editor" role="dialog" aria-modal="true" aria-label={`Configurar ${selected.name}`}>
               <span className="sheet-handle" aria-hidden="true" />
               <div className="selected-heading">
                 <FoodThumb item={selected} compact />
@@ -770,8 +775,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
                 />
               )}
               <div className="selected-controls">
-                <Input selectOnFocus label={selected.type === "RECIPE" ? "Gramos ingeridos" : "Cantidad"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
-                <Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={selectedUnitOptions} />
+                <Input selectOnFocus label={selected.type === "RECIPE" || unit === "GRAM" ? "Gramos" : "Cantidad de porciones"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+                <Select label="Unidad" value={unit} onChange={(event) => changeSelectedUnit(event.target.value)} options={selectedUnitOptions} />
               </div>
               <div className="nutrition-preview" aria-label="Resumen nutricional">
                 <span>
@@ -1115,7 +1120,7 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
     const data = Object.fromEntries(formData);
     setSaving(true);
     try {
-      const food = await api.request("/api/foods", {
+      await api.request("/api/foods", {
         method: "POST",
         body: JSON.stringify({
           name: data.name,
@@ -1139,15 +1144,6 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
             : [],
         }),
       });
-      const image = formData.get("image");
-      if (image?.size) {
-        const upload = new FormData();
-        upload.append("image", image);
-        await api.request(`/api/foods/${food.id}/image`, {
-          method: "POST",
-          body: upload,
-        });
-      }
       api.notify("Alimento creado.");
       form.reset();
       setOcrData(null);
@@ -1245,7 +1241,6 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
           <Input name="fatGrams" label="Grasas g" type="number" step="0.1" min="0" required />
         </div>
         <Input name="tags" label="Tags separados por coma" />
-        <Input name="image" label="Foto del producto" type="file" accept="image/jpeg,image/png,image/webp" />
         <button className="primary" disabled={saving || scanning}>
           {saving ? "Creando…" : "Crear alimento"}
         </button>
