@@ -33,6 +33,7 @@ body {
   overflow-x: hidden;
   min-height: 100dvh;
   scroll-padding-bottom: 45dvh;
+  touch-action: pan-x pan-y;
 }
 
 img { display: block; max-width: 100%; }
@@ -1922,6 +1923,17 @@ button:disabled { cursor: not-allowed; opacity: .5; }
     padding: 12px;
   }
 }
+.create-tabs { width: 100%; }
+.create-tabs button { flex: 1; }
+.my-foods-list { display: grid; gap: 8px; }
+.my-foods-list > button { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; width: 100%; min-height: 62px; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface); color: var(--text); text-align: left; }
+.my-foods-list > button > span:first-child { display: grid; gap: 3px; min-width: 0; }
+.my-foods-list strong, .my-foods-list small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.my-foods-list .material-symbols-outlined { color: var(--primary); }
+.edit-food-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: end center; padding: 18px; background: rgb(0 0 0 / 65%); backdrop-filter: blur(5px); }
+.edit-food-sheet { display: grid; gap: 12px; width: min(600px, 100%); max-height: min(90dvh, 820px); overflow: auto; padding: 18px; border: 1px solid var(--outline); border-radius: 20px; background: var(--surface-low); box-shadow: var(--shadow); }
+.edit-food-sheet > header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.edit-food-sheet h2 { margin: 2px 0 0; }
 .selected-close { margin-left: auto; }
 @media (max-width: 520px) {
   :root { font-size: 14px; }
@@ -1929,6 +1941,9 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .page-header h1 { font-size: 28px; }
   .content { width: 100%; padding: 14px 10px calc(82px + env(safe-area-inset-bottom)); }
   .panel { padding: 14px; }
+  .create-tabs button { padding: 0 8px; font-size: 12px; }
+  .edit-food-backdrop { padding: 0; }
+  .edit-food-sheet { width: 100%; max-height: 100dvh; padding: 14px 12px max(16px, env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; }
   .ocr-preview { padding: 13px; }
   .ocr-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-hero,
