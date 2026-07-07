@@ -217,8 +217,8 @@ function Dashboard({ api, user, setPage }) {
             />
           </svg>
           <div className="calorie-values">
-            <span>Consumidas / restantes</span>
-            <strong><b>{formatNumber(data?.caloriesConsumed)}</b><i>/</i><b>{formatNumber(data?.caloriesRemaining)}</b></strong>
+            <span>Consumidas / totales</span>
+            <strong><b>{formatNumber(data?.caloriesConsumed)}</b><i>/</i><b>{formatNumber(data?.calorieGoal)}</b></strong>
             <small>kcal</small>
           </div>
         </div>
