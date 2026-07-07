@@ -568,9 +568,10 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
 }
 
 function SwipeableMealItem({ children, className = "", onEdit, onDelete }) {
-  const startX = useRef(null); const [offset, setOffset] = useState(0); const [revealed, setRevealed] = useState("");
-  function finish() { if (offset > 64) { setRevealed("edit"); setOffset(72); } else if (offset < -64) { setRevealed("delete"); setOffset(-72); } else { setRevealed(""); setOffset(0); } startX.current = null; }
-  return <div className={`swipe-row ${revealed}`}><button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={onEdit}><span className="material-symbols-outlined">edit</span></button><button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={onDelete}><span className="material-symbols-outlined">delete</span></button><div className={`meal-item ${className}`} style={{ transform: `translateX(${offset}px)` }} onTouchStart={(e) => { startX.current = e.touches[0].clientX; }} onTouchMove={(e) => { if (startX.current != null) setOffset(Math.max(-88, Math.min(88, e.touches[0].clientX - startX.current))); }} onTouchEnd={finish}>{children}</div></div>;
+  const gesture = useRef(null); const [offset, setOffset] = useState(0); const [revealed, setRevealed] = useState("");
+  function finish() { if (gesture.current?.axis === "x" && offset > 64) { setRevealed("edit"); setOffset(72); } else if (gesture.current?.axis === "x" && offset < -64) { setRevealed("delete"); setOffset(-72); } else { setRevealed(""); setOffset(0); } gesture.current = null; }
+  function move(event) { if (!gesture.current) return; const dx = event.touches[0].clientX - gesture.current.x; const dy = event.touches[0].clientY - gesture.current.y; if (!gesture.current.axis && Math.max(Math.abs(dx), Math.abs(dy)) > 10) gesture.current.axis = Math.abs(dx) > Math.abs(dy) * 1.35 ? "x" : "y"; if (gesture.current.axis === "x") { event.preventDefault(); setOffset(Math.max(-88, Math.min(88, dx))); } }
+  return <div className={`swipe-row ${revealed}`}><button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={onEdit}><span className="material-symbols-outlined">edit</span></button><button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={onDelete}><span className="material-symbols-outlined">delete</span></button><div className={`meal-item ${className}`} style={{ transform: `translateX(${offset}px)` }} onTouchStart={(e) => { gesture.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, axis: null }; }} onTouchMove={move} onTouchEnd={finish} onTouchCancel={finish}>{children}</div></div>;
 }
 
 function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavigate }) {
@@ -2019,6 +2020,8 @@ function Profile({ api, logout }) {
   const [presets, setPresets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [weight, setWeight] = useState("");
+  const [savingWeight, setSavingWeight] = useState(false);
   const loadPlans = useCallback(
     () =>
       api
@@ -2033,6 +2036,7 @@ function Profile({ api, logout }) {
     Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans"), api.request("/api/profile/nutrition-plan-presets")])
       .then(([nextProfile, nextPlans, nextPresets]) => {
         setProfile(nextProfile);
+        setWeight(nextProfile.weightKg || "");
         setPlans(nextPlans);
         setPresets(nextPresets);
       })
@@ -2070,6 +2074,12 @@ function Profile({ api, logout }) {
           <Stat icon="height" label="Altura" value={`${formatNumber(profile?.heightCm)} cm`} />
           <Stat icon="local_fire_department" label="Meta diaria" value={`${formatNumber(profile?.dailyCalorieGoal)} kcal`} />
         </div>
+      </Panel>
+      <Panel title="Registrar peso" className="weight-panel">
+        <form onSubmit={async (event) => { event.preventDefault(); if (savingWeight) return; setSavingWeight(true); try { const updated = await api.request("/api/profile", { method: "PATCH", body: JSON.stringify({ weightKg: Number(weight) }) }); setProfile(updated); setWeight(updated.weightKg || ""); api.notify("Peso actualizado."); } catch { api.notify("No se pudo registrar el peso.", "error"); } finally { setSavingWeight(false); } }}>
+          <Input label="Peso actual (kg)" type="number" min="20" max="400" step="0.1" inputMode="decimal" value={weight} onChange={(event) => setWeight(event.target.value)} required />
+          <button className="secondary" disabled={savingWeight}>{savingWeight ? "Guardando…" : "Anotar peso"}</button>
+        </form>
       </Panel>
       <NutritionPlanManager api={api} presets={presets} plans={plans} onChanged={loadPlans} />
       <NutritionTutorial />
@@ -2126,7 +2136,6 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     setForm((current) => ({
       ...current,
       name: preset.name,
-      dailyCalories: preset.dailyCalories,
       proteinPercent: preset.proteinPercent,
       carbsPercent: preset.carbsPercent,
       fatPercent: preset.fatPercent,
@@ -2165,6 +2174,11 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     <Panel title="Plan alimenticio">
       <button type="button" className="primary add-plan-button" onClick={() => setCreating((value) => !value)}><span className="material-symbols-outlined">add</span>{creating ? "Cancelar" : "Agregar plan"}</button>
       {creating && <>
+      <div className="plan-calorie-step">
+        <span className="step-number">1</span><div><strong>Definí tus calorías diarias</strong><small>Esta base se usa para calcular los gramos de cada macronutriente.</small></div>
+        <Input label="Calorías por día" type="number" min="800" max="10000" step="10" value={form.dailyCalories} onChange={(event) => setField("dailyCalories", event.target.value)} required />
+      </div>
+      <div className="plan-step-heading"><span className="step-number">2</span><div><strong>Distribuí tus macronutrientes</strong><small>Elegí una propuesta o ajustá los porcentajes.</small></div></div>
       <div className="preset-grid">
         {presets.map((preset) => (
           <button type="button" className={`preset-card ${selectedPreset === preset.key ? "selected" : ""}`} key={preset.key} onClick={() => applyPreset(preset)}>
@@ -2201,7 +2215,6 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
           <summary>Detalles del plan</summary>
           <div className="form-grid">
             <Input label="Nombre del plan" value={form.name} onChange={(event) => setField("name", event.target.value)} minLength="2" required />
-            <Input label="Calorías diarias" type="number" min="1" value={form.dailyCalories} onChange={(event) => setField("dailyCalories", event.target.value)} required />
             <div className="split">
               <Input label="Fecha inicio" type="date" value={form.startDate} onChange={(event) => setField("startDate", event.target.value)} required />
               <Input label="Fecha fin opcional" type="date" min={form.startDate} value={form.endDate} onChange={(event) => setField("endDate", event.target.value)} />
