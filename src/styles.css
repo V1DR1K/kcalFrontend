@@ -2285,6 +2285,11 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .dashboard-hero .macro-strip { grid-column: 1 / -1; }
   .calorie-ring { width: 104px; }
   .calorie-ring strong { font-size: 27px; }
+  .calorie-ring .calorie-values { gap: 2px; width: 76px; }
+  .calorie-ring .calorie-values > span { max-width: 76px; font-size: 8px; line-height: 1.05; letter-spacing: -.01em; }
+  .calorie-ring .calorie-values strong { gap: 2px; max-width: 78px; font-size: 14px; letter-spacing: -.035em; }
+  .calorie-ring .calorie-values strong i { font-size: 9px; }
+  .calorie-ring .calorie-values > small { font-size: 9px; line-height: 1; }
   .dashboard-hero h2 { font-size: 20px; }
   .mobile-nav button { font-size: clamp(8px, 2.2vw, 10px); }
   .mobile-nav button .material-symbols-outlined { font-size: clamp(18px, 4.6vw, 21px); }
