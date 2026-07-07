@@ -657,6 +657,13 @@ select:focus,
   display: grid;
   gap: 4px;
 }
+.meal-header-actions { display: flex !important; align-items: center; gap: 6px !important; }
+.meal-menu { position: relative; }
+.meal-menu summary { display: grid; place-items: center; width: 40px; height: 40px; color: var(--muted); cursor: pointer; list-style: none; }
+.meal-menu summary::-webkit-details-marker { display: none; }
+.meal-menu > div { position: absolute; z-index: 8; top: 44px; right: 0; display: grid !important; min-width: 150px; padding: 6px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface-high); box-shadow: var(--shadow); }
+.meal-menu button { border: 0; padding: 10px; background: transparent; color: var(--text); text-align: left; }
+.meal-menu .danger-text { color: var(--error); }
 
 .meal-card header span {
   color: var(--muted);
@@ -754,6 +761,11 @@ summary:focus-visible {
   user-select: none;
 }
 .meal-item:active { cursor: grabbing; }
+.swipe-row { position: relative; overflow: hidden; border-top: 1px solid rgb(60 74 66 / 55%); }
+.swipe-row .meal-item { position: relative; z-index: 2; border-top: 0; background: rgb(16 24 19); transition: transform 160ms ease; }
+.swipe-action { position: absolute; inset-block: 0; width: 72px; border: 0; color: white; }
+.swipe-edit { left: 0; background: #287a61; }
+.swipe-delete { right: 0; background: #9f3535; }
 
 .empty-state {
   margin: 0;
@@ -1361,6 +1373,11 @@ button:disabled {
   transform: translateY(-2px);
   border-color: var(--primary);
 }
+.calendar-grid span:not(.calendar-spacer) { position: relative; gap: 1px; border-bottom: 3px solid var(--plan-color); }
+.calendar-grid span small { width: 100%; overflow: hidden; padding: 0 3px; color: var(--muted); font-size: 8px; line-height: 1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.plan-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.plan-legend span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.plan-legend i { width: 9px; height: 9px; border-radius: 50%; }
 
 .calendar-grid .done {
   background: rgb(0 82 54 / 34%);
@@ -1473,6 +1490,8 @@ button:disabled {
 .plan-details { border: 1px solid var(--outline); border-radius: 12px; background: var(--surface); }
 .plan-details summary { padding: 14px; cursor: pointer; font-weight: 800; }
 .plan-details > .form-grid { padding: 0 14px 14px; }
+.add-plan-button { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-bottom: 16px; }
+.nutrition-plan-form .plan-details input { min-height: 46px; padding: 10px 12px; border-radius: 10px; background: var(--surface-high); }
 
 button:disabled { cursor: not-allowed; opacity: .5; }
 
@@ -2068,8 +2087,8 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .ghost-meal header, .ghost-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .ghost-meal header > div:first-child { display: grid; }
 .ghost-actions button { width: 38px; height: 38px; border: 0; border-radius: 50%; color: white; display: grid; place-items: center; cursor: pointer; }
-.copy-accept { background: #16a34a; }
-.copy-reject { background: #dc2626; }
+.copy-accept { background: transparent; color: var(--primary); }
+.copy-reject { background: transparent; color: var(--error); }
 .ghost-actions button:disabled { opacity: .55; cursor: default; }
 .ghost-item { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; color: var(--muted); }
 @media (max-width: 720px) { .past-meals-grid { grid-template-columns: 1fr; } .past-meals-tools { align-items: stretch; flex-direction: column; } }

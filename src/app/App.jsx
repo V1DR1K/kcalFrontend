@@ -90,6 +90,7 @@ function Dashboard({ api, user, setPage }) {
   const [deletingLogId, setDeletingLogId] = useState(null);
   const [movingLogId, setMovingLogId] = useState(null);
   const [waterSaving, setWaterSaving] = useState(false);
+  const [mealClipboard, setMealClipboard] = useState(null);
   const [selectedDate, setSelectedDate] = useState(today());
   const [yesterdayData, setYesterdayData] = useState(null);
   const load = (date = selectedDate) => {
@@ -192,6 +193,8 @@ function Dashboard({ api, user, setPage }) {
             targetDate={selectedDate}
             api={api}
             onCopied={load}
+            clipboard={mealClipboard}
+            onCopyMeal={(items) => { setMealClipboard(items); api.notify("Comida copiada."); }}
             deletingLogId={deletingLogId}
             movingLogId={movingLogId}
             onAdd={() => setPickerMeal(mealType)}
@@ -463,7 +466,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
   );
 }
 
-function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, deletingLogId, movingLogId, onAdd, onEdit, onDelete, onMove }) {
+function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, clipboard, onCopyMeal, deletingLogId, movingLogId, onAdd, onEdit, onDelete, onMove }) {
   const items = meal?.items || [];
   const [dragOver, setDragOver] = useState(false);
   const [suggestionState, setSuggestionState] = useState("idle");
@@ -485,6 +488,17 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, de
       setSuggestionState("idle");
       api.notify("No se pudo copiar la comida de ayer.", "error");
     }
+  }
+  async function addLogs(logs) {
+    try {
+      for (const log of logs) await api.request("/api/nutrition/meal-logs", { method: "POST", body: JSON.stringify({ itemType: log.itemType, itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id, mealType: mealType.code, quantity: log.quantity, unit: log.unit || "GRAM", logDate: targetDate }) });
+      api.notify(`Comida pegada en ${mealType.label}.`); await onCopied();
+    } catch { api.notify("No se pudo pegar la comida.", "error"); }
+  }
+  async function deleteAll() {
+    if (!items.length || !window.confirm(`¿Borrar todo ${mealType.label.toLowerCase()}?`)) return;
+    try { for (const log of items) await api.request(`/api/nutrition/food-logs/${log.id}`, { method: "DELETE" }); api.notify(`${mealType.label} eliminado.`); await onCopied(); }
+    catch { api.notify("No se pudo borrar toda la comida.", "error"); }
   }
   return (
     <article
@@ -513,9 +527,10 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, de
           <span>{mealType.label}</span>
           <strong>{meal?.calories || 0} kcal</strong>
         </div>
-        <button className="icon-button" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}>
-          <span className="material-symbols-outlined">add</span>
-        </button>
+        <div className="meal-header-actions">
+          <details className="meal-menu"><summary aria-label={`Acciones de ${mealType.label}`}><span className="material-symbols-outlined">more_vert</span></summary><div><button disabled={!items.length} onClick={() => onCopyMeal(items)}>Copiar todo</button><button disabled={!clipboard?.length} onClick={() => addLogs(clipboard)}>Pegar</button><button className="danger-text" disabled={!items.length} onClick={deleteAll}>Borrar todo</button></div></details>
+          <button className="icon-button" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><span className="material-symbols-outlined">add</span></button>
+        </div>
       </header>
       <div className="meal-macros">
         <small>P {formatNumber(meal?.proteinGrams, 1)}g</small>
@@ -534,29 +549,15 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, de
         items.map((log) => {
           const item = log.itemType === "RECIPE" ? { ...log.recipe, type: "RECIPE" } : { ...log.food, type: "FOOD" };
           return (
-            <div
-              className={`meal-item ${movingLogId === log.id ? "moving" : ""}`}
+            <SwipeableMealItem
+              className={movingLogId === log.id ? "moving" : ""}
               key={log.id}
-              draggable={!deletingLogId && !movingLogId}
-              title="Arrastrar a otra comida"
-              onDragStart={(event) => {
-                event.dataTransfer.effectAllowed = "move";
-                event.dataTransfer.setData("application/json", JSON.stringify(log));
-              }}
+              onEdit={() => onEdit(log)} onDelete={() => onDelete(log)}
             >
-              <span className="drag-indicator material-symbols-outlined" aria-hidden="true">
-                drag_indicator
-              </span>
               <FoodThumb item={item} compact />
               <span className="meal-item-copy"><span>{item.name}</span><small>{formatNumber(log.quantity, 1)} g{log.itemType === "FOOD" && log.food?.preparation && log.food.preparation !== "UNSPECIFIED" ? ` · ${preparationLabel(log.food.preparation)}` : ""}</small></span>
               <strong>{log.calories} kcal</strong>
-              <button className="edit-log" disabled={Boolean(deletingLogId || movingLogId)} aria-label="Editar registro" title="Editar registro" onClick={() => onEdit(log)}>
-                <span className="material-symbols-outlined">edit</span>
-              </button>
-              <button className="remove-log" disabled={Boolean(deletingLogId || movingLogId)} aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDelete(log)}>
-                <span className="material-symbols-outlined">{deletingLogId === log.id ? "progress_activity" : "delete"}</span>
-              </button>
-            </div>
+            </SwipeableMealItem>
           );
         })
       ) : (
@@ -564,6 +565,12 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, de
       )}
     </article>
   );
+}
+
+function SwipeableMealItem({ children, className = "", onEdit, onDelete }) {
+  const startX = useRef(null); const [offset, setOffset] = useState(0); const [revealed, setRevealed] = useState("");
+  function finish() { if (offset > 64) { setRevealed("edit"); setOffset(72); } else if (offset < -64) { setRevealed("delete"); setOffset(-72); } else { setRevealed(""); setOffset(0); } startX.current = null; }
+  return <div className={`swipe-row ${revealed}`}><button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={onEdit}><span className="material-symbols-outlined">edit</span></button><button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={onDelete}><span className="material-symbols-outlined">delete</span></button><div className={`meal-item ${className}`} style={{ transform: `translateX(${offset}px)` }} onTouchStart={(e) => { startX.current = e.touches[0].clientX; }} onTouchMove={(e) => { if (startX.current != null) setOffset(Math.max(-88, Math.min(88, e.touches[0].clientX - startX.current))); }} onTouchEnd={finish}>{children}</div></div>;
 }
 
 function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavigate }) {
@@ -1994,14 +2001,17 @@ function History({ api }) {
       <div className="calendar-grid">
         {Array.from({ length: leadingDays }, (_, index) => <span className="calendar-spacer" key={`spacer-${index}`} />)}
         {(data?.days || []).map((day) => (
-          <span key={day.date} className={day.goalReached ? "done" : ""}>
-            {new Date(`${day.date}T00:00:00`).getDate()}
+          <span key={day.date} className={day.goalReached ? "done" : ""} style={{ "--plan-color": planColor(day.planId || day.planName) }} title={day.planName}>
+            <b>{new Date(`${day.date}T00:00:00`).getDate()}</b><small>{day.planName}</small>
           </span>
         ))}
       </div>
+      <div className="plan-legend">{[...new Map((data?.days || []).map((day) => [day.planId || day.planName, day])).values()].map((day) => <span key={day.planId || day.planName}><i style={{ background: planColor(day.planId || day.planName) }} />{day.planName}</span>)}</div>
     </section>
   );
 }
+
+function planColor(value) { const palette = ["#4edea3", "#89ceff", "#ffd166", "#c7a6ff", "#ff8fa3"]; const hash = String(value || "plan").split("").reduce((sum, char) => sum + char.charCodeAt(0), 0); return palette[hash % palette.length]; }
 
 function Profile({ api, logout }) {
   const [profile, setProfile] = useState(null);
@@ -2079,6 +2089,7 @@ function Profile({ api, logout }) {
 }
 
 function NutritionPlanManager({ api, presets, plans, onChanged }) {
+  const [creating, setCreating] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -2142,6 +2153,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
         }),
       });
       api.notify("Plan alimenticio guardado.");
+      setCreating(false);
       await onChanged();
     } catch {
       api.notify("No se pudo guardar el plan.", "error");
@@ -2151,6 +2163,8 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
   }
   return (
     <Panel title="Plan alimenticio">
+      <button type="button" className="primary add-plan-button" onClick={() => setCreating((value) => !value)}><span className="material-symbols-outlined">add</span>{creating ? "Cancelar" : "Agregar plan"}</button>
+      {creating && <>
       <div className="preset-grid">
         {presets.map((preset) => (
           <button type="button" className={`preset-card ${selectedPreset === preset.key ? "selected" : ""}`} key={preset.key} onClick={() => applyPreset(preset)}>
@@ -2198,6 +2212,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
           {saving ? "Guardando…" : "Guardar nuevo plan"}
         </button>
       </form>
+      </>}
       <div className="plan-history">
         <h3>Historial de planes</h3>
         {plans.map((plan) => (
