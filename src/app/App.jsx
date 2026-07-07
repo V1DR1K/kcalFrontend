@@ -92,6 +92,9 @@ function Dashboard({ api, user, setPage }) {
   const [waterSaving, setWaterSaving] = useState(false);
   const [mealClipboard, setMealClipboard] = useState(null);
   const optimisticLogs = useRef(new Map());
+  const dashboardTopRef = useRef(null);
+  const balanceRef = useRef(null);
+  const [compactBalance, setCompactBalance] = useState(false);
   const [selectedDate, setSelectedDate] = useState(today());
   const [yesterdayData, setYesterdayData] = useState(null);
   const load = (date = selectedDate) => {
@@ -120,6 +123,25 @@ function Dashboard({ api, user, setPage }) {
       .catch(() => active && setYesterdayData(null));
     return () => { active = false; };
   }, [selectedDate]);
+  useEffect(() => {
+    const balance = balanceRef.current;
+    if (!balance) return undefined;
+    const content = balance.closest(".content");
+    const scrollTarget = content && getComputedStyle(content).overflowY !== "visible" ? content : window;
+    let frame = 0;
+    const updateCompactBalance = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setCompactBalance(balance.getBoundingClientRect().bottom <= 0));
+    };
+    updateCompactBalance();
+    scrollTarget.addEventListener("scroll", updateCompactBalance, { passive: true });
+    window.addEventListener("resize", updateCompactBalance, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      scrollTarget.removeEventListener("scroll", updateCompactBalance);
+      window.removeEventListener("resize", updateCompactBalance);
+    };
+  }, [loading, selectedDate]);
   const macros = data?.macros || [];
   const mealByCode = new Map((data?.meals || []).map((meal) => [meal.mealType, meal]));
   const recentMeals = readRecents(user).meals || [];
@@ -167,9 +189,20 @@ function Dashboard({ api, user, setPage }) {
     );
   }
   return (
-    <section className="page">
+    <section className="page dashboard-page" ref={dashboardTopRef}>
       <Header title="Mi día" eyebrow={data?.plan?.name || "Plan alimenticio"} compact action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
-      <div className="dashboard-hero dashboard-hero-full">
+      <CompactBalanceBar
+        visible={compactBalance}
+        consumed={data?.caloriesConsumed}
+        goal={data?.calorieGoal}
+        macros={macros}
+        onGoTop={() => {
+          const content = dashboardTopRef.current?.closest(".content");
+          const scrollTarget = content && getComputedStyle(content).overflowY !== "visible" ? content : window;
+          scrollTarget.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
+      <div className="dashboard-hero dashboard-hero-full" ref={balanceRef}>
         <div className="calorie-ring">
           <svg viewBox="0 0 160 160" aria-hidden="true">
             <circle cx="80" cy="80" r="68" />
@@ -349,6 +382,25 @@ function Dashboard({ api, user, setPage }) {
         />
       )}
     </section>
+  );
+}
+
+function CompactBalanceBar({ visible, consumed, goal, macros, onGoTop }) {
+  const macroByKey = new Map(macros.map((macro) => [String(macro.key).toUpperCase(), macro]));
+  const compactMacros = [["PROTEIN", "Proteína", "P"], ["CARBS", "Carbos", "C"], ["FAT", "Grasas", "G"]];
+  return (
+    <div className={`compact-balance-shell ${visible ? "visible" : ""}`} aria-hidden={!visible}>
+      <button type="button" className="compact-balance" onClick={onGoTop} tabIndex={visible ? 0 : -1} aria-label="Volver arriba al balance completo">
+        <span className="compact-calories"><span className="material-symbols-outlined">local_fire_department</span><strong>{formatNumber(consumed)}<small> / {formatNumber(goal)} kcal</small></strong></span>
+        <span className="compact-macros">
+          {compactMacros.map(([key, label, shortLabel]) => {
+            const macro = macroByKey.get(key);
+            return <span key={key}><b className="macro-full-label">{label}</b><b className="macro-short-label">{shortLabel}</b><strong>{formatNumber(macro?.consumed)}<small>/{formatNumber(macro?.goal)}g</small></strong></span>;
+          })}
+        </span>
+        <span className="compact-balance-up material-symbols-outlined" aria-hidden="true">keyboard_arrow_up</span>
+      </button>
+    </div>
   );
 }
 
