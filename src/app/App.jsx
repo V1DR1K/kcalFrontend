@@ -2102,6 +2102,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
   const [creating, setCreating] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [activatingId, setActivatingId] = useState(null);
   const [form, setForm] = useState({
     name: "Plan manual",
     dailyCalories: 2200,
@@ -2117,6 +2118,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     carbs: macroGrams(form.dailyCalories, form.carbsPercent, 4),
     fat: macroGrams(form.dailyCalories, form.fatPercent, 9),
   };
+  const currentPlan = plans.find((plan) => plan.startDate <= today() && (!plan.endDate || plan.endDate >= today()));
   function setField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
   }
@@ -2170,8 +2172,22 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
       setSaving(false);
     }
   }
+  async function activatePlan(plan) {
+    if (activatingId || plan.id === currentPlan?.id) return;
+    setActivatingId(plan.id);
+    try {
+      await api.request("/api/profile/nutrition-plans", { method: "POST", body: JSON.stringify({ name: plan.name, dailyCalories: plan.dailyCalories, proteinPercent: Number(plan.proteinPercent), carbsPercent: Number(plan.carbsPercent), fatPercent: Number(plan.fatPercent), startDate: today(), endDate: null }) });
+      api.notify(`${plan.name} es ahora tu plan actual.`); await onChanged();
+    } catch { api.notify("No se pudo cambiar el plan.", "error"); }
+    finally { setActivatingId(null); }
+  }
   return (
     <Panel title="Plan alimenticio">
+      <div className="current-plan-panel">
+        <span className="current-plan-dot" style={{ background: planColor(currentPlan?.id || currentPlan?.name) }} />
+        <div><small>PLAN ACTUAL</small><strong>{currentPlan?.name || "Sin plan activo"}</strong>{currentPlan && <span>Desde {readableDate(currentPlan.startDate)} · {currentPlan.dailyCalories} kcal</span>}</div>
+        {currentPlan && <div className="current-plan-macros"><span>{currentPlan.proteinPercent}% P</span><span>{currentPlan.carbsPercent}% C</span><span>{currentPlan.fatPercent}% G</span></div>}
+      </div>
       <button type="button" className="primary add-plan-button" onClick={() => setCreating((value) => !value)}><span className="material-symbols-outlined">add</span>{creating ? "Cancelar" : "Agregar plan"}</button>
       {creating && <>
       <div className="plan-calorie-step">
@@ -2229,8 +2245,8 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
       <div className="plan-history">
         <h3>Historial de planes</h3>
         {plans.map((plan) => (
-          <article key={plan.id || `${plan.name}-${plan.startDate}`}>
-            <strong>{plan.name}</strong>
+          <article className={plan.id === currentPlan?.id ? "active" : ""} key={plan.id || `${plan.name}-${plan.startDate}`}>
+            <div className="plan-history-heading"><strong>{plan.name}</strong>{plan.id === currentPlan?.id ? <span className="active-plan-badge">Actual</span> : <button className="secondary use-plan-button" disabled={Boolean(activatingId)} onClick={() => activatePlan(plan)}>{activatingId === plan.id ? "Cambiando…" : "Usar este plan"}</button>}</div>
             <span>
               {plan.startDate} - {plan.endDate || "actual"}
             </span>
