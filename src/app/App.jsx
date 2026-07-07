@@ -1281,12 +1281,12 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
         <Select name="category" label="Categoria" options={CATEGORY_OPTIONS} />
         <Input name="baseQuantity" label="Estos valores corresponden a (gramos)" type="number" defaultValue="100" step="0.1" min="0.1" required />
         <div className="split">
-          <Input name="calories" label="Kcal" type="number" min="0" required />
-          <Input name="proteinGrams" label="Proteinas g" type="number" step="0.1" min="0" required />
+          <Input numericOnly name="calories" label="Kcal" type="number" step="1" min="0" required />
+          <Input numericOnly name="proteinGrams" label="Proteinas g" type="number" step="0.1" min="0" required />
         </div>
         <div className="split">
-          <Input name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" min="0" required />
-          <Input name="fatGrams" label="Grasas g" type="number" step="0.1" min="0" required />
+          <Input numericOnly name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" min="0" required />
+          <Input numericOnly name="fatGrams" label="Grasas g" type="number" step="0.1" min="0" required />
         </div>
         <Input name="tags" label="Tags separados por coma" />
         <button className="primary" disabled={saving || scanning}>
