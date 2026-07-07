@@ -2517,11 +2517,10 @@ function Macro({ macro }) {
   return (
     <section className="macro-card">
       <h3>{macro.label}</h3>
-      <p className="big">{formatNumber(macro.consumed)}g</p>
+      <p className="big"><strong>{formatNumber(macro.consumed)}</strong><span> / {formatNumber(macro.goal)}g</span></p>
       <div className="bar">
         <span style={{ width: `${percent}%` }} />
       </div>
-      <small>{formatNumber(macro.goal)}g objetivo</small>
     </section>
   );
 }

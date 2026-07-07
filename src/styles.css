@@ -329,13 +329,12 @@ nav button.active {
   font-weight: 800;
 }
 
+.macro-card .big strong { color: var(--text); font: inherit; }
+.macro-card .big span { color: var(--muted); font-size: 11px; font-weight: 700; }
+
 .macro-card .bar {
   grid-column: 1 / -1;
   height: 4px;
-}
-
-.macro-card small {
-  display: none;
 }
 
 .dashboard-hero h2 {
