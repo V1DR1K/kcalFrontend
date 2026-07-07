@@ -91,6 +91,7 @@ function Dashboard({ api, user, setPage }) {
   const [movingLogId, setMovingLogId] = useState(null);
   const [waterSaving, setWaterSaving] = useState(false);
   const [mealClipboard, setMealClipboard] = useState(null);
+  const optimisticLogs = useRef(new Map());
   const [selectedDate, setSelectedDate] = useState(today());
   const [yesterdayData, setYesterdayData] = useState(null);
   const load = (date = selectedDate) => {
@@ -122,6 +123,28 @@ function Dashboard({ api, user, setPage }) {
   const macros = data?.macros || [];
   const mealByCode = new Map((data?.meals || []).map((meal) => [meal.mealType, meal]));
   const recentMeals = readRecents(user).meals || [];
+  function showOptimisticRecent(meal) {
+    const optimisticId = `recent:${meal.id}`;
+    optimisticLogs.current.set(optimisticId, meal.mealType);
+    const item = meal.itemType === "RECIPE"
+      ? { recipe: { id: meal.itemId, name: meal.label, imageUrl: meal.imageUrl }, food: null }
+      : { food: { id: meal.itemId, name: meal.label, imageUrl: meal.imageUrl, category: meal.category }, recipe: null };
+    const optimisticLog = { ...item, id: optimisticId, itemType: meal.itemType, mealType: meal.mealType, quantity: meal.quantity, unit: meal.unit, calories: meal.calories || 0, optimistic: true };
+    setData((current) => ({
+      ...current,
+      meals: mealTypes.map((type) => {
+        const existing = current?.meals?.find((entry) => entry.mealType === type.code) || { mealType: type.code, items: [], calories: 0 };
+        if (type.code !== meal.mealType || existing.items?.some((entry) => entry.id === optimisticId)) return existing;
+        return { ...existing, calories: Number(existing.calories || 0) + Number(meal.calories || 0), items: [...(existing.items || []), optimisticLog] };
+      }),
+    }));
+    return optimisticId;
+  }
+  function rollbackOptimisticRecent(optimisticId) {
+    const mealType = optimisticLogs.current.get(optimisticId);
+    optimisticLogs.current.delete(optimisticId);
+    setData((current) => ({ ...current, meals: current.meals.map((meal) => meal.mealType !== mealType ? meal : { ...meal, calories: Math.max(0, Number(meal.calories || 0) - Number(meal.items.find((item) => item.id === optimisticId)?.calories || 0)), items: meal.items.filter((item) => item.id !== optimisticId) }) }));
+  }
   if (loading && !data) {
     return (
       <section className="page">
@@ -292,7 +315,7 @@ function Dashboard({ api, user, setPage }) {
           </div>
         </Panel>
         {Boolean(recentMeals.length) && <Panel title="Comidas recientes">
-          <RecentMeals user={user} api={api} date={selectedDate} onDone={load} />
+          <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={showOptimisticRecent} onOptimisticRollback={rollbackOptimisticRecent} />
         </Panel>}
       </div>
       <PastMealsPreview api={api} targetDate={selectedDate} mealTypes={mealTypes} onCopied={load} />
@@ -550,7 +573,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
           const item = log.itemType === "RECIPE" ? { ...log.recipe, type: "RECIPE" } : { ...log.food, type: "FOOD" };
           return (
             <SwipeableMealItem
-              className={movingLogId === log.id ? "moving" : ""}
+              className={`${movingLogId === log.id ? "moving" : ""} ${log.optimistic ? "optimistic" : ""}`}
               key={log.id}
               onEdit={() => onEdit(log)} onDelete={() => onDelete(log)}
             >
@@ -879,12 +902,19 @@ function QuickItems({ title, items, onPick }) {
   );
 }
 
-function RecentMeals({ user, api, date, onDone }) {
-  const meals = readRecents(user).meals || [];
-  const [addingId, setAddingId] = useState(null);
+function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAdd, onOptimisticRollback }) {
+  const recents = readRecents(user);
+  const meals = (recents.meals || []).map((meal) => {
+    const savedItem = (recents.items || []).find((item) => item.id === meal.itemId && item.type === meal.itemType);
+    const baseQuantity = Number(savedItem?.baseQuantity || savedItem?.totalWeightGrams || 100);
+    const estimatedCalories = baseQuantity > 0 ? Math.round(Number(savedItem?.calories || 0) * Number(meal.quantity || 0) / baseQuantity) : 0;
+    return { ...meal, imageUrl: meal.imageUrl || savedItem?.imageUrl, category: meal.category || savedItem?.category, calories: meal.calories ?? estimatedCalories };
+  });
+  const [states, setStates] = useState({});
   async function addRecent(meal) {
-    if (addingId) return;
-    setAddingId(meal.id);
+    if (states[meal.id] === "adding") return;
+    const optimisticId = onOptimisticAdd(meal);
+    setStates((current) => ({ ...current, [meal.id]: "adding" }));
     try {
       await api.request("/api/nutrition/meal-logs", {
         method: "POST",
@@ -897,23 +927,38 @@ function RecentMeals({ user, api, date, onDone }) {
           logDate: date,
         }),
       });
-      api.notify("Comida reciente agregada.");
+      setStates((current) => ({ ...current, [meal.id]: "added" }));
+      api.notify(`${meal.label} agregado.`);
       await onDone();
+      window.setTimeout(() => setStates((current) => ({ ...current, [meal.id]: "idle" })), 1300);
     } catch {
+      onOptimisticRollback(optimisticId);
+      setStates((current) => ({ ...current, [meal.id]: "error" }));
       api.notify("No se pudo agregar la comida reciente.", "error");
-    } finally {
-      setAddingId(null);
+      window.setTimeout(() => setStates((current) => ({ ...current, [meal.id]: "idle" })), 900);
     }
   }
   if (!meals.length) return <p className="empty-state">Tus comidas recientes apareceran aca.</p>;
   return (
     <div className="recent-meals">
-      {meals.map((meal) => (
-        <button key={meal.id} disabled={Boolean(addingId)} onClick={() => addRecent(meal)}>
-          <span>{meal.label}</span>
-          <small>{addingId === meal.id ? "Agregando…" : `${meal.quantity}g`}</small>
-        </button>
-      ))}
+      {meals.map((meal) => {
+        const state = states[meal.id] || "idle";
+        const mealLabel = mealTypes.find((type) => type.code === meal.mealType)?.label || meal.mealType;
+        const item = { name: meal.label, imageUrl: meal.imageUrl, category: meal.category, type: meal.itemType };
+        return (
+          <article className={`recent-meal-card ${state}`} key={meal.id}>
+            <FoodThumb item={item} compact />
+            <span className="recent-meal-copy">
+              <strong>{meal.label}</strong>
+              <small>{mealLabel} · {formatNumber(meal.quantity, 1)} g</small>
+            </span>
+            <strong className="recent-meal-calories">{formatNumber(meal.calories || 0)}<small> kcal</small></strong>
+            <button type="button" disabled={state === "adding" || state === "added"} aria-label={`Agregar ${meal.label} a ${mealLabel}`} onClick={() => addRecent(meal)}>
+              <span className="material-symbols-outlined" aria-hidden="true">{state === "added" ? "check" : state === "error" ? "refresh" : "add"}</span>
+            </button>
+          </article>
+        );
+      })}
     </div>
   );
 }
