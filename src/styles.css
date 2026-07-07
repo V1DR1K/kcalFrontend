@@ -386,6 +386,11 @@ nav button.active {
   line-height: 1;
 }
 
+.calorie-ring .calorie-values > span { max-width: 110px; font-size: 11px; line-height: 1.15; text-align: center; }
+.calorie-ring .calorie-values strong { display: flex; align-items: baseline; gap: 5px; font-size: clamp(21px, 2.5vw, 29px); }
+.calorie-ring .calorie-values strong b { font: inherit; }
+.calorie-ring .calorie-values strong i { color: var(--muted); font-size: .65em; font-style: normal; font-weight: 500; }
+
 .grid {
   display: grid;
   gap: 16px;
