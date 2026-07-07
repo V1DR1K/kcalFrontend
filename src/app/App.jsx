@@ -2120,7 +2120,7 @@ function HistoryDayPreview({ api, day, onClose }) {
                     <div>
                       {meal.items.map((item) => (
                         <div className="history-food" key={item.id}>
-                          <span className="history-food-icon">{item.itemType === "RECIPE" ? "R" : (item.food?.name || "A").charAt(0)}</span>
+                          <FoodThumb compact item={item.itemType === "RECIPE" ? { ...item.recipe, type: "RECIPE" } : item.food} />
                           <p><strong>{item.itemType === "RECIPE" ? item.recipe?.name : item.food?.name}</strong><small>{formatNumber(item.quantity)} {item.unit === "GRAM" ? "g" : item.unit}</small></p>
                           <span>{formatNumber(item.calories)} kcal</span>
                         </div>

@@ -1503,7 +1503,7 @@ button:disabled {
 .history-meal > header small { color: var(--muted); }
 .history-food { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 11px; padding: 11px 15px; }
 .history-food + .history-food { border-top: 1px solid rgb(60 74 66 / 45%); }
-.history-food-icon { display: grid; place-items: center; width: 34px; aspect-ratio: 1; border-radius: 10px; background: rgb(78 222 163 / 11%); color: var(--primary); font-weight: 900; }
+.history-food .food-thumb.compact { width: 44px; height: 44px; overflow: hidden; border: 1px solid rgb(255 255 255 / 8%); border-radius: 12px; background: var(--surface-high); }
 .history-food p { display: grid; gap: 2px; margin: 0; }
 .history-food p small, .history-food > span:last-child { color: var(--muted); font-size: 12px; }
 .history-empty { display: grid; place-items: center; gap: 5px; padding: 30px; border: 1px dashed var(--outline); border-radius: 16px; color: var(--muted); text-align: center; }
