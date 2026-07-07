@@ -1895,6 +1895,17 @@ button:disabled { cursor: not-allowed; opacity: .5; }
     padding: 14px;
   }
 
+  .dashboard-page-header { display: flex; align-items: center; gap: 10px; min-height: 48px; }
+  .dashboard-page-header > div:first-child { min-width: 68px; }
+  .dashboard-page-header > div:first-child > span { display: block; max-width: 88px; overflow: hidden; color: var(--primary); font-size: 10px; font-weight: 800; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+  .dashboard-page-header h1 { margin-top: 1px; font-size: 22px; white-space: nowrap; }
+  .dashboard-page-header .date-nav { flex: 1; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 4px; width: auto; padding: 0; }
+  .dashboard-page-header .date-nav .icon-button { width: 38px; min-width: 38px; min-height: 38px; }
+  .dashboard-page-header .date-nav label { position: relative; flex: 0 1 92px; min-width: 72px; height: 38px; justify-content: center; overflow: hidden; border: 1px solid var(--outline); border-radius: 10px; background: var(--surface-high); }
+  .dashboard-page-header .date-nav label span { position: static; overflow: hidden; padding: 0 6px; color: var(--text); font-size: 11px; line-height: 38px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+  .dashboard-page-header .date-nav input { position: absolute; inset: 0; width: 100%; min-height: 0; opacity: 0; cursor: pointer; }
+  .dashboard-page-header .today-button { min-height: 38px; padding: 0 10px; font-size: 12px; }
+
   .yesterday-suggestion { gap: 7px; }
   .yesterday-suggestion .copy-accept, .yesterday-suggestion .copy-reject { width: 40px; height: 40px; }
   .content, .auth-page { width: min(100% - 20px, 760px); padding-top: 14px; }
@@ -2079,10 +2090,6 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .chips { gap: 6px; }
   .chips button { min-height: 34px; padding: 0 12px; font-size: 12px; }
   .selected-editor:focus-within { scroll-margin-top: 8px; }
-}
-
-@media (max-width: 360px) {
-  .today-button { display: none; }
 }
 
 @media (max-width: 520px) {

@@ -145,7 +145,7 @@ function Dashboard({ api, user, setPage }) {
   }
   return (
     <section className="page">
-      <Header title="Mi día" eyebrow={data?.plan?.name || "Plan alimenticio"} action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
+      <Header title="Mi día" eyebrow={data?.plan?.name || "Plan alimenticio"} compact action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
       <div className="dashboard-hero dashboard-hero-full">
         <div className="calorie-ring">
           <svg viewBox="0 0 160 160" aria-hidden="true">
@@ -2295,7 +2295,7 @@ function NutritionTutorial() {
   );
 }
 
-function Header({ title, eyebrow, action }) {
+function Header({ title, eyebrow, action, compact = false }) {
   const commitTime = typeof __COMMIT_TIME__ !== "undefined" ? new Date(__COMMIT_TIME__) : null;
   const versionLabel =
     commitTime && !Number.isNaN(commitTime.getTime())
@@ -2311,7 +2311,7 @@ function Header({ title, eyebrow, action }) {
           .replace(",", " ·")
       : "Desarrollo";
   return (
-    <header className="page-header">
+    <header className={`page-header ${compact ? "dashboard-page-header" : ""}`}>
       <div>
         <span>{eyebrow || APP_NAME}</span>
         <h1>{title}</h1>
