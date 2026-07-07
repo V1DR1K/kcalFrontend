@@ -1437,7 +1437,8 @@ button:disabled {
 .calendar-heading span { color: var(--muted); font-size: 13px; }
 .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; color: var(--muted); font-size: 12px; font-weight: 800; text-align: center; }
 
-.calendar-grid span {
+.calendar-grid > span,
+.calendar-grid > button {
   display: grid;
   place-items: center;
   aspect-ratio: 1;
@@ -1447,12 +1448,22 @@ button:disabled {
   transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
 }
 
-.calendar-grid span:hover {
+.calendar-grid > button {
+  padding: 0;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.calendar-grid > button:hover,
+.calendar-grid > button:focus-visible {
   transform: translateY(-2px);
   border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(78 222 163 / 12%);
 }
-.calendar-grid span:not(.calendar-spacer) { position: relative; gap: 1px; border-bottom: 3px solid var(--plan-color); }
-.calendar-grid span small { width: 100%; overflow: hidden; padding: 0 3px; color: var(--muted); font-size: 8px; line-height: 1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-grid > button { position: relative; gap: 1px; border-bottom: 3px solid var(--plan-color); }
+.calendar-grid > button small { width: 100%; overflow: hidden; padding: 0 3px; color: var(--muted); font-size: 8px; line-height: 1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .plan-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; }
 .plan-legend span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
 .plan-legend i { width: 9px; height: 9px; border-radius: 50%; }
@@ -1461,6 +1472,68 @@ button:disabled {
   background: rgb(0 82 54 / 34%);
   color: var(--primary);
   font-weight: 900;
+}
+
+.history-preview-backdrop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: rgb(3 10 8 / 76%); backdrop-filter: blur(10px); animation: fade-in 180ms ease-out; }
+.history-preview { display: grid; grid-template-rows: auto minmax(0, 1fr); width: min(720px, 100%); max-height: min(820px, calc(100dvh - 48px)); overflow: hidden; border: 1px solid rgb(78 222 163 / 26%); border-radius: 24px; background: var(--surface); box-shadow: 0 30px 90px rgb(0 0 0 / 55%); animation: history-preview-in 300ms cubic-bezier(.2,.8,.2,1); }
+.history-preview-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px 24px 20px; border-bottom: 1px solid var(--outline); background: linear-gradient(135deg, rgb(78 222 163 / 9%), transparent 60%); }
+.history-preview-header h2 { margin: 3px 0 2px; font-size: clamp(24px, 4vw, 32px); }
+.history-preview-header small { color: var(--muted); }
+.history-preview-close { display: grid; flex: 0 0 auto; place-items: center; width: 42px; min-height: 42px; padding: 0; border: 1px solid var(--outline); border-radius: 50%; background: var(--surface-low); color: var(--text); cursor: pointer; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
+.history-preview-close:hover { transform: rotate(8deg) scale(1.06); border-color: var(--primary); background: rgb(78 222 163 / 10%); }
+.history-preview-scroll { display: grid; gap: 18px; padding: 22px 24px 26px; overflow-y: auto; }
+.history-calorie-summary { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 22px; padding: 18px; border: 1px solid var(--outline); border-radius: 18px; background: var(--surface-low); }
+.history-calorie-ring { display: grid; place-content: center; width: 128px; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle closest-side, var(--surface-low) 79%, transparent 80% 100%), conic-gradient(var(--primary) var(--day-progress), var(--outline) 0); text-align: center; }
+.history-calorie-ring strong { font-size: 25px; line-height: 1; }
+.history-calorie-ring small, .history-calorie-summary > div:last-child small { margin-top: 5px; color: var(--muted); }
+.history-calorie-summary > div:last-child { display: grid; gap: 3px; }
+.history-calorie-summary > div:last-child > span { color: var(--primary); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.history-calorie-summary > div:last-child > strong { font-size: 34px; }
+.history-macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.history-macros article { display: grid; gap: 3px; padding: 14px; border: 1px solid var(--outline); border-radius: 14px; background: var(--surface-low); }
+.history-macros article > span, .history-macros small { color: var(--muted); font-size: 12px; }
+.history-macros strong { font-size: 20px; }
+.history-macros i { height: 4px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: var(--outline); }
+.history-macros i b { display: block; height: 100%; border-radius: inherit; background: var(--primary); animation: macro-fill 600ms ease-out both; }
+.history-meals { display: grid; gap: 12px; }
+.history-meal { overflow: hidden; border: 1px solid var(--outline); border-radius: 16px; background: var(--surface-low); animation: meal-slide-in 300ms ease-out both; animation-delay: var(--meal-delay); }
+.history-meal > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 15px; border-bottom: 1px solid var(--outline); }
+.history-meal > header div { display: flex; align-items: center; gap: 8px; }
+.history-meal > header .material-symbols-outlined { color: var(--primary); font-size: 20px; }
+.history-meal > header small { color: var(--muted); }
+.history-food { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 11px; padding: 11px 15px; }
+.history-food + .history-food { border-top: 1px solid rgb(60 74 66 / 45%); }
+.history-food-icon { display: grid; place-items: center; width: 34px; aspect-ratio: 1; border-radius: 10px; background: rgb(78 222 163 / 11%); color: var(--primary); font-weight: 900; }
+.history-food p { display: grid; gap: 2px; margin: 0; }
+.history-food p small, .history-food > span:last-child { color: var(--muted); font-size: 12px; }
+.history-empty { display: grid; place-items: center; gap: 5px; padding: 30px; border: 1px dashed var(--outline); border-radius: 16px; color: var(--muted); text-align: center; }
+.history-empty .material-symbols-outlined { color: var(--primary); font-size: 30px; }
+.history-water { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid rgb(137 206 255 / 25%); border-radius: 15px; background: rgb(137 206 255 / 7%); }
+.history-water > .material-symbols-outlined { color: #89ceff; }
+.history-water p { display: grid; gap: 2px; margin: 0; }
+.history-water small { color: var(--muted); }
+.history-preview-loading { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 180px; color: var(--muted); }
+@keyframes history-preview-in { from { opacity: 0; transform: translateY(18px) scale(.97); } }
+@keyframes meal-slide-in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes macro-fill { from { width: 0; } }
+
+@media (max-width: 600px) {
+  .history-preview-backdrop { place-items: end center; padding: 0; }
+  .history-preview { width: 100%; max-height: 94dvh; border-right: 0; border-bottom: 0; border-left: 0; border-radius: 24px 24px 0 0; }
+  .history-preview-header { padding: 20px 16px 16px; }
+  .history-preview-scroll { gap: 14px; padding: 16px 14px max(22px, env(safe-area-inset-bottom)); }
+  .history-calorie-summary { gap: 14px; padding: 14px; }
+  .history-calorie-ring { width: 104px; }
+  .history-calorie-ring strong { font-size: 21px; }
+  .history-calorie-summary > div:last-child > strong { font-size: 27px; }
+  .history-macros { gap: 7px; }
+  .history-macros article { padding: 11px 9px; }
+  .history-macros strong { font-size: 17px; }
+  .history-food { padding: 10px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-preview-backdrop, .history-preview, .history-meal, .history-macros i b { animation: none; }
 }
 
 .stat {

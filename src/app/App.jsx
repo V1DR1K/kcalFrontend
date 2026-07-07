@@ -1997,6 +1997,7 @@ function History({ api }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedDay, setSelectedDay] = useState(null);
   const load = useCallback(() => {
     const date = new Date();
     setLoading(true);
@@ -2047,13 +2048,95 @@ function History({ api }) {
       <div className="calendar-grid">
         {Array.from({ length: leadingDays }, (_, index) => <span className="calendar-spacer" key={`spacer-${index}`} />)}
         {(data?.days || []).map((day) => (
-          <span key={day.date} className={day.goalReached ? "done" : ""} style={{ "--plan-color": planColor(day.planId || day.planName) }} title={day.planName}>
+          <button type="button" key={day.date} className={day.goalReached ? "done" : ""} style={{ "--plan-color": planColor(day.planId || day.planName) }} title={`Ver detalle del ${readableDate(day.date)}`} onClick={() => setSelectedDay(day)}>
             <b>{new Date(`${day.date}T00:00:00`).getDate()}</b><small>{day.planName}</small>
-          </span>
+          </button>
         ))}
       </div>
       <div className="plan-legend">{[...new Map((data?.days || []).map((day) => [day.planId || day.planName, day])).values()].map((day) => <span key={day.planId || day.planName}><i style={{ background: planColor(day.planId || day.planName) }} />{day.planName}</span>)}</div>
+      {selectedDay && <HistoryDayPreview api={api} day={selectedDay} onClose={() => setSelectedDay(null)} />}
     </section>
+  );
+}
+
+function HistoryDayPreview({ api, day, onClose }) {
+  const [detail, setDetail] = useState(null);
+  const [error, setError] = useState("");
+  const closeRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+    api.request(`/api/nutrition/dashboard?date=${day.date}`)
+      .then((result) => active && setDetail(result))
+      .catch(() => active && setError("No pudimos cargar el detalle de este día."));
+    return () => { active = false; };
+  }, [api, day.date]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    const handleKeyDown = (event) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
+  const consumed = detail?.caloriesConsumed ?? day.caloriesConsumed ?? 0;
+  const goal = detail?.calorieGoal ?? day.calorieGoal ?? 0;
+  const progress = Math.min(100, Math.round((consumed / (goal || 1)) * 100));
+
+  return createPortal(
+    <div className="history-preview-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="history-preview" role="dialog" aria-modal="true" aria-labelledby="history-preview-title">
+        <header className="history-preview-header">
+          <div>
+            <span className="eyebrow">Resumen del día</span>
+            <h2 id="history-preview-title">{readableDate(day.date)}</h2>
+            <small>{day.planName || detail?.plan?.name}</small>
+          </div>
+          <button ref={closeRef} type="button" className="history-preview-close" onClick={onClose} aria-label="Cerrar detalle"><span className="material-symbols-outlined">close</span></button>
+        </header>
+
+        <div className="history-preview-scroll">
+          <div className="history-calorie-summary">
+            <div className="history-calorie-ring" style={{ "--day-progress": `${progress * 3.6}deg` }}><strong>{formatNumber(consumed)}</strong><small>de {formatNumber(goal)} kcal</small></div>
+            <div><span>{day.goalReached ? "Objetivo cumplido" : "Balance del día"}</span><strong>{progress}%</strong><small>{formatNumber(Math.max(0, goal - consumed))} kcal restantes</small></div>
+          </div>
+
+          {detail ? (
+            <>
+              <div className="history-macros">
+                {(detail.macros || []).map((macro) => (
+                  <article key={macro.key}><span>{macro.label}</span><strong>{formatNumber(macro.consumed)}g</strong><small>de {formatNumber(macro.goal)}g</small><i><b style={{ width: `${Math.min(100, Number(macro.consumed || 0) / (Number(macro.goal) || 1) * 100)}%` }} /></i></article>
+                ))}
+              </div>
+              <div className="history-meals">
+                {(detail.meals || []).filter((meal) => meal.items?.length).map((meal, mealIndex) => (
+                  <article className="history-meal" key={meal.mealType} style={{ "--meal-delay": `${mealIndex * 45}ms` }}>
+                    <header><div><span className="material-symbols-outlined">restaurant</span><strong>{meal.label}</strong></div><small>{formatNumber(meal.calories)} kcal</small></header>
+                    <div>
+                      {meal.items.map((item) => (
+                        <div className="history-food" key={item.id}>
+                          <span className="history-food-icon">{item.itemType === "RECIPE" ? "R" : (item.food?.name || "A").charAt(0)}</span>
+                          <p><strong>{item.itemType === "RECIPE" ? item.recipe?.name : item.food?.name}</strong><small>{formatNumber(item.quantity)} {item.unit === "GRAM" ? "g" : item.unit}</small></p>
+                          <span>{formatNumber(item.calories)} kcal</span>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+                {!detail.meals?.some((meal) => meal.items?.length) && <div className="history-empty"><span className="material-symbols-outlined">no_meals</span><strong>Sin alimentos registrados</strong><small>Este día todavía no tiene comidas cargadas.</small></div>}
+              </div>
+              <div className="history-water"><span className="material-symbols-outlined">water_drop</span><p><strong>Hidratación</strong><small>{formatNumber(detail.waterConsumedLiters, 1)} L de {formatNumber(detail.waterGoalLiters, 1)} L</small></p></div>
+            </>
+          ) : error ? <CatalogStatus error>{error}</CatalogStatus> : <div className="history-preview-loading"><span className="spinner" /><span>Cargando detalle…</span></div>}
+        </div>
+      </section>
+    </div>,
+    document.body,
   );
 }
 
