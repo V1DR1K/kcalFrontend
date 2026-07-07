@@ -91,6 +91,7 @@ function Dashboard({ api, user, setPage }) {
   const [movingLogId, setMovingLogId] = useState(null);
   const [waterSaving, setWaterSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState(today());
+  const [yesterdayData, setYesterdayData] = useState(null);
   const load = (date = selectedDate) => {
     if (!data) setLoading(true);
     setError("");
@@ -109,6 +110,13 @@ function Dashboard({ api, user, setPage }) {
       .request("/api/nutrition/meal-types")
       .then(setMealTypes)
       .catch(() => setMealTypes(DEFAULT_MEALS));
+  }, [selectedDate]);
+  useEffect(() => {
+    let active = true;
+    api.request(`/api/nutrition/dashboard?date=${shiftDate(selectedDate, -1)}`)
+      .then((result) => active && setYesterdayData(result))
+      .catch(() => active && setYesterdayData(null));
+    return () => { active = false; };
   }, [selectedDate]);
   const macros = data?.macros || [];
   const mealByCode = new Map((data?.meals || []).map((meal) => [meal.mealType, meal]));
@@ -180,6 +188,10 @@ function Dashboard({ api, user, setPage }) {
             key={mealType.code}
             mealType={mealType}
             meal={mealByCode.get(mealType.code)}
+            yesterdayMeal={yesterdayData?.meals?.find((meal) => meal.mealType === mealType.code)}
+            targetDate={selectedDate}
+            api={api}
+            onCopied={load}
             deletingLogId={deletingLogId}
             movingLogId={movingLogId}
             onAdd={() => setPickerMeal(mealType)}
@@ -451,9 +463,29 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
   );
 }
 
-function MealCard({ mealType, meal, deletingLogId, movingLogId, onAdd, onEdit, onDelete, onMove }) {
+function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, deletingLogId, movingLogId, onAdd, onEdit, onDelete, onMove }) {
   const items = meal?.items || [];
   const [dragOver, setDragOver] = useState(false);
+  const [suggestionState, setSuggestionState] = useState("idle");
+  const yesterdayItems = yesterdayMeal?.items || [];
+  useEffect(() => setSuggestionState("idle"), [targetDate, mealType.code]);
+  async function copyYesterday() {
+    setSuggestionState("copying");
+    try {
+      for (const log of yesterdayItems) {
+        await api.request("/api/nutrition/meal-logs", {
+          method: "POST",
+          body: JSON.stringify({ itemType: log.itemType, itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id, mealType: mealType.code, quantity: log.quantity, unit: log.unit || "GRAM", logDate: targetDate }),
+        });
+      }
+      setSuggestionState("copied");
+      api.notify(`${mealType.label} copiado de ayer.`);
+      await onCopied();
+    } catch {
+      setSuggestionState("idle");
+      api.notify("No se pudo copiar la comida de ayer.", "error");
+    }
+  }
   return (
     <article
       className={`meal-card ${dragOver ? "drag-over" : ""}`}
@@ -490,6 +522,14 @@ function MealCard({ mealType, meal, deletingLogId, movingLogId, onAdd, onEdit, o
         <small>C {formatNumber(meal?.carbsGrams, 1)}g</small>
         <small>G {formatNumber(meal?.fatGrams, 1)}g</small>
       </div>
+      {!items.length && yesterdayItems.length > 0 && suggestionState !== "dismissed" && (
+        <div className="yesterday-suggestion">
+          <span className="material-symbols-outlined" aria-hidden="true">content_copy</span>
+          <span><strong>¿Copiar de ayer?</strong><small>{yesterdayItems.length} {yesterdayItems.length === 1 ? "elemento" : "elementos"}</small></span>
+          <button className="copy-accept" disabled={suggestionState === "copying" || suggestionState === "copied"} aria-label={`Copiar ${mealType.label} de ayer`} onClick={copyYesterday}><span className="material-symbols-outlined">{suggestionState === "copied" ? "check_circle" : "check"}</span></button>
+          <button className="copy-reject" disabled={suggestionState === "copying" || suggestionState === "copied"} aria-label="Descartar sugerencia" onClick={() => setSuggestionState("dismissed")}><span className="material-symbols-outlined">close</span></button>
+        </div>
+      )}
       {items.length ? (
         items.map((log) => {
           const item = log.itemType === "RECIPE" ? { ...log.recipe, type: "RECIPE" } : { ...log.food, type: "FOOD" };
@@ -508,7 +548,7 @@ function MealCard({ mealType, meal, deletingLogId, movingLogId, onAdd, onEdit, o
                 drag_indicator
               </span>
               <FoodThumb item={item} compact />
-              <span>{item.name}</span>
+              <span className="meal-item-copy"><span>{item.name}</span><small>{formatNumber(log.quantity, 1)} g{log.itemType === "FOOD" && log.food?.preparation && log.food.preparation !== "UNSPECIFIED" ? ` · ${preparationLabel(log.food.preparation)}` : ""}</small></span>
               <strong>{log.calories} kcal</strong>
               <button className="edit-log" disabled={Boolean(deletingLogId || movingLogId)} aria-label="Editar registro" title="Editar registro" onClick={() => onEdit(log)}>
                 <span className="material-symbols-outlined">edit</span>

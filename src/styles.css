@@ -814,6 +814,14 @@ summary:focus-visible {
   flex: 1;
 }
 
+.meal-item-copy { display: grid; gap: 2px; min-width: 0; }
+.meal-item-copy > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meal-item-copy small { color: var(--muted); font-size: 12px; }
+.yesterday-suggestion { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid rgb(60 74 66 / 55%); }
+.yesterday-suggestion > .material-symbols-outlined { color: var(--primary); }
+.yesterday-suggestion > span:nth-child(2) { display: grid; line-height: 1.2; }
+.yesterday-suggestion small { color: var(--muted); }
+
 .drag-indicator {
   color: var(--muted);
   font-size: 20px;
@@ -979,6 +987,10 @@ button:disabled {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+.quick-items div { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; overscroll-behavior-inline: contain; }
+.quick-items div::-webkit-scrollbar { display: none; }
+.quick-items button { flex: 0 0 auto; }
 
 .quick-items button,
 .recent-meals button {
@@ -1802,6 +1814,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 }
 
 @media (max-width: 520px) {
+  .page { gap: 14px; }
   .page-header {
     display: grid;
     align-items: start;
@@ -1818,7 +1831,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   }
 
   .page-header h1 {
-    font-size: 34px;
+    font-size: 30px;
   }
 
   .page-header .header-actions { width: 100%; display: grid; grid-template-columns: .75fr 1.25fr; }
@@ -1839,6 +1852,10 @@ button:disabled { cursor: not-allowed; opacity: .5; }
     min-height: 0;
     padding: 14px;
   }
+
+  .yesterday-suggestion { gap: 7px; }
+  .yesterday-suggestion .copy-accept, .yesterday-suggestion .copy-reject { width: 40px; height: 40px; }
+  .content, .auth-page { width: min(100% - 20px, 760px); padding-top: 14px; }
 
   .meal-card header {
     align-items: center;
