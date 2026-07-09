@@ -578,6 +578,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
       }
       setSuggestionState("copied");
       api.notify(`${mealType.label} copiado de ayer.`);
+      await new Promise((resolve) => window.setTimeout(resolve, 650));
       await onCopied();
     } catch {
       setSuggestionState("idle");
@@ -633,11 +634,23 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
         <small>G {formatNumber(meal?.fatGrams, 1)}g</small>
       </div>
       {!items.length && yesterdayItems.length > 0 && suggestionState !== "dismissed" && (
-        <div className="yesterday-suggestion">
+        <div className={`yesterday-suggestion ${suggestionState === "copied" ? "copied" : ""}`}>
           <span className="material-symbols-outlined" aria-hidden="true">content_copy</span>
           <span><strong>¿Copiar de ayer?</strong><small>{yesterdayItems.length} {yesterdayItems.length === 1 ? "elemento" : "elementos"}</small></span>
           <button className="copy-accept" disabled={suggestionState === "copying" || suggestionState === "copied"} aria-label={`Copiar ${mealType.label} de ayer`} onClick={copyYesterday}><span className="material-symbols-outlined">{suggestionState === "copied" ? "check_circle" : "check"}</span></button>
           <button className="copy-reject" disabled={suggestionState === "copying" || suggestionState === "copied"} aria-label="Descartar sugerencia" onClick={() => setSuggestionState("dismissed")}><span className="material-symbols-outlined">close</span></button>
+          {suggestionState === "copied" && (
+            <span className="copy-confetti" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+          )}
         </div>
       )}
       {items.length ? (

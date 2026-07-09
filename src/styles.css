@@ -715,10 +715,16 @@ select:focus,
 }
 .meal-header-actions { display: flex !important; align-items: center; gap: 6px !important; }
 .meal-menu { position: relative; }
-.meal-menu summary { display: grid; place-items: center; width: 40px; height: 40px; color: var(--muted); cursor: pointer; list-style: none; }
+.meal-menu summary { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: var(--muted); cursor: pointer; list-style: none; transition: background 160ms ease, color 160ms ease, transform 160ms cubic-bezier(.2,.8,.2,1); }
 .meal-menu summary::-webkit-details-marker { display: none; }
-.meal-menu > div { position: absolute; z-index: 8; top: 44px; right: 0; display: grid !important; min-width: 150px; padding: 6px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface-high); box-shadow: var(--shadow); }
-.meal-menu button { border: 0; padding: 10px; background: transparent; color: var(--text); text-align: left; }
+.meal-menu summary:hover { background: rgb(78 222 163 / 10%); color: var(--primary); }
+.meal-menu summary:active { transform: scale(.92); }
+.meal-menu[open] summary { background: rgb(78 222 163 / 14%); color: var(--primary); }
+.meal-menu[open] summary .material-symbols-outlined { animation: meal-menu-dots 260ms cubic-bezier(.2,.8,.2,1); }
+.meal-menu > div { position: absolute; z-index: 8; top: 44px; right: 0; display: grid !important; min-width: 150px; padding: 6px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface-high); box-shadow: var(--shadow); transform-origin: top right; animation: meal-menu-in 170ms cubic-bezier(.2,.8,.2,1); }
+.meal-menu button { border: 0; border-radius: 9px; padding: 10px; background: transparent; color: var(--text); text-align: left; transition: background 140ms ease, color 140ms ease, transform 140ms ease; }
+.meal-menu button:not(:disabled):hover { background: rgb(255 255 255 / 6%); }
+.meal-menu button:not(:disabled):active { transform: translateX(2px); }
 .meal-menu .danger-text { color: var(--error); }
 
 .meal-card header span {
@@ -893,10 +899,22 @@ summary:focus-visible {
 .meal-item-copy { display: grid; gap: 2px; min-width: 0; }
 .meal-item-copy > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meal-item-copy small { color: var(--muted); font-size: 12px; }
-.yesterday-suggestion { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid rgb(60 74 66 / 55%); }
-.yesterday-suggestion > .material-symbols-outlined { color: var(--primary); }
+.yesterday-suggestion { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; overflow: hidden; padding: 10px 0; border-top: 1px solid rgb(60 74 66 / 55%); animation: yesterday-suggestion-in 220ms cubic-bezier(.2,.8,.2,1); }
+.yesterday-suggestion > .material-symbols-outlined { color: var(--primary); transition: transform 180ms ease, color 180ms ease; }
 .yesterday-suggestion > span:nth-child(2) { display: grid; line-height: 1.2; }
 .yesterday-suggestion small { color: var(--muted); }
+.yesterday-suggestion.copied { animation: yesterday-copied 650ms ease both; }
+.yesterday-suggestion.copied > .material-symbols-outlined:first-child { color: #ffd166; animation: copy-icon-pop 520ms cubic-bezier(.2,.8,.2,1); }
+.yesterday-suggestion.copied .copy-accept { color: #4edea3; animation: copy-button-pop 520ms cubic-bezier(.2,.8,.2,1); }
+.copy-confetti { position: absolute; inset: 0; pointer-events: none; }
+.copy-confetti i { position: absolute; left: 50%; top: 50%; width: 7px; height: 11px; border-radius: 2px; background: #4edea3; opacity: 0; transform: translate(-50%, -50%) rotate(0); animation: copy-confetti-burst 620ms cubic-bezier(.16,.9,.24,1) forwards; }
+.copy-confetti i:nth-child(2) { background: #ffd166; --x: -38px; --y: -24px; --r: -28deg; animation-delay: 20ms; }
+.copy-confetti i:nth-child(3) { background: #7dd3fc; --x: 34px; --y: -30px; --r: 36deg; animation-delay: 35ms; }
+.copy-confetti i:nth-child(4) { background: #fda4af; --x: -52px; --y: 8px; --r: 68deg; animation-delay: 50ms; }
+.copy-confetti i:nth-child(5) { background: #c4b5fd; --x: 48px; --y: 12px; --r: -62deg; animation-delay: 65ms; }
+.copy-confetti i:nth-child(6) { background: #facc15; --x: -18px; --y: -38px; --r: 104deg; animation-delay: 80ms; }
+.copy-confetti i:nth-child(7) { background: #34d399; --x: 18px; --y: -40px; --r: -96deg; animation-delay: 95ms; }
+.copy-confetti i:nth-child(8) { background: #fb7185; --x: 0; --y: 28px; --r: 136deg; animation-delay: 110ms; }
 
 .drag-indicator {
   color: var(--muted);
@@ -1146,6 +1164,17 @@ button:disabled {
 @keyframes recent-success { 40% { transform: scale(1.015); box-shadow: 0 0 0 5px rgb(78 222 163 / 10%); } }
 @keyframes recent-error { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
 @keyframes optimistic-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } }
+@keyframes meal-menu-in { from { opacity: 0; transform: translateY(-6px) scale(.96); } }
+@keyframes meal-menu-dots { 35% { transform: translateY(-2px) rotate(6deg); } 70% { transform: translateY(1px) rotate(-4deg); } }
+@keyframes yesterday-suggestion-in { from { opacity: 0; transform: translateY(-8px) scale(.985); } }
+@keyframes yesterday-copied { 35% { background: rgb(78 222 163 / 10%); box-shadow: 0 0 0 5px rgb(78 222 163 / 8%); } 100% { background: transparent; box-shadow: 0 0 0 rgb(78 222 163 / 0%); } }
+@keyframes copy-icon-pop { 45% { transform: scale(1.22) rotate(-8deg); } }
+@keyframes copy-button-pop { 45% { transform: scale(1.18); } }
+@keyframes copy-confetti-burst {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.6) rotate(0); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--x, 42px)), calc(-50% + var(--y, -18px))) scale(.85) rotate(var(--r, 82deg)); }
+}
 
 @media (max-width: 520px) {
   .recent-meal-card { grid-template-columns: auto minmax(0, 1fr) 42px; }
@@ -1154,8 +1183,8 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .recent-meal-card, .recent-meal-card.added, .recent-meal-card.error, .meal-item.optimistic { animation: none; }
-  .recent-meal-card, .recent-meal-card > button { transition-duration: 1ms; }
+  .recent-meal-card, .recent-meal-card.added, .recent-meal-card.error, .meal-item.optimistic, .meal-menu[open] summary .material-symbols-outlined, .meal-menu > div, .yesterday-suggestion, .yesterday-suggestion.copied, .yesterday-suggestion.copied > .material-symbols-outlined:first-child, .yesterday-suggestion.copied .copy-accept, .copy-confetti i { animation: none; }
+  .recent-meal-card, .recent-meal-card > button, .meal-menu summary, .meal-menu button, .yesterday-suggestion > .material-symbols-outlined { transition-duration: 1ms; }
 }
 
 .selected-subpanel {
