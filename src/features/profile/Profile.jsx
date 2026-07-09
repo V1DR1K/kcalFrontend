@@ -4,6 +4,12 @@ import { Header, Panel, Stat } from "../../components/Layout";
 import { CatalogStatus } from "../catalog/CatalogComponents";
 import { formatNumber, macroGrams, readableDate, today } from "../../utils/format";
 
+function planColor(value) {
+  const palette = ["#4edea3", "#89ceff", "#ffd166", "#c7a6ff", "#ff8fa3"];
+  const hash = String(value || "plan").split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return palette[hash % palette.length];
+}
+
 export function Profile({ api, logout }) {
   const [profile, setProfile] = useState(null);
   const [plans, setPlans] = useState([]);
