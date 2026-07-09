@@ -818,11 +818,18 @@ summary:focus-visible {
 }
 .meal-item:active { cursor: grabbing; }
 .swipe-row { position: relative; overflow: hidden; border-top: 1px solid rgb(60 74 66 / 55%); }
-.swipe-row .meal-item { position: relative; z-index: 2; border-top: 0; background: rgb(16 24 19); transition: transform 160ms ease; }
+.swipe-row .meal-item { position: relative; z-index: 2; border-top: 0; background: rgb(16 24 19); box-shadow: 0 0 0 rgb(0 0 0 / 0%); transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease; will-change: transform; }
+.swipe-row .meal-item.swiping { transition-duration: 90ms; }
 .swipe-row .meal-item { touch-action: pan-y; }
-.swipe-action { position: absolute; inset-block: 0; width: 72px; border: 0; color: white; }
-.swipe-edit { left: 0; background: #287a61; }
-.swipe-delete { right: 0; background: #9f3535; }
+.swipe-row.edit .meal-item,
+.swipe-row.delete .meal-item { box-shadow: 0 10px 28px rgb(0 0 0 / 24%); }
+.swipe-action { position: absolute; inset-block: 0; display: grid; place-items: center; width: 76px; border: 0; color: white; transition: filter 160ms ease, transform 180ms cubic-bezier(.2,.8,.2,1); }
+.swipe-action .material-symbols-outlined { font-size: 22px; transition: transform 180ms cubic-bezier(.2,.8,.2,1); }
+.swipe-action:active .material-symbols-outlined { transform: scale(.88); }
+.swipe-edit { left: 0; background: linear-gradient(135deg, #237a60, #34a985); }
+.swipe-delete { right: 0; background: linear-gradient(135deg, #8f3030, #c44646); }
+.swipe-row.edit .swipe-edit .material-symbols-outlined,
+.swipe-row.delete .swipe-delete .material-symbols-outlined { transform: scale(1.08); }
 
 .empty-state {
   margin: 0;
@@ -922,7 +929,8 @@ summary:focus-visible {
 
 .edit-log .material-symbols-outlined { font-size: 20px; }
 
-.compact-modal { place-items: center; }
+.compact-modal { place-items: center; animation: edit-backdrop-in 180ms ease-out; }
+.compact-modal.closing { animation: edit-backdrop-out 180ms ease-in forwards; }
 .edit-log-modal {
   display: grid;
   gap: 16px;
@@ -932,7 +940,9 @@ summary:focus-visible {
   border-radius: 18px;
   background: var(--surface-low);
   box-shadow: var(--shadow);
+  animation: edit-modal-in 220ms cubic-bezier(.2,.8,.2,1);
 }
+.compact-modal.closing .edit-log-modal { animation: edit-modal-out 180ms ease-in forwards; }
 .edit-log-modal header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .edit-log-modal h2 { margin: 2px 0 0; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
@@ -1712,6 +1722,24 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes edit-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes edit-backdrop-out {
+  to { opacity: 0; }
+}
+
+@keyframes edit-modal-in {
+  from { opacity: 0; transform: translateY(18px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes edit-modal-out {
+  to { opacity: 0; transform: translateY(14px) scale(.985); }
+}
 .calendar-grid .calendar-spacer { visibility: hidden; }
 
 @keyframes subpanel-in {
@@ -2363,4 +2391,14 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 
 @media (prefers-reduced-motion: reduce) {
   .compact-balance-shell { transition: none; }
+  .swipe-row .meal-item,
+  .swipe-action,
+  .swipe-action .material-symbols-outlined,
+  .compact-modal,
+  .compact-modal.closing,
+  .edit-log-modal,
+  .compact-modal.closing .edit-log-modal {
+    animation: none;
+    transition-duration: 1ms;
+  }
 }

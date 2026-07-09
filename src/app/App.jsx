@@ -91,6 +91,7 @@ function Dashboard({ api, user, setPage }) {
   const [movingLogId, setMovingLogId] = useState(null);
   const [waterSaving, setWaterSaving] = useState(false);
   const [mealClipboard, setMealClipboard] = useState(null);
+  const [swipeResetSignal, setSwipeResetSignal] = useState(0);
   const optimisticLogs = useRef(new Map());
   const dashboardTopRef = useRef(null);
   const balanceRef = useRef(null);
@@ -145,6 +146,19 @@ function Dashboard({ api, user, setPage }) {
   const macros = data?.macros || [];
   const mealByCode = new Map((data?.meals || []).map((meal) => [meal.mealType, meal]));
   const recentMeals = readRecents(user).meals || [];
+  const resetMealSwipes = useCallback(() => setSwipeResetSignal((signal) => signal + 1), []);
+  const closeEditingLog = useCallback(() => {
+    resetMealSwipes();
+    setEditingLog(null);
+  }, [resetMealSwipes]);
+  const finishEditingLog = useCallback(() => {
+    resetMealSwipes();
+    setEditingLog(null);
+    load();
+  }, [resetMealSwipes, load]);
+  useEffect(() => {
+    resetMealSwipes();
+  }, [data, resetMealSwipes, selectedDate]);
   function showOptimisticRecent(meal) {
     const optimisticId = `recent:${meal.id}`;
     optimisticLogs.current.set(optimisticId, meal.mealType);
@@ -253,10 +267,15 @@ function Dashboard({ api, user, setPage }) {
             onCopyMeal={(items) => { setMealClipboard(items); api.notify("Comida copiada."); }}
             deletingLogId={deletingLogId}
             movingLogId={movingLogId}
+            resetSignal={swipeResetSignal}
             onAdd={() => setPickerMeal(mealType)}
-            onEdit={setEditingLog}
+            onEdit={(log) => {
+              resetMealSwipes();
+              setEditingLog(log);
+            }}
             onMove={async (log, targetMealType) => {
               if (movingLogId || log.mealType === targetMealType) return;
+              resetMealSwipes();
               setMovingLogId(log.id);
               try {
                 await api.request(`/api/nutrition/food-logs/${log.id}`, {
@@ -278,7 +297,11 @@ function Dashboard({ api, user, setPage }) {
             }}
             onDelete={async (log) => {
               if (deletingLogId) return;
-              if (!window.confirm(`Eliminar ${log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name} del registro?`)) return;
+              if (!window.confirm(`Eliminar ${log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name} del registro?`)) {
+                resetMealSwipes();
+                return;
+              }
+              resetMealSwipes();
               setDeletingLogId(log.id);
               try {
                 await api.request(`/api/nutrition/food-logs/${log.id}`, {
@@ -374,11 +397,8 @@ function Dashboard({ api, user, setPage }) {
           api={api}
           log={editingLog}
           mealTypes={mealTypes}
-          onClose={() => setEditingLog(null)}
-          onDone={() => {
-            setEditingLog(null);
-            load();
-          }}
+          onClose={closeEditingLog}
+          onDone={finishEditingLog}
         />
       )}
     </section>
@@ -541,7 +561,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
   );
 }
 
-function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, clipboard, onCopyMeal, deletingLogId, movingLogId, onAdd, onEdit, onDelete, onMove }) {
+function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, clipboard, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
   const items = meal?.items || [];
   const [dragOver, setDragOver] = useState(false);
   const [suggestionState, setSuggestionState] = useState("idle");
@@ -627,6 +647,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
             <SwipeableMealItem
               className={`${movingLogId === log.id ? "moving" : ""} ${log.optimistic ? "optimistic" : ""}`}
               key={log.id}
+              resetSignal={resetSignal}
               onEdit={() => onEdit(log)} onDelete={() => onDelete(log)}
             >
               <FoodThumb item={item} compact />
@@ -642,11 +663,60 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
   );
 }
 
-function SwipeableMealItem({ children, className = "", onEdit, onDelete }) {
-  const gesture = useRef(null); const [offset, setOffset] = useState(0); const [revealed, setRevealed] = useState("");
-  function finish() { if (gesture.current?.axis === "x" && offset > 64) { setRevealed("edit"); setOffset(72); } else if (gesture.current?.axis === "x" && offset < -64) { setRevealed("delete"); setOffset(-72); } else { setRevealed(""); setOffset(0); } gesture.current = null; }
-  function move(event) { if (!gesture.current) return; const dx = event.touches[0].clientX - gesture.current.x; const dy = event.touches[0].clientY - gesture.current.y; if (!gesture.current.axis && Math.max(Math.abs(dx), Math.abs(dy)) > 10) gesture.current.axis = Math.abs(dx) > Math.abs(dy) * 1.35 ? "x" : "y"; if (gesture.current.axis === "x") { event.preventDefault(); setOffset(Math.max(-88, Math.min(88, dx))); } }
-  return <div className={`swipe-row ${revealed}`}><button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={onEdit}><span className="material-symbols-outlined">edit</span></button><button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={onDelete}><span className="material-symbols-outlined">delete</span></button><div className={`meal-item ${className}`} style={{ transform: `translateX(${offset}px)` }} onTouchStart={(e) => { gesture.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, axis: null }; }} onTouchMove={move} onTouchEnd={finish} onTouchCancel={finish}>{children}</div></div>;
+function SwipeableMealItem({ children, className = "", resetSignal, onEdit, onDelete }) {
+  const gesture = useRef(null);
+  const [offset, setOffset] = useState(0);
+  const [revealed, setRevealed] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const close = useCallback(() => {
+    gesture.current = null;
+    setDragging(false);
+    setRevealed("");
+    setOffset(0);
+  }, []);
+  useEffect(() => close(), [close, resetSignal]);
+  function finish() {
+    if (gesture.current?.axis === "x" && offset > 64) {
+      setRevealed("edit");
+      setOffset(76);
+    } else if (gesture.current?.axis === "x" && offset < -64) {
+      setRevealed("delete");
+      setOffset(-76);
+    } else {
+      close();
+    }
+    gesture.current = null;
+    setDragging(false);
+  }
+  function move(event) {
+    if (!gesture.current) return;
+    const dx = event.touches[0].clientX - gesture.current.x;
+    const dy = event.touches[0].clientY - gesture.current.y;
+    if (!gesture.current.axis && Math.max(Math.abs(dx), Math.abs(dy)) > 10) gesture.current.axis = Math.abs(dx) > Math.abs(dy) * 1.35 ? "x" : "y";
+    if (gesture.current.axis === "x") {
+      event.preventDefault();
+      setOffset(Math.max(-92, Math.min(92, dx)));
+    }
+  }
+  return (
+    <div className={`swipe-row ${revealed}`}>
+      <button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={() => { close(); window.setTimeout(onEdit, 120); }}><span className="material-symbols-outlined">edit</span></button>
+      <button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={() => { close(); window.setTimeout(onDelete, 120); }}><span className="material-symbols-outlined">delete</span></button>
+      <div
+        className={`meal-item ${dragging ? "swiping" : ""} ${className}`}
+        style={{ transform: `translateX(${offset}px)` }}
+        onTouchStart={(event) => {
+          gesture.current = { x: event.touches[0].clientX, y: event.touches[0].clientY, axis: null };
+          setDragging(true);
+        }}
+        onTouchMove={move}
+        onTouchEnd={finish}
+        onTouchCancel={finish}
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavigate }) {
@@ -1099,14 +1169,20 @@ function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [quantity, setQuantity] = useState(String(log.quantity));
   const [mealType, setMealType] = useState(log.mealType);
   const [saving, setSaving] = useState(false);
+  const [closing, setClosing] = useState(false);
   const item = log.itemType === "RECIPE" ? log.recipe : log.food;
+  const closeWithAnimation = useCallback(() => {
+    if (closing || saving) return;
+    setClosing(true);
+    window.setTimeout(onClose, 180);
+  }, [closing, onClose, saving]);
   useEffect(() => {
     const closeOnEscape = (event) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") closeWithAnimation();
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [onClose]);
+  }, [closeWithAnimation]);
   async function submit(event) {
     event.preventDefault();
     const numericQuantity = Number(quantity);
@@ -1123,21 +1199,22 @@ function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
         }),
       });
       api.notify("Registro actualizado.");
-      onDone();
+      setClosing(true);
+      window.setTimeout(onDone, 180);
     } catch {
       api.notify("No se pudo actualizar el registro.", "error");
       setSaving(false);
     }
   }
   return (
-    <div className="modal-backdrop compact-modal">
-      <form className="edit-log-modal" role="dialog" aria-modal="true" aria-labelledby="edit-log-title" onSubmit={submit}>
+    <div className={`modal-backdrop compact-modal ${closing ? "closing" : ""}`} onPointerDown={(event) => { if (event.target === event.currentTarget) closeWithAnimation(); }}>
+      <form className="edit-log-modal" role="dialog" aria-modal="true" aria-labelledby="edit-log-title" onPointerDown={(event) => event.stopPropagation()} onSubmit={submit}>
         <header>
           <div>
             <span>Editar registro</span>
             <h2 id="edit-log-title">{item?.name}</h2>
           </div>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Cerrar">
+          <button type="button" className="icon-button" onClick={closeWithAnimation} aria-label="Cerrar">
             <span className="material-symbols-outlined">close</span>
           </button>
         </header>
@@ -1152,7 +1229,7 @@ function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
           }))}
         />
         <div className="modal-actions">
-          <button type="button" className="secondary" onClick={onClose}>
+          <button type="button" className="secondary" onClick={closeWithAnimation}>
             Cancelar
           </button>
           <button className="primary" disabled={saving || Number(quantity) <= 0}>
