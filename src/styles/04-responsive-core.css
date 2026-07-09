@@ -1,0 +1,152 @@
+@media (max-width: 520px) {
+  .recent-meal-card { grid-template-columns: auto minmax(0, 1fr) 42px; }
+  .recent-meal-calories { grid-column: 2; grid-row: 2; margin-top: -20px; font-size: 12px; justify-self: end; }
+  .recent-meal-card > button { grid-column: 3; grid-row: 1 / span 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recent-meal-card, .recent-meal-card.adding::before, .recent-meal-card.added, .recent-meal-card.added::after, .recent-meal-card.error, .meal-item.optimistic, .meal-menu[open] summary .material-symbols-outlined, .meal-menu > div, .yesterday-suggestion, .yesterday-suggestion.copied, .yesterday-suggestion.copied > .material-symbols-outlined:first-child, .yesterday-suggestion.copied .copy-accept, .copy-confetti i { animation: none; }
+  .recent-meal-card, .recent-meal-card > button, .meal-menu summary, .meal-menu button, .yesterday-suggestion > .material-symbols-outlined { transition-duration: 1ms; }
+}
+
+.selected-subpanel {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  align-items: end;
+  padding: 20px;
+  background: rgb(3 8 5 / 68%);
+  backdrop-filter: blur(4px);
+  animation: fade-in 160ms ease-out;
+}
+
+.selected-editor {
+  display: grid;
+  gap: 10px;
+  width: min(560px, 100%);
+  max-height: 100%;
+  justify-self: center;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid rgb(78 222 163 / 42%);
+  border-radius: 22px;
+  background: linear-gradient(180deg, #202a24, #121a15);
+  box-shadow: 0 -18px 60px rgb(0 0 0 / 55%);
+  animation: subpanel-in 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.sheet-handle { display: none; }
+
+.selected-heading { display: flex; align-items: center; gap: 10px; }
+.selected-controls { display: grid; grid-template-columns: minmax(110px, .7fr) minmax(150px, 1fr); gap: 10px; align-items: end; }
+.nutrition-preview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.nutrition-preview span { display: grid; gap: 2px; min-width: 0; padding: 10px; border: 1px solid var(--outline); border-radius: 10px; background: var(--surface-high); text-align: center; }
+.nutrition-preview small { color: var(--muted); font-size: 11px; }
+.nutrition-preview strong { color: var(--text); font-size: 17px; font-variant-numeric: tabular-nums; }
+
+.mini {
+  padding: 12px;
+  font-size: 18px;
+}
+
+.ingredient-list {
+  display: grid;
+  gap: 8px;
+}
+
+.ingredient-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.ingredient-row button {
+  min-height: 40px;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--surface-high);
+  color: var(--text);
+}
+
+.food-thumb {
+  width: 72px;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background-position: center;
+  background-size: cover;
+  background-color: var(--surface-high);
+}
+
+.food-thumb img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.food-thumb.compact { width: 48px; height: 48px; }
+.food-thumb.hero { width: 96px; height: 96px; border-radius: 20px; flex: 0 0 auto; }
+
+.food-card p {
+  margin: 0;
+}
+
+.icon-button {
+  width: 46px;
+  min-height: 46px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--surface-highest);
+  color: var(--primary);
+}
+
+.icon-button:hover {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.add-food {
+  width: 52px;
+  min-height: 52px;
+  border: 1px solid rgb(78 222 163 / 35%);
+  background: rgb(78 222 163 / 16%);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+}
+
+.configure-food-heading { display: flex; align-items: center; gap: 18px; }
+.configure-food-heading h2 { margin: 3px 0; }
+.configure-food-heading span { color: var(--primary); font-weight: 800; }
+.configure-panel { display: grid; gap: 20px; }
+.configure-preview { display: grid; gap: 5px; }
+.configure-preview strong { font-size: inherit; }
+.configure-preview small { font-size: 14px; }
+
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid rgb(255 180 171 / 45%);
+  border-radius: 12px;
+  background: rgb(255 180 171 / 10%);
+  color: var(--error);
+  font-weight: 800;
+}
+
+.preview {
+  padding: 24px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--surface-high), rgb(0 82 54 / 24%));
+  color: var(--primary);
+  font-size: 42px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.result {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}

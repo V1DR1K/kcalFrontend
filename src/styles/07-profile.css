@@ -1,0 +1,96 @@
+.current-plan-panel { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-bottom: 14px; padding: 16px; border: 1px solid rgb(78 222 163 / 60%); border-radius: 14px; background: linear-gradient(135deg, rgb(0 82 54 / 28%), var(--surface)); }
+.current-plan-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 5px rgb(255 255 255 / 5%); }
+.current-plan-panel > div { display: grid; gap: 3px; }
+.current-plan-panel small { color: var(--primary); font-size: 10px; font-weight: 900; letter-spacing: .08em; }
+.current-plan-panel span { color: var(--muted); font-size: 12px; }
+.current-plan-macros { display: flex !important; gap: 5px !important; }
+.current-plan-macros span { padding: 5px 7px; border-radius: 999px; background: var(--surface-high); color: var(--text); }
+.plan-history article.active { border-color: rgb(78 222 163 / 55%); }
+.plan-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.active-plan-badge { padding: 4px 8px; border-radius: 999px; background: rgb(78 222 163 / 16%); color: var(--primary); font-size: 11px; font-weight: 900; }
+.use-plan-button { min-height: 34px; padding: 5px 9px; font-size: 12px; }
+
+.tutorial-list {
+  display: grid;
+  gap: 8px;
+}
+
+.tutorial-list details {
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.tutorial-list summary {
+  cursor: pointer;
+  padding: 14px;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.tutorial-list p {
+  margin: 0;
+  padding: 0 14px 14px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.94);
+  }
+  70% {
+    transform: translateY(-2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes scan {
+  0% {
+    top: 16%;
+    opacity: 0;
+  }
+  12%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    top: 84%;
+    opacity: 0;
+  }
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}

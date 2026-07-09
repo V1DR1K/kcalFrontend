@@ -1,0 +1,239 @@
+.scanner-page {
+  position: relative;
+  min-height: 100vh;
+  margin: -36px calc((min(1180px, calc(100vw - 32px)) - 100vw) / 2) -96px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #050806;
+  animation: fade-in 220ms ease-out;
+}
+
+.scanner-page > .back-button {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  z-index: 4;
+  background: rgb(9 16 12 / 72%);
+  backdrop-filter: blur(12px);
+  color: var(--primary);
+}
+
+.scanner-stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: start center;
+  padding-top: clamp(88px, 14vh, 150px);
+}
+
+.scanner-stage video,
+.scanner-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.52;
+  filter: saturate(0.9) contrast(1.12);
+}
+
+.scanner-fallback {
+  background:
+    linear-gradient(rgb(0 0 0 / 38%), rgb(0 0 0 / 48%)),
+    url("/esc_ner_de_c_digo_modo_noche_vitality_peak/screen.png") center / cover;
+  transform: scale(1.05);
+}
+
+.scanner-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, transparent 0 34%, rgb(0 0 0 / 72%) 62%);
+}
+
+.scan-frame {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: min(78vw, 360px);
+  aspect-ratio: 1;
+  border: 2px solid rgb(78 222 163 / 50%);
+  border-radius: 28px;
+  box-shadow: 0 0 0 999px rgb(0 0 0 / 22%), 0 0 40px rgb(78 222 163 / 18%);
+  overflow: hidden;
+}
+
+.scan-frame i {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border-color: var(--primary);
+}
+
+.scan-frame i:nth-child(1) {
+  top: 12px;
+  left: 12px;
+  border-top: 4px solid;
+  border-left: 4px solid;
+  border-radius: 12px 0 0;
+}
+
+.scan-frame i:nth-child(2) {
+  top: 12px;
+  right: 12px;
+  border-top: 4px solid;
+  border-right: 4px solid;
+  border-radius: 0 12px 0 0;
+}
+
+.scan-frame i:nth-child(3) {
+  bottom: 12px;
+  right: 12px;
+  border-bottom: 4px solid;
+  border-right: 4px solid;
+  border-radius: 0 0 12px;
+}
+
+.scan-frame i:nth-child(4) {
+  bottom: 12px;
+  left: 12px;
+  border-bottom: 4px solid;
+  border-left: 4px solid;
+  border-radius: 0 0 0 12px;
+}
+
+.scan-frame > span {
+  color: rgb(225 227 223 / 78%);
+  font-size: 82px;
+}
+
+.scan-frame.recognized {
+  border-color: var(--primary);
+  background: rgb(8 45 30 / 42%);
+  box-shadow: 0 0 0 999px rgb(0 0 0 / 42%), 0 0 52px rgb(78 222 163 / 42%);
+}
+
+.scan-frame.recognized > span {
+  color: var(--primary);
+}
+
+.scan-frame.recognized .scan-line {
+  display: none;
+}
+
+.scan-line {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  box-shadow: 0 0 18px var(--primary);
+  animation: scan 2.6s linear infinite;
+}
+
+.scanner-stage p {
+  position: absolute;
+  z-index: 2;
+  top: calc(clamp(88px, 14vh, 150px) + min(78vw, 360px) + 16px);
+  width: min(420px, calc(100% - 32px));
+  color: var(--text);
+  text-align: center;
+  font-weight: 800;
+}
+
+.scanner-result {
+  position: fixed;
+  left: 50%;
+  bottom: 92px;
+  z-index: 5;
+  display: grid;
+  gap: 14px;
+  width: min(440px, calc(100% - 32px));
+  padding: 16px;
+  transform: translateX(-50%);
+}
+
+.manual-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  border: 0;
+  border-bottom: 1px solid var(--outline);
+  background: transparent;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.manual-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.manual-panel input,
+.manual-panel .secondary {
+  min-height: 40px;
+}
+
+.scanner-result.show {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  animation: result-in 280ms ease-out;
+}
+
+.scanner-result strong,
+.scanner-result span {
+  display: block;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.calendar-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.calendar-heading h2 { margin: 0; }
+.calendar-heading span { color: var(--muted); font-size: 13px; }
+.calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; color: var(--muted); font-size: 12px; font-weight: 800; text-align: center; }
+
+.calendar-grid > span,
+.calendar-grid > button {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  background: var(--surface-low);
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.calendar-grid > button {
+  padding: 0;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.calendar-grid > button:hover,
+.calendar-grid > button:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(78 222 163 / 12%);
+}
+.calendar-grid > button { position: relative; gap: 1px; border-bottom: 3px solid var(--plan-color); }
+.calendar-grid > button small { width: 100%; overflow: hidden; padding: 0 3px; color: var(--muted); font-size: 8px; line-height: 1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.plan-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.plan-legend span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.plan-legend i { width: 9px; height: 9px; border-radius: 50%; }
+
+.calendar-grid .done {
+  background: rgb(0 82 54 / 34%);
+  color: var(--primary);
+  font-weight: 900;
+}
