@@ -736,8 +736,8 @@ summary:focus-visible {
 .swipe-row.expanded .meal-item-chevron { color: var(--primary); transform: rotate(180deg); }
 .meal-item-detail {
   display: grid;
-  gap: 10px;
-  padding: 0 0 12px 60px;
+  gap: 9px;
+  padding: 0 0 12px 56px;
   animation: meal-detail-in 190ms cubic-bezier(.2,.8,.2,1);
 }
 .meal-detail-summary {
@@ -750,7 +750,9 @@ summary:focus-visible {
   display: grid;
   gap: 2px;
   min-width: 0;
-  padding: 9px 10px;
+  min-height: 50px;
+  align-content: center;
+  padding: 8px 10px;
   border: 1px solid rgb(60 74 66 / 58%);
   border-radius: 10px;
   background: rgb(255 255 255 / 3%);
@@ -779,29 +781,26 @@ summary:focus-visible {
 }
 .recipe-detail-list {
   display: grid;
-  gap: 7px;
+  gap: 6px;
 }
 .recipe-ingredient-detail {
-  display: grid;
-  gap: 0;
+  display: block;
   width: 100%;
-  padding: 0;
   border: 1px solid rgb(60 74 66 / 55%);
   border-radius: 12px;
   overflow: hidden;
   background: rgb(12 18 15 / 64%);
   color: var(--text);
   text-align: left;
-  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  transition: border-color 160ms ease, background 160ms ease;
 }
 .recipe-ingredient-detail:hover { border-color: rgb(78 222 163 / 34%); background: rgb(20 31 25 / 78%); }
-.recipe-ingredient-detail:active { transform: scale(.992); }
 .recipe-ingredient-main {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
   align-items: center;
   gap: 9px;
-  padding: 8px;
+  padding: 8px 10px;
 }
 .recipe-ingredient-main > span:nth-child(2) { display: grid; gap: 2px; min-width: 0; }
 .recipe-ingredient-main strong,
@@ -811,12 +810,11 @@ summary:focus-visible {
   white-space: nowrap;
 }
 .recipe-ingredient-main small { color: var(--muted); font-size: 12px; }
-.recipe-ingredient-main > .material-symbols-outlined { color: var(--muted); transition: transform 180ms cubic-bezier(.2,.8,.2,1), color 160ms ease; }
-.recipe-ingredient-detail.open .recipe-ingredient-main > .material-symbols-outlined { color: var(--primary); transform: rotate(180deg); }
-.recipe-ingredient-panel {
-  display: grid;
-  padding: 0 8px 8px 65px;
-  animation: meal-detail-in 170ms cubic-bezier(.2,.8,.2,1);
+.recipe-ingredient-kcal {
+  justify-self: end;
+  color: var(--text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 .meal-detail-empty {
   margin: 0;

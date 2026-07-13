@@ -685,7 +685,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
 
 function MealLogDetails({ log, item }) {
   if (log.itemType === "RECIPE") {
-    const ingredients = item?.ingredients || [];
+    const ingredients = aggregateRecipeIngredients(item?.ingredients || []);
     return (
       <div className="meal-item-detail">
         <div className="meal-detail-summary">
@@ -694,8 +694,8 @@ function MealLogDetails({ log, item }) {
         </div>
         <NutritionPills nutrition={log} />
         <div className="recipe-detail-list">
-          {ingredients.length ? ingredients.map((ingredient, index) => (
-            <RecipeIngredientDetail ingredient={ingredient} key={`${ingredient.food?.id || "food"}-${index}`} />
+          {ingredients.length ? ingredients.map((ingredient) => (
+            <RecipeIngredientDetail ingredient={ingredient} key={ingredient.key} />
           )) : (
             <p className="meal-detail-empty">Esta receta todavia no trae ingredientes.</p>
           )}
@@ -714,23 +714,33 @@ function MealLogDetails({ log, item }) {
   );
 }
 
+function aggregateRecipeIngredients(ingredients) {
+  const grouped = new Map();
+  for (const ingredient of ingredients) {
+    const food = ingredient.food || {};
+    const key = food.id ? `food:${food.id}` : `name:${food.name || "Alimento"}`;
+    const current = grouped.get(key);
+    const quantity = Number(ingredient.quantity || 0);
+    if (current) {
+      current.quantity += quantity;
+    } else {
+      grouped.set(key, { ...ingredient, key, quantity, food });
+    }
+  }
+  return [...grouped.values()];
+}
+
 function RecipeIngredientDetail({ ingredient }) {
-  const [open, setOpen] = useState(false);
   const food = ingredient.food || {};
   const nutrition = scaleFoodNutrition(food, ingredient.quantity);
   return (
-    <button type="button" className={`recipe-ingredient-detail ${open ? "open" : ""}`} onClick={() => setOpen((current) => !current)} aria-expanded={open}>
+    <div className="recipe-ingredient-detail">
       <span className="recipe-ingredient-main">
         <FoodThumb item={{ ...food, type: "FOOD" }} compact />
         <span><strong>{food.name || "Alimento"}</strong><small>{formatNumber(ingredient.quantity, 1)} g{foodPreparationSuffix(food)}</small></span>
-        <span className="material-symbols-outlined" aria-hidden="true">expand_more</span>
+        <strong className="recipe-ingredient-kcal">{formatNumber(nutrition.calories)} kcal</strong>
       </span>
-      {open && (
-        <span className="recipe-ingredient-panel">
-          <NutritionPills nutrition={nutrition} />
-        </span>
-      )}
-    </button>
+    </div>
   );
 }
 

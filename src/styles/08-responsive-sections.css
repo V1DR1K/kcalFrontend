@@ -335,18 +335,30 @@
   }
 
   .meal-item-detail {
-    gap: 8px;
+    gap: 7px;
     padding-bottom: 10px;
   }
 
+  .meal-detail-summary,
   .meal-detail-pills {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .meal-detail-summary > span,
+  .meal-detail-pills > span {
+    min-height: 46px;
+    padding: 7px 8px;
   }
 
   .recipe-ingredient-main {
-    grid-template-columns: auto minmax(0, 1fr) 22px;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
     gap: 7px;
     padding: 7px;
+  }
+
+  .recipe-ingredient-kcal {
+    font-size: 12px;
   }
 
   .meal-item .food-thumb.compact {
