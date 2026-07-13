@@ -15,6 +15,7 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
   const [category, setCategory] = useState("");
   const [editingRecipe, setEditingRecipe] = useState(null);
   const [deletingRecipeId, setDeletingRecipeId] = useState(null);
+  const [loadingRecipeId, setLoadingRecipeId] = useState(null);
   const [swipeResetSignal, setSwipeResetSignal] = useState(0);
   const catalog = usePagedCatalog({
     api,
@@ -70,10 +71,18 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
                 key={`RECIPE:${item.id}`}
                 recipe={typedItem}
                 resetSignal={swipeResetSignal}
-                disabled={deletingRecipeId === item.id}
-                onEdit={() => {
+                disabled={deletingRecipeId === item.id || loadingRecipeId === item.id}
+                onEdit={async () => {
                   setSwipeResetSignal((value) => value + 1);
-                  setEditingRecipe(typedItem);
+                  setLoadingRecipeId(item.id);
+                  try {
+                    const fullRecipe = await api.request(`/api/recipes/${item.id}`);
+                    setEditingRecipe({ ...fullRecipe, type: "RECIPE" });
+                  } catch (error) {
+                    api.notify(error.message || "No se pudo cargar la receta.", "error");
+                  } finally {
+                    setLoadingRecipeId(null);
+                  }
                 }}
                 onDelete={async () => {
                   if (deletingRecipeId) return;
