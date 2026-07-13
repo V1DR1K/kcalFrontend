@@ -2,7 +2,7 @@
   .recent-meal-card { grid-template-columns: auto minmax(0, 1fr) 42px; }
   .recent-meal-calories { grid-column: 2; grid-row: 2; margin-top: -20px; font-size: 12px; justify-self: end; }
   .recent-meal-card > button { grid-column: 3; grid-row: 1 / span 2; }
-  .meal-item-detail { padding-left: 42px; }
+  .meal-item-detail { padding-inline: 8px; }
   .meal-detail-summary,
   .meal-detail-pills { gap: 6px; }
   .meal-detail-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
