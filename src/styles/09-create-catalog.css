@@ -13,6 +13,25 @@
 .edit-food-actions { padding-top: 2px; border-top: 1px solid var(--outline); }
 .edit-food-actions .primary { width: 100%; min-height: 52px; }
 .selected-close { margin-left: auto; }
+.recipe-swipe-row {
+  border-top: 0;
+  border-radius: 14px;
+  background: transparent;
+}
+.recipe-swipe-row .swipe-action {
+  border-radius: 14px;
+}
+.recipe-swipe-card {
+  width: 100%;
+  min-height: 100%;
+  background: linear-gradient(#161d19f5, #0e1511f5);
+}
+.recipe-swipe-card.swiping {
+  transition-duration: 90ms;
+}
+.edit-recipe-sheet .ingredient-list {
+  padding-top: 2px;
+}
 .recipe-panel { overflow: hidden; }
 .recipe-weight-summary {
   display: flex;
