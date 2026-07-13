@@ -21,6 +21,7 @@ export function Dashboard({ api, user, setPage }) {
   const [movingLogId, setMovingLogId] = useState(null);
   const [waterSaving, setWaterSaving] = useState(false);
   const [mealClipboard, setMealClipboard] = useState(null);
+  const [mealPasteLoading, setMealPasteLoading] = useState(false);
   const [swipeResetSignal, setSwipeResetSignal] = useState(0);
   const optimisticLogs = useRef(new Map());
   const dashboardTopRef = useRef(null);
@@ -194,6 +195,8 @@ export function Dashboard({ api, user, setPage }) {
             api={api}
             onCopied={load}
             clipboard={mealClipboard}
+            pasteLoading={mealPasteLoading}
+            setPasteLoading={setMealPasteLoading}
             onCopyMeal={(items) => { setMealClipboard(items); api.notify("Comida copiada."); }}
             deletingLogId={deletingLogId}
             movingLogId={movingLogId}
@@ -331,7 +334,21 @@ export function Dashboard({ api, user, setPage }) {
           onDone={finishEditingLog}
         />
       )}
+      {mealPasteLoading && <MealPasteLoader />}
     </section>
+  );
+}
+
+function MealPasteLoader() {
+  return createPortal(
+    <div className="meal-paste-loader" role="alert" aria-live="assertive" aria-busy="true">
+      <div className="meal-paste-loader-card">
+        <span className="meal-paste-spinner" aria-hidden="true" />
+        <strong>Pegando comida</strong>
+        <small>Estamos guardando los alimentos...</small>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -491,7 +508,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
   );
 }
 
-function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, clipboard, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
+function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, clipboard, pasteLoading, setPasteLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
   const items = meal?.items || [];
   const [dragOver, setDragOver] = useState(false);
   const [suggestionState, setSuggestionState] = useState("idle");
@@ -516,10 +533,13 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
     }
   }
   async function addLogs(logs) {
+    if (pasteLoading) return;
+    setPasteLoading(true);
     try {
       for (const log of logs) await api.request("/api/nutrition/meal-logs", { method: "POST", body: JSON.stringify({ itemType: log.itemType, itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id, mealType: mealType.code, quantity: log.quantity, unit: log.unit || "GRAM", logDate: targetDate }) });
       api.notify(`Comida pegada en ${mealType.label}.`); await onCopied();
     } catch { api.notify("No se pudo pegar la comida.", "error"); }
+    finally { setPasteLoading(false); }
   }
   async function deleteAll() {
     if (!items.length || !window.confirm(`¿Borrar todo ${mealType.label.toLowerCase()}?`)) return;
@@ -554,7 +574,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
           <strong>{meal?.calories || 0} kcal</strong>
         </div>
         <div className="meal-header-actions">
-          <details className="meal-menu"><summary aria-label={`Acciones de ${mealType.label}`}><span className="material-symbols-outlined">more_vert</span></summary><div><button disabled={!items.length} onClick={() => onCopyMeal(items)}>Copiar todo</button><button disabled={!clipboard?.length} onClick={() => addLogs(clipboard)}>Pegar</button><button className="danger-text" disabled={!items.length} onClick={deleteAll}>Borrar todo</button></div></details>
+          <details className="meal-menu"><summary aria-label={`Acciones de ${mealType.label}`}><span className="material-symbols-outlined">more_vert</span></summary><div><button disabled={!items.length || pasteLoading} onClick={() => onCopyMeal(items)}>Copiar todo</button><button disabled={!clipboard?.length || pasteLoading} onClick={() => addLogs(clipboard)}>Pegar</button><button className="danger-text" disabled={!items.length || pasteLoading} onClick={deleteAll}>Borrar todo</button></div></details>
           <button className="icon-button" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><span className="material-symbols-outlined">add</span></button>
         </div>
       </header>
