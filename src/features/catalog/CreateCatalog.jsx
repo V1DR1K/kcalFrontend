@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CATEGORY_OPTIONS } from "../../config/app";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
@@ -238,7 +238,7 @@ function MyFoods({ api }) {
     return api
       .request("/api/foods/mine")
       .then(setItems)
-      .catch(() => api.notify("No se pudieron cargar tus alimentos.", "error"))
+      .catch((error) => api.notify(error.message || "No se pudieron cargar tus alimentos.", "error"))
       .finally(() => setLoading(false));
   }, [api]);
   useEffect(() => {
@@ -332,9 +332,12 @@ function MyFoods({ api }) {
 function CreateRecipeForm({ api }) {
   const [query, setQuery] = useState("");
   const [ingredients, setIngredients] = useState([]);
-  const [totalWeight, setTotalWeight] = useState("");
   const [preview, setPreview] = useState(null);
   const [saving, setSaving] = useState(false);
+  const totalWeight = useMemo(
+    () => ingredients.reduce((total, item) => total + (Number(item.quantity) || 0), 0),
+    [ingredients],
+  );
   const catalog = usePagedCatalog({
     api,
     endpoint: "/api/foods",
@@ -342,18 +345,17 @@ function CreateRecipeForm({ api }) {
     pageSize: 10,
   });
   useEffect(() => {
-    const numericWeight = Number(totalWeight);
-    if (!ingredients.length || !Number.isFinite(numericWeight) || numericWeight <= 0) return setPreview(null);
+    if (!ingredients.length || totalWeight <= 0) return setPreview(null);
     const normalizedIngredients = ingredients.map((item) => ({
-      ...item,
+      foodId: item.foodId,
       quantity: Number(item.quantity),
+      unit: item.unit,
     }));
     api
       .request("/api/recipes/preview", {
         method: "POST",
         body: JSON.stringify({
           name: "preview",
-          totalWeightGrams: numericWeight,
           ingredients: normalizedIngredients,
         }),
       })
@@ -371,22 +373,21 @@ function CreateRecipeForm({ api }) {
     setSaving(true);
     try {
       const normalizedIngredients = ingredients.map((item) => ({
-        ...item,
+        foodId: item.foodId,
         quantity: Number(item.quantity),
+        unit: item.unit,
       }));
       await api.request("/api/recipes", {
         method: "POST",
         body: JSON.stringify({
           name: data.name,
           description: data.description,
-          totalWeightGrams: Number(data.totalWeightGrams),
           ingredients: normalizedIngredients,
         }),
       });
       api.notify("Receta creada.");
       event.currentTarget.reset();
       setIngredients([]);
-      setTotalWeight("");
       setPreview(null);
     } catch {
       api.notify("No se pudo crear la receta. Revisá los datos.", "error");
@@ -399,7 +400,13 @@ function CreateRecipeForm({ api }) {
       <form className="form-grid recipe-form" onSubmit={submit}>
         <Input name="name" label="Nombre" required />
         <Input name="description" label="Descripcion opcional" />
-        <Input name="totalWeightGrams" label="Peso total en gramos" type="number" min="0.1" step="0.1" value={totalWeight} required onChange={(event) => setTotalWeight(event.target.value)} />
+        <div className="recipe-weight-summary" aria-live="polite">
+          <span className="material-symbols-outlined">scale</span>
+          <div>
+            <small>Peso total calculado</small>
+            <strong>{formatNumber(totalWeight, 1)} g</strong>
+          </div>
+        </div>
         <div className="search-wrap">
           <span className="material-symbols-outlined">search</span>
           <input className="search" placeholder="Buscar ingredientes..." value={query} onChange={(event) => setQuery(event.target.value)} />
@@ -408,7 +415,7 @@ function CreateRecipeForm({ api }) {
           {groupFoodVariants(catalog.items).map((food) => (
             <button
               type="button"
-              className="catalog-row"
+              className="catalog-row ingredient-pick"
               key={food.id}
               onClick={() =>
                 setIngredients([
@@ -422,8 +429,11 @@ function CreateRecipeForm({ api }) {
                 ])
               }
             >
-              <span>{food.name}</span>
-              <small>{food.calories} kcal / 100g</small>
+              <span>
+                <strong>{food.name}</strong>
+                <small>{food.calories} kcal / 100g</small>
+              </span>
+              <em><span className="material-symbols-outlined">add</span>Agregar</em>
             </button>
           ))}
         </div>
@@ -442,15 +452,22 @@ function CreateRecipeForm({ api }) {
         <div className="ingredient-list">
           {ingredients.map((item, index) => (
             <label className="ingredient-row" key={`${item.foodId}:${index}`}>
-              <span>{item.name}</span>
-              <input aria-label={`Cantidad de ${item.name} en gramos`} type="number" min="0.1" step="0.1" value={item.quantity} onChange={(event) => setIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: event.target.value } : ingredient)))} />
-              <button type="button" onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}>
-                Quitar
+              <span className="ingredient-name">{item.name}</span>
+              <span className="ingredient-quantity">
+                <input aria-label={`Cantidad de ${item.name} en gramos`} type="number" min="0.1" step="0.1" value={item.quantity} onChange={(event) => setIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: event.target.value } : ingredient)))} />
+                <small>g</small>
+              </span>
+              <button type="button" className="ingredient-remove" onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}>
+                <span className="material-symbols-outlined">remove</span>Quitar
               </button>
             </label>
           ))}
         </div>
-        <div className="preview mini">
+        <div className="recipe-nutrition-summary" aria-label="Resumen nutricional de la receta">
+          <span><strong>{formatNumber(preview?.calories)}</strong><small>Kcal</small></span>
+          <span><strong>{formatNumber(preview?.proteinGrams, 1)}g</strong><small>Proteinas</small></span>
+          <span><strong>{formatNumber(preview?.carbsGrams, 1)}g</strong><small>Carbos</small></span>
+          <span><strong>{formatNumber(preview?.fatGrams, 1)}g</strong><small>Grasas</small></span>
           {formatNumber(preview?.calories)} kcal · P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g
         </div>
         <button className="primary recipe-submit" disabled={!ingredients.length || saving}>
