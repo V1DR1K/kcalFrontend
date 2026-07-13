@@ -9,6 +9,10 @@ import { usePagedCatalog } from "./usePagedCatalog";
 import { recognizeNutrition } from "../../services/nutritionOcr";
 import { formatNumber } from "../../utils/format";
 
+function macroCalories(proteinGrams, carbsGrams, fatGrams) {
+  return Math.round(Number(proteinGrams || 0) * 4 + Number(carbsGrams || 0) * 4 + Number(fatGrams || 0) * 9);
+}
+
 export function CreateCatalog({ api, setPage, prefillBarcode, clearPrefillBarcode }) {
   const [tab, setTab] = useState("FOOD");
   return (
@@ -58,7 +62,6 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
           category: data.category,
           baseUnit: "GRAM",
           baseQuantity: Number(data.baseQuantity || 100),
-          calories: Number(data.calories),
           proteinGrams: Number(data.proteinGrams),
           carbsGrams: Number(data.carbsGrams),
           fatGrams: Number(data.fatGrams),
@@ -93,7 +96,7 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
   }
   function acceptOcrData() {
     if (!ocrData) return;
-    ["calories", "proteinGrams", "carbsGrams", "fatGrams"].forEach((field) => setField(field, ocrData[field] ?? 0));
+    ["proteinGrams", "carbsGrams", "fatGrams"].forEach((field) => setField(field, ocrData[field] ?? 0));
     setOcrData(null);
     setOcrStatus("Valores aplicados al alimento. Podés seguir completando el formulario.");
     api.notify("Valores nutricionales aplicados.");
@@ -104,7 +107,7 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
     setOcrStatus("Procesando imagen con OCR...");
     try {
       const data = await recognizeNutrition(file);
-      if (data.calories != null || data.proteinGrams != null || data.carbsGrams != null || data.fatGrams != null) {
+      if (data.proteinGrams != null || data.carbsGrams != null || data.fatGrams != null) {
         setOcrData(data);
         setOcrStatus("Revisá los valores detectados antes de aplicarlos.");
       } else {
@@ -162,12 +165,12 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
         <Select name="category" label="Categoria" options={CATEGORY_OPTIONS} />
         <Input name="baseQuantity" label="Estos valores corresponden a (gramos)" type="number" defaultValue="100" step="0.1" min="0.1" required />
         <div className="split">
-          <Input numericOnly name="calories" label="Kcal" type="number" step="1" min="0" required />
           <Input numericOnly name="proteinGrams" label="Proteinas g" type="number" step="0.1" min="0" required />
+          <Input numericOnly name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" min="0" required />
         </div>
         <div className="split">
-          <Input numericOnly name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" min="0" required />
           <Input numericOnly name="fatGrams" label="Grasas g" type="number" step="0.1" min="0" required />
+          <DerivedCaloriesHint />
         </div>
         <Input name="tags" label="Tags separados por coma" />
         <button className="primary" disabled={saving || scanning}>
@@ -179,8 +182,8 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
 }
 
 function OcrNutritionPreview({ data, setData, onAccept, onDiscard }) {
+  const derivedCalories = macroCalories(data.proteinGrams, data.carbsGrams, data.fatGrams);
   const fields = [
-    { key: "calories", label: "Kcal", unit: "" },
     { key: "proteinGrams", label: "Proteínas", unit: "g" },
     { key: "carbsGrams", label: "Carbohidratos", unit: "g" },
     { key: "fatGrams", label: "Grasas", unit: "g" },
@@ -195,6 +198,7 @@ function OcrNutritionPreview({ data, setData, onAccept, onDiscard }) {
         <span className="material-symbols-outlined">document_scanner</span>
       </header>
       <div className="ocr-preview-grid">
+        <span className="derived-calories-card"><small>Kcal calculadas</small><strong>{formatNumber(derivedCalories)}</strong></span>
         {fields.map(({ key, label, unit }) => (
           <label key={key}>
             <span>{label}</span>
@@ -228,6 +232,15 @@ function OcrNutritionPreview({ data, setData, onAccept, onDiscard }) {
   );
 }
 
+function DerivedCaloriesHint({ values }) {
+  return (
+    <div className="derived-calories-card">
+      <small>Kcal calculadas</small>
+      <strong>{values ? formatNumber(macroCalories(values.proteinGrams, values.carbsGrams, values.fatGrams)) : "P*4 + C*4 + G*9"}</strong>
+    </div>
+  );
+}
+
 function MyFoods({ api }) {
   const [items, setItems] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -250,7 +263,7 @@ function MyFoods({ api }) {
     setSaving(true);
     const data = Object.fromEntries(new FormData(event.currentTarget));
     try {
-      await api.request(`/api/foods/${editing.id}`, { method: "PUT", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity), calories: Number(data.calories), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), preparation: "UNSPECIFIED", servingName: null, servingWeightGrams: null, tags: [] }) });
+      await api.request(`/api/foods/${editing.id}`, { method: "PUT", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), preparation: "UNSPECIFIED", servingName: null, servingWeightGrams: null, tags: [] }) });
       api.notify("Alimento actualizado.");
       setEditing(null);
       await load();
@@ -308,12 +321,12 @@ function MyFoods({ api }) {
               <Select name="category" label="Categoría" defaultValue={editing.category} options={CATEGORY_OPTIONS} />
               <Input name="baseQuantity" label="Estos valores corresponden a (gramos)" type="number" min="0.1" step="0.1" defaultValue={editing.baseQuantity || 100} required />
               <div className="split">
-                <Input name="calories" label="Kcal" type="number" min="0" defaultValue={editing.calories} required />
                 <Input name="proteinGrams" label="Proteínas g" type="number" min="0" step="0.1" defaultValue={editing.proteinGrams} required />
+                <Input name="carbsGrams" label="Carbohidratos g" type="number" min="0" step="0.1" defaultValue={editing.carbsGrams} required />
               </div>
               <div className="split">
-                <Input name="carbsGrams" label="Carbohidratos g" type="number" min="0" step="0.1" defaultValue={editing.carbsGrams} required />
                 <Input name="fatGrams" label="Grasas g" type="number" min="0" step="0.1" defaultValue={editing.fatGrams} required />
+                <DerivedCaloriesHint values={editing} />
               </div>
             </div>
             <footer className="edit-food-actions">

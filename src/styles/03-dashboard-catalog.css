@@ -312,6 +312,29 @@
 .ocr-preview-grid small { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
 .ocr-preview-actions { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: 8px; }
 .ocr-preview-actions button { min-width: 0; }
+.derived-calories-card {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-height: 46px;
+  padding: 8px 10px;
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  background: rgb(78 222 163 / 9%);
+}
+.derived-calories-card small {
+  position: static;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+  transform: none;
+}
+.derived-calories-card strong {
+  color: var(--text);
+  font-size: 14px;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .field {
@@ -477,6 +500,7 @@ select:focus,
 
 .meal-card {
   display: grid;
+  align-content: start;
   gap: 14px;
   min-height: 220px;
   padding: 18px;

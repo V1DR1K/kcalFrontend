@@ -92,6 +92,21 @@
     box-shadow: var(--shadow);
   }
 
+  .mobile-version {
+    display: flex;
+    justify-content: center;
+    flex: 0 0 auto;
+    padding: 4px 10px 0;
+    border-top: 1px solid rgb(60 74 66 / 50%);
+    background: rgb(14 21 17 / 96%);
+  }
+
+  .mobile-version .version-badge {
+    margin: 0;
+    font-size: 9px;
+    line-height: 1.2;
+  }
+
   .mobile-nav button {
     display: grid;
     place-items: center;

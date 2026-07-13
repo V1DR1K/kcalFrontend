@@ -23,12 +23,19 @@ function scaleFoodNutrition(food, quantity) {
   const baseQuantity = Number(food?.baseQuantity || 100);
   const grams = Number(quantity || 0);
   const factor = baseQuantity > 0 ? grams / baseQuantity : 0;
+  const proteinGrams = Number(food?.proteinGrams || 0) * factor;
+  const carbsGrams = Number(food?.carbsGrams || 0) * factor;
+  const fatGrams = Number(food?.fatGrams || 0) * factor;
   return {
-    calories: Math.round(Number(food?.calories || 0) * factor),
-    proteinGrams: Number(food?.proteinGrams || 0) * factor,
-    carbsGrams: Number(food?.carbsGrams || 0) * factor,
-    fatGrams: Number(food?.fatGrams || 0) * factor,
+    calories: macroCalories(proteinGrams, carbsGrams, fatGrams),
+    proteinGrams,
+    carbsGrams,
+    fatGrams,
   };
+}
+
+function macroCalories(proteinGrams, carbsGrams, fatGrams) {
+  return Math.round(Number(proteinGrams || 0) * 4 + Number(carbsGrams || 0) * 4 + Number(fatGrams || 0) * 9);
 }
 
 function NutritionPills({ nutrition }) {
@@ -685,7 +692,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
 
 function MealLogDetails({ log, item }) {
   if (log.itemType === "RECIPE") {
-    const ingredients = item?.ingredients || [];
+    const ingredients = aggregateRecipeIngredients(item?.ingredients || []);
     return (
       <div className="meal-item-detail">
         <div className="meal-detail-summary">
@@ -694,8 +701,8 @@ function MealLogDetails({ log, item }) {
         </div>
         <NutritionPills nutrition={log} />
         <div className="recipe-detail-list">
-          {ingredients.length ? ingredients.map((ingredient, index) => (
-            <RecipeIngredientDetail ingredient={ingredient} key={`${ingredient.food?.id || "food"}-${index}`} />
+          {ingredients.length ? ingredients.map((ingredient) => (
+            <RecipeIngredientDetail ingredient={ingredient} key={ingredient.key} />
           )) : (
             <p className="meal-detail-empty">Esta receta todavia no trae ingredientes.</p>
           )}
@@ -714,9 +721,35 @@ function MealLogDetails({ log, item }) {
   );
 }
 
+function aggregateRecipeIngredients(ingredients) {
+  const grouped = new Map();
+  for (const ingredient of ingredients) {
+    const food = ingredient.food || {};
+    const key = food.id ? `food:${food.id}` : `name:${food.name || "Alimento"}`;
+    const quantity = Number(ingredient.quantity || 0);
+    const nutrition = scaleFoodNutrition(food, quantity);
+    const current = grouped.get(key);
+    if (current) {
+      current.quantity += quantity;
+      current.nutrition.proteinGrams += nutrition.proteinGrams;
+      current.nutrition.carbsGrams += nutrition.carbsGrams;
+      current.nutrition.fatGrams += nutrition.fatGrams;
+    } else {
+      grouped.set(key, { ...ingredient, key, quantity, food, nutrition });
+    }
+  }
+  return [...grouped.values()].map((ingredient) => ({
+    ...ingredient,
+    nutrition: {
+      ...ingredient.nutrition,
+      calories: macroCalories(ingredient.nutrition.proteinGrams, ingredient.nutrition.carbsGrams, ingredient.nutrition.fatGrams),
+    },
+  }));
+}
+
 function RecipeIngredientDetail({ ingredient }) {
   const food = ingredient.food || {};
-  const nutrition = scaleFoodNutrition(food, ingredient.quantity);
+  const nutrition = ingredient.nutrition || scaleFoodNutrition(food, ingredient.quantity);
   return (
     <div className="recipe-ingredient-detail">
       <span className="recipe-ingredient-main">

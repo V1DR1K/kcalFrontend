@@ -67,6 +67,10 @@ small {
   color: #e67e22;
 }
 
+.mobile-version {
+  display: none;
+}
+
 nav {
   display: grid;
   gap: 8px;
