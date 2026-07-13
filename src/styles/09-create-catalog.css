@@ -270,7 +270,7 @@
   .chips button { min-height: 34px; padding: 0 12px; font-size: 12px; }
   .selected-subpanel { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
   .selected-editor {
-    max-height: min(84dvh, calc(var(--picker-height, 100dvh) - 122px));
+    max-height: min(84svh, calc(var(--picker-height, 100svh) - 122px));
     padding-bottom: calc(34px + env(safe-area-inset-bottom));
   }
   .selected-editor:focus-within { scroll-margin-top: 8px; }

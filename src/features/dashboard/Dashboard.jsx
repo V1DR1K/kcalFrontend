@@ -729,20 +729,18 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     };
   }, [onClose]);
   useEffect(() => {
-    const viewport = window.visualViewport;
-    if (!viewport) return undefined;
     let frame = 0;
     const syncViewport = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        modalRef.current?.style.setProperty("--picker-height", `${Math.round(viewport.height)}px`);
+        modalRef.current?.style.setProperty("--picker-height", `${Math.round(window.innerHeight)}px`);
       });
     };
     syncViewport();
-    viewport.addEventListener("resize", syncViewport);
+    window.addEventListener("orientationchange", syncViewport);
     return () => {
       cancelAnimationFrame(frame);
-      viewport.removeEventListener("resize", syncViewport);
+      window.removeEventListener("orientationchange", syncViewport);
     };
   }, []);
   useEffect(() => {
