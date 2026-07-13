@@ -334,6 +334,21 @@
     font-size: 13px;
   }
 
+  .meal-item-detail {
+    gap: 8px;
+    padding-bottom: 10px;
+  }
+
+  .meal-detail-pills {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .recipe-ingredient-main {
+    grid-template-columns: auto minmax(0, 1fr) 22px;
+    gap: 7px;
+    padding: 7px;
+  }
+
   .meal-item .food-thumb.compact {
     width: 34px;
     height: 34px;

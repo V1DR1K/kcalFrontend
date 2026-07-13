@@ -2,11 +2,16 @@
   .recent-meal-card { grid-template-columns: auto minmax(0, 1fr) 42px; }
   .recent-meal-calories { grid-column: 2; grid-row: 2; margin-top: -20px; font-size: 12px; justify-self: end; }
   .recent-meal-card > button { grid-column: 3; grid-row: 1 / span 2; }
+  .meal-item-detail { padding-left: 42px; }
+  .meal-detail-summary,
+  .meal-detail-pills { gap: 6px; }
+  .meal-detail-summary { grid-template-columns: 1fr; }
+  .recipe-ingredient-panel { padding-left: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .recent-meal-card, .recent-meal-card.adding::before, .recent-meal-card.added, .recent-meal-card.added::after, .recent-meal-card.error, .meal-item.optimistic, .meal-menu[open] summary .material-symbols-outlined, .meal-menu > div, .yesterday-suggestion, .yesterday-suggestion.copied, .yesterday-suggestion.copied > .material-symbols-outlined:first-child, .yesterday-suggestion.copied .copy-accept, .copy-confetti i { animation: none; }
-  .recent-meal-card, .recent-meal-card > button, .meal-menu summary, .meal-menu button, .yesterday-suggestion > .material-symbols-outlined { transition-duration: 1ms; }
+  .recent-meal-card, .recent-meal-card.adding::before, .recent-meal-card.added, .recent-meal-card.added::after, .recent-meal-card.error, .meal-item.optimistic, .meal-menu[open] summary .material-symbols-outlined, .meal-menu > div, .meal-item-detail, .recipe-ingredient-panel, .yesterday-suggestion, .yesterday-suggestion.copied, .yesterday-suggestion.copied > .material-symbols-outlined:first-child, .yesterday-suggestion.copied .copy-accept, .copy-confetti i { animation: none; }
+  .recent-meal-card, .recent-meal-card > button, .meal-menu summary, .meal-menu button, .meal-item-shell, .meal-item-chevron, .recipe-ingredient-detail, .recipe-ingredient-main > .material-symbols-outlined, .yesterday-suggestion > .material-symbols-outlined { transition-duration: 1ms; }
 }
 
 .selected-subpanel {

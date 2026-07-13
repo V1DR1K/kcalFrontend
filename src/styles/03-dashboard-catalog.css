@@ -639,18 +639,25 @@ summary:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  width: 100%;
   padding: 10px 0;
+  border: 0;
   border-top: 1px solid rgb(60 74 66 / 55%);
+  background: transparent;
+  color: var(--text);
   cursor: grab;
+  font: inherit;
+  text-align: left;
   user-select: none;
 }
 .meal-item:active { cursor: grabbing; }
 .swipe-row { position: relative; overflow: hidden; border-top: 1px solid rgb(60 74 66 / 55%); background: rgb(16 24 19); isolation: isolate; }
-.swipe-row .meal-item { position: relative; z-index: 2; border-top: 0; background: rgb(16 24 19); box-shadow: 0 0 0 rgb(0 0 0 / 0%); transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease; will-change: transform; }
-.swipe-row .meal-item.swiping { transition-duration: 90ms; }
-.swipe-row .meal-item { touch-action: pan-y; }
-.swipe-row.edit .meal-item,
-.swipe-row.delete .meal-item { box-shadow: 0 10px 28px rgb(0 0 0 / 24%); }
+.swipe-row .meal-item-shell { position: relative; z-index: 2; display: grid; border-top: 0; background: rgb(16 24 19); box-shadow: 0 0 0 rgb(0 0 0 / 0%); transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease, background 180ms ease; will-change: transform; touch-action: pan-y; }
+.swipe-row .meal-item-shell.swiping { transition-duration: 90ms; }
+.swipe-row .meal-item { border-top: 0; }
+.swipe-row.expanded .meal-item-shell { background: linear-gradient(180deg, rgb(21 32 26), rgb(16 24 19)); box-shadow: inset 0 0 0 1px rgb(78 222 163 / 18%); }
+.swipe-row.edit .meal-item-shell,
+.swipe-row.delete .meal-item-shell { box-shadow: 0 10px 28px rgb(0 0 0 / 24%); }
 .swipe-action { position: absolute; inset-block: 0; z-index: 1; display: grid; place-items: center; width: 76px; border: 0; color: white; opacity: 0; transform: scaleX(.94); pointer-events: none; transition: opacity 90ms ease, filter 160ms ease, transform 180ms cubic-bezier(.2,.8,.2,1); }
 .swipe-row.swiping .swipe-action,
 .swipe-row.edit .swipe-action,
@@ -724,6 +731,98 @@ summary:focus-visible {
 .meal-item-copy { display: grid; gap: 2px; min-width: 0; }
 .meal-item-copy > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meal-item-copy small { color: var(--muted); font-size: 12px; }
+.meal-item > strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.meal-item-chevron { flex: 0 0 auto !important; color: var(--muted); font-size: 22px; transition: transform 190ms cubic-bezier(.2,.8,.2,1), color 160ms ease; }
+.swipe-row.expanded .meal-item-chevron { color: var(--primary); transform: rotate(180deg); }
+.meal-item-detail {
+  display: grid;
+  gap: 10px;
+  padding: 0 0 12px 60px;
+  animation: meal-detail-in 190ms cubic-bezier(.2,.8,.2,1);
+}
+.meal-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.meal-detail-summary > span,
+.meal-detail-pills > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgb(60 74 66 / 58%);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 3%);
+}
+.meal-detail-summary small,
+.meal-detail-pills small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.meal-detail-summary strong,
+.meal-detail-pills strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.meal-detail-pills {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.recipe-detail-list {
+  display: grid;
+  gap: 7px;
+}
+.recipe-ingredient-detail {
+  display: grid;
+  gap: 0;
+  width: 100%;
+  padding: 0;
+  border: 1px solid rgb(60 74 66 / 55%);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgb(12 18 15 / 64%);
+  color: var(--text);
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+.recipe-ingredient-detail:hover { border-color: rgb(78 222 163 / 34%); background: rgb(20 31 25 / 78%); }
+.recipe-ingredient-detail:active { transform: scale(.992); }
+.recipe-ingredient-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+}
+.recipe-ingredient-main > span:nth-child(2) { display: grid; gap: 2px; min-width: 0; }
+.recipe-ingredient-main strong,
+.recipe-ingredient-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recipe-ingredient-main small { color: var(--muted); font-size: 12px; }
+.recipe-ingredient-main > .material-symbols-outlined { color: var(--muted); transition: transform 180ms cubic-bezier(.2,.8,.2,1), color 160ms ease; }
+.recipe-ingredient-detail.open .recipe-ingredient-main > .material-symbols-outlined { color: var(--primary); transform: rotate(180deg); }
+.recipe-ingredient-panel {
+  display: grid;
+  padding: 0 8px 8px 65px;
+  animation: meal-detail-in 170ms cubic-bezier(.2,.8,.2,1);
+}
+.meal-detail-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
 .yesterday-suggestion { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; overflow: hidden; padding: 10px 0; border-top: 1px solid rgb(60 74 66 / 55%); animation: yesterday-suggestion-in 220ms cubic-bezier(.2,.8,.2,1); }
 .yesterday-suggestion > .material-symbols-outlined { color: var(--primary); transition: transform 180ms ease, color 180ms ease; }
 .yesterday-suggestion > span:nth-child(2) { display: grid; line-height: 1.2; }
@@ -1064,6 +1163,7 @@ button:disabled {
 }
 @keyframes recent-error { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
 @keyframes optimistic-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } }
+@keyframes meal-detail-in { from { opacity: 0; transform: translateY(-6px) scale(.992); } }
 @keyframes meal-menu-in { from { opacity: 0; transform: translateY(-6px) scale(.96); } }
 @keyframes meal-menu-dots { 28% { transform: translateY(-3px) rotate(8deg); } 58% { transform: translateY(2px) rotate(-6deg); } 82% { transform: translateY(-1px) rotate(3deg); } }
 @keyframes paste-loader-in { from { opacity: 0; } }

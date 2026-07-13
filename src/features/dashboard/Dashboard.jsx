@@ -15,6 +15,33 @@ function formatMealLogAmount(log) {
   return `${formatNumber(log.quantity, 1)} g`;
 }
 
+function foodPreparationSuffix(food) {
+  return food?.preparation && food.preparation !== "UNSPECIFIED" ? ` · ${preparationLabel(food.preparation)}` : "";
+}
+
+function scaleFoodNutrition(food, quantity) {
+  const baseQuantity = Number(food?.baseQuantity || 100);
+  const grams = Number(quantity || 0);
+  const factor = baseQuantity > 0 ? grams / baseQuantity : 0;
+  return {
+    calories: Math.round(Number(food?.calories || 0) * factor),
+    proteinGrams: Number(food?.proteinGrams || 0) * factor,
+    carbsGrams: Number(food?.carbsGrams || 0) * factor,
+    fatGrams: Number(food?.fatGrams || 0) * factor,
+  };
+}
+
+function NutritionPills({ nutrition }) {
+  return (
+    <div className="meal-detail-pills">
+      <span><small>Kcal</small><strong>{formatNumber(nutrition?.calories)}</strong></span>
+      <span><small>P</small><strong>{formatNumber(nutrition?.proteinGrams, 1)}g</strong></span>
+      <span><small>C</small><strong>{formatNumber(nutrition?.carbsGrams, 1)}g</strong></span>
+      <span><small>G</small><strong>{formatNumber(nutrition?.fatGrams, 1)}g</strong></span>
+    </div>
+  );
+}
+
 export function Dashboard({ api, user, setPage }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -515,10 +542,28 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
 
 function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, clipboard, pasteLoading, setPasteLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
   const items = meal?.items || [];
+  const cardRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
+  const [expandedLogId, setExpandedLogId] = useState(null);
   const [suggestionState, setSuggestionState] = useState("idle");
   const yesterdayItems = yesterdayMeal?.items || [];
   useEffect(() => setSuggestionState("idle"), [targetDate, mealType.code]);
+  useEffect(() => setExpandedLogId(null), [targetDate, mealType.code, resetSignal]);
+  useEffect(() => {
+    if (!expandedLogId) return undefined;
+    function closeFromOutside(event) {
+      if (!cardRef.current?.contains(event.target)) setExpandedLogId(null);
+    }
+    function closeFromKeyboard(event) {
+      if (event.key === "Escape") setExpandedLogId(null);
+    }
+    document.addEventListener("pointerdown", closeFromOutside);
+    document.addEventListener("keydown", closeFromKeyboard);
+    return () => {
+      document.removeEventListener("pointerdown", closeFromOutside);
+      document.removeEventListener("keydown", closeFromKeyboard);
+    };
+  }, [expandedLogId]);
   async function copyYesterday() {
     setSuggestionState("copying");
     try {
@@ -553,8 +598,12 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
   }
   return (
     <article
+      ref={cardRef}
       className={`meal-card ${dragOver ? "drag-over" : ""}`}
       data-meal-type={mealType.code}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setExpandedLogId(null);
+      }}
       onDragOver={(event) => {
         event.preventDefault();
         setDragOver(true);
@@ -616,10 +665,13 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
               className={`${movingLogId === log.id ? "moving" : ""} ${log.optimistic ? "optimistic" : ""}`}
               key={log.id}
               resetSignal={resetSignal}
+              expanded={expandedLogId === log.id}
+              onToggle={() => setExpandedLogId((current) => (current === log.id ? null : log.id))}
               onEdit={() => onEdit(log)} onDelete={() => onDelete(log)}
+              details={<MealLogDetails log={log} item={item} />}
             >
               <FoodThumb item={item} compact />
-              <span className="meal-item-copy"><span>{item.name}</span><small>{formatMealLogAmount(log)}{log.itemType === "FOOD" && log.food?.preparation && log.food.preparation !== "UNSPECIFIED" ? ` · ${preparationLabel(log.food.preparation)}` : ""}</small></span>
+              <span className="meal-item-copy"><span>{item.name}</span><small>{formatMealLogAmount(log)}{log.itemType === "FOOD" ? foodPreparationSuffix(log.food) : ""}</small></span>
               <strong>{log.calories} kcal</strong>
             </SwipeableMealItem>
           );
@@ -631,8 +683,60 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
   );
 }
 
-function SwipeableMealItem({ children, className = "", resetSignal, onEdit, onDelete }) {
+function MealLogDetails({ log, item }) {
+  if (log.itemType === "RECIPE") {
+    const ingredients = item?.ingredients || [];
+    return (
+      <div className="meal-item-detail">
+        <div className="meal-detail-summary">
+          <span><small>Porciones</small><strong>{formatNumber(log.quantity, 1)}</strong></span>
+          <span><small>Peso interno</small><strong>{formatNumber(item?.totalWeightGrams, 1)}g</strong></span>
+        </div>
+        <NutritionPills nutrition={log} />
+        <div className="recipe-detail-list">
+          {ingredients.length ? ingredients.map((ingredient, index) => (
+            <RecipeIngredientDetail ingredient={ingredient} key={`${ingredient.food?.id || "food"}-${index}`} />
+          )) : (
+            <p className="meal-detail-empty">Esta receta todavia no trae ingredientes.</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="meal-item-detail">
+      <div className="meal-detail-summary">
+        <span><small>Cantidad</small><strong>{formatMealLogAmount(log)}</strong></span>
+        <span><small>Alimento</small><strong>{item?.name}</strong></span>
+      </div>
+      <NutritionPills nutrition={log} />
+    </div>
+  );
+}
+
+function RecipeIngredientDetail({ ingredient }) {
+  const [open, setOpen] = useState(false);
+  const food = ingredient.food || {};
+  const nutrition = scaleFoodNutrition(food, ingredient.quantity);
+  return (
+    <button type="button" className={`recipe-ingredient-detail ${open ? "open" : ""}`} onClick={() => setOpen((current) => !current)} aria-expanded={open}>
+      <span className="recipe-ingredient-main">
+        <FoodThumb item={{ ...food, type: "FOOD" }} compact />
+        <span><strong>{food.name || "Alimento"}</strong><small>{formatNumber(ingredient.quantity, 1)} g{foodPreparationSuffix(food)}</small></span>
+        <span className="material-symbols-outlined" aria-hidden="true">expand_more</span>
+      </span>
+      {open && (
+        <span className="recipe-ingredient-panel">
+          <NutritionPills nutrition={nutrition} />
+        </span>
+      )}
+    </button>
+  );
+}
+
+function SwipeableMealItem({ children, className = "", resetSignal, expanded = false, onToggle, details, onEdit, onDelete }) {
   const gesture = useRef(null);
+  const suppressClick = useRef(false);
   const [offset, setOffset] = useState(0);
   const [revealed, setRevealed] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -645,19 +749,26 @@ function SwipeableMealItem({ children, className = "", resetSignal, onEdit, onDe
     setOffset(0);
   }, []);
   useEffect(() => close(), [close, resetSignal]);
+  useEffect(() => {
+    if (expanded && revealed) close();
+  }, [expanded, close, revealed]);
   function finish() {
     if (gesture.current?.axis === "x" && offset > 64) {
+      suppressClick.current = true;
       setRevealed("edit");
       setOffset(76);
     } else if (gesture.current?.axis === "x" && offset < -64) {
+      suppressClick.current = true;
       setRevealed("delete");
       setOffset(-76);
     } else {
+      if (gesture.current?.axis === "x") suppressClick.current = true;
       close();
     }
     gesture.current = null;
     setDragging(false);
     setHorizontalDragging(false);
+    if (suppressClick.current) window.setTimeout(() => { suppressClick.current = false; }, 220);
   }
   function move(event) {
     if (!gesture.current) return;
@@ -678,11 +789,11 @@ function SwipeableMealItem({ children, className = "", resetSignal, onEdit, onDe
     }
   }
   return (
-    <div className={`swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""}`}>
+    <div className={`swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""} ${expanded ? "expanded" : ""}`}>
       <button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={() => { close(); window.setTimeout(onEdit, 120); }}><span className="material-symbols-outlined">edit</span></button>
       <button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={() => { close(); window.setTimeout(onDelete, 120); }}><span className="material-symbols-outlined">delete</span></button>
       <div
-        className={`meal-item ${horizontalDragging ? "swiping" : ""} ${className}`}
+        className={`meal-item-shell ${horizontalDragging ? "swiping" : ""} ${className}`}
         style={{ transform: `translateX(${offset}px)` }}
         onTouchStart={(event) => {
           gesture.current = { x: event.touches[0].clientX, y: event.touches[0].clientY, axis: null };
@@ -692,7 +803,11 @@ function SwipeableMealItem({ children, className = "", resetSignal, onEdit, onDe
         onTouchEnd={finish}
         onTouchCancel={finish}
       >
-        {children}
+        <button type="button" className="meal-item" aria-expanded={expanded} onClick={() => !horizontalDragging && !suppressClick.current && onToggle?.()}>
+          {children}
+          <span className="meal-item-chevron material-symbols-outlined" aria-hidden="true">expand_more</span>
+        </button>
+        {expanded && details}
       </div>
     </div>
   );
