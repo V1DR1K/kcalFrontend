@@ -7,8 +7,15 @@
 .current-plan-macros span { padding: 5px 7px; border-radius: 999px; background: var(--surface-high); color: var(--text); }
 .plan-history article.active { border-color: rgb(78 222 163 / 55%); }
 .plan-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.plan-history-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 7px; }
 .active-plan-badge { padding: 4px 8px; border-radius: 999px; background: rgb(78 222 163 / 16%); color: var(--primary); font-size: 11px; font-weight: 900; }
-.use-plan-button { min-height: 34px; padding: 5px 9px; font-size: 12px; }
+.use-plan-button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px; padding: 5px 9px; font-size: 12px; }
+.use-plan-button .material-symbols-outlined { font-size: 17px; }
+.editing-plan-banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-bottom: 14px; padding: 12px; border: 1px solid rgb(137 206 255 / 42%); border-radius: 12px; background: rgb(137 206 255 / 9%); }
+.editing-plan-banner > .material-symbols-outlined { color: #89ceff; }
+.editing-plan-banner div { display: grid; gap: 2px; }
+.editing-plan-banner small { color: var(--muted); }
+.ghost-icon { display: grid; place-items: center; width: 34px; min-height: 34px; padding: 0; border: 1px solid var(--outline); border-radius: 50%; background: var(--surface-low); color: var(--text); }
 
 .tutorial-list {
   display: grid;

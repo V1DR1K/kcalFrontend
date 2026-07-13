@@ -96,10 +96,11 @@ export function Profile({ api, logout }) {
 
 function NutritionPlanManager({ api, presets, plans, onChanged }) {
   const [creating, setCreating] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
   const [selectedPreset, setSelectedPreset] = useState(null);
   const [saving, setSaving] = useState(false);
   const [activatingId, setActivatingId] = useState(null);
-  const [form, setForm] = useState({
+  const initialForm = {
     name: "Plan manual",
     dailyCalories: 2200,
     proteinPercent: 25,
@@ -107,7 +108,8 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     fatPercent: 25,
     startDate: today(),
     endDate: "",
-  });
+  };
+  const [form, setForm] = useState(initialForm);
   const total = Number(form.proteinPercent) + Number(form.carbsPercent) + Number(form.fatPercent);
   const grams = {
     protein: macroGrams(form.dailyCalories, form.proteinPercent, 4),
@@ -115,6 +117,38 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     fat: macroGrams(form.dailyCalories, form.fatPercent, 9),
   };
   const currentPlan = plans.find((plan) => plan.startDate <= today() && (!plan.endDate || plan.endDate >= today()));
+  const formVisible = creating || Boolean(editingPlan);
+  const formMode = editingPlan ? "edit" : "create";
+  function resetForm() {
+    setForm(initialForm);
+    setSelectedPreset(null);
+    setEditingPlan(null);
+    setCreating(false);
+  }
+  function startCreate() {
+    if (creating) {
+      resetForm();
+      return;
+    }
+    setEditingPlan(null);
+    setSelectedPreset(null);
+    setForm(initialForm);
+    setCreating(true);
+  }
+  function startEdit(plan) {
+    setCreating(false);
+    setSelectedPreset(null);
+    setEditingPlan(plan);
+    setForm({
+      name: plan.name,
+      dailyCalories: plan.dailyCalories,
+      proteinPercent: Number(plan.proteinPercent),
+      carbsPercent: Number(plan.carbsPercent),
+      fatPercent: Number(plan.fatPercent),
+      startDate: plan.startDate,
+      endDate: plan.endDate || "",
+    });
+  }
   function setField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
   }
@@ -148,22 +182,25 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     }
     setSaving(true);
     try {
-      await api.request("/api/profile/nutrition-plans", {
-        method: "POST",
+      const payload = {
+        ...form,
+        dailyCalories: Number(form.dailyCalories),
+        proteinPercent: Number(form.proteinPercent),
+        carbsPercent: Number(form.carbsPercent),
+        fatPercent: Number(form.fatPercent),
+        endDate: form.endDate || null,
+      };
+      await api.request(editingPlan ? `/api/profile/nutrition-plans/${editingPlan.id}` : "/api/profile/nutrition-plans", {
+        method: editingPlan ? "PUT" : "POST",
         body: JSON.stringify({
-          ...form,
-          dailyCalories: Number(form.dailyCalories),
-          proteinPercent: Number(form.proteinPercent),
-          carbsPercent: Number(form.carbsPercent),
-          fatPercent: Number(form.fatPercent),
-          endDate: form.endDate || null,
+          ...payload,
         }),
       });
-      api.notify("Plan alimenticio guardado.");
-      setCreating(false);
+      api.notify(editingPlan ? "Plan alimenticio actualizado." : "Plan alimenticio guardado.");
+      resetForm();
       await onChanged();
     } catch {
-      api.notify("No se pudo guardar el plan.", "error");
+      api.notify(editingPlan ? "No se pudo actualizar el plan. Revisa que no se superponga con otro." : "No se pudo guardar el plan. Revisa que no se superponga con otro.", "error");
     } finally {
       setSaving(false);
     }
@@ -172,7 +209,9 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     if (activatingId || plan.id === currentPlan?.id) return;
     setActivatingId(plan.id);
     try {
-      await api.request("/api/profile/nutrition-plans", { method: "POST", body: JSON.stringify({ name: plan.name, dailyCalories: plan.dailyCalories, proteinPercent: Number(plan.proteinPercent), carbsPercent: Number(plan.carbsPercent), fatPercent: Number(plan.fatPercent), startDate: today(), endDate: null }) });
+      const payload = { name: plan.name, dailyCalories: plan.dailyCalories, proteinPercent: Number(plan.proteinPercent), carbsPercent: Number(plan.carbsPercent), fatPercent: Number(plan.fatPercent), startDate: today(), endDate: null };
+      const replaceCurrentPlan = currentPlan?.id && currentPlan.startDate === today();
+      await api.request(replaceCurrentPlan ? `/api/profile/nutrition-plans/${currentPlan.id}` : "/api/profile/nutrition-plans", { method: replaceCurrentPlan ? "PUT" : "POST", body: JSON.stringify(payload) });
       api.notify(`${plan.name} es ahora tu plan actual.`); await onChanged();
     } catch { api.notify("No se pudo cambiar el plan.", "error"); }
     finally { setActivatingId(null); }
@@ -184,8 +223,9 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
         <div><small>PLAN ACTUAL</small><strong>{currentPlan?.name || "Sin plan activo"}</strong>{currentPlan && <span>Desde {readableDate(currentPlan.startDate)} · {currentPlan.dailyCalories} kcal</span>}</div>
         {currentPlan && <div className="current-plan-macros"><span>{currentPlan.proteinPercent}% P</span><span>{currentPlan.carbsPercent}% C</span><span>{currentPlan.fatPercent}% G</span></div>}
       </div>
-      <button type="button" className="primary add-plan-button" onClick={() => setCreating((value) => !value)}><span className="material-symbols-outlined">add</span>{creating ? "Cancelar" : "Agregar plan"}</button>
-      {creating && <>
+      <button type="button" className="primary add-plan-button" onClick={startCreate}><span className="material-symbols-outlined">{creating ? "close" : "add"}</span>{creating ? "Cancelar" : "Agregar plan"}</button>
+      {formVisible && <>
+      {editingPlan && <div className="editing-plan-banner"><span className="material-symbols-outlined">edit</span><div><strong>Editando {editingPlan.name}</strong><small>Los cambios se guardan sobre este plan del historial.</small></div><button type="button" className="ghost-icon" onClick={resetForm} aria-label="Cancelar edicion"><span className="material-symbols-outlined">close</span></button></div>}
       <div className="plan-calorie-step">
         <span className="step-number">1</span><div><strong>Definí tus calorías diarias</strong><small>Esta base se usa para calcular los gramos de cada macronutriente.</small></div>
         <Input label="Calorías por día" type="number" min="800" max="10000" step="10" value={form.dailyCalories} onChange={(event) => setField("dailyCalories", event.target.value)} required />
@@ -234,7 +274,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
           </div>
         </details>
         <button className="primary" disabled={saving || Math.round(total * 10) / 10 !== 100}>
-          {saving ? "Guardando…" : "Guardar nuevo plan"}
+          {saving ? "Guardando..." : formMode === "edit" ? "Guardar cambios" : "Guardar nuevo plan"}
         </button>
       </form>
       </>}
@@ -242,7 +282,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
         <h3>Historial de planes</h3>
         {plans.map((plan) => (
           <article className={plan.id === currentPlan?.id ? "active" : ""} key={plan.id || `${plan.name}-${plan.startDate}`}>
-            <div className="plan-history-heading"><strong>{plan.name}</strong>{plan.id === currentPlan?.id ? <span className="active-plan-badge">Actual</span> : <button className="secondary use-plan-button" disabled={Boolean(activatingId)} onClick={() => activatePlan(plan)}>{activatingId === plan.id ? "Cambiando…" : "Usar este plan"}</button>}</div>
+            <div className="plan-history-heading"><strong>{plan.name}</strong><div className="plan-history-actions">{plan.id === currentPlan?.id && <span className="active-plan-badge">Actual</span>}<button type="button" className="secondary use-plan-button" onClick={() => startEdit(plan)}><span className="material-symbols-outlined">edit</span>Editar</button>{plan.id !== currentPlan?.id && <button className="secondary use-plan-button" disabled={Boolean(activatingId)} onClick={() => activatePlan(plan)}>{activatingId === plan.id ? "Cambiando..." : "Usar este plan"}</button>}</div></div>
             <span>
               {plan.startDate} - {plan.endDate || "actual"}
             </span>
