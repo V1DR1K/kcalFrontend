@@ -868,7 +868,15 @@ button:disabled {
 
 .catalog-copy { display: grid; gap: 4px; min-width: 0; }
 .catalog-copy strong,
-.catalog-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catalog-copy small,
+.food-brand-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.food-brand-line {
+  color: var(--primary);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.15;
+}
 .row-action { color: var(--muted); }
 
 .preparation-badge {
@@ -915,7 +923,24 @@ button:disabled {
 
 .quick-items div { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; overscroll-behavior-inline: contain; }
 .quick-items div::-webkit-scrollbar { display: none; }
-.quick-items button { flex: 0 0 auto; }
+.quick-items button {
+  flex: 0 0 auto;
+  align-content: center;
+  gap: 1px;
+  min-width: 96px;
+}
+.quick-items button span,
+.quick-items button small {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quick-items button small {
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 800;
+}
 
 .quick-items button,
 .recent-meals button {

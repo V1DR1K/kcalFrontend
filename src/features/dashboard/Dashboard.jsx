@@ -1007,7 +1007,8 @@ export function QuickItems({ title, items, onPick }) {
       <div>
         {items.map((item) => (
           <button key={`${item.type}:${item.id}`} onClick={() => onPick(item)}>
-            {item.name}
+            <span>{item.name}</span>
+            {item.type === "FOOD" && item.brand && <small>{item.brand}</small>}
           </button>
         ))}
       </div>

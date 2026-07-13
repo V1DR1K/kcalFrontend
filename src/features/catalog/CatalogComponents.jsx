@@ -10,6 +10,15 @@ export function CatalogStatus({ children, error = false }) {
   );
 }
 
+function foodMeta(item) {
+  if (!item || item.type === "RECIPE") return "";
+  const parts = [];
+  if (item.brand) parts.push(item.brand);
+  const category = categoryLabel(item.category);
+  if (category && category !== item.brand) parts.push(category);
+  return parts.join(" · ");
+}
+
 export function CategoryChips({ category, setCategory }) {
   return (
     <div className="chips" aria-label="Filtrar por categoría">
@@ -26,6 +35,7 @@ export function CatalogRow({ item, onPick }) {
   return (
     <button className="catalog-row" onClick={() => onPick(item)}>
       <span>{item.name}</span>
+      {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
       <PreparationBadge food={item} />
       <small>
         {item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g
@@ -50,7 +60,7 @@ export function CatalogCard({ item, onAdd }) {
       <FoodThumb item={item} />
       <div>
         <h3>{item.name}</h3>
-        <p>{item.type === "RECIPE" ? `Receta completa · ${formatNumber(item.totalWeightGrams)}g internos` : item.brand || categoryLabel(item.category)}</p>
+        <p>{item.type === "RECIPE" ? `Receta completa · ${formatNumber(item.totalWeightGrams)}g internos` : foodMeta(item) || categoryLabel(item.category)}</p>
         {item.type === "FOOD" && <PreparationBadge food={item} />}
       </div>
       <strong>{item.calories} kcal</strong>
@@ -68,6 +78,7 @@ export function CatalogRowWithImage({ item, onPick }) {
       <FoodThumb item={item} compact />
       <span className="catalog-copy">
         <strong>{item.name}</strong>
+        {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
         <PreparationBadge food={item} />
         <small>
           {item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g
