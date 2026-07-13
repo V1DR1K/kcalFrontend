@@ -329,10 +329,19 @@ function MyFoods({ api }) {
   );
 }
 
+function recipeFieldLabel(field) {
+  if (field === "name") return "Nombre";
+  if (field === "description") return "Descripcion";
+  if (field === "totalWeightGrams") return "Peso total";
+  if (field?.startsWith("ingredients")) return "Ingredientes";
+  return field || "Datos";
+}
+
 function CreateRecipeForm({ api }) {
   const [query, setQuery] = useState("");
   const [ingredients, setIngredients] = useState([]);
   const [preview, setPreview] = useState(null);
+  const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const totalWeight = useMemo(
     () => ingredients.reduce((total, item) => total + (Number(item.quantity) || 0), 0),
@@ -365,9 +374,18 @@ function CreateRecipeForm({ api }) {
   async function submit(event) {
     event.preventDefault();
     if (saving) return;
+    setFormError("");
     const data = Object.fromEntries(new FormData(event.currentTarget));
+    if (!String(data.name || "").trim()) {
+      setFormError("Poné un nombre para la receta.");
+      return;
+    }
+    if (!ingredients.length) {
+      setFormError("Agregá al menos un ingrediente.");
+      return;
+    }
     if (ingredients.some((item) => !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0)) {
-      api.notify("Cada ingrediente debe tener una cantidad mayor a cero.", "error");
+      setFormError("Cada ingrediente debe tener una cantidad mayor a cero.");
       return;
     }
     setSaving(true);
@@ -382,6 +400,7 @@ function CreateRecipeForm({ api }) {
         body: JSON.stringify({
           name: data.name,
           description: data.description,
+          totalWeightGrams: totalWeight,
           ingredients: normalizedIngredients,
         }),
       });
@@ -389,8 +408,13 @@ function CreateRecipeForm({ api }) {
       event.currentTarget.reset();
       setIngredients([]);
       setPreview(null);
-    } catch {
-      api.notify("No se pudo crear la receta. Revisá los datos.", "error");
+    } catch (error) {
+      const fieldDetails = Object.entries(error.fields || {})
+        .map(([field, message]) => `${recipeFieldLabel(field)}: ${message}`)
+        .join(" ");
+      const message = fieldDetails || error.message || "No se pudo crear la receta. Revisa los datos.";
+      setFormError(message);
+      api.notify(message, "error");
     } finally {
       setSaving(false);
     }
@@ -398,6 +422,12 @@ function CreateRecipeForm({ api }) {
   return (
     <Panel title="Nueva receta" className="recipe-panel">
       <form className="form-grid recipe-form" onSubmit={submit}>
+        {formError && (
+          <div className="form-error recipe-error" role="alert">
+            <span className="material-symbols-outlined">error</span>
+            <span>{formError}</span>
+          </div>
+        )}
         <Input name="name" label="Nombre" required />
         <Input name="description" label="Descripcion opcional" />
         <div className="recipe-weight-summary" aria-live="polite">
