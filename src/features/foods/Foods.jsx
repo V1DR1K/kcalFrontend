@@ -84,8 +84,8 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
                   setDeletingRecipeId(item.id);
                   try {
                     await api.request(`/api/recipes/${item.id}`, { method: "DELETE" });
+                    catalog.removeItem(item.id);
                     api.notify("Receta borrada.");
-                    catalog.retry();
                   } catch (error) {
                     api.notify(error.message || "No se pudo borrar la receta.", "error");
                   } finally {
@@ -128,7 +128,7 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
           onClose={() => setEditingRecipe(null)}
           onDone={() => {
             setEditingRecipe(null);
-            catalog.retry();
+            catalog.refresh();
           }}
         />
       )}

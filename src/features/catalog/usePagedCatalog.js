@@ -39,5 +39,11 @@ export function usePagedCatalog({ api, endpoint, query = "", category = "", page
     if (!state.initialLoading && !state.loadingMore && state.hasNext && !requestRef.current) fetchPage(state.page + 1, false);
   }, [fetchPage, state.hasNext, state.initialLoading, state.loadingMore, state.page]);
 
-  return { ...state, loadNext, retry: () => fetchPage(state.failedPage ?? 0, !state.items.length) };
+  const removeItem = useCallback((id) => {
+    setState((current) => ({ ...current, items: current.items.filter((item) => item.id !== id) }));
+  }, []);
+
+  const refresh = useCallback(() => fetchPage(0, true), [fetchPage]);
+
+  return { ...state, loadNext, removeItem, refresh, retry: () => fetchPage(state.failedPage ?? 0, !state.items.length) };
 }
