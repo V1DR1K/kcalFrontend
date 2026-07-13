@@ -374,8 +374,9 @@ function CreateRecipeForm({ api }) {
   async function submit(event) {
     event.preventDefault();
     if (saving) return;
+    const form = event.currentTarget;
     setFormError("");
-    const data = Object.fromEntries(new FormData(event.currentTarget));
+    const data = Object.fromEntries(new FormData(form));
     if (!String(data.name || "").trim()) {
       setFormError("Poné un nombre para la receta.");
       return;
@@ -405,7 +406,7 @@ function CreateRecipeForm({ api }) {
         }),
       });
       api.notify("Receta creada.");
-      event.currentTarget.reset();
+      form.reset();
       setIngredients([]);
       setPreview(null);
     } catch (error) {
