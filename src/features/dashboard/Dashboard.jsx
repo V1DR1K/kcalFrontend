@@ -10,6 +10,11 @@ import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, readableDate, shiftDate, today } from "../../utils/format";
 
+function formatMealLogAmount(log) {
+  if (log.itemType === "RECIPE") return `${formatNumber(log.quantity, 1)} porcion${Number(log.quantity) === 1 ? "" : "es"}`;
+  return `${formatNumber(log.quantity, 1)} g`;
+}
+
 export function Dashboard({ api, user, setPage }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -494,7 +499,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
                   <div className="ghost-item" key={log.id}>
                     <span>{log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name}</span>
                     <small>
-                      {formatNumber(log.quantity, 1)}g · {log.calories} kcal
+                      {formatMealLogAmount(log)} · {log.calories} kcal
                     </small>
                   </div>
                 ))}
@@ -614,7 +619,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
               onEdit={() => onEdit(log)} onDelete={() => onDelete(log)}
             >
               <FoodThumb item={item} compact />
-              <span className="meal-item-copy"><span>{item.name}</span><small>{formatNumber(log.quantity, 1)} g{log.itemType === "FOOD" && log.food?.preparation && log.food.preparation !== "UNSPECIFIED" ? ` · ${preparationLabel(log.food.preparation)}` : ""}</small></span>
+              <span className="meal-item-copy"><span>{item.name}</span><small>{formatMealLogAmount(log)}{log.itemType === "FOOD" && log.food?.preparation && log.food.preparation !== "UNSPECIFIED" ? ` · ${preparationLabel(log.food.preparation)}` : ""}</small></span>
               <strong>{log.calories} kcal</strong>
             </SwipeableMealItem>
           );
@@ -752,13 +757,17 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     if (selected.type === "FOOD" && selected.servingWeightGrams) {
       setQuantity("1");
       setUnit("SERVING");
+    } else if (selected.type === "RECIPE") {
+      setQuantity("1");
+      setUnit("PORTION");
     } else {
       setQuantity(selected.category === "FAT" ? "10" : "100");
       setUnit("GRAM");
     }
   }, [selected?.category, selected?.id, selected?.servingWeightGrams, selected?.type]);
   useEffect(() => {
-    if (!selected?.servingWeightGrams && unit === "SERVING") setUnit("GRAM");
+    if (selected?.type === "RECIPE" && unit !== "PORTION") setUnit("PORTION");
+    if (selected?.type !== "RECIPE" && !selected?.servingWeightGrams && unit === "SERVING") setUnit("GRAM");
   }, [selected, unit]);
   useEffect(() => {
     const numericQuantity = Number(quantity);
@@ -778,20 +787,19 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
         .then(setPreview)
         .catch(() => setPreview(null));
     } else {
-      const ratio = numericQuantity / Number(selected.totalWeightGrams || 1);
       setPreview({
-        calories: Math.round(selected.calories * ratio),
-        proteinGrams: selected.proteinGrams * ratio,
-        carbsGrams: selected.carbsGrams * ratio,
-        fatGrams: selected.fatGrams * ratio,
+        calories: Math.round(selected.calories * numericQuantity),
+        proteinGrams: selected.proteinGrams * numericQuantity,
+        carbsGrams: selected.carbsGrams * numericQuantity,
+        fatGrams: selected.fatGrams * numericQuantity,
       });
     }
   }, [api, selected, quantity, unit]);
   async function add() {
     const numericQuantity = Number(quantity);
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || adding) return;
-    const quantityInGrams = selected.type === "FOOD" && unit === "SERVING" ? numericQuantity * Number(selected.servingWeightGrams || 0) : numericQuantity;
-    if (quantityInGrams <= 0) return;
+    const logQuantity = selected.type === "FOOD" && unit === "SERVING" ? numericQuantity * Number(selected.servingWeightGrams || 0) : numericQuantity;
+    if (logQuantity <= 0) return;
     setAdding(true);
     try {
       const log = await api.request("/api/nutrition/meal-logs", {
@@ -800,8 +808,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           itemType: selected.type,
           itemId: selected.id,
           mealType: mealType.code,
-          quantity: quantityInGrams,
-          unit: "GRAM",
+          quantity: logQuantity,
+          unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
           logDate: selectedDate,
         }),
       });
@@ -815,7 +823,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     }
   }
   const selectedUnitOptions =
-    selected?.type === "FOOD" && selected?.servingWeightGrams
+    selected?.type === "RECIPE"
+      ? [{ value: "PORTION", label: "Porciones" }]
+      : selected?.type === "FOOD" && selected?.servingWeightGrams
       ? [
           { value: "GRAM", label: "Gramos" },
           {
@@ -942,8 +952,15 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
                 />
               )}
               <div className="selected-controls">
-                <Input selectOnFocus label={selected.type === "RECIPE" || unit === "GRAM" ? "Gramos" : "Cantidad de porciones"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
-                <Select label="Unidad" value={unit} onChange={(event) => changeSelectedUnit(event.target.value)} options={selectedUnitOptions} />
+                <Input selectOnFocus numericOnly label={selected.type === "RECIPE" ? "Porciones" : unit === "GRAM" ? "Gramos" : "Cantidad de porciones"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+                {selected.type === "RECIPE" ? (
+                  <div className="recipe-fixed-unit" aria-label="Unidad fija">
+                    <span>Unidad</span>
+                    <strong>Porciones</strong>
+                  </div>
+                ) : (
+                  <Select label="Unidad" value={unit} onChange={(event) => changeSelectedUnit(event.target.value)} options={selectedUnitOptions} />
+                )}
               </div>
               <div className="nutrition-preview" aria-label="Resumen nutricional">
                 <span>
@@ -1002,7 +1019,7 @@ function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAdd, onOp
   const recents = readRecents(user);
   const meals = (recents.meals || []).map((meal) => {
     const savedItem = (recents.items || []).find((item) => item.id === meal.itemId && item.type === meal.itemType);
-    const baseQuantity = Number(savedItem?.baseQuantity || savedItem?.totalWeightGrams || 100);
+    const baseQuantity = meal.itemType === "RECIPE" ? 1 : Number(savedItem?.baseQuantity || 100);
     const estimatedCalories = baseQuantity > 0 ? Math.round(Number(savedItem?.calories || 0) * Number(meal.quantity || 0) / baseQuantity) : 0;
     return { ...meal, imageUrl: meal.imageUrl || savedItem?.imageUrl, category: meal.category || savedItem?.category, calories: meal.calories ?? estimatedCalories };
   });
@@ -1020,7 +1037,7 @@ function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAdd, onOp
           itemId: meal.itemId,
           mealType: meal.mealType,
           quantity: meal.quantity,
-          unit: meal.unit,
+          unit: meal.itemType === "RECIPE" ? "PORTION" : meal.unit,
           logDate: date,
         }),
       });
@@ -1049,7 +1066,7 @@ function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAdd, onOp
             <FoodThumb item={item} compact />
             <span className="recent-meal-copy">
               <strong>{meal.label}</strong>
-              <small>{mealLabel} · {formatNumber(meal.quantity, 1)} g</small>
+              <small>{mealLabel} · {meal.itemType === "RECIPE" ? `${formatNumber(meal.quantity, 1)} porcion${Number(meal.quantity) === 1 ? "" : "es"}` : `${formatNumber(meal.quantity, 1)} g`}</small>
             </span>
             <strong className="recent-meal-calories">{formatNumber(meal.calories || 0)}<small> kcal</small></strong>
             <button type="button" disabled={state === "adding" || state === "added"} aria-label={`Agregar ${meal.label} a ${mealLabel}`} onClick={() => addRecent(meal)}>

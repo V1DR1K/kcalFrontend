@@ -485,7 +485,7 @@ function CreateRecipeForm({ api }) {
             <label className="ingredient-row" key={`${item.foodId}:${index}`}>
               <span className="ingredient-name">{item.name}</span>
               <span className="ingredient-quantity">
-                <input aria-label={`Cantidad de ${item.name} en gramos`} type="number" min="0.1" step="0.1" value={item.quantity} onChange={(event) => setIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: event.target.value } : ingredient)))} />
+                <input aria-label={`Cantidad de ${item.name} en gramos`} type="number" inputMode="decimal" min="0.1" step="0.1" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(",", ".").replace(/[^\d.]/g, ""); }} onChange={(event) => setIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: event.target.value } : ingredient)))} />
                 <small>g</small>
               </span>
               <button type="button" className="ingredient-remove" onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}>

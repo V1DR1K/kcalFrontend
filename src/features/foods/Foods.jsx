@@ -202,7 +202,7 @@ function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }
         <FoodThumb item={recipe} />
         <div>
           <h3>{recipe.name}</h3>
-          <p>{formatNumber(recipe.totalWeightGrams, 1)}g totales</p>
+          <p>Receta completa · {formatNumber(recipe.totalWeightGrams, 1)}g internos</p>
         </div>
         <strong>{recipe.calories} kcal</strong>
       </article>
@@ -272,7 +272,7 @@ function EditRecipeModal({ api, recipe, onClose, onDone }) {
               <label className="ingredient-row" key={`${item.foodId}:${index}`}>
                 <span className="ingredient-name">{item.name}</span>
                 <span className="ingredient-quantity">
-                  <input aria-label={`Cantidad de ${item.name} en gramos`} type="number" min="0.1" step="0.1" value={item.quantity} onChange={(event) => setIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: event.target.value } : ingredient)))} />
+                  <input aria-label={`Cantidad de ${item.name} en gramos`} type="number" inputMode="decimal" min="0.1" step="0.1" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(",", ".").replace(/[^\d.]/g, ""); }} onChange={(event) => setIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: event.target.value } : ingredient)))} />
                   <small>g</small>
                 </span>
                 <button type="button" className="ingredient-remove" onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}>
@@ -320,7 +320,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
         body: JSON.stringify({
           mealType,
           quantity: numericQuantity,
-          unit: log.unit || "GRAM",
+          unit: log.itemType === "RECIPE" ? "PORTION" : log.unit || "GRAM",
           logDate: log.logDate,
         }),
       });
@@ -344,7 +344,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
             <span className="material-symbols-outlined">close</span>
           </button>
         </header>
-        <Input autoFocus selectOnFocus label={log.itemType === "RECIPE" ? "Gramos ingeridos" : "Cantidad en gramos"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+        <Input autoFocus selectOnFocus numericOnly label={log.itemType === "RECIPE" ? "Porciones" : "Cantidad en gramos"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
         <Select
           label="Comida"
           value={mealType}

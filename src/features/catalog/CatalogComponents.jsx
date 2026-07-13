@@ -50,7 +50,7 @@ export function CatalogCard({ item, onAdd }) {
       <FoodThumb item={item} />
       <div>
         <h3>{item.name}</h3>
-        <p>{item.type === "RECIPE" ? `${formatNumber(item.totalWeightGrams)}g totales` : item.brand || categoryLabel(item.category)}</p>
+        <p>{item.type === "RECIPE" ? `Receta completa · ${formatNumber(item.totalWeightGrams)}g internos` : item.brand || categoryLabel(item.category)}</p>
         {item.type === "FOOD" && <PreparationBadge food={item} />}
       </div>
       <strong>{item.calories} kcal</strong>
