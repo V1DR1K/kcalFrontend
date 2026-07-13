@@ -294,6 +294,12 @@ function EditRecipeModal({ api, recipe, onClose, onDone }) {
 export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [quantity, setQuantity] = useState(String(log.quantity));
   const [mealType, setMealType] = useState(log.mealType);
+  const [preview, setPreview] = useState({
+    calories: log.calories,
+    proteinGrams: log.proteinGrams,
+    carbsGrams: log.carbsGrams,
+    fatGrams: log.fatGrams,
+  });
   const [saving, setSaving] = useState(false);
   const [closing, setClosing] = useState(false);
   const item = log.itemType === "RECIPE" ? log.recipe : log.food;
@@ -309,6 +315,37 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [closeWithAnimation]);
+  useEffect(() => {
+    const numericQuantity = Number(quantity);
+    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || !item) {
+      setPreview(null);
+      return undefined;
+    }
+    if (log.itemType === "RECIPE") {
+      setPreview({
+        calories: Math.round(Number(item.calories || 0) * numericQuantity),
+        proteinGrams: Number(item.proteinGrams || 0) * numericQuantity,
+        carbsGrams: Number(item.carbsGrams || 0) * numericQuantity,
+        fatGrams: Number(item.fatGrams || 0) * numericQuantity,
+      });
+      return undefined;
+    }
+    let active = true;
+    api
+      .request("/api/foods/preview", {
+        method: "POST",
+        body: JSON.stringify({
+          foodId: item.id,
+          quantity: numericQuantity,
+          unit: "GRAM",
+        }),
+      })
+      .then((nextPreview) => active && setPreview(nextPreview))
+      .catch(() => active && setPreview(null));
+    return () => {
+      active = false;
+    };
+  }, [api, item, log.itemType, quantity]);
   async function submit(event) {
     event.preventDefault();
     const numericQuantity = Number(quantity);
@@ -354,6 +391,24 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
             label: meal.label,
           }))}
         />
+        <div className="nutrition-preview edit-log-preview" aria-label="Resumen nutricional">
+          <span>
+            <small>Kcal</small>
+            <strong>{formatNumber(preview?.calories)}</strong>
+          </span>
+          <span>
+            <small>Proteinas</small>
+            <strong>{formatNumber(preview?.proteinGrams, 1)}g</strong>
+          </span>
+          <span>
+            <small>Carbos</small>
+            <strong>{formatNumber(preview?.carbsGrams, 1)}g</strong>
+          </span>
+          <span>
+            <small>Grasas</small>
+            <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
+          </span>
+        </div>
         <div className="modal-actions">
           <button type="button" className="secondary" onClick={closeWithAnimation}>
             Cancelar
