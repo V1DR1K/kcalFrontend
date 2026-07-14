@@ -763,37 +763,40 @@ function RecipeIngredientDetail({ ingredient }) {
 
 function SwipeableMealItem({ children, className = "", resetSignal, expanded = false, onToggle, details, onEdit, onDelete }) {
   const gesture = useRef(null);
+  const offsetRef = useRef(0);
   const suppressClick = useRef(false);
   const [offset, setOffset] = useState(0);
   const [revealed, setRevealed] = useState("");
-  const [dragging, setDragging] = useState(false);
   const [horizontalDragging, setHorizontalDragging] = useState(false);
+  const setSwipeOffset = useCallback((nextOffset) => {
+    offsetRef.current = nextOffset;
+    setOffset(nextOffset);
+  }, []);
   const close = useCallback(() => {
     gesture.current = null;
-    setDragging(false);
     setHorizontalDragging(false);
     setRevealed("");
-    setOffset(0);
-  }, []);
+    setSwipeOffset(0);
+  }, [setSwipeOffset]);
   useEffect(() => close(), [close, resetSignal]);
   useEffect(() => {
     if (expanded && revealed) close();
   }, [expanded, close, revealed]);
   function finish() {
-    if (gesture.current?.axis === "x" && offset > 64) {
+    const finalOffset = offsetRef.current;
+    if (gesture.current?.axis === "x" && finalOffset > 64) {
       suppressClick.current = true;
       setRevealed("edit");
-      setOffset(76);
-    } else if (gesture.current?.axis === "x" && offset < -64) {
+      setSwipeOffset(76);
+    } else if (gesture.current?.axis === "x" && finalOffset < -64) {
       suppressClick.current = true;
       setRevealed("delete");
-      setOffset(-76);
+      setSwipeOffset(-76);
     } else {
       if (gesture.current?.axis === "x") suppressClick.current = true;
       close();
     }
     gesture.current = null;
-    setDragging(false);
     setHorizontalDragging(false);
     if (suppressClick.current) window.setTimeout(() => { suppressClick.current = false; }, 220);
   }
@@ -804,15 +807,14 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
     if (!gesture.current.axis && Math.max(Math.abs(dx), Math.abs(dy)) > 10) {
       gesture.current.axis = Math.abs(dx) > Math.abs(dy) * 1.8 ? "x" : "y";
       if (gesture.current.axis === "y") {
-        setDragging(false);
         setHorizontalDragging(false);
-        setOffset(0);
+        setSwipeOffset(0);
       }
     }
     if (gesture.current.axis === "x") {
-      event.preventDefault();
+      if (event.cancelable) event.preventDefault();
       setHorizontalDragging(true);
-      setOffset(Math.max(-92, Math.min(92, dx)));
+      setSwipeOffset(Math.max(-92, Math.min(92, dx)));
     }
   }
   return (
@@ -824,7 +826,6 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
         style={{ transform: `translateX(${offset}px)` }}
         onTouchStart={(event) => {
           gesture.current = { x: event.touches[0].clientX, y: event.touches[0].clientY, axis: null };
-          setDragging(true);
         }}
         onTouchMove={move}
         onTouchEnd={finish}

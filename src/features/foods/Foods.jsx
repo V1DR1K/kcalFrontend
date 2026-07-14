@@ -147,23 +147,29 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
 
 function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }) {
   const gesture = useRef(null);
+  const offsetRef = useRef(0);
   const [offset, setOffset] = useState(0);
   const [revealed, setRevealed] = useState("");
   const [horizontalDragging, setHorizontalDragging] = useState(false);
+  const setSwipeOffset = useCallback((nextOffset) => {
+    offsetRef.current = nextOffset;
+    setOffset(nextOffset);
+  }, []);
   const close = useCallback(() => {
     gesture.current = null;
     setHorizontalDragging(false);
     setRevealed("");
-    setOffset(0);
-  }, []);
+    setSwipeOffset(0);
+  }, [setSwipeOffset]);
   useEffect(() => close(), [close, resetSignal]);
   function finish() {
-    if (gesture.current?.axis === "x" && offset > 64) {
+    const finalOffset = offsetRef.current;
+    if (gesture.current?.axis === "x" && finalOffset > 64) {
       setRevealed("edit");
-      setOffset(76);
-    } else if (gesture.current?.axis === "x" && offset < -64) {
+      setSwipeOffset(76);
+    } else if (gesture.current?.axis === "x" && finalOffset < -64) {
       setRevealed("delete");
-      setOffset(-76);
+      setSwipeOffset(-76);
     } else {
       close();
     }
@@ -178,13 +184,13 @@ function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }
       gesture.current.axis = Math.abs(dx) > Math.abs(dy) * 1.8 ? "x" : "y";
       if (gesture.current.axis === "y") {
         setHorizontalDragging(false);
-        setOffset(0);
+        setSwipeOffset(0);
       }
     }
     if (gesture.current.axis === "x") {
-      event.preventDefault();
+      if (event.cancelable) event.preventDefault();
       setHorizontalDragging(true);
-      setOffset(Math.max(-92, Math.min(92, dx)));
+      setSwipeOffset(Math.max(-92, Math.min(92, dx)));
     }
   }
   return (
