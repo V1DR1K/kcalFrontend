@@ -300,6 +300,12 @@ function EditRecipeModal({ api, recipe, onClose, onDone }) {
 export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [quantity, setQuantity] = useState(String(log.quantity));
   const [mealType, setMealType] = useState(log.mealType);
+  const [ingredients, setIngredients] = useState(() => (log.recipe?.ingredients || []).map((ingredient) => ({
+    foodId: ingredient.food?.id,
+    name: ingredient.food?.name || "Alimento",
+    quantity: String(ingredient.quantity ?? ""),
+    unit: ingredient.unit || "GRAM",
+  })));
   const [preview, setPreview] = useState({
     calories: log.calories,
     proteinGrams: log.proteinGrams,
@@ -309,6 +315,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [saving, setSaving] = useState(false);
   const [closing, setClosing] = useState(false);
   const item = log.itemType === "RECIPE" ? log.recipe : log.food;
+  const isRecipe = log.itemType === "RECIPE";
   const closeWithAnimation = useCallback(() => {
     if (closing || saving) return;
     setClosing(true);
@@ -327,12 +334,21 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
       setPreview(null);
       return undefined;
     }
-    if (log.itemType === "RECIPE") {
+    if (isRecipe) {
+      const nutrition = ingredients.reduce((total, ingredient) => {
+        const food = item?.ingredients?.find((entry) => entry.food?.id === ingredient.foodId)?.food;
+        const factor = Number(ingredient.quantity) / Number(food?.baseQuantity || 100);
+        return {
+          proteinGrams: total.proteinGrams + Number(food?.proteinGrams || 0) * factor,
+          carbsGrams: total.carbsGrams + Number(food?.carbsGrams || 0) * factor,
+          fatGrams: total.fatGrams + Number(food?.fatGrams || 0) * factor,
+        };
+      }, { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
       setPreview({
-        calories: Math.round(Number(item.calories || 0) * numericQuantity),
-        proteinGrams: Number(item.proteinGrams || 0) * numericQuantity,
-        carbsGrams: Number(item.carbsGrams || 0) * numericQuantity,
-        fatGrams: Number(item.fatGrams || 0) * numericQuantity,
+        calories: Math.round((nutrition.proteinGrams * 4 + nutrition.carbsGrams * 4 + nutrition.fatGrams * 9) * numericQuantity),
+        proteinGrams: nutrition.proteinGrams * numericQuantity,
+        carbsGrams: nutrition.carbsGrams * numericQuantity,
+        fatGrams: nutrition.fatGrams * numericQuantity,
       });
       return undefined;
     }
@@ -351,23 +367,46 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     return () => {
       active = false;
     };
-  }, [api, item, log.itemType, quantity]);
+  }, [api, ingredients, isRecipe, item, log.itemType, quantity]);
+  function updateIngredient(index, value) {
+    setIngredients((current) => current.map((ingredient, currentIndex) => currentIndex === index ? { ...ingredient, quantity: value } : ingredient));
+  }
+  async function resetRecipe() {
+    if (saving || !isRecipe) return;
+    setSaving(true);
+    try {
+      await api.request(`/api/nutrition/food-logs/${log.id}/recipe-ingredients`, { method: "DELETE" });
+      api.notify("Receta diaria restablecida.");
+      setClosing(true);
+      window.setTimeout(onDone, 180);
+    } catch (error) {
+      api.notify(error.message || "No se pudo restablecer la receta.", "error");
+      setSaving(false);
+    }
+  }
   async function submit(event) {
     event.preventDefault();
     const numericQuantity = Number(quantity);
-    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || saving) return;
+    const validIngredients = ingredients.every((ingredient) => Number.isFinite(Number(ingredient.quantity)) && Number(ingredient.quantity) > 0);
+    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || (isRecipe && !validIngredients) || saving) return;
     setSaving(true);
     try {
+      if (isRecipe) {
+        await api.request(`/api/nutrition/food-logs/${log.id}/recipe-ingredients`, {
+          method: "PUT",
+          body: JSON.stringify({ ingredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit }) => ({ foodId, quantity: Number(ingredientQuantity), unit })) }),
+        });
+      }
       await api.request(`/api/nutrition/food-logs/${log.id}`, {
         method: "PUT",
         body: JSON.stringify({
           mealType,
           quantity: numericQuantity,
-          unit: log.itemType === "RECIPE" ? "PORTION" : log.unit || "GRAM",
+          unit: isRecipe ? "PORTION" : log.unit || "GRAM",
           logDate: log.logDate,
         }),
       });
-      api.notify("Registro actualizado.");
+      api.notify(isRecipe ? "Receta diaria actualizada." : "Registro actualizado.");
       setClosing(true);
       window.setTimeout(onDone, 180);
     } catch {
@@ -387,7 +426,16 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
             <span className="material-symbols-outlined">close</span>
           </button>
         </header>
-        <Input autoFocus selectOnFocus numericOnly label={log.itemType === "RECIPE" ? "Porciones" : "Cantidad en gramos"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+        <Input autoFocus selectOnFocus numericOnly label={isRecipe ? "Porciones" : "Cantidad en gramos"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+        {isRecipe && (
+          <section className="daily-recipe-editor" aria-label="Ingredientes para este día">
+            <div><strong>Receta para este día</strong><small>Estos cambios no modifican la receta base.</small></div>
+            {ingredients.map((ingredient, index) => (
+              <Input key={ingredient.foodId} numericOnly label={`${ingredient.name} (g)`} type="number" inputMode="decimal" min="0.1" step="0.1" value={ingredient.quantity} onChange={(event) => updateIngredient(index, event.target.value)} />
+            ))}
+            {log.recipeAdjusted && <button type="button" className="secondary daily-recipe-reset" disabled={saving} onClick={resetRecipe}>Restablecer receta base</button>}
+          </section>
+        )}
         <Select
           label="Comida"
           value={mealType}

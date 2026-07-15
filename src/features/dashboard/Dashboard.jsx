@@ -694,12 +694,13 @@ function MealLogDetails({ log, item }) {
   if (log.itemType === "RECIPE") {
     const ingredients = aggregateRecipeIngredients(item?.ingredients || []);
     return (
-      <div className="meal-item-detail">
+      <div className="meal-item-detail recipe-meal-item-detail">
         <div className="meal-detail-summary">
           <span><small>Porciones</small><strong>{formatNumber(log.quantity, 1)}</strong></span>
           <span><small>Peso interno</small><strong>{formatNumber(item?.totalWeightGrams, 1)}g</strong></span>
         </div>
         <NutritionPills nutrition={log} />
+        {log.recipeAdjusted && <small className="daily-recipe-note">Versión ajustada para este día</small>}
         <div className="recipe-detail-list">
           {ingredients.length ? ingredients.map((ingredient) => (
             <RecipeIngredientDetail ingredient={ingredient} key={ingredient.key} />

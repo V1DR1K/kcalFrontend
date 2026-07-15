@@ -354,6 +354,8 @@
     padding-bottom: 10px;
   }
 
+  .recipe-meal-item-detail { padding-top: 6px; }
+
   .meal-detail-summary,
   .meal-detail-pills {
     grid-template-columns: repeat(2, minmax(0, 1fr));
