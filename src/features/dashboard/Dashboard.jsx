@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { DEFAULT_MEALS } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
@@ -61,7 +60,7 @@ export function Dashboard({ api, user, setPage }) {
   const [movingLogId, setMovingLogId] = useState(null);
   const [waterSaving, setWaterSaving] = useState(false);
   const [mealClipboard, setMealClipboard] = useState(null);
-  const [mealPasteLoading, setMealPasteLoading] = useState(false);
+  const [mealBulkActionLoading, setMealBulkActionLoading] = useState(false);
   const [swipeResetSignal, setSwipeResetSignal] = useState(0);
   const optimisticLogs = useRef(new Map());
   const dashboardTopRef = useRef(null);
@@ -242,8 +241,8 @@ export function Dashboard({ api, user, setPage }) {
             api={api}
             onCopied={load}
             clipboard={mealClipboard}
-            pasteLoading={mealPasteLoading}
-            setPasteLoading={setMealPasteLoading}
+            bulkActionLoading={mealBulkActionLoading}
+            setBulkActionLoading={setMealBulkActionLoading}
             onCopyMeal={(items) => { setMealClipboard(items); api.notify("Comida copiada."); }}
             deletingLogId={deletingLogId}
             movingLogId={movingLogId}
@@ -258,17 +257,22 @@ export function Dashboard({ api, user, setPage }) {
               resetMealSwipes();
               setMovingLogId(log.id);
               try {
-                await api.request(`/api/nutrition/food-logs/${log.id}`, {
-                  method: "PUT",
-                  body: JSON.stringify({
-                    mealType: targetMealType,
-                    quantity: log.quantity,
-                    unit: log.unit || "GRAM",
-                    logDate: log.logDate,
-                  }),
-                });
-                api.notify("Alimento movido.");
-                await load();
+                await api.runAction(
+                  { title: "Moviendo alimento", description: "Estamos actualizando tu comida..." },
+                  async () => {
+                    await api.request(`/api/nutrition/food-logs/${log.id}`, {
+                      method: "PUT",
+                      body: JSON.stringify({
+                        mealType: targetMealType,
+                        quantity: log.quantity,
+                        unit: log.unit || "GRAM",
+                        logDate: log.logDate,
+                      }),
+                    });
+                    api.notify("Alimento movido.");
+                    await load();
+                  },
+                );
               } catch (error) {
                 api.notify(error.message || "No se pudo mover el alimento.", "error");
               } finally {
@@ -284,11 +288,14 @@ export function Dashboard({ api, user, setPage }) {
               resetMealSwipes();
               setDeletingLogId(log.id);
               try {
-                await api.request(`/api/nutrition/food-logs/${log.id}`, {
-                  method: "DELETE",
-                });
-                api.notify("Registro eliminado.");
-                await load();
+                await api.runAction(
+                  { title: "Eliminando alimento", description: "Estamos actualizando tu registro..." },
+                  async () => {
+                    await api.request(`/api/nutrition/food-logs/${log.id}`, { method: "DELETE" });
+                    api.notify("Registro eliminado.");
+                    await load();
+                  },
+                );
               } catch (error) {
                 api.notify(error.message || "No se pudo eliminar el registro.", "error");
               } finally {
@@ -311,9 +318,14 @@ export function Dashboard({ api, user, setPage }) {
                 if (waterSaving) return;
                 setWaterSaving(true);
                 try {
-                  await api.request(`/api/nutrition/water-logs/latest?date=${selectedDate}`, { method: "DELETE" });
-                  api.notify("Ultimo registro de agua eliminado.");
-                  await load();
+                  await api.runAction(
+                    { title: "Deshaciendo hidratacion", description: "Estamos actualizando tu registro de agua..." },
+                    async () => {
+                      await api.request(`/api/nutrition/water-logs/latest?date=${selectedDate}`, { method: "DELETE" });
+                      api.notify("Ultimo registro de agua eliminado.");
+                      await load();
+                    },
+                  );
                 } catch {
                   api.notify("No hay agua para descontar.", "error");
                 } finally {
@@ -330,15 +342,20 @@ export function Dashboard({ api, user, setPage }) {
                 if (waterSaving) return;
                 setWaterSaving(true);
                 try {
-                  await api.request("/api/nutrition/water-logs", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      liters: 0.5,
-                      logDate: selectedDate,
-                    }),
-                  });
-                  api.notify("Hidratacion registrada.");
-                  await load();
+                  await api.runAction(
+                    { title: "Registrando hidratacion", description: "Estamos guardando el agua consumida..." },
+                    async () => {
+                      await api.request("/api/nutrition/water-logs", {
+                        method: "POST",
+                        body: JSON.stringify({
+                          liters: 0.5,
+                          logDate: selectedDate,
+                        }),
+                      });
+                      api.notify("Hidratacion registrada.");
+                      await load();
+                    },
+                  );
                 } catch {
                   api.notify("No se pudo registrar el agua.", "error");
                 } finally {
@@ -362,9 +379,9 @@ export function Dashboard({ api, user, setPage }) {
           mealType={pickerMeal}
           selectedDate={selectedDate}
           onClose={() => setPickerMeal(null)}
-          onDone={() => {
+          onDone={async () => {
             setPickerMeal(null);
-            load();
+            await load();
           }}
           onNavigate={(target) => {
             setPickerMeal(null);
@@ -381,21 +398,7 @@ export function Dashboard({ api, user, setPage }) {
           onDone={finishEditingLog}
         />
       )}
-      {mealPasteLoading && <MealPasteLoader />}
     </section>
-  );
-}
-
-function MealPasteLoader() {
-  return createPortal(
-    <div className="meal-paste-loader" role="alert" aria-live="assertive" aria-busy="true">
-      <div className="meal-paste-loader-card">
-        <span className="meal-paste-spinner" aria-hidden="true" />
-        <strong>Pegando comida</strong>
-        <small>Estamos guardando los alimentos...</small>
-      </div>
-    </div>,
-    document.body
   );
 }
 
@@ -452,7 +455,10 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
     setLoading(true);
     setStatus({});
     try {
-      setSource(await api.request(`/api/nutrition/dashboard?date=${sourceDate}`));
+      setSource(await api.runAction(
+        { title: "Cargando comidas", description: "Estamos buscando el dia seleccionado..." },
+        () => api.request(`/api/nutrition/dashboard?date=${sourceDate}`),
+      ));
     } catch {
       api.notify("No se pudo cargar ese dia.", "error");
     } finally {
@@ -462,21 +468,26 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
   async function copyMeal(mealType, items) {
     setStatus((current) => ({ ...current, [mealType]: "copying" }));
     try {
-      for (const log of items)
-        await api.request("/api/nutrition/meal-logs", {
-          method: "POST",
-          body: JSON.stringify({
-            itemType: log.itemType,
-            itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id,
-            mealType,
-            quantity: log.quantity,
-            unit: log.unit || "GRAM",
-            logDate: targetDate,
-          }),
-        });
-      setStatus((current) => ({ ...current, [mealType]: "copied" }));
-      api.notify("Comida copiada respetando su horario.");
-      await onCopied();
+      await api.runAction(
+        { title: "Copiando comida", description: "Estamos guardando los alimentos en tu dia..." },
+        async () => {
+          for (const log of items)
+            await api.request("/api/nutrition/meal-logs", {
+              method: "POST",
+              body: JSON.stringify({
+                itemType: log.itemType,
+                itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id,
+                mealType,
+                quantity: log.quantity,
+                unit: log.unit || "GRAM",
+                logDate: targetDate,
+              }),
+            });
+          setStatus((current) => ({ ...current, [mealType]: "copied" }));
+          api.notify("Comida copiada respetando su horario.");
+          await onCopied();
+        },
+      );
     } catch {
       setStatus((current) => ({ ...current, [mealType]: "error" }));
       api.notify("No se pudo copiar la comida completa.", "error");
@@ -555,9 +566,10 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
   );
 }
 
-function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, clipboard, pasteLoading, setPasteLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
+function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
   const items = meal?.items || [];
   const cardRef = useRef(null);
+  const menuRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const [expandedLogId, setExpandedLogId] = useState(null);
   const [suggestionState, setSuggestionState] = useState("idle");
@@ -582,34 +594,56 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
   async function copyYesterday() {
     setSuggestionState("copying");
     try {
-      for (const log of yesterdayItems) {
-        await api.request("/api/nutrition/meal-logs", {
-          method: "POST",
-          body: JSON.stringify({ itemType: log.itemType, itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id, mealType: mealType.code, quantity: log.quantity, unit: log.unit || "GRAM", logDate: targetDate }),
-        });
-      }
-      setSuggestionState("copied");
-      api.notify(`${mealType.label} copiado de ayer.`);
-      await new Promise((resolve) => window.setTimeout(resolve, 650));
-      await onCopied();
+      await api.runAction(
+        { title: "Copiando comida", description: "Estamos guardando los alimentos de ayer..." },
+        async () => {
+          for (const log of yesterdayItems) {
+            await api.request("/api/nutrition/meal-logs", {
+              method: "POST",
+              body: JSON.stringify({ itemType: log.itemType, itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id, mealType: mealType.code, quantity: log.quantity, unit: log.unit || "GRAM", logDate: targetDate }),
+            });
+          }
+          setSuggestionState("copied");
+          api.notify(`${mealType.label} copiado de ayer.`);
+          await new Promise((resolve) => window.setTimeout(resolve, 650));
+          await onCopied();
+        },
+      );
     } catch {
       setSuggestionState("idle");
       api.notify("No se pudo copiar la comida de ayer.", "error");
     }
   }
   async function addLogs(logs) {
-    if (pasteLoading) return;
-    setPasteLoading(true);
+    if (bulkActionLoading) return;
+    setBulkActionLoading(true);
     try {
-      for (const log of logs) await api.request("/api/nutrition/meal-logs", { method: "POST", body: JSON.stringify({ itemType: log.itemType, itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id, mealType: mealType.code, quantity: log.quantity, unit: log.unit || "GRAM", logDate: targetDate }) });
-      api.notify(`Comida pegada en ${mealType.label}.`); await onCopied();
+      await api.runAction(
+        { title: "Pegando comida", description: "Estamos guardando los alimentos..." },
+        async () => {
+          for (const log of logs) await api.request("/api/nutrition/meal-logs", { method: "POST", body: JSON.stringify({ itemType: log.itemType, itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id, mealType: mealType.code, quantity: log.quantity, unit: log.unit || "GRAM", logDate: targetDate }) });
+          api.notify(`Comida pegada en ${mealType.label}.`);
+          await onCopied();
+        },
+      );
     } catch { api.notify("No se pudo pegar la comida.", "error"); }
-    finally { setPasteLoading(false); }
+    finally { setBulkActionLoading(false); }
   }
   async function deleteAll() {
     if (!items.length || !window.confirm(`¿Borrar todo ${mealType.label.toLowerCase()}?`)) return;
-    try { for (const log of items) await api.request(`/api/nutrition/food-logs/${log.id}`, { method: "DELETE" }); api.notify(`${mealType.label} eliminado.`); await onCopied(); }
+    setBulkActionLoading(true);
+    try {
+      await api.runAction(
+        { title: `Borrando ${mealType.label.toLowerCase()}`, description: "Estamos eliminando los alimentos..." },
+        async () => {
+          for (const log of items) await api.request(`/api/nutrition/food-logs/${log.id}`, { method: "DELETE" });
+          api.notify(`${mealType.label} eliminado.`);
+          await onCopied();
+        },
+      );
+    }
     catch { api.notify("No se pudo borrar toda la comida.", "error"); }
+    finally { setBulkActionLoading(false); }
   }
   return (
     <article
@@ -643,7 +677,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
           <strong>{meal?.calories || 0} kcal</strong>
         </div>
         <div className="meal-header-actions">
-          <details className="meal-menu"><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button disabled={!items.length || pasteLoading} onClick={() => onCopyMeal(items)}>Copiar todo</button><button disabled={!clipboard?.length || pasteLoading} onClick={() => addLogs(clipboard)}>Pegar</button><button className="danger-text" disabled={!items.length || pasteLoading} onClick={deleteAll}>Borrar todo</button></div></details>
+          <details className="meal-menu" ref={menuRef}><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button disabled={!items.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); onCopyMeal(items); }}>Copiar todo</button><button disabled={!clipboard?.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); addLogs(clipboard); }}>Pegar</button><button className="danger-text" disabled={!items.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); deleteAll(); }}>Borrar todo</button></div></details>
           <button className="icon-button" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><Icon name="add" /></button>
         </div>
       </header>
@@ -898,7 +932,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   useEffect(() => {
     if (!selected || selected.type !== "FOOD") return setSelectedPreparations([]);
     api
-      .request(`/api/foods/${selected.id}/preparations`)
+      .runAction(
+        { title: "Cargando opciones", description: "Estamos buscando las presentaciones disponibles..." },
+        () => api.request(`/api/foods/${selected.id}/preparations`),
+      )
       .then(setSelectedPreparations)
       .catch(() => setSelectedPreparations([]));
   }, [api, selected?.id, selected?.type]);
@@ -952,17 +989,20 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     if (logQuantity <= 0) return;
     setAdding(true);
     try {
-      const log = await api.request("/api/nutrition/meal-logs", {
-        method: "POST",
-        body: JSON.stringify({
-          itemType: selected.type,
-          itemId: selected.id,
-          mealType: mealType.code,
-          quantity: logQuantity,
-          unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
-          logDate: selectedDate,
+      const log = await api.runAction(
+        { title: "Agregando alimento", description: `Estamos sumando ${selected.name} a ${mealType.label.toLowerCase()}...` },
+        () => api.request("/api/nutrition/meal-logs", {
+          method: "POST",
+          body: JSON.stringify({
+            itemType: selected.type,
+            itemId: selected.id,
+            mealType: mealType.code,
+            quantity: logQuantity,
+            unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
+            logDate: selectedDate,
+          }),
         }),
-      });
+      );
       rememberItem(user, selected);
       rememberMeal(user, mealType.code, log);
       api.notify(`${selected.name} agregado a ${mealType.label}.`);
@@ -1181,19 +1221,24 @@ function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAdd, onOp
     const startedAt = performance.now();
     setStates((current) => ({ ...current, [meal.id]: "adding" }));
     try {
-      await api.request("/api/nutrition/meal-logs", {
-        method: "POST",
-        body: JSON.stringify({
-          itemType: meal.itemType,
-          itemId: meal.itemId,
-          mealType: meal.mealType,
-          quantity: meal.quantity,
-          unit: meal.itemType === "RECIPE" ? "PORTION" : meal.unit,
-          logDate: date,
-        }),
-      });
-      api.notify(`${meal.label} agregado.`);
-      await onDone();
+      await api.runAction(
+        { title: "Agregando comida reciente", description: `Estamos sumando ${meal.label} a tu dia...` },
+        async () => {
+          await api.request("/api/nutrition/meal-logs", {
+            method: "POST",
+            body: JSON.stringify({
+              itemType: meal.itemType,
+              itemId: meal.itemId,
+              mealType: meal.mealType,
+              quantity: meal.quantity,
+              unit: meal.itemType === "RECIPE" ? "PORTION" : meal.unit,
+              logDate: date,
+            }),
+          });
+          api.notify(`${meal.label} agregado.`);
+          await onDone();
+        },
+      );
       const elapsed = performance.now() - startedAt;
       if (elapsed < 520) await new Promise((resolve) => window.setTimeout(resolve, 520 - elapsed));
       setStates((current) => ({ ...current, [meal.id]: "added" }));

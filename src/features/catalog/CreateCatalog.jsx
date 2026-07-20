@@ -53,29 +53,32 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
     const data = Object.fromEntries(formData);
     setSaving(true);
     try {
-      await api.request("/api/foods", {
-        method: "POST",
-        body: JSON.stringify({
-          name: data.name,
-          brand: data.brand,
-          barcode: data.barcode,
-          category: data.category,
-          baseUnit: "GRAM",
-          baseQuantity: Number(data.baseQuantity || 100),
-          proteinGrams: Number(data.proteinGrams),
-          carbsGrams: Number(data.carbsGrams),
-          fatGrams: Number(data.fatGrams),
-          preparation: "UNSPECIFIED",
-          servingName: null,
-          servingWeightGrams: null,
-          tags: data.tags
-            ? data.tags
-                .split(",")
-                .map((tag) => tag.trim())
-                .filter(Boolean)
-            : [],
+      await api.runAction(
+        { title: "Creando alimento", description: "Estamos guardando el alimento en el catalogo..." },
+        () => api.request("/api/foods", {
+          method: "POST",
+          body: JSON.stringify({
+            name: data.name,
+            brand: data.brand,
+            barcode: data.barcode,
+            category: data.category,
+            baseUnit: "GRAM",
+            baseQuantity: Number(data.baseQuantity || 100),
+            proteinGrams: Number(data.proteinGrams),
+            carbsGrams: Number(data.carbsGrams),
+            fatGrams: Number(data.fatGrams),
+            preparation: "UNSPECIFIED",
+            servingName: null,
+            servingWeightGrams: null,
+            tags: data.tags
+              ? data.tags
+                  .split(",")
+                  .map((tag) => tag.trim())
+                  .filter(Boolean)
+              : [],
+          }),
         }),
-      });
+      );
       api.notify("Alimento creado.");
       form.reset();
       setOcrData(null);
@@ -264,7 +267,10 @@ function MyFoods({ api }) {
     setSaving(true);
     const data = Object.fromEntries(new FormData(event.currentTarget));
     try {
-      await api.request(`/api/foods/${editing.id}`, { method: "PUT", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), preparation: "UNSPECIFIED", servingName: null, servingWeightGrams: null, tags: [] }) });
+      await api.runAction(
+        { title: "Guardando alimento", description: "Estamos actualizando los datos del catalogo..." },
+        () => api.request(`/api/foods/${editing.id}`, { method: "PUT", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), preparation: "UNSPECIFIED", servingName: null, servingWeightGrams: null, tags: [] }) }),
+      );
       api.notify("Alimento actualizado.");
       setEditing(null);
       await load();
@@ -410,15 +416,18 @@ function CreateRecipeForm({ api }) {
         quantity: Number(item.quantity),
         unit: item.unit,
       }));
-      await api.request("/api/recipes", {
-        method: "POST",
-        body: JSON.stringify({
-          name: data.name,
-          description: data.description,
-          totalWeightGrams: totalWeight,
-          ingredients: normalizedIngredients,
+      await api.runAction(
+        { title: "Creando receta", description: "Estamos guardando los ingredientes..." },
+        () => api.request("/api/recipes", {
+          method: "POST",
+          body: JSON.stringify({
+            name: data.name,
+            description: data.description,
+            totalWeightGrams: totalWeight,
+            ingredients: normalizedIngredients,
+          }),
         }),
-      });
+      );
       api.notify("Receta creada.");
       form.reset();
       setIngredients([]);

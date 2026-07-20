@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { APP_NAME, REGISTRATION_ENABLED } from "../../config/app";
 import { Icon } from "../../components/Icon";
-import { request } from "../../services/http";
 import { Input, Select } from "../../components/FormControls";
 
-export function AuthScreen({ page, setPage, saveSession, notify }) {
+export function AuthScreen({ api, page, setPage, saveSession, notify }) {
   const isRegister = REGISTRATION_ENABLED && page === "register";
   const [loading, setLoading] = useState(false);
   async function submit(event) {
@@ -12,9 +11,15 @@ export function AuthScreen({ page, setPage, saveSession, notify }) {
     const data = Object.fromEntries(new FormData(event.currentTarget));
     setLoading(true);
     try {
-      const payload = await request(isRegister ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify(isRegister ? {
-        fullName: data.fullName, email: data.email, password: data.password, weightKg: Number(data.weightKg), heightCm: Number(data.heightCm), birthDate: data.birthDate, gender: data.gender, goal: data.goal, activityLevel: data.activityLevel,
-      } : { email: data.email, password: data.password }) });
+      const payload = await api.runAction(
+        {
+          title: isRegister ? "Creando tu cuenta" : "Iniciando sesion",
+          description: isRegister ? "Estamos preparando tu perfil..." : "Estamos verificando tus datos...",
+        },
+        () => api.request(isRegister ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify(isRegister ? {
+          fullName: data.fullName, email: data.email, password: data.password, weightKg: Number(data.weightKg), heightCm: Number(data.heightCm), birthDate: data.birthDate, gender: data.gender, goal: data.goal, activityLevel: data.activityLevel,
+        } : { email: data.email, password: data.password }) }),
+      );
       saveSession(payload);
       notify(isRegister ? "Cuenta creada." : "Sesion iniciada.");
     } catch { notify(isRegister ? "No se pudo crear la cuenta." : "No se pudo iniciar sesion.", "error"); }

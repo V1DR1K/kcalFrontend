@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "../styles.css";
 import { request as apiRequest } from "../services/http";
 import { TOKEN_KEY, USER_KEY } from "../config/app";
@@ -6,6 +6,7 @@ import { getSavedUser } from "../services/recents";
 import { Shell } from "./Shell";
 import { AuthScreen } from "../features/auth/AuthScreen";
 import { Toast } from "../components/Layout";
+import { ActionLoader } from "../components/ActionLoader";
 
 function lazyPage(load, name) {
   return lazy(() => load().then((module) => ({ default: module[name] })));
@@ -29,10 +30,26 @@ export function App() {
   const [user, setUser] = useState(() => getSavedUser(USER_KEY));
   const [selectedFoodId, setSelectedFoodId] = useState(null);
   const [prefillBarcode, setPrefillBarcode] = useState("");
+  const [actionLoading, setActionLoading] = useState(null);
+  const actionSequence = useRef(0);
+  const pendingActions = useRef(new Map());
 
   const api = useMemo(
     () => ({
       request: apiRequest,
+      async runAction(loading, operation) {
+        const id = actionSequence.current + 1;
+        actionSequence.current = id;
+        pendingActions.current.set(id, loading);
+        setActionLoading(loading);
+        try {
+          return await operation();
+        } finally {
+          pendingActions.current.delete(id);
+          const activeActions = [...pendingActions.current.values()];
+          setActionLoading(activeActions[activeActions.length - 1] || null);
+        }
+      },
       notify(message, tone = "success") {
         setToast({ message, tone });
         window.setTimeout(() => setToast(null), 3500);
@@ -86,9 +103,10 @@ export function App() {
           </Suspense>
         </Shell>
       ) : (
-        <AuthScreen page={page} setPage={setPage} saveSession={saveSession} notify={api.notify} />
+        <AuthScreen api={api} page={page} setPage={setPage} saveSession={saveSession} notify={api.notify} />
       )}
       {toast && <Toast {...toast} />}
+      {actionLoading && <ActionLoader {...actionLoading} />}
     </>
   );
 }

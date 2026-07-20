@@ -80,7 +80,10 @@ function HistoryDayPreview({ api, day, onClose }) {
 
   useEffect(() => {
     let active = true;
-    api.request(`/api/nutrition/dashboard?date=${day.date}`)
+    api.runAction(
+      { title: "Cargando detalle", description: "Estamos preparando el resumen de este dia..." },
+      () => api.request(`/api/nutrition/dashboard?date=${day.date}`),
+    )
       .then((result) => active && setDetail(result))
       .catch(() => active && setError("No pudimos cargar el detalle de este día."));
     return () => { active = false; };

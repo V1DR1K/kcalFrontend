@@ -24,7 +24,10 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
       setFood(null);
       setFoodError("");
       api
-        .request(`/api/foods/${id}`)
+        .runAction(
+          { title: "Cargando alimento", description: "Estamos preparando sus datos nutricionales..." },
+          () => api.request(`/api/foods/${id}`),
+        )
         .then((nextFood) => {
           setFood(nextFood);
           if (nextFood.servingWeightGrams) {
@@ -54,7 +57,10 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
   useEffect(() => {
     if (foodId)
       api
-        .request(`/api/foods/${foodId}/preparations`)
+        .runAction(
+          { title: "Cargando opciones", description: "Estamos buscando las presentaciones disponibles..." },
+          () => api.request(`/api/foods/${foodId}/preparations`),
+        )
         .then(setPreparationOptions)
         .catch(() => setPreparationOptions([]));
   }, [api, foodId]);
@@ -85,17 +91,20 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
     if (quantityInGrams <= 0) return;
     setAdding(true);
     try {
-      const log = await api.request("/api/nutrition/meal-logs", {
-        method: "POST",
-        body: JSON.stringify({
-          itemType: "FOOD",
-          itemId: activeFoodId,
-          mealType,
-          quantity: quantityInGrams,
-          unit: "GRAM",
-          logDate: today(),
+      const log = await api.runAction(
+        { title: "Agregando alimento", description: `Estamos sumando ${food?.name || "el alimento"} a tu dia...` },
+        () => api.request("/api/nutrition/meal-logs", {
+          method: "POST",
+          body: JSON.stringify({
+            itemType: "FOOD",
+            itemId: activeFoodId,
+            mealType,
+            quantity: quantityInGrams,
+            unit: "GRAM",
+            logDate: today(),
+          }),
         }),
-      });
+      );
       if (food) rememberItem(user, { ...food, type: "FOOD" });
       rememberMeal(user, mealType, log);
       api.notify("Alimento agregado.");

@@ -60,7 +60,10 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode }) 
       return;
     }
     try {
-      const found = await api.request(`/api/foods/barcode/${encodeURIComponent(cleanCode)}`);
+      const found = await api.runAction(
+        { title: "Buscando producto", description: "Estamos consultando el codigo de barras..." },
+        () => api.request(`/api/foods/barcode/${encodeURIComponent(cleanCode)}`),
+      );
       setFood(found);
       setStatus("Producto encontrado. Ajusta la porcion antes de agregarlo.");
       setCameraOn(false);

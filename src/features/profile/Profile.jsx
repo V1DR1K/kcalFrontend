@@ -75,7 +75,7 @@ export function Profile({ api, logout }) {
         </div>
       </Panel>
       <Panel title="Registrar peso" className="weight-panel">
-        <form onSubmit={async (event) => { event.preventDefault(); if (savingWeight) return; setSavingWeight(true); try { const updated = await api.request("/api/profile", { method: "PATCH", body: JSON.stringify({ weightKg: Number(weight) }) }); setProfile(updated); setWeight(updated.weightKg || ""); api.notify("Peso actualizado."); } catch { api.notify("No se pudo registrar el peso.", "error"); } finally { setSavingWeight(false); } }}>
+        <form onSubmit={async (event) => { event.preventDefault(); if (savingWeight) return; setSavingWeight(true); try { const updated = await api.runAction({ title: "Actualizando peso", description: "Estamos guardando tu nuevo registro..." }, () => api.request("/api/profile", { method: "PATCH", body: JSON.stringify({ weightKg: Number(weight) }) })); setProfile(updated); setWeight(updated.weightKg || ""); api.notify("Peso actualizado."); } catch { api.notify("No se pudo registrar el peso.", "error"); } finally { setSavingWeight(false); } }}>
           <Input label="Peso actual (kg)" type="number" min="20" max="400" step="0.1" inputMode="decimal" value={weight} onChange={(event) => setWeight(event.target.value)} required />
           <button className="secondary" disabled={savingWeight}>{savingWeight ? "Guardando…" : "Anotar peso"}</button>
         </form>
@@ -193,15 +193,23 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
         fatPercent: Number(form.fatPercent),
         endDate: form.endDate || null,
       };
-      await api.request(editingPlan ? `/api/profile/nutrition-plans/${editingPlan.id}` : "/api/profile/nutrition-plans", {
-        method: editingPlan ? "PUT" : "POST",
-        body: JSON.stringify({
-          ...payload,
-        }),
-      });
-      api.notify(editingPlan ? "Plan alimenticio actualizado." : "Plan alimenticio guardado.");
-      resetForm();
-      await onChanged();
+      await api.runAction(
+        {
+          title: editingPlan ? "Actualizando plan" : "Guardando plan",
+          description: "Estamos recalculando tu plan alimenticio...",
+        },
+        async () => {
+          await api.request(editingPlan ? `/api/profile/nutrition-plans/${editingPlan.id}` : "/api/profile/nutrition-plans", {
+            method: editingPlan ? "PUT" : "POST",
+            body: JSON.stringify({
+              ...payload,
+            }),
+          });
+          api.notify(editingPlan ? "Plan alimenticio actualizado." : "Plan alimenticio guardado.");
+          resetForm();
+          await onChanged();
+        },
+      );
     } catch {
       api.notify(editingPlan ? "No se pudo actualizar el plan. Revisa que no se superponga con otro." : "No se pudo guardar el plan. Revisa que no se superponga con otro.", "error");
     } finally {
@@ -214,8 +222,14 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     try {
       const payload = { name: plan.name, dailyCalories: plan.dailyCalories, proteinPercent: Number(plan.proteinPercent), carbsPercent: Number(plan.carbsPercent), fatPercent: Number(plan.fatPercent), startDate: today(), endDate: null };
       const replaceCurrentPlan = currentPlan?.id && currentPlan.startDate === today();
-      await api.request(replaceCurrentPlan ? `/api/profile/nutrition-plans/${currentPlan.id}` : "/api/profile/nutrition-plans", { method: replaceCurrentPlan ? "PUT" : "POST", body: JSON.stringify(payload) });
-      api.notify(`${plan.name} es ahora tu plan actual.`); await onChanged();
+      await api.runAction(
+        { title: "Cambiando plan", description: "Estamos activando tu plan alimenticio..." },
+        async () => {
+          await api.request(replaceCurrentPlan ? `/api/profile/nutrition-plans/${currentPlan.id}` : "/api/profile/nutrition-plans", { method: replaceCurrentPlan ? "PUT" : "POST", body: JSON.stringify(payload) });
+          api.notify(`${plan.name} es ahora tu plan actual.`);
+          await onChanged();
+        },
+      );
     } catch { api.notify("No se pudo cambiar el plan.", "error"); }
     finally { setActivatingId(null); }
   }

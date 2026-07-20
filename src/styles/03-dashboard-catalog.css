@@ -563,7 +563,7 @@ select:focus,
 .meal-card.drag-over { border-color: var(--primary); background: rgb(0 82 54 / 32%); box-shadow: 0 0 0 3px rgb(78 222 163 / 16%); }
 .meal-item.moving { opacity: .45; }
 
-.meal-paste-loader {
+.action-loader {
   position: fixed;
   inset: 0;
   z-index: 80;
@@ -573,10 +573,10 @@ select:focus,
   background: rgb(4 8 6 / 62%);
   -webkit-backdrop-filter: blur(5px) saturate(120%);
   backdrop-filter: blur(5px) saturate(120%);
-  animation: paste-loader-in 160ms ease-out both;
+  animation: action-loader-in 160ms ease-out both;
 }
 
-.meal-paste-loader-card {
+.action-loader-card {
   display: grid;
   justify-items: center;
   gap: 9px;
@@ -590,10 +590,10 @@ select:focus,
   text-align: center;
 }
 
-.meal-paste-loader-card strong { font-size: 16px; }
-.meal-paste-loader-card small { color: var(--muted); font-size: 12px; }
+.action-loader-card strong { font-size: 16px; }
+.action-loader-card small { color: var(--muted); font-size: 12px; }
 
-.meal-paste-spinner {
+.action-loader-spinner {
   width: 42px;
   height: 42px;
   border: 4px solid rgb(78 222 163 / 18%);
@@ -1201,7 +1201,7 @@ button:disabled {
 @keyframes meal-detail-in { from { opacity: 0; transform: translateY(-6px) scale(.992); } }
 @keyframes meal-menu-in { from { opacity: 0; transform: translateY(-6px) scale(.96); } }
 @keyframes meal-menu-dots { 28% { transform: translateY(-3px) rotate(8deg); } 58% { transform: translateY(2px) rotate(-6deg); } 82% { transform: translateY(-1px) rotate(3deg); } }
-@keyframes paste-loader-in { from { opacity: 0; } }
+@keyframes action-loader-in { from { opacity: 0; } }
 @keyframes edit-backdrop-in { from { opacity: 0; } }
 @keyframes edit-backdrop-out { to { opacity: 0; } }
 @keyframes edit-modal-in { from { opacity: 0; transform: translateY(18px) scale(.98); } }

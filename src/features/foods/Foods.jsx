@@ -77,7 +77,10 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
                   setSwipeResetSignal((value) => value + 1);
                   setLoadingRecipeId(item.id);
                   try {
-                    const fullRecipe = await api.request(`/api/recipes/${item.id}`);
+                    const fullRecipe = await api.runAction(
+                      { title: "Cargando receta", description: "Estamos preparando los datos para editarla..." },
+                      () => api.request(`/api/recipes/${item.id}`),
+                    );
                     setEditingRecipe({ ...fullRecipe, type: "RECIPE" });
                   } catch (error) {
                     api.notify(error.message || "No se pudo cargar la receta.", "error");
@@ -93,9 +96,14 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
                   }
                   setDeletingRecipeId(item.id);
                   try {
-                    await api.request(`/api/recipes/${item.id}`, { method: "DELETE" });
-                    catalog.removeItem(item.id);
-                    api.notify("Receta borrada.");
+                    await api.runAction(
+                      { title: "Borrando receta", description: "Estamos eliminando la receta del catalogo..." },
+                      async () => {
+                        await api.request(`/api/recipes/${item.id}`, { method: "DELETE" });
+                        catalog.removeItem(item.id);
+                        api.notify("Receta borrada.");
+                      },
+                    );
                   } catch (error) {
                     api.notify(error.message || "No se pudo borrar la receta.", "error");
                   } finally {
@@ -237,15 +245,18 @@ function EditRecipeModal({ api, recipe, onClose, onDone }) {
     if (ingredients.some((item) => !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0)) return setError("Cada ingrediente debe tener una cantidad mayor a cero.");
     setSaving(true);
     try {
-      await api.request(`/api/recipes/${recipe.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim(),
-          totalWeightGrams: totalWeight,
-          ingredients: ingredients.map((item) => ({ foodId: item.foodId, quantity: Number(item.quantity), unit: item.unit })),
+      await api.runAction(
+        { title: "Guardando receta", description: "Estamos actualizando los ingredientes..." },
+        () => api.request(`/api/recipes/${recipe.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            name: name.trim(),
+            description: description.trim(),
+            totalWeightGrams: totalWeight,
+            ingredients: ingredients.map((item) => ({ foodId: item.foodId, quantity: Number(item.quantity), unit: item.unit })),
+          }),
         }),
-      });
+      );
       api.notify("Receta actualizada.");
       onDone();
     } catch (requestError) {
@@ -376,7 +387,10 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     if (saving || !isRecipe) return;
     setSaving(true);
     try {
-      await api.request(`/api/nutrition/food-logs/${log.id}/recipe-ingredients`, { method: "DELETE" });
+      await api.runAction(
+        { title: "Restableciendo receta", description: "Estamos recuperando los ingredientes originales..." },
+        () => api.request(`/api/nutrition/food-logs/${log.id}/recipe-ingredients`, { method: "DELETE" }),
+      );
       api.notify("Receta diaria restablecida.");
       setClosing(true);
       window.setTimeout(onDone, 180);
@@ -392,21 +406,26 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || (isRecipe && !validIngredients) || saving) return;
     setSaving(true);
     try {
-      if (isRecipe) {
-        await api.request(`/api/nutrition/food-logs/${log.id}/recipe-ingredients`, {
-          method: "PUT",
-          body: JSON.stringify({ ingredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit }) => ({ foodId, quantity: Number(ingredientQuantity), unit })) }),
-        });
-      }
-      await api.request(`/api/nutrition/food-logs/${log.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          mealType,
-          quantity: numericQuantity,
-          unit: isRecipe ? "PORTION" : log.unit || "GRAM",
-          logDate: log.logDate,
-        }),
-      });
+      await api.runAction(
+        { title: "Guardando cambios", description: "Estamos actualizando tu registro..." },
+        async () => {
+          if (isRecipe) {
+            await api.request(`/api/nutrition/food-logs/${log.id}/recipe-ingredients`, {
+              method: "PUT",
+              body: JSON.stringify({ ingredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit }) => ({ foodId, quantity: Number(ingredientQuantity), unit })) }),
+            });
+          }
+          await api.request(`/api/nutrition/food-logs/${log.id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+              mealType,
+              quantity: numericQuantity,
+              unit: isRecipe ? "PORTION" : log.unit || "GRAM",
+              logDate: log.logDate,
+            }),
+          });
+        },
+      );
       api.notify(isRecipe ? "Receta diaria actualizada." : "Registro actualizado.");
       setClosing(true);
       window.setTimeout(onDone, 180);
