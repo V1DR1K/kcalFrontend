@@ -39,3 +39,15 @@
   margin: 0;
   padding: 0 14px 14px;
 }
+
+.viewport-recovery { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0; padding: 12px; border: 1px solid rgb(137 206 255 / 30%); border-radius: 12px; background: rgb(137 206 255 / 7%); }
+.viewport-recovery > div { display: grid; gap: 3px; min-width: 0; }
+.viewport-recovery strong { font-size: 14px; }
+.viewport-recovery small { color: var(--muted); font-size: 12px; }
+.viewport-recovery button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; min-height: 42px; white-space: nowrap; }
+.viewport-recovery .material-symbols-outlined { font-size: 18px; }
+
+@media (max-width: 520px) {
+  .viewport-recovery { align-items: stretch; flex-direction: column; }
+  .viewport-recovery button { width: 100%; }
+}

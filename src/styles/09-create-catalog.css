@@ -282,9 +282,5 @@
 }
 
 @media (max-width: 520px) {
-  .chips {
-    margin-right: -10px;
-    padding-right: 24px;
-    mask-image: linear-gradient(to right, #000 88%, transparent);
-  }
+  .chips { margin-right: 0; mask-image: none; }
 }

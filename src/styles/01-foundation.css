@@ -20,6 +20,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 * {
@@ -36,6 +38,7 @@ body {
     var(--background);
   color: var(--text);
   overflow-x: hidden;
+  max-width: 100%;
   min-height: 100dvh;
   scroll-padding-bottom: 45dvh;
   touch-action: pan-x pan-y;

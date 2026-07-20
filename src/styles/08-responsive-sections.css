@@ -26,6 +26,7 @@
     height: 100dvh;
     min-height: 0;
     overflow: hidden;
+    max-width: 100%;
   }
 
   .sidebar {
@@ -183,8 +184,12 @@
   .edit-log-preview strong { font-size: 14px; }
   .edit-log-preview small { font-size: 9px; }
   .picker-modal > header { position: relative; z-index: 2; }
-  .picker-modal .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  .picker-modal .chips::-webkit-scrollbar { display: none; }
+  .picker-modal .chips { flex-wrap: wrap; overflow: visible; }
+  .chips { flex-wrap: wrap; overflow: visible; padding-right: 0; }
+  .quick-items div { flex-wrap: wrap; overflow: visible; padding-bottom: 0; }
+  .quick-items button { flex: 1 1 calc(50% - 4px); min-width: 0; }
+  .quick-items button span,
+  .quick-items button small { max-width: 100%; }
   .selected-subpanel {
     align-items: end;
     padding: 0 0 calc(86px + env(safe-area-inset-bottom));
@@ -422,9 +427,8 @@
   .panel > .grid.three .stat { min-width: 0; padding: 10px 8px; }
   .panel > .grid.three .stat strong { font-size: 15px; white-space: nowrap; }
   .panel > .grid.three .stat small { font-size: 11px; }
-  .preset-grid { display: flex; gap: 10px; overflow-x: auto; margin-right: -14px; padding: 0 14px 8px 0; scroll-snap-type: x mandatory; scrollbar-width: none; }
-  .preset-grid::-webkit-scrollbar { display: none; }
-  .preset-card { flex: 0 0 min(82%, 280px); min-height: 118px; scroll-snap-align: start; }
+  .preset-grid { display: grid; grid-template-columns: 1fr; gap: 10px; overflow: visible; margin: 0; padding: 0; scroll-snap-type: none; }
+  .preset-card { min-height: 0; }
   .macro-control, .macro-control input[type="range"] { min-width: 0; width: 100%; }
 
   .content { width: 100%; padding-left: 14px; padding-right: 14px; }
@@ -461,8 +465,6 @@
   .nutrition-preview span { gap: 1px; padding: 7px 3px; }
   .nutrition-preview strong { font-size: 14px; }
   .nutrition-preview small { font-size: 9px; }
-  .preset-grid { grid-template-columns: 1fr; }
-  .preset-card { min-height: auto; }
   .account-panel .danger-button { width: 100%; }
 
   .scanner-stage {
