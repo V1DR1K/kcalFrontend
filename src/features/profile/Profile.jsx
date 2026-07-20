@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Input } from "../../components/FormControls";
+import { Icon } from "../../components/Icon";
 import { Header, Panel, Stat } from "../../components/Layout";
 import { CatalogStatus } from "../catalog/CatalogComponents";
 import { formatNumber, macroGrams, readableDate, today } from "../../utils/format";
+import "../../styles/06-history.css";
+import "../../styles/07-profile.css";
 
 function planColor(value) {
   const palette = ["#4edea3", "#89ceff", "#ffd166", "#c7a6ff", "#ff8fa3"];
@@ -87,7 +90,7 @@ export function Profile({ api, logout }) {
             if (window.confirm("¿Querés cerrar sesión?")) logout();
           }}
         >
-          <span className="material-symbols-outlined">logout</span>Cerrar sesión
+          <Icon name="logout" />Cerrar sesión
         </button>
       </Panel>
     </section>
@@ -223,9 +226,9 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
         <div><small>PLAN ACTUAL</small><strong>{currentPlan?.name || "Sin plan activo"}</strong>{currentPlan && <span>Desde {readableDate(currentPlan.startDate)} · {currentPlan.dailyCalories} kcal</span>}</div>
         {currentPlan && <div className="current-plan-macros"><span>{currentPlan.proteinPercent}% P</span><span>{currentPlan.carbsPercent}% C</span><span>{currentPlan.fatPercent}% G</span></div>}
       </div>
-      <button type="button" className="primary add-plan-button" onClick={startCreate}><span className="material-symbols-outlined">{creating ? "close" : "add"}</span>{creating ? "Cancelar" : "Agregar plan"}</button>
+      <button type="button" className="primary add-plan-button" onClick={startCreate}><Icon name={creating ? "close" : "add"} />{creating ? "Cancelar" : "Agregar plan"}</button>
       {formVisible && <>
-      {editingPlan && <div className="editing-plan-banner"><span className="material-symbols-outlined">edit</span><div><strong>Editando {editingPlan.name}</strong><small>Los cambios se guardan sobre este plan del historial.</small></div><button type="button" className="ghost-icon" onClick={resetForm} aria-label="Cancelar edicion"><span className="material-symbols-outlined">close</span></button></div>}
+      {editingPlan && <div className="editing-plan-banner"><Icon name="edit" /><div><strong>Editando {editingPlan.name}</strong><small>Los cambios se guardan sobre este plan del historial.</small></div><button type="button" className="ghost-icon" onClick={resetForm} aria-label="Cancelar edicion"><Icon name="close" /></button></div>}
       <div className="plan-calorie-step">
         <span className="step-number">1</span><div><strong>Definí tus calorías diarias</strong><small>Esta base se usa para calcular los gramos de cada macronutriente.</small></div>
         <Input label="Calorías por día" type="number" min="800" max="10000" step="10" value={form.dailyCalories} onChange={(event) => setField("dailyCalories", event.target.value)} required />
@@ -282,7 +285,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
         <h3>Historial de planes</h3>
         {plans.map((plan) => (
           <article className={plan.id === currentPlan?.id ? "active" : ""} key={plan.id || `${plan.name}-${plan.startDate}`}>
-            <div className="plan-history-heading"><strong>{plan.name}</strong><div className="plan-history-actions">{plan.id === currentPlan?.id && <span className="active-plan-badge">Actual</span>}<button type="button" className="secondary use-plan-button" onClick={() => startEdit(plan)}><span className="material-symbols-outlined">edit</span>Editar</button>{plan.id !== currentPlan?.id && <button className="secondary use-plan-button" disabled={Boolean(activatingId)} onClick={() => activatePlan(plan)}>{activatingId === plan.id ? "Cambiando..." : "Usar este plan"}</button>}</div></div>
+            <div className="plan-history-heading"><strong>{plan.name}</strong><div className="plan-history-actions">{plan.id === currentPlan?.id && <span className="active-plan-badge">Actual</span>}<button type="button" className="secondary use-plan-button" onClick={() => startEdit(plan)}><Icon name="edit" />Editar</button>{plan.id !== currentPlan?.id && <button className="secondary use-plan-button" disabled={Boolean(activatingId)} onClick={() => activatePlan(plan)}>{activatingId === plan.id ? "Cambiando..." : "Usar este plan"}</button>}</div></div>
             <span>
               {plan.startDate} - {plan.endDate || "actual"}
             </span>

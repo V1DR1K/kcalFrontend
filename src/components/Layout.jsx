@@ -1,5 +1,6 @@
 import React from "react";
 import { APP_NAME } from "../config/app";
+import { Icon } from "./Icon";
 import { formatNumber } from "../utils/format";
 
 export function Header({ title, eyebrow, action, compact = false }) {
@@ -23,7 +24,7 @@ export function Header({ title, eyebrow, action, compact = false }) {
         <span>{eyebrow || APP_NAME}</span>
         <h1>{title}</h1>
         <small className="header-build" title="Fecha y hora del commit instalado">
-          <span className="material-symbols-outlined">verified</span>
+          <Icon name="verified" />
           {versionLabel}
         </small>
       </div>
@@ -54,7 +55,7 @@ export function Macro({ macro }) {
 export function Stat({ icon, label, value }) {
   return (
     <div className="stat">
-      <span className="material-symbols-outlined">{icon}</span>
+      <Icon name={icon} />
       <small>{label}</small>
       <strong>{value}</strong>
     </div>

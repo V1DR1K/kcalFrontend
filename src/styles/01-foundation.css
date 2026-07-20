@@ -14,7 +14,7 @@
   --tertiary: #89ceff;
   --error: #ffb4ab;
   --shadow: 0 20px 50px rgb(0 0 0 / 36%);
-  font-family: Inter, system-ui, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 * {
@@ -49,16 +49,59 @@ button {
 }
 
 .material-symbols-outlined {
-  font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 24;
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
 }
 
-.fill {
-  font-variation-settings: "FILL" 1, "wght" 700, "GRAD" 0, "opsz" 24;
+.material-symbols-outlined svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
 }
 
 h1,
 h2,
 h3,
 .brand strong {
-  font-family: "Hanken Grotesk", Inter, sans-serif;
+  font-family: "Hanken Grotesk", Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 20;
+  max-width: min(420px, calc(100vw - 36px));
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 800;
+  box-shadow: var(--shadow);
+  animation: bounce-in 260ms ease-out;
+}
+
+.toast.error {
+  background: var(--error);
+  color: #4b0905;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes bounce-in {
+  0% { opacity: 0; transform: translateY(20px) scale(0.94); }
+  70% { transform: translateY(-2px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0); }
 }

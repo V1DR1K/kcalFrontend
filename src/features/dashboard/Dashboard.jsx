@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DEFAULT_MEALS } from "../../config/app";
+import { Icon } from "../../components/Icon";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Macro, Panel } from "../../components/Layout";
@@ -89,11 +90,18 @@ export function Dashboard({ api, user, setPage }) {
   }, [selectedDate]);
   useEffect(() => {
     let active = true;
-    api.request(`/api/nutrition/dashboard?date=${shiftDate(selectedDate, -1)}`)
+    setYesterdayData(null);
+    const loadYesterday = () => api.request(`/api/nutrition/dashboard?date=${shiftDate(selectedDate, -1)}`)
       .then((result) => active && setYesterdayData(result))
       .catch(() => active && setYesterdayData(null));
-    return () => { active = false; };
-  }, [selectedDate]);
+    const schedule = window.requestIdleCallback || ((callback) => window.setTimeout(callback, 1500));
+    const cancel = window.cancelIdleCallback || window.clearTimeout;
+    const handle = schedule(loadYesterday);
+    return () => {
+      active = false;
+      cancel(handle);
+    };
+  }, [api, selectedDate]);
   useEffect(() => {
     const balance = balanceRef.current;
     if (!balance) return undefined;
@@ -397,14 +405,14 @@ function CompactBalanceBar({ visible, consumed, goal, macros, onGoTop }) {
   return (
     <div className={`compact-balance-shell ${visible ? "visible" : ""}`} aria-hidden={!visible}>
       <button type="button" className="compact-balance" onClick={onGoTop} tabIndex={visible ? 0 : -1} aria-label="Volver arriba al balance completo">
-        <span className="compact-calories"><span className="material-symbols-outlined">local_fire_department</span><strong>{formatNumber(consumed)}<small> / {formatNumber(goal)} kcal</small></strong></span>
+        <span className="compact-calories"><Icon name="local_fire_department" /><strong>{formatNumber(consumed)}<small> / {formatNumber(goal)} kcal</small></strong></span>
         <span className="compact-macros">
           {compactMacros.map(([key, label, shortLabel]) => {
             const macro = macroByKey.get(key);
             return <span key={key}><b className="macro-full-label">{label}</b><b className="macro-short-label">{shortLabel}</b><strong>{formatNumber(macro?.consumed)}<small>/{formatNumber(macro?.goal)}g</small></strong></span>;
           })}
         </span>
-        <span className="compact-balance-up material-symbols-outlined" aria-hidden="true">keyboard_arrow_up</span>
+        <Icon name="keyboard_arrow_up" className="compact-balance-up" />
       </button>
     </div>
   );
@@ -414,17 +422,17 @@ function DateNavigator({ date, setDate }) {
   return (
     <div className="date-nav">
       <button className="icon-button" aria-label="Día anterior" onClick={() => setDate(shiftDate(date, -1))}>
-        <span className="material-symbols-outlined">chevron_left</span>
+        <Icon name="chevron_left" />
       </button>
       <label>
         <span>{readableDate(date)}</span>
         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
       </label>
       <button className="icon-button" aria-label="Día siguiente" onClick={() => setDate(shiftDate(date, 1))}>
-        <span className="material-symbols-outlined">chevron_right</span>
+        <Icon name="chevron_right" />
       </button>
       <button className="secondary today-button" aria-label="Ir a hoy" onClick={() => setDate(today())}>
-        <span className="material-symbols-outlined">today</span><span className="today-label">Hoy</span>
+        <Icon name="today" /><span className="today-label">Hoy</span>
       </button>
     </div>
   );
@@ -476,7 +484,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
   }
   return (
     <details className="panel past-meals-panel">
-      <summary><span className="material-symbols-outlined">content_copy</span><span><strong>Copiar comidas de otro día</strong><small>Reutilizá un día anterior sin cargar todo de nuevo</small></span><span className="material-symbols-outlined chevron">expand_more</span></summary>
+      <summary><Icon name="content_copy" /><span><strong>Copiar comidas de otro día</strong><small>Reutilizá un día anterior sin cargar todo de nuevo</small></span><Icon name="expand_more" className="chevron" /></summary>
       <div className="past-meals-content">
       <div className="past-meals-tools">
         <Input
@@ -512,7 +520,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
                   </div>
                   <div className="ghost-actions">
                     <button className="copy-accept" disabled={state === "copying" || state === "copied"} aria-label={`Copiar ${type.label}`} onClick={() => copyMeal(type.code, items)}>
-                      <span className="material-symbols-outlined">{state === "copied" ? "check_circle" : "check"}</span>
+                      <Icon name={state === "copied" ? "check_circle" : "check"} />
                     </button>
                     <button
                       className="copy-reject"
@@ -525,7 +533,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
                         }))
                       }
                     >
-                      <span className="material-symbols-outlined">close</span>
+                      <Icon name="close" />
                     </button>
                   </div>
                 </header>
@@ -635,8 +643,8 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
           <strong>{meal?.calories || 0} kcal</strong>
         </div>
         <div className="meal-header-actions">
-          <details className="meal-menu"><summary aria-label={`Acciones de ${mealType.label}`}><span className="material-symbols-outlined">more_vert</span></summary><div><button disabled={!items.length || pasteLoading} onClick={() => onCopyMeal(items)}>Copiar todo</button><button disabled={!clipboard?.length || pasteLoading} onClick={() => addLogs(clipboard)}>Pegar</button><button className="danger-text" disabled={!items.length || pasteLoading} onClick={deleteAll}>Borrar todo</button></div></details>
-          <button className="icon-button" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><span className="material-symbols-outlined">add</span></button>
+          <details className="meal-menu"><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button disabled={!items.length || pasteLoading} onClick={() => onCopyMeal(items)}>Copiar todo</button><button disabled={!clipboard?.length || pasteLoading} onClick={() => addLogs(clipboard)}>Pegar</button><button className="danger-text" disabled={!items.length || pasteLoading} onClick={deleteAll}>Borrar todo</button></div></details>
+          <button className="icon-button" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><Icon name="add" /></button>
         </div>
       </header>
       <div className="meal-macros">
@@ -646,10 +654,10 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
       </div>
       {!items.length && yesterdayItems.length > 0 && suggestionState !== "dismissed" && (
         <div className={`yesterday-suggestion ${suggestionState === "copied" ? "copied" : ""}`}>
-          <span className="material-symbols-outlined" aria-hidden="true">content_copy</span>
+          <Icon name="content_copy" />
           <span><strong>¿Copiar de ayer?</strong><small>{yesterdayItems.length} {yesterdayItems.length === 1 ? "elemento" : "elementos"}</small></span>
-          <button className="copy-accept" disabled={suggestionState === "copying" || suggestionState === "copied"} aria-label={`Copiar ${mealType.label} de ayer`} onClick={copyYesterday}><span className="material-symbols-outlined">{suggestionState === "copied" ? "check_circle" : "check"}</span></button>
-          <button className="copy-reject" disabled={suggestionState === "copying" || suggestionState === "copied"} aria-label="Descartar sugerencia" onClick={() => setSuggestionState("dismissed")}><span className="material-symbols-outlined">close</span></button>
+          <button className="copy-accept" disabled={suggestionState === "copying" || suggestionState === "copied"} aria-label={`Copiar ${mealType.label} de ayer`} onClick={copyYesterday}><Icon name={suggestionState === "copied" ? "check_circle" : "check"} /></button>
+          <button className="copy-reject" disabled={suggestionState === "copying" || suggestionState === "copied"} aria-label="Descartar sugerencia" onClick={() => setSuggestionState("dismissed")}><Icon name="close" /></button>
           {suggestionState === "copied" && (
             <span className="copy-confetti" aria-hidden="true">
               <i />
@@ -820,8 +828,8 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
   }
   return (
     <div className={`swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""} ${expanded ? "expanded" : ""}`}>
-      <button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={() => { close(); window.setTimeout(onEdit, 120); }}><span className="material-symbols-outlined">edit</span></button>
-      <button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={() => { close(); window.setTimeout(onDelete, 120); }}><span className="material-symbols-outlined">delete</span></button>
+      <button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={() => { close(); window.setTimeout(onEdit, 120); }}><Icon name="edit" /></button>
+      <button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
       <div
         className={`meal-item-shell ${horizontalDragging ? "swiping" : ""} ${className}`}
         style={{ transform: `translateX(${offset}px)` }}
@@ -834,7 +842,7 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
       >
         <button type="button" className="meal-item" aria-expanded={expanded} onClick={() => !horizontalDragging && !suppressClick.current && onToggle?.()}>
           {children}
-          <span className="meal-item-chevron material-symbols-outlined" aria-hidden="true">expand_more</span>
+          <Icon name="expand_more" className="meal-item-chevron" />
         </button>
         {expanded && details}
       </div>
@@ -995,7 +1003,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
             <h2 id="food-picker-title">Agregar comida</h2>
           </div>
           <button className="icon-button" aria-label="Cerrar" onClick={onClose}>
-            <span className="material-symbols-outlined">close</span>
+            <Icon name="close" />
           </button>
         </header>
         <div className="tabs">
@@ -1020,7 +1028,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
         </div>
         <div className="picker-tools">
           <div className="search-wrap">
-            <span className="material-symbols-outlined">search</span>
+            <Icon name="search" />
             <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : "recetas"}...`} value={query} onChange={(event) => setQuery(event.target.value)} />
           </div>
           {tab === "FOOD" && <CategoryChips category={category} setCategory={setCategory} />}
@@ -1073,7 +1081,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
                     setPreview(null);
                   }}
                 >
-                  <span className="material-symbols-outlined">close</span>
+                  <Icon name="close" />
                 </button>
               </div>
               {selectedPreparations.length > 1 && (
@@ -1213,7 +1221,7 @@ function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAdd, onOp
             </span>
             <strong className="recent-meal-calories">{formatNumber(meal.calories || 0)}<small> kcal</small></strong>
             <button type="button" disabled={state === "adding" || state === "added"} aria-label={`Agregar ${meal.label} a ${mealLabel}`} onClick={() => addRecent(meal)}>
-              <span className="material-symbols-outlined" aria-hidden="true">{state === "added" ? "check" : state === "error" ? "refresh" : "add"}</span>
+              <Icon name={state === "added" ? "check" : state === "error" ? "refresh" : "add"} />
             </button>
           </article>
         );

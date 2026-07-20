@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Header, Panel } from "../../components/Layout";
+import { Icon } from "../../components/Icon";
+import "../../styles/05-scanner.css";
+import "../../styles/06-history.css";
 import { CatalogStatus, FoodThumb } from "../catalog/CatalogComponents";
 import { formatNumber, readableDate } from "../../utils/format";
 
@@ -108,7 +111,7 @@ function HistoryDayPreview({ api, day, onClose }) {
             <h2 id="history-preview-title">{readableDate(day.date)}</h2>
             <small>{day.planName || detail?.plan?.name}</small>
           </div>
-          <button ref={closeRef} type="button" className="history-preview-close" onClick={onClose} aria-label="Cerrar detalle"><span className="material-symbols-outlined">close</span></button>
+          <button ref={closeRef} type="button" className="history-preview-close" onClick={onClose} aria-label="Cerrar detalle"><Icon name="close" /></button>
         </header>
 
         <div className="history-preview-scroll">
@@ -127,7 +130,7 @@ function HistoryDayPreview({ api, day, onClose }) {
               <div className="history-meals">
                 {(detail.meals || []).filter((meal) => meal.items?.length).map((meal, mealIndex) => (
                   <article className="history-meal" key={meal.mealType} style={{ "--meal-delay": `${mealIndex * 45}ms` }}>
-                    <header><div><span className="material-symbols-outlined">restaurant</span><strong>{meal.label}</strong></div><small>{formatNumber(meal.calories)} kcal</small></header>
+                    <header><div><Icon name="restaurant" /><strong>{meal.label}</strong></div><small>{formatNumber(meal.calories)} kcal</small></header>
                     <div>
                       {meal.items.map((item) => (
                         <div className="history-food" key={item.id}>
@@ -139,9 +142,9 @@ function HistoryDayPreview({ api, day, onClose }) {
                     </div>
                   </article>
                 ))}
-                {!detail.meals?.some((meal) => meal.items?.length) && <div className="history-empty"><span className="material-symbols-outlined">no_meals</span><strong>Sin alimentos registrados</strong><small>Este día todavía no tiene comidas cargadas.</small></div>}
+                {!detail.meals?.some((meal) => meal.items?.length) && <div className="history-empty"><Icon name="no_meals" /><strong>Sin alimentos registrados</strong><small>Este día todavía no tiene comidas cargadas.</small></div>}
               </div>
-              <div className="history-water"><span className="material-symbols-outlined">water_drop</span><p><strong>Hidratación</strong><small>{formatNumber(detail.waterConsumedLiters, 1)} L de {formatNumber(detail.waterGoalLiters, 1)} L</small></p></div>
+              <div className="history-water"><Icon name="water_drop" /><p><strong>Hidratación</strong><small>{formatNumber(detail.waterConsumedLiters, 1)} L de {formatNumber(detail.waterGoalLiters, 1)} L</small></p></div>
             </>
           ) : error ? <CatalogStatus error>{error}</CatalogStatus> : <div className="history-preview-loading"><span className="spinner" /><span>Cargando detalle…</span></div>}
         </div>

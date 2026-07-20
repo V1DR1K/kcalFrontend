@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CATEGORY_OPTIONS } from "../../config/app";
+import { Icon } from "../../components/Icon";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Panel } from "../../components/Layout";
 import { CatalogRowWithImage, CatalogStatus, groupFoodVariants, categoryLabel } from "./CatalogComponents";
 import { usePagedCatalog } from "./usePagedCatalog";
-import { recognizeNutrition } from "../../services/nutritionOcr";
 import { formatNumber } from "../../utils/format";
 
 function macroCalories(proteinGrams, carbsGrams, fatGrams) {
@@ -18,7 +18,7 @@ export function CreateCatalog({ api, setPage, prefillBarcode, clearPrefillBarcod
   return (
     <section className="page narrow">
       <button className="back-button" onClick={() => setPage("foods")}>
-        <span className="material-symbols-outlined">arrow_back</span>Alimentos
+        <Icon name="arrow_back" />Alimentos
       </button>
       <Header title="Crear" eyebrow="Catalogo global" />
       <div className="tabs create-tabs">
@@ -106,6 +106,7 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
     setScanning(true);
     setOcrStatus("Procesando imagen con OCR...");
     try {
+      const { recognizeNutrition } = await import("../../services/nutritionOcr");
       const data = await recognizeNutrition(file);
       if (data.proteinGrams != null || data.carbsGrams != null || data.fatGrams != null) {
         setOcrData(data);
@@ -143,7 +144,7 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
         )}
         <div className="ocr-actions">
           <label className="secondary ocr-label">
-            <span className="material-symbols-outlined">document_scanner</span>
+            <Icon name="document_scanner" />
             Escanear tabla nutricional
             <input
               type="file"
@@ -195,7 +196,7 @@ function OcrNutritionPreview({ data, setData, onAccept, onDiscard }) {
           <span>Vista previa</span>
           <strong>Información detectada</strong>
         </div>
-        <span className="material-symbols-outlined">document_scanner</span>
+        <Icon name="document_scanner" />
       </header>
       <div className="ocr-preview-grid">
         <span className="derived-calories-card"><small>Kcal calculadas</small><strong>{formatNumber(derivedCalories)}</strong></span>
@@ -225,7 +226,7 @@ function OcrNutritionPreview({ data, setData, onAccept, onDiscard }) {
           Descartar
         </button>
         <button type="button" className="primary" onClick={onAccept}>
-          <span className="material-symbols-outlined">check</span>Aceptar valores
+          <Icon name="check" />Aceptar valores
         </button>
       </div>
     </section>
@@ -292,7 +293,7 @@ function MyFoods({ api }) {
                 <small>{item.brand || categoryLabel(item.category)}</small>
               </span>
               <span>{item.calories} kcal</span>
-              <span className="material-symbols-outlined">edit</span>
+              <Icon name="edit" />
             </button>
           ))}
         </div>
@@ -311,7 +312,7 @@ function MyFoods({ api }) {
                 <h2>{editing.name}</h2>
               </div>
               <button type="button" className="icon-button" aria-label="Cerrar" onClick={() => setEditing(null)}>
-                <span className="material-symbols-outlined">close</span>
+                <Icon name="close" />
               </button>
             </header>
             <div className="edit-food-fields">
@@ -438,21 +439,21 @@ function CreateRecipeForm({ api }) {
       <form className="form-grid recipe-form" onSubmit={submit}>
         {formError && (
           <div className="form-error recipe-error" role="alert">
-            <span className="material-symbols-outlined">error</span>
+            <Icon name="error" />
             <span>{formError}</span>
           </div>
         )}
         <Input name="name" label="Nombre" required />
         <Input name="description" label="Descripcion opcional" />
         <div className="recipe-weight-summary" aria-live="polite">
-          <span className="material-symbols-outlined">scale</span>
+          <Icon name="scale" />
           <div>
             <small>Peso total calculado</small>
             <strong>{formatNumber(totalWeight, 1)} g</strong>
           </div>
         </div>
         <div className="search-wrap">
-          <span className="material-symbols-outlined">search</span>
+          <Icon name="search" />
           <input className="search" placeholder="Buscar ingredientes..." value={query} onChange={(event) => setQuery(event.target.value)} />
         </div>
         <div className="picker-results">
@@ -477,7 +478,7 @@ function CreateRecipeForm({ api }) {
                 <strong>{food.name}</strong>
                 <small>{food.calories} kcal / 100g</small>
               </span>
-              <em><span className="material-symbols-outlined">add</span>Agregar</em>
+              <em><Icon name="add" />Agregar</em>
             </button>
           ))}
         </div>
@@ -502,7 +503,7 @@ function CreateRecipeForm({ api }) {
                 <small>g</small>
               </span>
               <button type="button" className="ingredient-remove" onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}>
-                <span className="material-symbols-outlined">remove</span>Quitar
+                <Icon name="remove" />Quitar
               </button>
             </label>
           ))}

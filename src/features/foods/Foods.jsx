@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
+import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { Header } from "../../components/Layout";
 import { CatalogCard, CatalogStatus, CategoryChips, FoodThumb, groupFoodVariants } from "../catalog/CatalogComponents";
@@ -33,7 +34,7 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
               Crear
             </button>
             <button className="primary pill" onClick={() => setPage("scanner")}>
-              <span className="material-symbols-outlined">barcode_scanner</span>
+              <Icon name="barcode_scanner" />
               Escanear
             </button>
           </div>
@@ -48,7 +49,7 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
         </button>
       </div>
       <div className="search-wrap">
-        <span className="material-symbols-outlined">search</span>
+        <Icon name="search" />
         <input className="search" placeholder="Buscar..." value={query} onChange={(event) => setQuery(event.target.value)} />
       </div>
       {tab === "FOOD" && <CategoryChips category={category} setCategory={setCategory} />}
@@ -195,8 +196,8 @@ function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }
   }
   return (
     <div className={`swipe-row recipe-swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""}`}>
-      <button className="swipe-action swipe-edit" aria-label="Editar receta" disabled={disabled} onClick={() => { close(); window.setTimeout(onEdit, 120); }}><span className="material-symbols-outlined">edit</span></button>
-      <button className="swipe-action swipe-delete" aria-label="Borrar receta" disabled={disabled} onClick={() => { close(); window.setTimeout(onDelete, 120); }}><span className="material-symbols-outlined">delete</span></button>
+      <button className="swipe-action swipe-edit" aria-label="Editar receta" disabled={disabled} onClick={() => { close(); window.setTimeout(onEdit, 120); }}><Icon name="edit" /></button>
+      <button className="swipe-action swipe-delete" aria-label="Borrar receta" disabled={disabled} onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
       <article
         className={`food-card recipe-swipe-card ${horizontalDragging ? "swiping" : ""} ${disabled ? "moving" : ""}`}
         style={{ transform: `translateX(${offset}px)` }}
@@ -265,14 +266,14 @@ function EditRecipeModal({ api, recipe, onClose, onDone }) {
             <h2>{recipe.name}</h2>
           </div>
           <button type="button" className="icon-button" aria-label="Cerrar" onClick={onClose}>
-            <span className="material-symbols-outlined">close</span>
+            <Icon name="close" />
           </button>
         </header>
         <div className="edit-food-fields">
-          {error && <div className="form-error recipe-error" role="alert"><span className="material-symbols-outlined">error</span><span>{error}</span></div>}
+          {error && <div className="form-error recipe-error" role="alert"><Icon name="error" /><span>{error}</span></div>}
           <Input label="Nombre" value={name} onChange={(event) => setName(event.target.value)} required />
           <Input label="Descripcion opcional" value={description} onChange={(event) => setDescription(event.target.value)} />
-          <div className="recipe-weight-summary"><span className="material-symbols-outlined">scale</span><div><small>Peso total calculado</small><strong>{formatNumber(totalWeight, 1)} g</strong></div></div>
+          <div className="recipe-weight-summary"><Icon name="scale" /><div><small>Peso total calculado</small><strong>{formatNumber(totalWeight, 1)} g</strong></div></div>
           <div className="ingredient-list">
             {ingredients.map((item, index) => (
               <label className="ingredient-row" key={`${item.foodId}:${index}`}>
@@ -282,7 +283,7 @@ function EditRecipeModal({ api, recipe, onClose, onDone }) {
                   <small>g</small>
                 </span>
                 <button type="button" className="ingredient-remove" onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}>
-                  <span className="material-symbols-outlined">remove</span>Quitar
+                  <Icon name="remove" />Quitar
                 </button>
               </label>
             ))}
@@ -423,7 +424,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
             <h2 id="edit-log-title">{item?.name}</h2>
           </div>
           <button type="button" className="icon-button" onClick={closeWithAnimation} aria-label="Cerrar">
-            <span className="material-symbols-outlined">close</span>
+            <Icon name="close" />
           </button>
         </header>
         <Input autoFocus selectOnFocus numericOnly label={isRecipe ? "Porciones" : "Cantidad en gramos"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { APP_NAME, REGISTRATION_ENABLED } from "../../config/app";
+import { Icon } from "../../components/Icon";
 import { request } from "../../services/http";
 import { Input, Select } from "../../components/FormControls";
 
@@ -19,7 +20,7 @@ export function AuthScreen({ page, setPage, saveSession, notify }) {
     } catch { notify(isRegister ? "No se pudo crear la cuenta." : "No se pudo iniciar sesion.", "error"); }
     finally { setLoading(false); }
   }
-  return <main className="auth-page"><section className="auth-card"><div className="brand auth-brand"><span className="material-symbols-outlined fill">vital_signs</span><div><strong>{APP_NAME}</strong><span>{isRegister ? "Crear cuenta" : "Ingreso"}</span></div></div><form onSubmit={submit} className="form-grid">
+  return <main className="auth-page"><section className="auth-card"><div className="brand auth-brand"><Icon name="vital_signs" className="fill" /><div><strong>{APP_NAME}</strong><span>{isRegister ? "Crear cuenta" : "Ingreso"}</span></div></div><form onSubmit={submit} className="form-grid">
     {isRegister && <Input name="fullName" label="Nombre completo" required />}
     <Input name="email" label="Email" type="email" defaultValue={!isRegister && import.meta.env.DEV ? "alex@kazadesarrollos.com" : ""} autoComplete="email" required />
     <Input name="password" label="Contraseña" type="password" defaultValue={!isRegister && import.meta.env.DEV ? "password123" : ""} autoComplete={isRegister ? "new-password" : "current-password"} minLength="8" required />

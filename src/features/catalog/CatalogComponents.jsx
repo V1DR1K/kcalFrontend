@@ -1,5 +1,6 @@
 import React from "react";
 import { CATEGORY_OPTIONS, PREPARATION_OPTIONS, CATEGORY_ART, RECIPE_ART } from "../../config/app";
+import { Icon } from "../../components/Icon";
 import { formatNumber } from "../../utils/format";
 
 export function CatalogStatus({ children, error = false }) {
@@ -66,7 +67,7 @@ export function CatalogCard({ item, onAdd }) {
       <strong>{item.calories} kcal</strong>
       {item.type === "FOOD" && (
         <button className="icon-button add-food" onClick={onAdd} aria-label={`Agregar ${item.name}`}>
-          <span className="material-symbols-outlined">add</span>
+          <Icon name="add" />
         </button>
       )}
     </article>
@@ -84,7 +85,7 @@ export function CatalogRowWithImage({ item, onPick }) {
           {item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g
         </small>
       </span>
-      <span className="material-symbols-outlined row-action">chevron_right</span>
+       <Icon name="chevron_right" className="row-action" />
     </button>
   );
 }

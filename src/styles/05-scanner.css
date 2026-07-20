@@ -237,3 +237,14 @@
   color: var(--primary);
   font-weight: 900;
 }
+
+@keyframes scan {
+  0% { top: 16%; opacity: 0; }
+  12%, 88% { opacity: 1; }
+  100% { top: 84%; opacity: 0; }
+}
+
+@keyframes result-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(18px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

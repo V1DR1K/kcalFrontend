@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Icon } from "../../components/Icon";
+import "../../styles/05-scanner.css";
 
 export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode }) {
   const [barcode, setBarcode] = useState("");
@@ -75,7 +77,7 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode }) 
   return (
     <section className="scanner-page">
       <button className="back-button" onClick={() => setPage("foods")}>
-        <span className="material-symbols-outlined">arrow_back</span>Alimentos
+        <Icon name="arrow_back" />Alimentos
       </button>
       <div className="scanner-stage">
         <video ref={videoRef} muted playsInline />
@@ -86,7 +88,7 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode }) 
           <i />
           <i />
           <div className="scan-line" />
-          <span className="material-symbols-outlined">{status.startsWith("Codigo reconocido") ? "check_circle" : "barcode_scanner"}</span>
+          <Icon name={status.startsWith("Codigo reconocido") ? "check_circle" : "barcode_scanner"} />
         </div>
         <p aria-live="polite">{status}</p>
       </div>
@@ -111,7 +113,7 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode }) 
           <>
             <button className="manual-toggle" onClick={() => setManualOpen((value) => !value)}>
               <span>Codigo manual</span>
-              <span className="material-symbols-outlined">{manualOpen ? "expand_more" : "chevron_right"}</span>
+              <Icon name={manualOpen ? "expand_more" : "chevron_right"} />
             </button>
             {manualOpen && (
               <div className="manual-panel">

@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import "../styles.css";
 import { request as apiRequest } from "../services/http";
 import { TOKEN_KEY, USER_KEY } from "../config/app";
@@ -6,13 +6,22 @@ import { getSavedUser } from "../services/recents";
 import { Shell } from "./Shell";
 import { AuthScreen } from "../features/auth/AuthScreen";
 import { Toast } from "../components/Layout";
-import { Dashboard } from "../features/dashboard/Dashboard";
-import { Foods } from "../features/foods/Foods";
-import { CreateCatalog } from "../features/catalog/CreateCatalog";
-import { ConfigureFood } from "../features/foods/ConfigureFood";
-import { Scanner } from "../features/scanner/Scanner";
-import { History } from "../features/history/History";
-import { Profile } from "../features/profile/Profile";
+
+function lazyPage(load, name) {
+  return lazy(() => load().then((module) => ({ default: module[name] })));
+}
+
+const Dashboard = lazyPage(() => import("../features/dashboard/Dashboard"), "Dashboard");
+const Foods = lazyPage(() => import("../features/foods/Foods"), "Foods");
+const CreateCatalog = lazyPage(() => import("../features/catalog/CreateCatalog"), "CreateCatalog");
+const ConfigureFood = lazyPage(() => import("../features/foods/ConfigureFood"), "ConfigureFood");
+const Scanner = lazyPage(() => import("../features/scanner/Scanner"), "Scanner");
+const History = lazyPage(() => import("../features/history/History"), "History");
+const Profile = lazyPage(() => import("../features/profile/Profile"), "Profile");
+
+function PageLoader() {
+  return <section className="page"><div className="catalog-status" role="status">Cargando…</div></section>;
+}
 
 export function App() {
   const [page, setPage] = useState(() => (localStorage.getItem(TOKEN_KEY) ? "dashboard" : "login"));
@@ -66,13 +75,15 @@ export function App() {
     <>
       {authenticated ? (
         <Shell user={user} page={page} setPage={setPage} logout={logout}>
-          {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
-          {page === "foods" && <Foods api={api} user={user} setPage={setPage} setSelectedFoodId={setSelectedFoodId} />}
-          {page === "create" && <CreateCatalog api={api} setPage={setPage} prefillBarcode={prefillBarcode} clearPrefillBarcode={() => setPrefillBarcode("")} />}
-          {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
-          {page === "scanner" && <Scanner api={api} setPage={setPage} setSelectedFoodId={setSelectedFoodId} setPrefillBarcode={setPrefillBarcode} />}
-          {page === "history" && <History api={api} />}
-          {page === "profile" && <Profile api={api} logout={logout} />}
+          <Suspense fallback={<PageLoader />}>
+            {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
+            {page === "foods" && <Foods api={api} user={user} setPage={setPage} setSelectedFoodId={setSelectedFoodId} />}
+            {page === "create" && <CreateCatalog api={api} setPage={setPage} prefillBarcode={prefillBarcode} clearPrefillBarcode={() => setPrefillBarcode("")} />}
+            {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
+            {page === "scanner" && <Scanner api={api} setPage={setPage} setSelectedFoodId={setSelectedFoodId} setPrefillBarcode={setPrefillBarcode} />}
+            {page === "history" && <History api={api} />}
+            {page === "profile" && <Profile api={api} logout={logout} />}
+          </Suspense>
         </Shell>
       ) : (
         <AuthScreen page={page} setPage={setPage} saveSession={saveSession} notify={api.notify} />

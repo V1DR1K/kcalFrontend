@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { DEFAULT_MEALS } from "../../config/app";
+import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Panel } from "../../components/Layout";
 import { CatalogStatus, FoodThumb, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
@@ -121,7 +122,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
     return (
       <section className="page narrow configure-page">
         <button className="back-button configure-back" onClick={() => setPage("foods")}>
-          <span className="material-symbols-outlined">arrow_back</span>Alimentos
+          <Icon name="arrow_back" />Alimentos
         </button>
         <Header title="Configurar alimento" />
         <CatalogStatus error>
@@ -135,7 +136,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
   return (
     <section className="page narrow configure-page">
       <button className="back-button configure-back" onClick={() => setPage("foods")}>
-        <span className="material-symbols-outlined">arrow_back</span>Alimentos
+        <Icon name="arrow_back" />Alimentos
       </button>
       <Header title="Configurar alimento" />
       <Panel className="configure-panel">
