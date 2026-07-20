@@ -345,16 +345,17 @@
 
   .meal-item {
     gap: 8px;
-    padding: 8px 0 0;
+    padding: 10px;
     font-size: 13px;
   }
 
   .meal-item-detail {
-    gap: 7px;
-    padding-bottom: 10px;
+    gap: 10px;
+    margin: 0 8px 10px;
+    padding: 12px;
   }
 
-  .recipe-meal-item-detail { padding-top: 6px; }
+  .recipe-meal-item-detail { gap: 12px; }
 
   .meal-detail-summary,
   .meal-detail-pills {

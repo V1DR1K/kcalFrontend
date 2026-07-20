@@ -7,6 +7,7 @@ import { Shell } from "./Shell";
 import { AuthScreen } from "../features/auth/AuthScreen";
 import { Toast } from "../components/Layout";
 import { ActionLoader } from "../components/ActionLoader";
+import { ConfirmationDialog } from "../components/ConfirmationDialog";
 
 function lazyPage(load, name) {
   return lazy(() => load().then((module) => ({ default: module[name] })));
@@ -31,8 +32,10 @@ export function App() {
   const [selectedFoodId, setSelectedFoodId] = useState(null);
   const [prefillBarcode, setPrefillBarcode] = useState("");
   const [actionLoading, setActionLoading] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
   const actionSequence = useRef(0);
   const pendingActions = useRef(new Map());
+  const confirmationResolver = useRef(null);
 
   const api = useMemo(
     () => ({
@@ -49,6 +52,12 @@ export function App() {
           const activeActions = [...pendingActions.current.values()];
           setActionLoading(activeActions[activeActions.length - 1] || null);
         }
+      },
+      confirm(options) {
+        return new Promise((resolve) => {
+          confirmationResolver.current = resolve;
+          setConfirmation(options);
+        });
       },
       notify(message, tone = "success") {
         setToast({ message, tone });
@@ -76,6 +85,13 @@ export function App() {
     localStorage.removeItem(USER_KEY);
     setUser(null);
     setPage("login");
+  }
+
+  function resolveConfirmation(confirmed) {
+    const resolve = confirmationResolver.current;
+    confirmationResolver.current = null;
+    setConfirmation(null);
+    resolve?.(confirmed);
   }
 
   useEffect(() => {
@@ -107,6 +123,7 @@ export function App() {
       )}
       {toast && <Toast {...toast} />}
       {actionLoading && <ActionLoader {...actionLoading} />}
+      {confirmation && <ConfirmationDialog {...confirmation} onCancel={() => resolveConfirmation(false)} onConfirm={() => resolveConfirmation(true)} />}
     </>
   );
 }

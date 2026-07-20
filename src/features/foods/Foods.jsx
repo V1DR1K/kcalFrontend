@@ -10,6 +10,8 @@ import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents } from "../../services/recents";
 import { formatNumber } from "../../utils/format";
 
+const SWIPE_ACTION_WIDTH = 84;
+
 export function Foods({ api, user, setPage, setSelectedFoodId }) {
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
@@ -90,7 +92,12 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
                 }}
                 onDelete={async () => {
                   if (deletingRecipeId) return;
-                  if (!window.confirm(`Borrar la receta ${item.name}?`)) {
+                  const confirmed = await api.confirm({
+                    title: "Borrar receta?",
+                    description: `${item.name} se eliminara de tu catalogo.`,
+                    confirmLabel: "Borrar receta",
+                  });
+                  if (!confirmed) {
                     setSwipeResetSignal((value) => value + 1);
                     return;
                   }
@@ -173,12 +180,12 @@ function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }
   useEffect(() => close(), [close, resetSignal]);
   function finish() {
     const finalOffset = offsetRef.current;
-    if (gesture.current?.axis === "x" && finalOffset > 64) {
+    if (gesture.current?.axis === "x" && finalOffset > SWIPE_ACTION_WIDTH * 0.65) {
       setRevealed("edit");
-      setSwipeOffset(76);
-    } else if (gesture.current?.axis === "x" && finalOffset < -64) {
+      setSwipeOffset(SWIPE_ACTION_WIDTH);
+    } else if (gesture.current?.axis === "x" && finalOffset < -SWIPE_ACTION_WIDTH * 0.65) {
       setRevealed("delete");
-      setSwipeOffset(-76);
+      setSwipeOffset(-SWIPE_ACTION_WIDTH);
     } else {
       close();
     }
@@ -199,7 +206,7 @@ function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }
     if (gesture.current.axis === "x") {
       if (event.cancelable) event.preventDefault();
       setHorizontalDragging(true);
-      setSwipeOffset(Math.max(-92, Math.min(92, dx)));
+      setSwipeOffset(Math.max(-SWIPE_ACTION_WIDTH, Math.min(SWIPE_ACTION_WIDTH, dx)));
     }
   }
   return (
@@ -208,7 +215,7 @@ function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }
       <button className="swipe-action swipe-delete" aria-label="Borrar receta" disabled={disabled} onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
       <article
         className={`food-card recipe-swipe-card ${horizontalDragging ? "swiping" : ""} ${disabled ? "moving" : ""}`}
-        style={{ transform: `translateX(${offset}px)` }}
+        style={{ transform: `translate3d(${offset}px, 0, 0)` }}
         onTouchStart={(event) => { gesture.current = { x: event.touches[0].clientX, y: event.touches[0].clientY, axis: null }; }}
         onTouchMove={move}
         onTouchEnd={finish}

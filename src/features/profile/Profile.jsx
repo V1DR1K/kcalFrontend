@@ -86,8 +86,14 @@ export function Profile({ api, logout }) {
         <p>Podés cerrar tu sesión de forma segura en este dispositivo.</p>
         <button
           className="danger-button"
-          onClick={() => {
-            if (window.confirm("¿Querés cerrar sesión?")) logout();
+          onClick={async () => {
+            const confirmed = await api.confirm({
+              title: "Cerrar sesion?",
+              description: "Tendras que volver a ingresar para usar tu cuenta en este dispositivo.",
+              confirmLabel: "Cerrar sesion",
+              tone: "neutral",
+            });
+            if (confirmed) logout();
           }}
         >
           <Icon name="logout" />Cerrar sesión

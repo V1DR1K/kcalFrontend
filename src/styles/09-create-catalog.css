@@ -17,12 +17,13 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-top: 0;
+  contain: paint;
+  border: 1px solid rgb(60 74 66 / 65%);
   border-radius: 14px;
   background: rgb(16 24 19);
 }
 .recipe-swipe-row .swipe-action {
-  border-radius: 14px;
+  border-radius: 0;
 }
 .recipe-swipe-card {
   position: relative;
@@ -33,7 +34,11 @@
   gap: 12px;
   width: 100%;
   min-height: 88px;
+  overflow: hidden;
+  border: 0;
+  border-radius: inherit;
   background: linear-gradient(#161d19f5, #0e1511f5);
+  box-shadow: none;
   transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease;
   will-change: transform;
   touch-action: pan-y;

@@ -2,7 +2,17 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./app/App";
 
-document.addEventListener("gesturestart", (event) => event.preventDefault(), { passive: false });
+function preventPinchZoom(event) {
+  event.preventDefault();
+}
+
+["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
+  document.addEventListener(eventName, preventPinchZoom, { passive: false });
+});
+document.addEventListener("touchmove", (event) => {
+  if (event.touches.length > 1) event.preventDefault();
+}, { passive: false });
+document.addEventListener("dblclick", (event) => event.preventDefault(), { passive: false });
 document.addEventListener("wheel", (event) => { if (event.ctrlKey) event.preventDefault(); }, { passive: false });
 document.addEventListener("keydown", (event) => {
   if ((event.ctrlKey || event.metaKey) && ["+", "-", "=", "0"].includes(event.key)) event.preventDefault();

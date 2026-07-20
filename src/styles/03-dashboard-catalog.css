@@ -486,7 +486,10 @@ select:focus,
   place-items: center;
   flex: 0 0 auto;
   overflow: hidden;
+  isolation: isolate;
+  background: var(--surface-high);
 }
+.food-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
 .food-thumb .material-symbols-outlined {
   color: var(--primary);
@@ -501,7 +504,7 @@ select:focus,
 .meal-card {
   display: grid;
   align-content: start;
-  gap: 14px;
+  gap: 10px;
   min-height: 220px;
   padding: 18px;
   border: 1px solid rgb(60 74 66 / 55%);
@@ -666,9 +669,8 @@ summary:focus-visible {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 10px 0;
+  padding: 12px;
   border: 0;
-  border-top: 1px solid rgb(60 74 66 / 55%);
   background: transparent;
   color: var(--text);
   cursor: grab;
@@ -677,15 +679,14 @@ summary:focus-visible {
   user-select: none;
 }
 .meal-item:active { cursor: grabbing; }
-.swipe-row { position: relative; overflow: hidden; border-top: 1px solid rgb(60 74 66 / 55%); background: rgb(16 24 19); isolation: isolate; }
-.swipe-row.expanded { border-radius: 14px; }
-.swipe-row .meal-item-shell { position: relative; z-index: 2; display: grid; overflow: hidden; border-top: 0; background: rgb(16 24 19); box-shadow: 0 0 0 rgb(0 0 0 / 0%); transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease, background 180ms ease; will-change: transform; touch-action: pan-y; }
+.swipe-row { --swipe-action-width: 84px; position: relative; overflow: hidden; contain: paint; border: 1px solid rgb(60 74 66 / 65%); border-radius: 14px; background: rgb(16 24 19); isolation: isolate; touch-action: pan-y; }
+.swipe-row .meal-item-shell { position: relative; z-index: 2; display: grid; width: 100%; min-width: 100%; overflow: hidden; border-radius: inherit; background: rgb(16 24 19); box-shadow: 0 0 0 rgb(0 0 0 / 0%); transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease, background 180ms ease; will-change: transform; touch-action: pan-y; }
 .swipe-row .meal-item-shell.swiping { transition-duration: 90ms; }
 .swipe-row .meal-item { border-top: 0; }
-.swipe-row.expanded .meal-item-shell { border-radius: 14px; background: linear-gradient(180deg, rgb(21 32 26), rgb(16 24 19)); box-shadow: inset 0 0 0 1px rgb(78 222 163 / 18%); }
+.swipe-row.expanded .meal-item-shell { background: linear-gradient(180deg, rgb(21 32 26), rgb(16 24 19)); box-shadow: inset 0 0 0 1px rgb(78 222 163 / 18%); }
 .swipe-row.edit .meal-item-shell,
 .swipe-row.delete .meal-item-shell { box-shadow: 0 10px 28px rgb(0 0 0 / 24%); }
-.swipe-action { position: absolute; inset-block: 0; z-index: 1; display: grid; place-items: center; width: 76px; border: 0; color: white; opacity: 0; transform: scaleX(.94); pointer-events: none; transition: opacity 90ms ease, filter 160ms ease, transform 180ms cubic-bezier(.2,.8,.2,1); }
+.swipe-action { position: absolute; inset-block: 0; z-index: 1; display: grid; place-items: center; width: var(--swipe-action-width); min-width: var(--swipe-action-width); margin: 0; padding: 0; border: 0; border-radius: 0; color: white; opacity: 0; transform: scaleX(.94); pointer-events: none; transition: opacity 90ms ease, filter 160ms ease, transform 180ms cubic-bezier(.2,.8,.2,1); }
 .swipe-row.swiping .swipe-action,
 .swipe-row.edit .swipe-action,
 .swipe-row.delete .swipe-action { opacity: 1; pointer-events: auto; transform: scaleX(1); }
@@ -763,15 +764,21 @@ summary:focus-visible {
 .swipe-row.expanded .meal-item-chevron { color: var(--primary); transform: rotate(180deg); }
 .meal-item .food-thumb.compact,
 .recipe-ingredient-main .food-thumb.compact {
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 10px;
   overflow: hidden;
 }
 .meal-item-detail {
   display: grid;
-  gap: 9px;
-  padding: 0 10px 12px;
+  gap: 12px;
+  margin: 0 12px 14px;
+  padding: 14px;
+  border: 1px solid rgb(78 222 163 / 17%);
+  border-radius: 12px;
+  background: rgb(4 12 8 / 38%);
   animation: meal-detail-in 190ms cubic-bezier(.2,.8,.2,1);
 }
-.recipe-meal-item-detail { padding-top: 8px; }
+.recipe-meal-item-detail { gap: 14px; }
 .daily-recipe-note { color: var(--primary); font-size: 12px; font-weight: 800; }
 .daily-recipe-editor { display: grid; gap: 10px; padding: 12px; border: 1px solid rgb(78 222 163 / 26%); border-radius: 12px; background: rgb(78 222 163 / 6%); }
 .daily-recipe-editor > div { display: grid; gap: 2px; }

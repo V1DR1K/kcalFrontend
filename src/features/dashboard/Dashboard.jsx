@@ -10,6 +10,8 @@ import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, readableDate, shiftDate, today } from "../../utils/format";
 
+const SWIPE_ACTION_WIDTH = 84;
+
 function formatMealLogAmount(log) {
   if (log.itemType === "RECIPE") return `${formatNumber(log.quantity, 1)} porcion${Number(log.quantity) === 1 ? "" : "es"}`;
   return `${formatNumber(log.quantity, 1)} g`;
@@ -281,7 +283,13 @@ export function Dashboard({ api, user, setPage }) {
             }}
             onDelete={async (log) => {
               if (deletingLogId) return;
-              if (!window.confirm(`Eliminar ${log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name} del registro?`)) {
+              const itemName = log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name;
+              const confirmed = await api.confirm({
+                title: "Eliminar alimento?",
+                description: `${itemName || "Este alimento"} se quitara de tu registro de hoy.`,
+                confirmLabel: "Eliminar",
+              });
+              if (!confirmed) {
                 resetMealSwipes();
                 return;
               }
@@ -630,7 +638,13 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
     finally { setBulkActionLoading(false); }
   }
   async function deleteAll() {
-    if (!items.length || !window.confirm(`¿Borrar todo ${mealType.label.toLowerCase()}?`)) return;
+    if (!items.length) return;
+    const confirmed = await api.confirm({
+      title: `Borrar ${mealType.label.toLowerCase()}?`,
+      description: "Se eliminaran todos los alimentos de esta comida.",
+      confirmLabel: "Borrar todo",
+    });
+    if (!confirmed) return;
     setBulkActionLoading(true);
     try {
       await api.runAction(
@@ -827,14 +841,14 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
   }, [expanded, close, revealed]);
   function finish() {
     const finalOffset = offsetRef.current;
-    if (gesture.current?.axis === "x" && finalOffset > 64) {
+    if (gesture.current?.axis === "x" && finalOffset > SWIPE_ACTION_WIDTH * 0.65) {
       suppressClick.current = true;
       setRevealed("edit");
-      setSwipeOffset(76);
-    } else if (gesture.current?.axis === "x" && finalOffset < -64) {
+      setSwipeOffset(SWIPE_ACTION_WIDTH);
+    } else if (gesture.current?.axis === "x" && finalOffset < -SWIPE_ACTION_WIDTH * 0.65) {
       suppressClick.current = true;
       setRevealed("delete");
-      setSwipeOffset(-76);
+      setSwipeOffset(-SWIPE_ACTION_WIDTH);
     } else {
       if (gesture.current?.axis === "x") suppressClick.current = true;
       close();
@@ -857,7 +871,7 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
     if (gesture.current.axis === "x") {
       if (event.cancelable) event.preventDefault();
       setHorizontalDragging(true);
-      setSwipeOffset(Math.max(-92, Math.min(92, dx)));
+      setSwipeOffset(Math.max(-SWIPE_ACTION_WIDTH, Math.min(SWIPE_ACTION_WIDTH, dx)));
     }
   }
   return (
@@ -866,7 +880,7 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
       <button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
       <div
         className={`meal-item-shell ${horizontalDragging ? "swiping" : ""} ${className}`}
-        style={{ transform: `translateX(${offset}px)` }}
+        style={{ transform: `translate3d(${offset}px, 0, 0)` }}
         onTouchStart={(event) => {
           gesture.current = { x: event.touches[0].clientX, y: event.touches[0].clientY, axis: null };
         }}
