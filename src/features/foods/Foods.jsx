@@ -331,6 +331,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     carbsGrams: log.carbsGrams,
     fatGrams: log.fatGrams,
   });
+  const [showIngredients, setShowIngredients] = useState(Boolean(log.recipeAdjusted));
   const [saving, setSaving] = useState(false);
   const [closing, setClosing] = useState(false);
   const item = log.itemType === "RECIPE" ? log.recipe : log.food;
@@ -451,8 +452,9 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   return (
     <div className={`modal-backdrop compact-modal ${closing ? "closing" : ""}`} onPointerDown={(event) => { if (event.target === event.currentTarget) closeWithAnimation(); }}>
       <form className="edit-log-modal" role="dialog" aria-modal="true" aria-labelledby="edit-log-title" onPointerDown={(event) => event.stopPropagation()} onSubmit={submit}>
-        <header>
-          <div>
+        <header className="edit-log-header">
+          <FoodThumb item={isRecipe ? { ...item, type: "RECIPE" } : item} compact />
+          <div className="edit-log-identity">
             <span>Editar registro</span>
             <h2 id="edit-log-title">{item?.name}</h2>
           </div>
@@ -460,51 +462,63 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
             <Icon name="close" />
           </button>
         </header>
-        <Input autoFocus selectOnFocus numericOnly label={isRecipe ? "Porciones" : "Cantidad en gramos"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
-        {isRecipe && (
-          <section className="daily-recipe-editor" aria-label="Ingredientes para este día">
-            <div><strong>Receta para este día</strong><small>Estos cambios no modifican la receta base.</small></div>
-            {ingredients.map((ingredient, index) => (
-              <Input key={ingredient.foodId} numericOnly label={`${ingredient.name} (g)`} type="number" inputMode="decimal" min="0.1" step="0.1" value={ingredient.quantity} onChange={(event) => updateIngredient(index, event.target.value)} />
-            ))}
-            {log.recipeAdjusted && <button type="button" className="secondary daily-recipe-reset" disabled={saving} onClick={resetRecipe}>Restablecer receta base</button>}
-          </section>
-        )}
-        <Select
-          label="Comida"
-          value={mealType}
-          onChange={(event) => setMealType(event.target.value)}
-          options={mealTypes.map((meal) => ({
-            value: meal.code,
-            label: meal.label,
-          }))}
-        />
-        <div className="nutrition-preview edit-log-preview" aria-label="Resumen nutricional">
-          <span>
-            <small>Kcal</small>
-            <strong>{formatNumber(preview?.calories)}</strong>
-          </span>
-          <span>
-            <small>Proteinas</small>
-            <strong>{formatNumber(preview?.proteinGrams, 1)}g</strong>
-          </span>
-          <span>
-            <small>Carbos</small>
-            <strong>{formatNumber(preview?.carbsGrams, 1)}g</strong>
-          </span>
-          <span>
-            <small>Grasas</small>
-            <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
-          </span>
+        <div className="edit-log-body">
+          <div className="edit-log-fields">
+            <div className={`edit-log-quantity ${isRecipe ? "portions" : ""}`}>
+              <Input selectOnFocus numericOnly label="Cantidad" type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+              <small>{isRecipe ? "porciones" : "g"}</small>
+            </div>
+            <Select
+              label="Comida"
+              value={mealType}
+              onChange={(event) => setMealType(event.target.value)}
+              options={mealTypes.map((meal) => ({
+                value: meal.code,
+                label: meal.label,
+              }))}
+            />
+          </div>
+          {isRecipe && (
+            <section className="daily-recipe-editor" aria-label="Ingredientes para este día">
+              <button type="button" className="daily-recipe-toggle" aria-expanded={showIngredients} aria-controls={`daily-recipe-${log.id}`} onClick={() => setShowIngredients((current) => !current)}>
+                <span><strong>Ingredientes de hoy</strong><small>Los cambios no modifican la receta base.</small></span>
+                <Icon name={showIngredients ? "expand_less" : "expand_more"} />
+              </button>
+              <div className="daily-recipe-fields" id={`daily-recipe-${log.id}`} hidden={!showIngredients}>
+                {ingredients.map((ingredient, index) => (
+                  <Input key={ingredient.foodId} numericOnly label={`${ingredient.name} (g)`} type="number" inputMode="decimal" min="0.1" step="0.1" value={ingredient.quantity} onChange={(event) => updateIngredient(index, event.target.value)} />
+                ))}
+                {log.recipeAdjusted && <button type="button" className="secondary daily-recipe-reset" disabled={saving} onClick={resetRecipe}>Restablecer receta base</button>}
+              </div>
+            </section>
+          )}
+          <div className="nutrition-preview edit-log-preview" aria-label="Resumen nutricional">
+            <span className="edit-log-calories">
+              <small>Kcal</small>
+              <strong>{formatNumber(preview?.calories)}</strong>
+            </span>
+            <span className="edit-log-macro protein" aria-label={`Proteinas: ${formatNumber(preview?.proteinGrams, 1)} gramos`}>
+              <small>P</small>
+              <strong>{formatNumber(preview?.proteinGrams, 1)}g</strong>
+            </span>
+            <span className="edit-log-macro carbs" aria-label={`Carbohidratos: ${formatNumber(preview?.carbsGrams, 1)} gramos`}>
+              <small>C</small>
+              <strong>{formatNumber(preview?.carbsGrams, 1)}g</strong>
+            </span>
+            <span className="edit-log-macro fat" aria-label={`Grasas: ${formatNumber(preview?.fatGrams, 1)} gramos`}>
+              <small>G</small>
+              <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
+            </span>
+          </div>
         </div>
-        <div className="modal-actions">
+        <footer className="modal-actions">
           <button type="button" className="secondary" onClick={closeWithAnimation}>
             Cancelar
           </button>
           <button className="primary" disabled={saving || Number(quantity) <= 0}>
             {saving ? "Guardando…" : "Guardar cambios"}
           </button>
-        </div>
+        </footer>
       </form>
     </div>
   );

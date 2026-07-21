@@ -928,8 +928,21 @@ summary:focus-visible {
   animation: edit-modal-in 280ms cubic-bezier(.16, 1, .3, 1);
 }
 .compact-modal.closing .edit-log-modal { animation: edit-modal-out 180ms ease-in forwards; }
-.edit-log-modal header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.edit-log-modal h2 { margin: 2px 0 0; }
+.edit-log-header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.edit-log-header .food-thumb.compact { width: 46px; height: 46px; }
+.edit-log-identity { min-width: 0; }
+.edit-log-identity > span { color: var(--primary); font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.edit-log-modal h2 { overflow: hidden; margin: 2px 0 0; text-overflow: ellipsis; white-space: nowrap; }
+.edit-log-body { display: grid; align-content: start; gap: 16px; min-width: 0; }
+.edit-log-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.edit-log-quantity { position: relative; min-width: 0; }
+.edit-log-quantity > small { position: absolute; right: 12px; bottom: 15px; color: var(--muted); font-size: 12px; font-weight: 800; pointer-events: none; }
+.edit-log-quantity .field input { padding-right: 34px; }
+.edit-log-quantity.portions .field input { padding-right: 78px; }
+.daily-recipe-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; border: 0; padding: 0; background: transparent; color: var(--text); text-align: left; }
+.daily-recipe-toggle > span { display: grid; gap: 2px; }
+.daily-recipe-toggle .material-symbols-outlined { color: var(--primary); }
+.daily-recipe-fields { display: grid; gap: 10px; }
 .edit-log-preview {
   animation: edit-preview-in 260ms cubic-bezier(.16, 1, .3, 1) both;
 }
