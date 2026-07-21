@@ -876,7 +876,7 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
   }
   return (
     <div className={`swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""} ${expanded ? "expanded" : ""}`}>
-      <button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={() => { close(); window.setTimeout(onEdit, 120); }}><Icon name="edit" /></button>
+      <button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={() => { close(); onEdit(); }}><Icon name="edit" /></button>
       <button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
       <div
         className={`meal-item-shell ${horizontalDragging ? "swiping" : ""} ${className}`}

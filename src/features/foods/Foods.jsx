@@ -348,6 +348,13 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [closeWithAnimation]);
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+  useEffect(() => {
     const numericQuantity = Number(quantity);
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || !item) {
       setPreview(null);
