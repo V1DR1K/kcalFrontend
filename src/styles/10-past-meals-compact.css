@@ -6,8 +6,9 @@
 .past-meals-panel .chevron { transition: transform 180ms ease; }
 .past-meals-panel[open] .chevron { transform: rotate(180deg); }
 .past-meals-content { padding-top: 16px; }
-.past-meals-tools { display: flex; gap: 12px; align-items: end; }
-.past-meals-tools .field { flex: 1; }
+.past-meals-tools { display: flex; min-width: 0; gap: 12px; align-items: end; }
+.past-meals-tools .field { flex: 1; min-width: 0; }
+.past-meals-tools input[type="date"] { min-width: 0; max-width: 100%; overflow: hidden; padding-inline: 10px; text-overflow: ellipsis; }
 .past-meals-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
 .ghost-meal { padding: 14px; border: 1px dashed #64748b; border-radius: 14px; background: rgba(100,116,139,.08); opacity: .78; }
 .ghost-meal.copied { border-color: #22c55e; opacity: 1; }
@@ -19,7 +20,7 @@
 .copy-reject { background: transparent; color: var(--error); }
 .ghost-actions button:disabled { opacity: .55; cursor: default; }
 .ghost-item { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; color: var(--muted); }
-@media (max-width: 720px) { .past-meals-grid { grid-template-columns: 1fr; } .past-meals-tools { align-items: stretch; flex-direction: column; } }
+@media (max-width: 720px) { .past-meals-grid { grid-template-columns: 1fr; } .past-meals-tools { align-items: stretch; flex-direction: column; } .past-meals-tools .field, .past-meals-tools .secondary { width: 100%; } }
 
 @media (max-width: 900px) {
   .content { -webkit-overflow-scrolling: touch; }

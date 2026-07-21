@@ -71,6 +71,10 @@ small {
   display: none;
 }
 
+.mobile-nav {
+  display: none;
+}
+
 nav {
   display: grid;
   gap: 8px;
