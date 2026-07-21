@@ -202,7 +202,7 @@
   }
   .edit-log-modal .modal-actions button { flex: 1 1 0; }
   .edit-log-preview { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-  .edit-log-preview span { padding: 8px 4px; }
+  .edit-log-preview span { min-height: 60px; align-content: center; padding: 8px 4px; }
   .edit-log-preview strong { font-size: 14px; }
   .edit-log-preview small { font-size: 9px; }
   .picker-modal > header { position: relative; z-index: 2; }
