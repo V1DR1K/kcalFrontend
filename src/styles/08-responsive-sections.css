@@ -176,10 +176,10 @@
     padding: max(12px, env(safe-area-inset-top)) 12px 12px;
   }
   .edit-log-modal {
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
     gap: 0;
     width: 100%;
-    height: min(640px, calc(100% - max(12px, env(safe-area-inset-top))));
+    height: auto;
     max-height: calc(100% - max(12px, env(safe-area-inset-top)));
     overflow: hidden;
     padding: 0;
@@ -187,6 +187,10 @@
     background: linear-gradient(180deg, rgb(28 38 32 / 99%), rgb(15 23 18 / 99%));
     box-shadow: 0 24px 60px rgb(0 0 0 / 48%);
     animation: edit-sheet-in 300ms cubic-bezier(.16, 1, .3, 1);
+  }
+  .edit-log-modal.recipe-log-modal {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: min(640px, calc(100% - max(12px, env(safe-area-inset-top))));
   }
   .compact-modal.closing .edit-log-modal { animation: edit-sheet-out 180ms ease-in forwards; }
   .edit-log-header { padding: 14px 14px 12px; border-bottom: 1px solid rgb(255 255 255 / 8%); }
@@ -383,7 +387,7 @@
   .dashboard-page-header .today-button { min-height: 38px; padding: 0 10px; font-size: 12px; }
 
   .yesterday-suggestion { gap: 7px; }
-  .yesterday-suggestion .copy-accept, .yesterday-suggestion .copy-reject { width: 40px; height: 40px; }
+  .yesterday-suggestion .copy-accept, .yesterday-suggestion .copy-reject { width: 40px; height: 40px; border: none; background: transparent; }
   .content, .auth-page { width: min(100% - 20px, 760px); padding-top: 14px; }
 
   .meal-card header {

@@ -451,7 +451,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   }
   return (
     <div className={`modal-backdrop compact-modal ${closing ? "closing" : ""}`} onPointerDown={(event) => { if (event.target === event.currentTarget) closeWithAnimation(); }}>
-      <form className="edit-log-modal" role="dialog" aria-modal="true" aria-labelledby="edit-log-title" onPointerDown={(event) => event.stopPropagation()} onSubmit={submit}>
+      <form className={`edit-log-modal ${isRecipe ? "recipe-log-modal" : ""}`} role="dialog" aria-modal="true" aria-labelledby="edit-log-title" onPointerDown={(event) => event.stopPropagation()} onSubmit={submit}>
         <header className="edit-log-header">
           <FoodThumb item={isRecipe ? { ...item, type: "RECIPE" } : item} compact />
           <div className="edit-log-identity">
