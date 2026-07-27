@@ -4,7 +4,7 @@ import { Icon } from "../../components/Icon";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Macro, Panel } from "../../components/Layout";
-import { CatalogRowWithImage, CatalogStatus, CategoryChips, FoodThumb, PreparationBadge, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
+import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
 import { EditFoodLog } from "../foods/Foods";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../services/recents";
@@ -922,7 +922,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   const modalRef = useRef(null);
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("");
   const [selected, setSelected] = useState(null);
   const [selectedPreparations, setSelectedPreparations] = useState([]);
   const [quantity, setQuantity] = useState("150");
@@ -938,7 +937,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     api,
     endpoint: tab === "FOOD" ? "/api/foods" : "/api/recipes",
     query,
-    category: tab === "FOOD" ? category : "",
   });
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -1151,7 +1149,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
             <Icon name="search" />
             <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : "recetas"}...`} value={query} onChange={(event) => setQuery(event.target.value)} />
           </div>
-          {tab === "FOOD" && <CategoryChips category={category} setCategory={setCategory} />}
         </div>
         <div className="picker-scroll">
           <QuickItems title="Usados recientemente" items={groupFoodVariants(recents.items.filter((item) => item.type === tab))} onPick={setSelected} />
