@@ -14,7 +14,18 @@ const SWIPE_ACTION_WIDTH = 84;
 
 function formatMealLogAmount(log) {
   if (log.itemType === "RECIPE") return `${formatNumber(log.quantity, 1)} porcion${Number(log.quantity) === 1 ? "" : "es"}`;
+  if (log.itemType === "AI_ESTIMATE") return "Estimación por foto";
   return `${formatNumber(log.quantity, 1)} g`;
+}
+
+function mealLogName(log) {
+  return log.itemType === "RECIPE" ? log.recipe?.name : log.itemType === "AI_ESTIMATE" ? log.displayName || "Comida estimada" : log.food?.name;
+}
+
+function mealLogItem(log) {
+  if (log.itemType === "RECIPE") return { ...log.recipe, type: "RECIPE" };
+  if (log.itemType === "AI_ESTIMATE") return { name: mealLogName(log), category: "OTHER", type: "AI_ESTIMATE" };
+  return { ...log.food, type: "FOOD" };
 }
 
 function foodPreparationSuffix(food) {
@@ -251,6 +262,10 @@ export function Dashboard({ api, user, setPage }) {
             resetSignal={swipeResetSignal}
             onAdd={() => setPickerMeal(mealType)}
             onEdit={(log) => {
+              if (log.itemType === "AI_ESTIMATE") {
+                api.notify("Las estimaciones se corrigen antes de agregarlas. Podés moverla o eliminarla.");
+                return;
+              }
               resetMealSwipes();
               setEditingLog(log);
             }}
@@ -283,7 +298,7 @@ export function Dashboard({ api, user, setPage }) {
             }}
             onDelete={async (log) => {
               if (deletingLogId) return;
-              const itemName = log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name;
+              const itemName = mealLogName(log);
               const confirmed = await api.confirm({
                 title: "Eliminar alimento?",
                 description: `${itemName || "Este alimento"} se quitara de tu registro de hoy.`,
@@ -484,7 +499,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
               method: "POST",
               body: JSON.stringify({
                 itemType: log.itemType,
-                itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id,
+                  itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id,
                 mealType,
                 quantity: log.quantity,
                 unit: log.unit || "GRAM",
@@ -558,7 +573,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
                 </header>
                 {items.map((log) => (
                   <div className="ghost-item" key={log.id}>
-                    <span>{log.itemType === "RECIPE" ? log.recipe?.name : log.food?.name}</span>
+                    <span>{mealLogName(log)}</span>
                     <small>
                       {formatMealLogAmount(log)} · {log.calories} kcal
                     </small>
@@ -722,7 +737,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
       )}
       {items.length ? (
         items.map((log) => {
-          const item = log.itemType === "RECIPE" ? { ...log.recipe, type: "RECIPE" } : { ...log.food, type: "FOOD" };
+            const item = mealLogItem(log);
           return (
             <SwipeableMealItem
               className={`${movingLogId === log.id ? "moving" : ""} ${log.optimistic ? "optimistic" : ""}`}
@@ -771,7 +786,7 @@ function MealLogDetails({ log, item }) {
     <div className="meal-item-detail">
       <div className="meal-detail-summary">
         <span><small>Cantidad</small><strong>{formatMealLogAmount(log)}</strong></span>
-        <span><small>Alimento</small><strong>{item?.name}</strong></span>
+        <span><small>{log.itemType === "AI_ESTIMATE" ? "Origen" : "Alimento"}</small><strong>{item?.name}</strong></span>
       </div>
       <NutritionPills nutrition={log} />
     </div>
@@ -909,6 +924,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   const [unit, setUnit] = useState("GRAM");
   const [preview, setPreview] = useState(null);
   const [adding, setAdding] = useState(false);
+  const [aiUsage, setAiUsage] = useState(null);
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [aiEstimate, setAiEstimate] = useState(null);
   const recents = readRecents(user);
   const catalog = usePagedCatalog({
     api,
@@ -943,6 +961,48 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
       window.removeEventListener("orientationchange", syncViewport);
     };
   }, []);
+  useEffect(() => {
+    api.request("/api/nutrition/ai-estimates/usage").then(setAiUsage).catch(() => setAiUsage(null));
+  }, [api]);
+  async function analyzeMealPhoto(file) {
+    if (!file || aiAnalyzing) return;
+    setAiAnalyzing(true);
+    try {
+      const image = await compressMealPhoto(file);
+      const form = new FormData();
+      form.append("image", image);
+      const result = await api.runAction(
+        { title: "Analizando tu comida", description: "Estamos estimando los alimentos y las porciones visibles..." },
+        () => api.request("/api/nutrition/ai-estimates", { method: "POST", body: form }),
+      );
+      setAiEstimate(result);
+      setAiUsage(result.usage);
+    } catch (error) {
+      api.notify(error.message || "No se pudo analizar la foto.", "error");
+    } finally {
+      setAiAnalyzing(false);
+    }
+  }
+  async function confirmAiEstimate(estimate) {
+    if (adding) return;
+    setAdding(true);
+    try {
+      await api.runAction(
+        { title: "Agregando estimación", description: "Estamos sumando los macros revisados a tu comida..." },
+        () => api.request("/api/nutrition/ai-estimates/confirm", {
+          method: "POST",
+          body: JSON.stringify({ name: estimate.name, confidence: estimate.confidence, items: estimate.items, mealType: mealType.code, logDate: selectedDate }),
+        }),
+      );
+      api.notify("Estimación agregada. Revisá siempre las porciones y salsas.");
+      setAiEstimate(null);
+      onDone();
+    } catch (error) {
+      api.notify(error.message || "No se pudo guardar la estimación.", "error");
+    } finally {
+      setAdding(false);
+    }
+  }
   useEffect(() => {
     if (!selected || selected.type !== "FOOD") return setSelectedPreparations([]);
     api
@@ -1190,6 +1250,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
             </section>
           </div>
         )}
+        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} saving={adding} onDiscard={() => setAiEstimate(null)} onConfirm={confirmAiEstimate} />}
         <footer>
           <button className="secondary" onClick={() => onNavigate("scanner")}>
             Escanear
@@ -1197,10 +1258,82 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           <button className="secondary" onClick={() => onNavigate("create")}>
             Crear nuevo
           </button>
+          <label className={`secondary ai-photo-trigger ${aiAnalyzing || !aiUsage?.available || !aiUsage?.remaining ? "disabled" : ""}`}>
+            <Icon name="photo_camera" />
+            {aiAnalyzing ? "Analizando..." : aiUsage?.available ? `Foto IA · ${aiUsage.remaining}/${aiUsage.dailyLimit}` : "Foto IA"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              disabled={aiAnalyzing || !aiUsage?.available || !aiUsage?.remaining}
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
+                analyzeMealPhoto(file);
+              }}
+              hidden
+            />
+          </label>
         </footer>
       </section>
     </div>
   );
+}
+
+function AiEstimateEditor({ estimate, setEstimate, saving, onDiscard, onConfirm }) {
+  const totals = (estimate.items || []).reduce((sum, item) => ({
+    proteinGrams: sum.proteinGrams + Number(item.proteinGrams || 0),
+    carbsGrams: sum.carbsGrams + Number(item.carbsGrams || 0),
+    fatGrams: sum.fatGrams + Number(item.fatGrams || 0),
+  }), { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
+  const calories = macroCalories(totals.proteinGrams, totals.carbsGrams, totals.fatGrams);
+  function updateItem(index, field, value) {
+    const normalized = value.replace(",", ".").replace(/[^\d.]/g, "");
+    setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: normalized } : item) }));
+  }
+  return (
+    <div className="selected-subpanel ai-estimate-subpanel">
+      <section className="selected-editor ai-estimate-editor" role="dialog" aria-modal="true" aria-label="Revisar estimación por foto">
+        <span className="sheet-handle" aria-hidden="true" />
+        <header><div><span>Estimación IA</span><h3>{estimate.name}</h3><small>Confianza estimada: {estimate.confidence}%</small></div><button className="icon-button" aria-label="Cerrar estimación" onClick={onDiscard}><Icon name="close" /></button></header>
+        <p className="ai-estimate-warning">Es una aproximación. Revisá especialmente aceites, salsas, queso y el tamaño de las porciones.</p>
+        {(estimate.assumptions || []).length > 0 && <ul className="ai-estimate-assumptions">{estimate.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}</ul>}
+        <div className="ai-estimate-items">
+          {estimate.items.map((item, index) => (
+            <article key={`${item.name}:${index}`}>
+              <Input label="Alimento" value={item.name} onChange={(event) => setEstimate((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value } : entry) }))} />
+              <div className="ai-estimate-values">
+                <label><span>g</span><input inputMode="decimal" value={item.estimatedGrams ?? ""} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
+                <label><span>P</span><input inputMode="decimal" value={item.proteinGrams ?? ""} onChange={(event) => updateItem(index, "proteinGrams", event.target.value)} /></label>
+                <label><span>C</span><input inputMode="decimal" value={item.carbsGrams ?? ""} onChange={(event) => updateItem(index, "carbsGrams", event.target.value)} /></label>
+                <label><span>G</span><input inputMode="decimal" value={item.fatGrams ?? ""} onChange={(event) => updateItem(index, "fatGrams", event.target.value)} /></label>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="ai-estimate-total"><span><small>Kcal aproximadas</small><strong>{formatNumber(calories)}</strong></span><span><small>Macros totales</small><strong>P {formatNumber(totals.proteinGrams, 1)} · C {formatNumber(totals.carbsGrams, 1)} · G {formatNumber(totals.fatGrams, 1)}</strong></span></div>
+        <div className="ai-estimate-actions"><button className="secondary" onClick={onDiscard}>Descartar</button><button className="primary" disabled={saving || !estimate.items.length || estimate.items.some((item) => !item.name || Number(item.estimatedGrams) <= 0)} onClick={() => onConfirm(estimate)}>{saving ? "Agregando..." : "Agregar estimación"}</button></div>
+      </section>
+    </div>
+  );
+}
+
+async function compressMealPhoto(file) {
+  const source = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; image.src = source; });
+    const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+    if (!blob) throw new Error("No pudimos preparar la foto.");
+    return new File([blob], "comida.jpg", { type: "image/jpeg" });
+  } finally {
+    URL.revokeObjectURL(source);
+  }
 }
 
 export function QuickItems({ title, items, onPick }) {

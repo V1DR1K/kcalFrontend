@@ -274,6 +274,9 @@
     overscroll-behavior: contain;
     scroll-padding-bottom: 76px;
   }
+  .ai-estimate-subpanel { align-items: end; padding-bottom: 0; }
+  .ai-estimate-editor { max-height: min(88svh, calc(var(--picker-height, 100svh) - 12px)); overflow-y: auto; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  .ai-estimate-actions { position: sticky; bottom: 0; padding-top: 8px; background: var(--surface-low); }
   .selected-editor > .primary {
     position: sticky;
     bottom: 0;

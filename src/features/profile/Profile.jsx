@@ -24,6 +24,7 @@ export function Profile({ api, logout }) {
   const [profile, setProfile] = useState(null);
   const [plans, setPlans] = useState([]);
   const [presets, setPresets] = useState([]);
+  const [aiUsage, setAiUsage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [weight, setWeight] = useState("");
@@ -39,12 +40,13 @@ export function Profile({ api, logout }) {
   const load = useCallback(() => {
     setLoading(true);
     setError("");
-    Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans"), api.request("/api/profile/nutrition-plan-presets")])
-      .then(([nextProfile, nextPlans, nextPresets]) => {
+    Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans"), api.request("/api/profile/nutrition-plan-presets"), api.request("/api/nutrition/ai-estimates/usage").catch(() => null)])
+      .then(([nextProfile, nextPlans, nextPresets, nextAiUsage]) => {
         setProfile(nextProfile);
         setWeight(nextProfile.weightKg || "");
         setPlans(nextPlans);
         setPresets(nextPresets);
+        setAiUsage(nextAiUsage);
       })
       .catch(() => setError("No pudimos cargar tu perfil."))
       .finally(() => setLoading(false));
@@ -88,6 +90,9 @@ export function Profile({ api, logout }) {
         </form>
       </Panel>
       <NutritionPlanManager api={api} presets={presets} plans={plans} onChanged={loadPlans} />
+      <Panel title="Fotos con IA" className="ai-usage-panel">
+        {aiUsage?.available ? <><div><Icon name="photo_camera" /><span><strong>{aiUsage.remaining} de {aiUsage.dailyLimit}</strong><small>estimaciones gratuitas disponibles hoy</small></span></div><p>La IA estima macros a partir de una foto. Siempre podés revisar y corregir las porciones antes de agregarlas.</p></> : <p>La estimación por foto no está disponible por el momento.</p>}
+      </Panel>
       <NutritionTutorial />
       <Panel title="Cuenta" className="account-panel">
         <p>Podés cerrar tu sesión de forma segura en este dispositivo.</p>

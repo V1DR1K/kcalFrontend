@@ -315,6 +315,27 @@
 .ocr-preview-actions { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: 8px; }
 .ocr-preview-actions button { min-width: 0; }
 .ocr-preview-note { margin: -4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
+.ai-photo-trigger { position: relative; min-width: 0; overflow: hidden; white-space: nowrap; }
+.ai-photo-trigger.disabled { opacity: .55; pointer-events: none; }
+.ai-estimate-editor { display: grid; gap: 12px; }
+.ai-estimate-editor > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.ai-estimate-editor > header > div { display: grid; gap: 3px; min-width: 0; }
+.ai-estimate-editor h3 { margin: 0; font-size: 18px; }
+.ai-estimate-editor header span { color: var(--primary); font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.ai-estimate-warning { margin: 0; padding: 10px 12px; border: 1px solid rgb(255 209 102 / 36%); border-radius: 12px; background: rgb(255 209 102 / 8%); color: #ffe3a0; font-size: 12px; line-height: 1.35; }
+.ai-estimate-assumptions { display: grid; gap: 4px; margin: 0; padding-left: 18px; color: var(--muted); font-size: 12px; }
+.ai-estimate-items { display: grid; gap: 8px; }
+.ai-estimate-items article { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--outline); border-radius: 12px; background: rgb(255 255 255 / 3%); }
+.ai-estimate-items .field { gap: 4px; }
+.ai-estimate-items .field input { min-height: 42px; }
+.ai-estimate-values { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.ai-estimate-values label { display: grid; gap: 3px; color: var(--muted); font-size: 11px; font-weight: 800; }
+.ai-estimate-values input { min-width: 0; min-height: 40px; padding: 0 8px; font-weight: 800; }
+.ai-estimate-total { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 8px; padding: 10px; border-radius: 12px; background: rgb(78 222 163 / 10%); }
+.ai-estimate-total span { display: grid; gap: 2px; min-width: 0; }
+.ai-estimate-total small { color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.ai-estimate-total strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-estimate-actions { display: grid; grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); gap: 8px; }
 .derived-calories-card {
   display: grid;
   align-content: center;
