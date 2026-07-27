@@ -932,7 +932,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiEstimate, setAiEstimate] = useState(null);
   const aiQuotaBlocked = Boolean(aiUsage?.blockedUntil && new Date(aiUsage.blockedUntil) > new Date());
-  const recents = readRecents(user);
   const catalog = usePagedCatalog({
     api,
     endpoint: tab === "FOOD" ? "/api/foods" : "/api/recipes",
@@ -1151,7 +1150,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           </div>
         </div>
         <div className="picker-scroll">
-          <QuickItems title="Usados recientemente" items={groupFoodVariants(recents.items.filter((item) => item.type === tab))} onPick={setSelected} />
           <div className="picker-results">
             {groupFoodVariants(catalog.items).map((item) => (
               <CatalogRowWithImage key={`${tab}:${item.preparationGroup || item.id}`} item={{ ...item, type: tab }} onPick={setSelected} />
