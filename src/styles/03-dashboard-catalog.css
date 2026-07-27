@@ -280,6 +280,7 @@
   border: 1px solid var(--primary);
   color: var(--primary);
 }
+.ocr-status.loading { border: 1px solid var(--outline); color: var(--muted); }
 .ocr-status.bad {
   border: 1px solid var(--error);
   color: var(--error);
@@ -306,12 +307,14 @@
 .ocr-preview > header div > span { color: var(--primary); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
 .ocr-preview > header > .material-symbols-outlined { color: var(--primary); font-size: 28px; }
 .ocr-preview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ocr-preview-grid .derived-calories-card { grid-column: 1 / -1; }
 .ocr-preview-grid label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 700; }
 .ocr-preview-grid label > div { position: relative; }
 .ocr-preview-grid input { min-height: 46px; padding-right: 28px; background: var(--surface-high); font-weight: 900; }
 .ocr-preview-grid small { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
 .ocr-preview-actions { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: 8px; }
 .ocr-preview-actions button { min-width: 0; }
+.ocr-preview-note { margin: -4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
 .derived-calories-card {
   display: grid;
   align-content: center;

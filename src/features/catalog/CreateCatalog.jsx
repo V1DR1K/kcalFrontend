@@ -13,6 +13,8 @@ function macroCalories(proteinGrams, carbsGrams, fatGrams) {
   return Math.round(Number(proteinGrams || 0) * 4 + Number(carbsGrams || 0) * 4 + Number(fatGrams || 0) * 9);
 }
 
+const OCR_MACRO_FIELDS = ["proteinGrams", "carbsGrams", "fatGrams"];
+
 export function CreateCatalog({ api, setPage, prefillBarcode, clearPrefillBarcode }) {
   const [tab, setTab] = useState("FOOD");
   return (
@@ -99,7 +101,8 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
   }
   function acceptOcrData() {
     if (!ocrData) return;
-    ["proteinGrams", "carbsGrams", "fatGrams"].forEach((field) => setField(field, ocrData[field] ?? 0));
+    OCR_MACRO_FIELDS.forEach((field) => setField(field, ocrData[field]));
+    setField("baseQuantity", ocrData.baseQuantity);
     setOcrData(null);
     setOcrStatus("Valores aplicados al alimento. Podés seguir completando el formulario.");
     api.notify("Valores nutricionales aplicados.");
@@ -125,11 +128,12 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
       setScanning(false);
     }
   }
+  const ocrStatusClass = scanning ? "loading" : ocrData || ocrStatus.startsWith("Valores aplicados") ? "ok" : "bad";
   return (
     <Panel title="Nuevo alimento">
       <form className="form-grid" ref={formRef} onSubmit={submit}>
         {ocrStatus && (
-          <div className={`ocr-status ${ocrData || ocrStatus.startsWith("Valores aplicados") ? "ok" : "bad"}`}>
+          <div className={`ocr-status ${ocrStatusClass}`}>
             {scanning ? <span className="ocr-loading" /> : null}
             <span>{ocrStatus}</span>
           </div>
@@ -154,9 +158,11 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
               accept="image/*"
               capture="environment"
               onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
                 setOcrStatus("");
                 setOcrData(null);
-                handleOcrImage(event.currentTarget.files?.[0]);
+                handleOcrImage(file);
               }}
               hidden
               disabled={scanning}
@@ -186,49 +192,57 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
 }
 
 function OcrNutritionPreview({ data, setData, onAccept, onDiscard }) {
-  const derivedCalories = macroCalories(data.proteinGrams, data.carbsGrams, data.fatGrams);
+  const missingMacros = OCR_MACRO_FIELDS.filter((field) => data[field] == null);
+  const hasBaseQuantity = Number(data.baseQuantity) > 0;
+  const derivedCalories = missingMacros.length ? null : macroCalories(data.proteinGrams, data.carbsGrams, data.fatGrams);
   const fields = [
+    { key: "baseQuantity", label: data.basisAmbiguous ? "Base a confirmar" : "Valores por", unit: "g", min: "0.1" },
     { key: "proteinGrams", label: "Proteínas", unit: "g" },
     { key: "carbsGrams", label: "Carbohidratos", unit: "g" },
     { key: "fatGrams", label: "Grasas", unit: "g" },
   ];
+  function updateNumericField(key, value) {
+    const cleaned = value.replace(",", ".").replace(/[^\d.]/g, "");
+    const [whole, ...decimals] = cleaned.split(".");
+    setData((current) => ({ ...current, [key]: decimals.length ? `${whole}.${decimals.join("")}` : whole }));
+  }
   return (
     <section className="ocr-preview" aria-label="Vista previa nutricional">
       <header>
         <div>
           <span>Vista previa</span>
-          <strong>Información detectada</strong>
+          <strong>Información detectada{data.baseQuantity ? ` · por ${formatNumber(data.baseQuantity, 1)} g` : ""}</strong>
         </div>
         <Icon name="document_scanner" />
       </header>
       <div className="ocr-preview-grid">
-        <span className="derived-calories-card"><small>Kcal calculadas</small><strong>{formatNumber(derivedCalories)}</strong></span>
-        {fields.map(({ key, label, unit }) => (
+        {fields.map(({ key, label, unit, min = "0" }) => (
           <label key={key}>
             <span>{label}</span>
             <div>
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
+                min={min}
                 step="0.1"
                 value={data[key] ?? ""}
-                onChange={(event) =>
-                  setData((current) => ({
-                    ...current,
-                    [key]: event.target.value,
-                  }))
-                }
+                onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }}
+                onChange={(event) => updateNumericField(key, event.target.value)}
               />
               <small>{unit}</small>
             </div>
           </label>
         ))}
+        <span className="derived-calories-card"><small>{derivedCalories == null ? "Completá los macros" : "Kcal calculadas"}</small><strong>{derivedCalories == null ? "—" : formatNumber(derivedCalories)}</strong></span>
       </div>
+      {data.basisAmbiguous && <p className="ocr-preview-note">La etiqueta incluye valores por porción y por 100 g. Indicá la base de los valores detectados antes de aceptar.</p>}
+      {!hasBaseQuantity && !data.basisAmbiguous && <p className="ocr-preview-note">No se detectó la base. Indicá los gramos a los que corresponden los valores.</p>}
+      {missingMacros.length > 0 && <p className="ocr-preview-note">Completá manualmente los macros que el OCR no pudo leer antes de guardar.</p>}
       <div className="ocr-preview-actions">
         <button type="button" className="secondary" onClick={onDiscard}>
           Descartar
         </button>
-        <button type="button" className="primary" onClick={onAccept}>
+        <button type="button" className="primary" onClick={onAccept} disabled={!hasBaseQuantity}>
           <Icon name="check" />Aceptar valores
         </button>
       </div>

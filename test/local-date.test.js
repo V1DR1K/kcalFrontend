@@ -3,7 +3,14 @@ import assert from "node:assert/strict";
 import { shiftDate, today } from "../src/utils/format.js";
 
 test("uses the local calendar date instead of the UTC date", () => {
-  assert.equal(today(new Date("2026-07-24T00:30:00Z")), "2026-07-23");
+  const previousTimeZone = process.env.TZ;
+  process.env.TZ = "America/Argentina/Cordoba";
+  try {
+    assert.equal(today(new Date("2026-07-24T00:30:00Z")), "2026-07-23");
+  } finally {
+    if (previousTimeZone == null) delete process.env.TZ;
+    else process.env.TZ = previousTimeZone;
+  }
 });
 
 test("shifts dates without converting them to UTC", () => {
