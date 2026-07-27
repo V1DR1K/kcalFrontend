@@ -527,7 +527,9 @@
   .picker-modal { gap: 9px; padding-left: 12px; padding-right: 12px; }
   .picker-modal .tabs { width: 100%; }
   .picker-modal .tabs button { flex: 1; }
-  .picker-modal footer button { flex: 1; }
+  .picker-modal footer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .picker-modal footer button { min-width: 0; }
+  .picker-modal footer .ai-photo-trigger { grid-column: 1 / -1; width: 100%; min-height: 52px; }
   .selected-editor { gap: 8px; padding: 10px; }
   .selected-heading .food-thumb.compact { width: 38px; height: 38px; }
   .selected-heading strong { font-size: 14px; }

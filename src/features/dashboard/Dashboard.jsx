@@ -1259,14 +1259,14 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
         {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} saving={adding} onDiscard={() => setAiEstimate(null)} onConfirm={confirmAiEstimate} />}
         <footer>
           <button className="secondary" onClick={() => onNavigate("scanner")}>
-            Escanear
+            <Icon name="barcode_scanner" />Código
           </button>
           <button className="secondary" onClick={() => onNavigate("create")}>
-            Crear nuevo
+            <Icon name="add" />Crear
           </button>
-          <label className={`secondary ai-photo-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
+          <label className={`primary ai-photo-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
             <Icon name="photo_camera" />
-            {aiAnalyzing ? "Analizando..." : aiQuotaBlocked ? `Foto IA · vuelve ${aiQuotaReset(aiUsage)}` : aiUsage?.available ? "Foto IA" : "Foto IA"}
+            {aiAnalyzing ? "Analizando comida..." : aiQuotaBlocked ? `Escanear comida · vuelve ${aiQuotaReset(aiUsage)}` : "Escanear comida"}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
