@@ -449,7 +449,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
       setSaving(false);
     }
   }
-  return (
+  return createPortal(
     <div className={`modal-backdrop compact-modal ${closing ? "closing" : ""}`} onPointerDown={(event) => { if (event.target === event.currentTarget) closeWithAnimation(); }}>
       <form className={`edit-log-modal ${isRecipe ? "recipe-log-modal" : ""}`} role="dialog" aria-modal="true" aria-labelledby="edit-log-title" onPointerDown={(event) => event.stopPropagation()} onSubmit={submit}>
         <header className="edit-log-header">
@@ -520,6 +520,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
           </button>
         </footer>
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }

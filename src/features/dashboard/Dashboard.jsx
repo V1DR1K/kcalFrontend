@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { DEFAULT_MEALS } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
@@ -1111,7 +1112,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     }
     setUnit(nextUnit);
   }
-  return (
+  return createPortal(
     <div className="modal-backdrop">
       <section ref={modalRef} className="picker-modal" role="dialog" aria-modal="true" aria-labelledby="food-picker-title">
         <header>
@@ -1277,7 +1278,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           </label>
         </footer>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

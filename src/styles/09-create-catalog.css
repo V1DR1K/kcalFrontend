@@ -5,7 +5,7 @@
 .my-foods-list > button > span:first-child { display: grid; gap: 3px; min-width: 0; }
 .my-foods-list strong, .my-foods-list small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .my-foods-list .material-symbols-outlined { color: var(--primary); }
-.edit-food-backdrop { position: fixed; top: var(--app-viewport-top, 0); right: 0; left: 0; z-index: 40; display: grid; place-items: end center; height: var(--app-viewport-height, 100dvh); min-height: 0; padding: 18px; overflow: hidden; background: rgb(0 0 0 / 65%); backdrop-filter: blur(5px); }
+.edit-food-backdrop { position: fixed; top: var(--app-viewport-top, 0); right: 0; left: 0; z-index: var(--z-modal); display: grid; place-items: end center; height: var(--app-viewport-height, 100dvh); min-height: 0; padding: 18px; overflow: hidden; background: rgb(0 0 0 / 65%); backdrop-filter: blur(5px); }
 .edit-food-sheet { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; width: min(600px, 100%); height: min(calc(var(--app-viewport-height, 100dvh) - 36px), 820px); max-height: 100%; overflow: hidden; padding: 18px; border: 1px solid var(--outline); border-radius: 20px; background: var(--surface-low); box-shadow: var(--shadow); }
 .edit-food-sheet > header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .edit-food-sheet h2 { margin: 2px 0 0; }

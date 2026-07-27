@@ -16,7 +16,7 @@
 .selected-subpanel {
   position: absolute;
   inset: 0;
-  z-index: 12;
+  z-index: 1;
   display: grid;
   align-items: end;
   padding: 20px;

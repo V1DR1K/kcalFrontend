@@ -1,4 +1,4 @@
-.history-preview-backdrop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: rgb(3 10 8 / 76%); backdrop-filter: blur(10px); animation: fade-in 180ms ease-out; }
+.history-preview-backdrop { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: 24px; background: rgb(3 10 8 / 76%); backdrop-filter: blur(10px); animation: fade-in 180ms ease-out; }
 .history-preview { display: grid; grid-template-rows: auto minmax(0, 1fr); width: min(720px, 100%); max-height: min(820px, calc(100dvh - 48px)); overflow: hidden; border: 1px solid rgb(78 222 163 / 26%); border-radius: 24px; background: var(--surface); box-shadow: 0 30px 90px rgb(0 0 0 / 55%); animation: history-preview-in 300ms cubic-bezier(.2,.8,.2,1); }
 .history-preview-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px 24px 20px; border-bottom: 1px solid var(--outline); background: linear-gradient(135deg, rgb(78 222 163 / 9%), transparent 60%); }
 .history-preview-header h2 { margin: 3px 0 2px; font-size: clamp(24px, 4vw, 32px); }
