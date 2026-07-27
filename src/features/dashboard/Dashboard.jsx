@@ -28,6 +28,11 @@ function mealLogItem(log) {
   return { ...log.food, type: "FOOD" };
 }
 
+function aiQuotaReset(usage) {
+  if (!usage?.blockedUntil) return "";
+  return new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" }).format(new Date(usage.blockedUntil));
+}
+
 function foodPreparationSuffix(food) {
   return food?.preparation && food.preparation !== "UNSPECIFIED" ? ` · ${preparationLabel(food.preparation)}` : "";
 }
@@ -927,6 +932,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   const [aiUsage, setAiUsage] = useState(null);
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiEstimate, setAiEstimate] = useState(null);
+  const aiQuotaBlocked = Boolean(aiUsage?.blockedUntil && new Date(aiUsage.blockedUntil) > new Date());
   const recents = readRecents(user);
   const catalog = usePagedCatalog({
     api,
@@ -1258,14 +1264,14 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           <button className="secondary" onClick={() => onNavigate("create")}>
             Crear nuevo
           </button>
-          <label className={`secondary ai-photo-trigger ${aiAnalyzing || !aiUsage?.available || !aiUsage?.remaining ? "disabled" : ""}`}>
+          <label className={`secondary ai-photo-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
             <Icon name="photo_camera" />
-            {aiAnalyzing ? "Analizando..." : aiUsage?.available ? `Foto IA · ${aiUsage.remaining}/${aiUsage.dailyLimit}` : "Foto IA"}
+            {aiAnalyzing ? "Analizando..." : aiQuotaBlocked ? `Foto IA · vuelve ${aiQuotaReset(aiUsage)}` : aiUsage?.available ? "Foto IA" : "Foto IA"}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               capture="environment"
-              disabled={aiAnalyzing || !aiUsage?.available || !aiUsage?.remaining}
+              disabled={aiAnalyzing || !aiUsage?.available || aiQuotaBlocked}
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 event.currentTarget.value = "";

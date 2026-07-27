@@ -13,6 +13,10 @@ function planColor(value) {
   return palette[hash % palette.length];
 }
 
+function quotaReset(value) {
+  return new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" }).format(new Date(value));
+}
+
 function restoreViewportZoom() {
   const viewport = document.querySelector('meta[name="viewport"]');
   viewport?.setAttribute("content", "width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover");
@@ -91,7 +95,7 @@ export function Profile({ api, logout }) {
       </Panel>
       <NutritionPlanManager api={api} presets={presets} plans={plans} onChanged={loadPlans} />
       <Panel title="Fotos con IA" className="ai-usage-panel">
-        {aiUsage?.available ? <><div><Icon name="photo_camera" /><span><strong>{aiUsage.remaining} de {aiUsage.dailyLimit}</strong><small>estimaciones gratuitas disponibles hoy</small></span></div><p>La IA estima macros a partir de una foto. Siempre podés revisar y corregir las porciones antes de agregarlas.</p></> : <p>La estimación por foto no está disponible por el momento.</p>}
+        {aiUsage?.available ? <><div><Icon name="photo_camera" /><span><strong>{aiUsage.blockedUntil ? "Gemini sin cuota" : "Sin límite interno"}</strong><small>{aiUsage.blockedUntil ? `Probá nuevamente desde ${quotaReset(aiUsage.blockedUntil)}` : `${aiUsage.used} consultas realizadas hoy`}</small></span></div><p>{aiUsage.blockedUntil ? "Gemini informó que no quedan solicitudes disponibles por ahora. La hora mostrada proviene de Gemini; si no la informa, se usa su próximo reinicio diario estimado." : "Gemini no expone un saldo gratuito exacto. Kcals no limita tus fotos: solo registra el uso y mostrará cuándo Gemini vuelva a aceptar consultas."}</p></> : <p>La estimación por foto no está disponible por el momento.</p>}
       </Panel>
       <NutritionTutorial />
       <Panel title="Cuenta" className="account-panel">
