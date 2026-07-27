@@ -932,6 +932,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   const [aiUsage, setAiUsage] = useState(null);
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiEstimate, setAiEstimate] = useState(null);
+  const [aiError, setAiError] = useState("");
   const aiQuotaBlocked = Boolean(aiUsage?.blockedUntil && new Date(aiUsage.blockedUntil) > new Date());
   const catalog = usePagedCatalog({
     api,
@@ -970,6 +971,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   }, [api]);
   async function analyzeMealPhoto(file) {
     if (!file || aiAnalyzing) return;
+    setAiError("");
     setAiAnalyzing(true);
     try {
       const image = await compressMealPhoto(file);
@@ -979,10 +981,13 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
         { title: "Analizando tu comida", description: "Estamos estimando los alimentos y las porciones visibles..." },
         () => api.request("/api/nutrition/ai-estimates", { method: "POST", body: form }),
       );
+      if (!result?.items?.length) throw new Error("La IA no pudo identificar alimentos en esta foto. Probá con mejor luz.");
       setAiEstimate(result);
       setAiUsage(result.usage);
     } catch (error) {
-      api.notify(error.message || "No se pudo analizar la foto.", "error");
+      const message = error.message || "No se pudo analizar la foto.";
+      setAiError(message);
+      api.notify(message, "error");
     } finally {
       setAiAnalyzing(false);
     }
@@ -1170,6 +1175,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && !catalog.hasNext && <CatalogStatus>Fin de los resultados.</CatalogStatus>}
           <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
         </div>
+        {aiError && <p className="ai-estimate-error" role="alert">{aiError}</p>}
         {selected && (
           <div
             className="selected-subpanel"
@@ -1299,6 +1305,7 @@ function AiEstimateEditor({ estimate, setEstimate, saving, onDiscard, onConfirm 
       <section className="selected-editor ai-estimate-editor" role="dialog" aria-modal="true" aria-label="Revisar estimación por foto">
         <span className="sheet-handle" aria-hidden="true" />
         <header><div><span>Estimación IA</span><h3>{estimate.name}</h3><small>Confianza estimada: {estimate.confidence}%</small></div><button className="icon-button" aria-label="Cerrar estimación" onClick={onDiscard}><Icon name="close" /></button></header>
+        {estimate.description && <p className="ai-estimate-description"><strong>Lo que detectó la IA</strong>{estimate.description}</p>}
         <p className="ai-estimate-warning">Es una aproximación. Revisá especialmente aceites, salsas, queso y el tamaño de las porciones.</p>
         {(estimate.assumptions || []).length > 0 && <ul className="ai-estimate-assumptions">{estimate.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}</ul>}
         <div className="ai-estimate-items">
@@ -1311,6 +1318,7 @@ function AiEstimateEditor({ estimate, setEstimate, saving, onDiscard, onConfirm 
                 <label><span>C</span><input inputMode="decimal" value={item.carbsGrams ?? ""} onChange={(event) => updateItem(index, "carbsGrams", event.target.value)} /></label>
                 <label><span>G</span><input inputMode="decimal" value={item.fatGrams ?? ""} onChange={(event) => updateItem(index, "fatGrams", event.target.value)} /></label>
               </div>
+              <small className="ai-estimate-item-calories">{formatNumber(macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))} kcal estimadas</small>
             </article>
           ))}
         </div>
@@ -1326,12 +1334,12 @@ async function compressMealPhoto(file) {
   try {
     const image = new Image();
     await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; image.src = source; });
-    const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
+    const scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
     canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
     canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.75));
     if (!blob) throw new Error("No pudimos preparar la foto.");
     return new File([blob], "comida.jpg", { type: "image/jpeg" });
   } finally {
