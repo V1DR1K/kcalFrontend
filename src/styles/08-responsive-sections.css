@@ -255,6 +255,7 @@
   .edit-log-modal .edit-log-preview .carbs strong { color: var(--tertiary); }
   .edit-log-modal .edit-log-preview .fat strong { color: #ffd166; }
   .picker-modal > header { position: relative; z-index: 2; }
+  .picker-modal > .selected-subpanel { z-index: 3; }
   .chips { flex-wrap: wrap; overflow: visible; padding-right: 0; }
   .quick-items div { flex-wrap: wrap; overflow: visible; padding-bottom: 0; }
   .quick-items button { flex: 1 1 calc(50% - 4px); min-width: 0; }
