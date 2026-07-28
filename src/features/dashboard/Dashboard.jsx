@@ -934,6 +934,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   const [aiEstimate, setAiEstimate] = useState(null);
   const [aiError, setAiError] = useState("");
   const [aiContext, setAiContext] = useState("");
+  const [aiEstimatePhoto, setAiEstimatePhoto] = useState(null);
+  const [aiCorrection, setAiCorrection] = useState("");
+  const [aiRefining, setAiRefining] = useState(false);
+  const [aiRefinementError, setAiRefinementError] = useState("");
   const [pendingMealPhoto, setPendingMealPhoto] = useState(null);
   const [pendingMealPhotoUrl, setPendingMealPhotoUrl] = useState("");
   const [audioRecording, setAudioRecording] = useState(false);
@@ -994,12 +998,18 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     if (!file || aiAnalyzing) return;
     setAiError("");
     setAiContext("");
+    setAiEstimatePhoto(null);
+    setAiCorrection("");
+    setAiRefinementError("");
     setPendingMealPhoto(file);
   }
   function discardMealPhoto() {
     if (audioRecording) audioRecorderRef.current?.stop();
     setAiError("");
     setAiContext("");
+    setAiEstimatePhoto(null);
+    setAiCorrection("");
+    setAiRefinementError("");
     setPendingMealPhoto(null);
   }
   async function toggleMealNoteRecording() {
@@ -1065,6 +1075,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
       if (!result?.items?.length) throw new Error("La IA no pudo identificar alimentos en esta foto. Probá con mejor luz.");
       setAiEstimate(result);
       setAiUsage(result.usage);
+      setAiEstimatePhoto(image);
+      setAiCorrection("");
+      setAiRefinementError("");
       setPendingMealPhoto(null);
     } catch (error) {
       const message = error.message || "No se pudo analizar la foto.";
@@ -1073,6 +1086,47 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     } finally {
       setAiAnalyzing(false);
     }
+  }
+  async function refineAiEstimate() {
+    if (!aiEstimatePhoto || !aiEstimate || !aiCorrection.trim() || aiRefining) return;
+    setAiRefinementError("");
+    setAiRefining(true);
+    try {
+      const form = new FormData();
+      form.append("image", aiEstimatePhoto);
+      if (aiContext.trim()) form.append("context", aiContext.trim());
+      form.append("request", new Blob([JSON.stringify({
+        currentEstimate: {
+          name: aiEstimate.name,
+          description: aiEstimate.description || null,
+          confidence: aiEstimate.confidence,
+          assumptions: aiEstimate.assumptions || [],
+          items: aiEstimate.items,
+        },
+        correction: aiCorrection.trim(),
+      })], { type: "application/json" }));
+      const result = await api.runAction(
+        { title: "Corrigiendo estimación", description: "Estamos revisando la foto, tu observación y los cambios actuales..." },
+        () => api.request("/api/nutrition/ai-estimates/refinements", { method: "POST", body: form }),
+      );
+      if (!result?.items?.length) throw new Error("La IA no pudo corregir esta estimación. Probá con una indicación más precisa.");
+      setAiEstimate(result);
+      setAiUsage(result.usage);
+      setAiCorrection("");
+    } catch (error) {
+      const message = error.message || "No se pudo corregir la estimación.";
+      setAiRefinementError(message);
+      api.notify(message, "error");
+    } finally {
+      setAiRefining(false);
+    }
+  }
+  function discardAiEstimate() {
+    setAiEstimate(null);
+    setAiEstimatePhoto(null);
+    setAiContext("");
+    setAiCorrection("");
+    setAiRefinementError("");
   }
   async function confirmAiEstimate(estimate) {
     if (adding) return;
@@ -1086,7 +1140,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
         }),
       );
       api.notify("Estimación agregada. Revisá siempre las porciones y salsas.");
-      setAiEstimate(null);
+      discardAiEstimate();
       onDone();
     } catch (error) {
       api.notify(error.message || "No se pudo guardar la estimación.", "error");
@@ -1340,7 +1394,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           </div>
         )}
         {pendingMealPhoto && <MealPhotoContextEditor photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
-        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} saving={adding} onDiscard={() => { setAiEstimate(null); setAiContext(""); }} onConfirm={confirmAiEstimate} />}
+        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} />}
         <footer>
           <button className="secondary" onClick={() => onNavigate("scanner")}>
             <Icon name="barcode_scanner" />Código
@@ -1411,7 +1465,7 @@ function MealPhotoContextEditor({ photoUrl, context, setContext, error, recordin
   );
 }
 
-function AiEstimateEditor({ estimate, setEstimate, saving, onDiscard, onConfirm }) {
+function AiEstimateEditor({ estimate, setEstimate, correction, setCorrection, refining, refinementError, onRefine, saving, onDiscard, onConfirm }) {
   const totals = (estimate.items || []).reduce((sum, item) => ({
     proteinGrams: sum.proteinGrams + Number(item.proteinGrams || 0),
     carbsGrams: sum.carbsGrams + Number(item.carbsGrams || 0),
@@ -1421,6 +1475,13 @@ function AiEstimateEditor({ estimate, setEstimate, saving, onDiscard, onConfirm 
   function updateItem(index, field, value) {
     const normalized = value.replace(",", ".").replace(/[^\d.]/g, "");
     setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: normalized } : item) }));
+  }
+  function addItem() {
+    if (estimate.items.length >= 12) return;
+    setEstimate((current) => ({ ...current, items: [...current.items, { name: "", estimatedGrams: "100", proteinGrams: "0", carbsGrams: "0", fatGrams: "0" }] }));
+  }
+  function removeItem(index) {
+    setEstimate((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== index) }));
   }
   return (
     <div className="selected-subpanel ai-estimate-subpanel">
@@ -1433,19 +1494,26 @@ function AiEstimateEditor({ estimate, setEstimate, saving, onDiscard, onConfirm 
         <div className="ai-estimate-items">
           {estimate.items.map((item, index) => (
             <article key={`${item.name}:${index}`}>
-              <Input label="Alimento" value={item.name} onChange={(event) => setEstimate((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value } : entry) }))} />
+              <div className="ai-estimate-item-heading"><strong>Alimento {index + 1}</strong><button type="button" className="icon-button ai-estimate-remove" aria-label={`Eliminar ${item.name || `alimento ${index + 1}`}`} disabled={refining} onClick={() => removeItem(index)}><Icon name="delete" /></button></div>
+              <Input label="Alimento" value={item.name} disabled={refining} onChange={(event) => setEstimate((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value } : entry) }))} />
               <div className="ai-estimate-values">
-                <label><span>g</span><input inputMode="decimal" value={item.estimatedGrams ?? ""} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
-                <label><span>P</span><input inputMode="decimal" value={item.proteinGrams ?? ""} onChange={(event) => updateItem(index, "proteinGrams", event.target.value)} /></label>
-                <label><span>C</span><input inputMode="decimal" value={item.carbsGrams ?? ""} onChange={(event) => updateItem(index, "carbsGrams", event.target.value)} /></label>
-                <label><span>G</span><input inputMode="decimal" value={item.fatGrams ?? ""} onChange={(event) => updateItem(index, "fatGrams", event.target.value)} /></label>
+                <label><span>g</span><input disabled={refining} inputMode="decimal" value={item.estimatedGrams ?? ""} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
+                <label><span>P</span><input disabled={refining} inputMode="decimal" value={item.proteinGrams ?? ""} onChange={(event) => updateItem(index, "proteinGrams", event.target.value)} /></label>
+                <label><span>C</span><input disabled={refining} inputMode="decimal" value={item.carbsGrams ?? ""} onChange={(event) => updateItem(index, "carbsGrams", event.target.value)} /></label>
+                <label><span>G</span><input disabled={refining} inputMode="decimal" value={item.fatGrams ?? ""} onChange={(event) => updateItem(index, "fatGrams", event.target.value)} /></label>
               </div>
               <small className="ai-estimate-item-calories">{formatNumber(macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))} kcal estimadas</small>
             </article>
           ))}
+          <button type="button" className="secondary ai-estimate-add-item" disabled={refining || estimate.items.length >= 12} onClick={addItem}><Icon name="add" />Agregar alimento</button>
         </div>
+        <section className="ai-estimate-refinement">
+          <label className="ai-context-field"><span>Corregir estimación con IA</span><textarea maxLength="240" disabled={refining} placeholder="Ej.: no había queso, el pollo eran 250 g y faltó una cucharada de aceite" value={correction} onChange={(event) => setCorrection(event.target.value)} /><small>Usa la foto, tu observación original y la revisión actual como referencia.</small></label>
+          {refinementError && <p className="ai-estimate-error" role="alert">{refinementError}</p>}
+          <button type="button" className="secondary" disabled={refining || !correction.trim()} onClick={onRefine}>{refining ? "Corrigiendo..." : "Aplicar corrección IA"}</button>
+        </section>
         <div className="ai-estimate-total"><span><small>Kcal aproximadas</small><strong>{formatNumber(calories)}</strong></span><span><small>Macros totales</small><strong>P {formatNumber(totals.proteinGrams, 1)} · C {formatNumber(totals.carbsGrams, 1)} · G {formatNumber(totals.fatGrams, 1)}</strong></span></div>
-        <div className="ai-estimate-actions"><button className="secondary" onClick={onDiscard}>Descartar</button><button className="primary" disabled={saving || !estimate.items.length || estimate.items.some((item) => !item.name || Number(item.estimatedGrams) <= 0)} onClick={() => onConfirm(estimate)}>{saving ? "Agregando..." : "Agregar estimación"}</button></div>
+        <div className="ai-estimate-actions"><button className="secondary" disabled={refining} onClick={onDiscard}>Descartar</button><button className="primary" disabled={saving || refining || !estimate.items.length || estimate.items.some((item) => !item.name || Number(item.estimatedGrams) <= 0)} onClick={() => onConfirm(estimate)}>{saving ? "Agregando..." : "Agregar estimación"}</button></div>
       </section>
     </div>
   );

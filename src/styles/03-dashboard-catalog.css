@@ -342,6 +342,12 @@
 .ai-estimate-assumptions { display: grid; gap: 4px; margin: 0; padding-left: 18px; color: var(--muted); font-size: 12px; }
 .ai-estimate-items { display: grid; gap: 8px; }
 .ai-estimate-items article { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--outline); border-radius: 12px; background: rgb(255 255 255 / 3%); }
+.ai-estimate-item-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; }
+.ai-estimate-remove { width: 34px; min-height: 34px; color: var(--error); }
+.ai-estimate-add-item { justify-self: start; }
+.ai-estimate-refinement { display: grid; gap: 8px; padding: 10px; border: 1px solid rgb(78 222 163 / 28%); border-radius: 12px; background: rgb(78 222 163 / 6%); }
+.ai-estimate-refinement .ai-context-field small { color: var(--muted); font-size: 11px; font-weight: 600; line-height: 1.35; }
+.ai-estimate-refinement .secondary { justify-self: start; }
 .ai-estimate-items .field { gap: 4px; }
 .ai-estimate-items .field input { min-height: 42px; }
 .ai-estimate-values { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
