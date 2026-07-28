@@ -933,7 +933,12 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiEstimate, setAiEstimate] = useState(null);
   const [aiError, setAiError] = useState("");
+  const [aiContext, setAiContext] = useState("");
+  const [audioRecording, setAudioRecording] = useState(false);
+  const [audioTranscribing, setAudioTranscribing] = useState(false);
   const galleryInputRef = useRef(null);
+  const audioRecorderRef = useRef(null);
+  const audioStreamRef = useRef(null);
   const aiQuotaBlocked = Boolean(aiUsage?.blockedUntil && new Date(aiUsage.blockedUntil) > new Date());
   const catalog = usePagedCatalog({
     api,
@@ -970,6 +975,57 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   useEffect(() => {
     api.request("/api/nutrition/ai-estimates/usage").then(setAiUsage).catch(() => setAiUsage(null));
   }, [api]);
+  useEffect(() => () => {
+    audioRecorderRef.current?.stop?.();
+    audioStreamRef.current?.getTracks().forEach((track) => track.stop());
+  }, []);
+  async function toggleMealNoteRecording() {
+    if (audioRecording) return audioRecorderRef.current?.stop();
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+      setAiError("Tu navegador no permite dictar una descripción. Escribila manualmente.");
+      return;
+    }
+    setAiError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const preferredType = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"].find((type) => MediaRecorder.isTypeSupported?.(type));
+      const recorder = new MediaRecorder(stream, preferredType ? { mimeType: preferredType } : undefined);
+      const chunks = [];
+      audioStreamRef.current = stream;
+      audioRecorderRef.current = recorder;
+      recorder.ondataavailable = (event) => event.data.size && chunks.push(event.data);
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        audioStreamRef.current = null;
+        audioRecorderRef.current = null;
+        setAudioRecording(false);
+        if (!chunks.length) return;
+        setAudioTranscribing(true);
+        try {
+          const type = recorder.mimeType || "audio/mp4";
+          const extension = type.includes("mp4") ? "m4a" : "webm";
+          const form = new FormData();
+          form.append("audio", new File([new Blob(chunks, { type })], `descripcion.${extension}`, { type }));
+          const result = await api.runAction(
+            { title: "Transcribiendo tu descripción", description: "Estamos preparando el contexto para analizar la comida..." },
+            () => api.request("/api/nutrition/ai-estimates/transcriptions", { method: "POST", body: form }),
+          );
+          if (!result?.transcript) throw new Error("No pudimos transcribir la nota. Intentá nuevamente.");
+          setAiContext(result.transcript);
+        } catch (error) {
+          const message = error.message || "No pudimos transcribir la nota. Intentá nuevamente.";
+          setAiError(message);
+          api.notify(message, "error");
+        } finally {
+          setAudioTranscribing(false);
+        }
+      };
+      recorder.start();
+      setAudioRecording(true);
+    } catch {
+      setAiError("No pudimos acceder al micrófono. Podés escribir una descripción manualmente.");
+    }
+  }
   async function analyzeMealPhoto(file) {
     if (!file || aiAnalyzing) return;
     setAiError("");
@@ -978,6 +1034,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
       const image = await compressMealPhoto(file);
       const form = new FormData();
       form.append("image", image);
+      if (aiContext.trim()) form.append("context", aiContext.trim());
       const result = await api.runAction(
         { title: "Analizando tu comida", description: "Estamos estimando los alimentos y las porciones visibles..." },
         () => api.request("/api/nutrition/ai-estimates", { method: "POST", body: form }),
@@ -1001,7 +1058,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
         { title: "Agregando estimación", description: "Estamos sumando los macros revisados a tu comida..." },
         () => api.request("/api/nutrition/ai-estimates/confirm", {
           method: "POST",
-          body: JSON.stringify({ name: estimate.name, confidence: estimate.confidence, items: estimate.items, mealType: mealType.code, logDate: selectedDate }),
+          body: JSON.stringify({ name: estimate.name, description: estimate.description || null, context: aiContext.trim() || null, confidence: estimate.confidence, items: estimate.items, mealType: mealType.code, logDate: selectedDate }),
         }),
       );
       api.notify("Estimación agregada. Revisá siempre las porciones y salsas.");
@@ -1154,6 +1211,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           <div className="search-wrap">
             <Icon name="search" />
             <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : "recetas"}...`} value={query} onChange={(event) => setQuery(event.target.value)} />
+          </div>
+          <div className="ai-context-tools">
+            <label className="ai-context-field"><span>Descripción opcional</span><textarea maxLength="240" placeholder="Ej.: dos empanadas de carne con queso y gaseosa" value={aiContext} onChange={(event) => setAiContext(event.target.value)} /></label>
+            <button type="button" className={`secondary ai-note-record ${audioRecording ? "recording" : ""}`} disabled={audioTranscribing || aiAnalyzing} onClick={toggleMealNoteRecording}><Icon name={audioRecording ? "stop_circle" : "mic"} />{audioTranscribing ? "Transcribiendo..." : audioRecording ? "Detener dictado" : "Dictar descripción"}</button>
           </div>
         </div>
         <div className="picker-scroll">

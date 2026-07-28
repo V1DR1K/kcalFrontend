@@ -526,6 +526,8 @@
   .picker-modal { gap: 9px; padding-left: 12px; padding-right: 12px; }
   .picker-modal .tabs { width: 100%; }
   .picker-modal .tabs button { flex: 1; }
+  .ai-context-tools { grid-template-columns: 1fr; }
+  .ai-note-record { width: 100%; }
   .picker-modal footer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .picker-modal footer button { min-width: 0; }
   .picker-modal footer .ai-photo-trigger { width: 100%; min-height: 52px; }

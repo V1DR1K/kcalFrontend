@@ -317,6 +317,11 @@
 .ocr-preview-note { margin: -4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
 .ai-photo-trigger { position: relative; min-width: 0; overflow: hidden; white-space: nowrap; }
 .ai-photo-trigger.disabled { opacity: .55; pointer-events: none; }
+.ai-context-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.ai-context-field { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: 12px; font-weight: 800; }
+.ai-context-field textarea { width: 100%; min-height: 58px; resize: vertical; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; }
+.ai-note-record { min-height: 46px; white-space: nowrap; }
+.ai-note-record.recording { border-color: var(--error); color: var(--error); }
 .ai-estimate-editor { display: grid; gap: 12px; }
 .ai-estimate-editor > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
 .ai-estimate-editor > header > div { display: grid; gap: 3px; min-width: 0; }
