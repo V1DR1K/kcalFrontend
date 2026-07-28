@@ -934,6 +934,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   const [aiEstimate, setAiEstimate] = useState(null);
   const [aiError, setAiError] = useState("");
   const [aiContext, setAiContext] = useState("");
+  const [pendingMealPhoto, setPendingMealPhoto] = useState(null);
+  const [pendingMealPhotoUrl, setPendingMealPhotoUrl] = useState("");
   const [audioRecording, setAudioRecording] = useState(false);
   const [audioTranscribing, setAudioTranscribing] = useState(false);
   const galleryInputRef = useRef(null);
@@ -979,6 +981,27 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     audioRecorderRef.current?.stop?.();
     audioStreamRef.current?.getTracks().forEach((track) => track.stop());
   }, []);
+  useEffect(() => {
+    if (!pendingMealPhoto) {
+      setPendingMealPhotoUrl("");
+      return undefined;
+    }
+    const source = URL.createObjectURL(pendingMealPhoto);
+    setPendingMealPhotoUrl(source);
+    return () => URL.revokeObjectURL(source);
+  }, [pendingMealPhoto]);
+  function selectMealPhoto(file) {
+    if (!file || aiAnalyzing) return;
+    setAiError("");
+    setAiContext("");
+    setPendingMealPhoto(file);
+  }
+  function discardMealPhoto() {
+    if (audioRecording) audioRecorderRef.current?.stop();
+    setAiError("");
+    setAiContext("");
+    setPendingMealPhoto(null);
+  }
   async function toggleMealNoteRecording() {
     if (audioRecording) return audioRecorderRef.current?.stop();
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
@@ -1042,6 +1065,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
       if (!result?.items?.length) throw new Error("La IA no pudo identificar alimentos en esta foto. Probá con mejor luz.");
       setAiEstimate(result);
       setAiUsage(result.usage);
+      setPendingMealPhoto(null);
     } catch (error) {
       const message = error.message || "No se pudo analizar la foto.";
       setAiError(message);
@@ -1212,10 +1236,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
             <Icon name="search" />
             <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : "recetas"}...`} value={query} onChange={(event) => setQuery(event.target.value)} />
           </div>
-          <div className="ai-context-tools">
-            <label className="ai-context-field"><span>Descripción opcional</span><textarea maxLength="240" placeholder="Ej.: dos empanadas de carne con queso y gaseosa" value={aiContext} onChange={(event) => setAiContext(event.target.value)} /></label>
-            <button type="button" className={`secondary ai-note-record ${audioRecording ? "recording" : ""}`} disabled={audioTranscribing || aiAnalyzing} onClick={toggleMealNoteRecording}><Icon name={audioRecording ? "stop_circle" : "mic"} />{audioTranscribing ? "Transcribiendo..." : audioRecording ? "Detener dictado" : "Dictar descripción"}</button>
-          </div>
         </div>
         <div className="picker-scroll">
           <div className="picker-results">
@@ -1237,7 +1257,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && !catalog.hasNext && <CatalogStatus>Fin de los resultados.</CatalogStatus>}
           <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
         </div>
-        {aiError && <div className="ai-estimate-error" role="alert"><span>{aiError}</span><button type="button" className="secondary" onClick={() => galleryInputRef.current?.click()}>Elegir otra foto</button></div>}
         {selected && (
           <div
             className="selected-subpanel"
@@ -1320,7 +1339,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
             </section>
           </div>
         )}
-        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} saving={adding} onDiscard={() => setAiEstimate(null)} onConfirm={confirmAiEstimate} />}
+        {pendingMealPhoto && <MealPhotoContextEditor photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
+        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} saving={adding} onDiscard={() => { setAiEstimate(null); setAiContext(""); }} onConfirm={confirmAiEstimate} />}
         <footer>
           <button className="secondary" onClick={() => onNavigate("scanner")}>
             <Icon name="barcode_scanner" />Código
@@ -1339,7 +1359,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 event.currentTarget.value = "";
-                analyzeMealPhoto(file);
+                selectMealPhoto(file);
               }}
               hidden
             />
@@ -1355,7 +1375,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 event.currentTarget.value = "";
-                analyzeMealPhoto(file);
+                selectMealPhoto(file);
               }}
               hidden
             />
@@ -1364,6 +1384,30 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
       </section>
     </div>,
     document.body,
+  );
+}
+
+function MealPhotoContextEditor({ photoUrl, context, setContext, error, recording, transcribing, analyzing, onToggleRecording, onDiscard, onChangePhoto, onAnalyze }) {
+  return (
+    <div className="selected-subpanel ai-photo-context-subpanel">
+      <section className="selected-editor ai-photo-context-editor" role="dialog" aria-modal="true" aria-label="Preparar análisis de foto">
+        <span className="sheet-handle" aria-hidden="true" />
+        <header>
+          <div><span>Estimación IA</span><h3>Contanos sobre la foto</h3><small>Agregá detalles que no se vean con claridad, si hace falta.</small></div>
+          <button className="icon-button" aria-label="Descartar foto" onClick={onDiscard}><Icon name="close" /></button>
+        </header>
+        {photoUrl && <img className="ai-photo-context-preview" src={photoUrl} alt="Foto elegida para estimar la comida" />}
+        <div className="ai-context-tools">
+          <label className="ai-context-field"><span>Descripción opcional</span><textarea maxLength="240" placeholder="Ej.: dos empanadas de carne con queso y gaseosa" value={context} onChange={(event) => setContext(event.target.value)} /></label>
+          <button type="button" className={`secondary ai-note-record ${recording ? "recording" : ""}`} disabled={transcribing || analyzing} onClick={onToggleRecording}><Icon name={recording ? "stop_circle" : "mic"} />{transcribing ? "Transcribiendo..." : recording ? "Detener dictado" : "Dictar descripción"}</button>
+        </div>
+        {error && <p className="ai-estimate-error" role="alert">{error}</p>}
+        <div className="ai-photo-context-actions">
+          <button type="button" className="secondary" disabled={analyzing} onClick={onChangePhoto}>Cambiar foto</button>
+          <button type="button" className="primary" disabled={analyzing || recording || transcribing} onClick={onAnalyze}>{analyzing ? "Analizando comida..." : "Analizar foto"}</button>
+        </div>
+      </section>
+    </div>
   );
 }
 

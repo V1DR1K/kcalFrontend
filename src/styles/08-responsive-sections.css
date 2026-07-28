@@ -279,6 +279,8 @@
   }
   .ai-estimate-subpanel { padding: 0; }
   .ai-estimate-editor { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  .ai-photo-context-preview { max-height: min(32dvh, 260px); }
+  .ai-photo-context-actions { position: sticky; bottom: 0; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); background: var(--surface-low); }
   .ai-estimate-actions { position: sticky; bottom: 0; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); background: var(--surface-low); }
   .selected-editor > .primary {
     position: sticky;

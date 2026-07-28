@@ -322,6 +322,13 @@
 .ai-context-field textarea { width: 100%; min-height: 58px; resize: vertical; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; }
 .ai-note-record { min-height: 46px; white-space: nowrap; }
 .ai-note-record.recording { border-color: var(--error); color: var(--error); }
+.ai-photo-context-editor > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.ai-photo-context-editor > header > div { display: grid; gap: 3px; min-width: 0; }
+.ai-photo-context-editor h3 { margin: 0; font-size: 18px; }
+.ai-photo-context-editor header span { color: var(--primary); font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.ai-photo-context-editor header small { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.ai-photo-context-preview { width: 100%; max-height: min(34vh, 260px); border: 1px solid var(--outline); border-radius: 14px; object-fit: cover; }
+.ai-photo-context-actions { display: grid; grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); gap: 8px; }
 .ai-estimate-editor { display: grid; gap: 12px; }
 .ai-estimate-editor > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
 .ai-estimate-editor > header > div { display: grid; gap: 3px; min-width: 0; }
