@@ -933,6 +933,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiEstimate, setAiEstimate] = useState(null);
   const [aiError, setAiError] = useState("");
+  const galleryInputRef = useRef(null);
   const aiQuotaBlocked = Boolean(aiUsage?.blockedUntil && new Date(aiUsage.blockedUntil) > new Date());
   const catalog = usePagedCatalog({
     api,
@@ -1175,7 +1176,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && !catalog.hasNext && <CatalogStatus>Fin de los resultados.</CatalogStatus>}
           <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
         </div>
-        {aiError && <p className="ai-estimate-error" role="alert">{aiError}</p>}
+        {aiError && <div className="ai-estimate-error" role="alert"><span>{aiError}</span><button type="button" className="secondary" onClick={() => galleryInputRef.current?.click()}>Elegir otra foto</button></div>}
         {selected && (
           <div
             className="selected-subpanel"
@@ -1266,9 +1267,25 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           <button className="secondary" onClick={() => onNavigate("create")}>
             <Icon name="add" />Crear
           </button>
-          <label className={`primary ai-photo-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
+          <label className={`secondary ai-photo-trigger ai-gallery-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
+            <Icon name="photo_library" />
+            Elegir foto
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={aiAnalyzing || !aiUsage?.available || aiQuotaBlocked}
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
+                analyzeMealPhoto(file);
+              }}
+              hidden
+            />
+          </label>
+          <label className={`primary ai-photo-trigger ai-camera-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
             <Icon name="photo_camera" />
-            {aiAnalyzing ? "Analizando comida..." : aiQuotaBlocked ? `Escanear comida · vuelve ${aiQuotaReset(aiUsage)}` : "Escanear comida"}
+            {aiAnalyzing ? "Analizando comida..." : aiQuotaBlocked ? `Vuelve ${aiQuotaReset(aiUsage)}` : "Tomar foto"}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"

@@ -325,7 +325,8 @@
 .ai-estimate-warning { margin: 0; padding: 10px 12px; border: 1px solid rgb(255 209 102 / 36%); border-radius: 12px; background: rgb(255 209 102 / 8%); color: #ffe3a0; font-size: 12px; line-height: 1.35; }
 .ai-estimate-description { display: grid; gap: 3px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
 .ai-estimate-description strong { color: var(--text); font-size: 12px; }
-.ai-estimate-error { margin: 0; padding: 10px 12px; border: 1px solid rgb(255 180 171 / 48%); border-radius: 12px; background: rgb(255 180 171 / 10%); color: var(--error); font-size: 13px; line-height: 1.35; }
+.ai-estimate-error { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0; padding: 10px 12px; border: 1px solid rgb(255 180 171 / 48%); border-radius: 12px; background: rgb(255 180 171 / 10%); color: var(--error); font-size: 13px; line-height: 1.35; }
+.ai-estimate-error button { flex: 0 0 auto; min-height: 38px; }
 .ai-estimate-assumptions { display: grid; gap: 4px; margin: 0; padding-left: 18px; color: var(--muted); font-size: 12px; }
 .ai-estimate-items { display: grid; gap: 8px; }
 .ai-estimate-items article { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--outline); border-radius: 12px; background: rgb(255 255 255 / 3%); }
