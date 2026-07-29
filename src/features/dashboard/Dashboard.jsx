@@ -6,7 +6,7 @@ import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Macro, Panel } from "../../components/Layout";
 import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
-import { EditFoodLog } from "../foods/Foods";
+import { EditFoodLog, FoodLogDialog } from "../foods/Foods";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, readableDate, shiftDate, today } from "../../utils/format";
@@ -1312,35 +1312,33 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
         </div>
         {selected && (
-          <div
-            className="selected-subpanel"
-            role="presentation"
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) {
-                setSelected(null);
-                setPreview(null);
-              }
+          <FoodLogDialog
+            item={selected}
+            eyebrow={`Agregar a ${mealType.label}`}
+            isRecipe={selected.type === "RECIPE"}
+            onClose={() => {
+              setSelected(null);
+              setPreview(null);
             }}
-          >
-            <section className="selected-editor" role="dialog" aria-modal="true" aria-label={`Configurar ${selected.name}`}>
-              <span className="sheet-handle" aria-hidden="true" />
-              <div className="selected-heading">
-                <FoodThumb item={selected} compact />
-                <div>
-                  <strong>{selected.name}</strong>
-                  <PreparationBadge food={selected} />
-                </div>
-                <button
-                  className="icon-button selected-close"
-                  aria-label="Cerrar alimento seleccionado"
-                  onClick={() => {
-                    setSelected(null);
-                    setPreview(null);
-                  }}
-                >
-                  <Icon name="close" />
+            onSubmit={(event) => {
+              event.preventDefault();
+              add();
+            }}
+            titleId="add-food-log-title"
+            footer={
+              <footer className="modal-actions">
+                <button type="button" className="secondary" disabled={adding} onClick={() => {
+                  setSelected(null);
+                  setPreview(null);
+                }}>
+                  Cancelar
                 </button>
-              </div>
+                <button className="primary" disabled={adding || Number(quantity) <= 0}>
+                  {adding ? "Agregando…" : `Agregar a ${mealType.label}`}
+                </button>
+              </footer>
+            }
+          >
               {selectedPreparations.length > 1 && (
                 <Select
                   label="Peso del alimento"
@@ -1358,8 +1356,11 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
                   }))}
                 />
               )}
-              <div className="selected-controls">
-                <Input selectOnFocus numericOnly label={selected.type === "RECIPE" ? "Porciones" : unit === "GRAM" ? "Gramos" : "Cantidad de porciones"} type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+              <div className="edit-log-fields">
+                <div className={`edit-log-quantity ${selected.type === "RECIPE" ? "portions" : ""}`}>
+                  <Input selectOnFocus numericOnly label="Cantidad" type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+                  <small>{selected.type === "RECIPE" ? "porciones" : unit === "GRAM" ? "g" : "porciones"}</small>
+                </div>
                 {selected.type === "RECIPE" ? (
                   <div className="recipe-fixed-unit" aria-label="Unidad fija">
                     <span>Unidad</span>
@@ -1369,29 +1370,25 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
                   <Select label="Unidad" value={unit} onChange={(event) => changeSelectedUnit(event.target.value)} options={selectedUnitOptions} />
                 )}
               </div>
-              <div className="nutrition-preview" aria-label="Resumen nutricional">
-                <span>
+              <div className="nutrition-preview edit-log-preview" aria-label="Resumen nutricional">
+                <span className="edit-log-calories">
                   <small>Kcal</small>
                   <strong>{formatNumber(preview?.calories)}</strong>
                 </span>
-                <span>
-                  <small>Proteínas</small>
+                <span className="edit-log-macro protein">
+                  <small>P</small>
                   <strong>{formatNumber(preview?.proteinGrams, 1)}g</strong>
                 </span>
-                <span>
-                  <small>Carbos</small>
+                <span className="edit-log-macro carbs">
+                  <small>C</small>
                   <strong>{formatNumber(preview?.carbsGrams, 1)}g</strong>
                 </span>
-                <span>
-                  <small>Grasas</small>
+                <span className="edit-log-macro fat">
+                  <small>G</small>
                   <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
                 </span>
               </div>
-              <button className="primary" disabled={adding || Number(quantity) <= 0} onClick={add}>
-                {adding ? "Agregando…" : `Agregar a ${mealType.label}`}
-              </button>
-            </section>
-          </div>
+          </FoodLogDialog>
         )}
         {pendingMealPhoto && <MealPhotoContextEditor photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
         {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} />}

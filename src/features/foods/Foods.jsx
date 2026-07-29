@@ -316,6 +316,28 @@ function EditRecipeModal({ api, recipe, onClose, onDone }) {
   );
 }
 
+export function FoodLogDialog({ item, eyebrow, title = item?.name, isRecipe = false, closing = false, onClose, onSubmit, children, footer, titleId = "food-log-title" }) {
+  return createPortal(
+    <div className={`modal-backdrop compact-modal ${closing ? "closing" : ""}`} onPointerDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <form className={`edit-log-modal ${isRecipe ? "recipe-log-modal" : ""}`} role="dialog" aria-modal="true" aria-labelledby={titleId} onPointerDown={(event) => event.stopPropagation()} onSubmit={onSubmit}>
+        <header className="edit-log-header">
+          <FoodThumb item={isRecipe ? { ...item, type: "RECIPE" } : item} compact />
+          <div className="edit-log-identity">
+            <span>{eyebrow}</span>
+            <h2 id={titleId}>{title}</h2>
+          </div>
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Cerrar">
+            <Icon name="close" />
+          </button>
+        </header>
+        <div className="edit-log-body">{children}</div>
+        {footer}
+      </form>
+    </div>,
+    document.body,
+  );
+}
+
 export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [quantity, setQuantity] = useState(String(log.quantity));
   const [mealType, setMealType] = useState(log.mealType);
@@ -449,20 +471,26 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
       setSaving(false);
     }
   }
-  return createPortal(
-    <div className={`modal-backdrop compact-modal ${closing ? "closing" : ""}`} onPointerDown={(event) => { if (event.target === event.currentTarget) closeWithAnimation(); }}>
-      <form className={`edit-log-modal ${isRecipe ? "recipe-log-modal" : ""}`} role="dialog" aria-modal="true" aria-labelledby="edit-log-title" onPointerDown={(event) => event.stopPropagation()} onSubmit={submit}>
-        <header className="edit-log-header">
-          <FoodThumb item={isRecipe ? { ...item, type: "RECIPE" } : item} compact />
-          <div className="edit-log-identity">
-            <span>Editar registro</span>
-            <h2 id="edit-log-title">{item?.name}</h2>
-          </div>
-          <button type="button" className="icon-button" onClick={closeWithAnimation} aria-label="Cerrar">
-            <Icon name="close" />
+  return (
+    <FoodLogDialog
+      item={item}
+      eyebrow="Editar registro"
+      isRecipe={isRecipe}
+      closing={closing}
+      onClose={closeWithAnimation}
+      onSubmit={submit}
+      titleId="edit-log-title"
+      footer={
+        <footer className="modal-actions">
+          <button type="button" className="secondary" onClick={closeWithAnimation}>
+            Cancelar
           </button>
-        </header>
-        <div className="edit-log-body">
+          <button className="primary" disabled={saving || Number(quantity) <= 0}>
+            {saving ? "Guardando…" : "Guardar cambios"}
+          </button>
+        </footer>
+      }
+    >
           <div className="edit-log-fields">
             <div className={`edit-log-quantity ${isRecipe ? "portions" : ""}`}>
               <Input selectOnFocus numericOnly label="Cantidad" type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
@@ -510,17 +538,6 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
               <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
             </span>
           </div>
-        </div>
-        <footer className="modal-actions">
-          <button type="button" className="secondary" onClick={closeWithAnimation}>
-            Cancelar
-          </button>
-          <button className="primary" disabled={saving || Number(quantity) <= 0}>
-            {saving ? "Guardando…" : "Guardar cambios"}
-          </button>
-        </footer>
-      </form>
-    </div>,
-    document.body,
+    </FoodLogDialog>
   );
 }
