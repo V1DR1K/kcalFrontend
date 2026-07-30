@@ -4,7 +4,7 @@ import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { Header } from "../../components/Layout";
-import { CatalogCard, CatalogStatus, CategoryChips, FoodThumb, groupFoodVariants } from "../catalog/CatalogComponents";
+import { CatalogCard, CatalogStatus, CategoryChips, FoodThumb, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
 import { QuickItems } from "../dashboard/Dashboard";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents } from "../../services/recents";
@@ -356,6 +356,8 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [showIngredients, setShowIngredients] = useState(Boolean(log.recipeAdjusted));
   const [saving, setSaving] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [preparations, setPreparations] = useState([]);
+  const [selectedFoodId, setSelectedFoodId] = useState(null);
   const item = log.itemType === "RECIPE" ? log.recipe : log.food;
   const isRecipe = log.itemType === "RECIPE";
   const closeWithAnimation = useCallback(() => {
@@ -377,6 +379,14 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
       document.body.style.overflow = previousOverflow;
     };
   }, []);
+  useEffect(() => {
+    if (!item || isRecipe) return;
+    setSelectedFoodId(item.id);
+    api
+      .request(`/api/foods/${item.id}/preparations`)
+      .then((result) => setPreparations(result || []))
+      .catch(() => setPreparations([item]));
+  }, [api, isRecipe, item]);
   useEffect(() => {
     const numericQuantity = Number(quantity);
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || !item) {
@@ -401,12 +411,13 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
       });
       return undefined;
     }
+    const previewFoodId = selectedFoodId || item.id;
     let active = true;
     api
       .request("/api/foods/preview", {
         method: "POST",
         body: JSON.stringify({
-          foodId: item.id,
+          foodId: previewFoodId,
           quantity: numericQuantity,
           unit: "GRAM",
         }),
@@ -416,7 +427,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     return () => {
       active = false;
     };
-  }, [api, ingredients, isRecipe, item, log.itemType, quantity]);
+  }, [api, ingredients, isRecipe, item, log.itemType, quantity, selectedFoodId]);
   function updateIngredient(index, value) {
     setIngredients((current) => current.map((ingredient, currentIndex) => currentIndex === index ? { ...ingredient, quantity: value } : ingredient));
   }
@@ -452,14 +463,18 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
               body: JSON.stringify({ ingredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit }) => ({ foodId, quantity: Number(ingredientQuantity), unit })) }),
             });
           }
+          const body = {
+            mealType,
+            quantity: numericQuantity,
+            unit: isRecipe ? "PORTION" : log.unit || "GRAM",
+            logDate: log.logDate,
+          };
+          if (!isRecipe && selectedFoodId && selectedFoodId !== log.food?.id) {
+            body.itemId = selectedFoodId;
+          }
           await api.request(`/api/nutrition/food-logs/${log.id}`, {
             method: "PUT",
-            body: JSON.stringify({
-              mealType,
-              quantity: numericQuantity,
-              unit: isRecipe ? "PORTION" : log.unit || "GRAM",
-              logDate: log.logDate,
-            }),
+            body: JSON.stringify(body),
           });
         },
       );
@@ -506,6 +521,19 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
               }))}
             />
           </div>
+          {!isRecipe && preparations.length > 1 && (
+            <Select
+              label="Peso del alimento"
+              value={String(selectedFoodId)}
+              onChange={(event) => {
+                setSelectedFoodId(Number(event.target.value));
+              }}
+              options={preparations.map((item) => ({
+                value: String(item.id),
+                label: preparationLabel(item.preparation),
+              }))}
+            />
+          )}
           {isRecipe && (
             <section className="daily-recipe-editor" aria-label="Ingredientes para este día">
               <button type="button" className="daily-recipe-toggle" aria-expanded={showIngredients} aria-controls={`daily-recipe-${log.id}`} onClick={() => setShowIngredients((current) => !current)}>

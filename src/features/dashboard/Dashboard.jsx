@@ -929,6 +929,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
   const [unit, setUnit] = useState("GRAM");
   const [preview, setPreview] = useState(null);
   const [adding, setAdding] = useState(false);
+  const [recipeDetail, setRecipeDetail] = useState(null);
+  const [recipeIngredients, setRecipeIngredients] = useState(null);
   const [aiUsage, setAiUsage] = useState(null);
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiEstimate, setAiEstimate] = useState(null);
@@ -1172,6 +1174,28 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     }
   }, [selected?.category, selected?.id, selected?.servingWeightGrams, selected?.type]);
   useEffect(() => {
+    if (!selected || selected.type !== "RECIPE") {
+      setRecipeDetail(null);
+      setRecipeIngredients(null);
+      return;
+    }
+    api
+      .request(`/api/recipes/${selected.id}`)
+      .then((fullRecipe) => {
+        setRecipeDetail(fullRecipe);
+        setRecipeIngredients((fullRecipe.ingredients || []).map((ing) => ({
+          foodId: ing.food?.id,
+          name: ing.food?.name || "Alimento",
+          quantity: String(ing.quantity ?? ""),
+          unit: ing.unit || "GRAM",
+        })));
+      })
+      .catch(() => {
+        setRecipeDetail(null);
+        setRecipeIngredients(null);
+      });
+  }, [api, selected?.id, selected?.type]);
+  useEffect(() => {
     if (selected?.type === "RECIPE" && unit !== "PORTION") setUnit("PORTION");
     if (selected?.type !== "RECIPE" && !selected?.servingWeightGrams && unit === "SERVING") setUnit("GRAM");
   }, [selected, unit]);
@@ -1192,6 +1216,22 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
         })
         .then(setPreview)
         .catch(() => setPreview(null));
+    } else if (selected.type === "RECIPE" && recipeIngredients) {
+      const nutrition = recipeIngredients.reduce((total, ing) => {
+        const food = recipeDetail?.ingredients?.find((entry) => entry.food?.id === ing.foodId)?.food;
+        const factor = Number(ing.quantity) / Number(food?.baseQuantity || 100);
+        return {
+          proteinGrams: total.proteinGrams + Number(food?.proteinGrams || 0) * factor,
+          carbsGrams: total.carbsGrams + Number(food?.carbsGrams || 0) * factor,
+          fatGrams: total.fatGrams + Number(food?.fatGrams || 0) * factor,
+        };
+      }, { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
+      setPreview({
+        calories: Math.round((nutrition.proteinGrams * 4 + nutrition.carbsGrams * 4 + nutrition.fatGrams * 9) * numericQuantity),
+        proteinGrams: nutrition.proteinGrams * numericQuantity,
+        carbsGrams: nutrition.carbsGrams * numericQuantity,
+        fatGrams: nutrition.fatGrams * numericQuantity,
+      });
     } else {
       setPreview({
         calories: Math.round(selected.calories * numericQuantity),
@@ -1200,7 +1240,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
         fatGrams: selected.fatGrams * numericQuantity,
       });
     }
-  }, [api, selected, quantity, unit]);
+  }, [api, recipeDetail, recipeIngredients, selected, quantity, unit]);
   async function add() {
     const numericQuantity = Number(quantity);
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || adding) return;
@@ -1210,17 +1250,43 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     try {
       const log = await api.runAction(
         { title: "Agregando alimento", description: `Estamos sumando ${selected.name} a ${mealType.label.toLowerCase()}...` },
-        () => api.request("/api/nutrition/meal-logs", {
-          method: "POST",
-          body: JSON.stringify({
-            itemType: selected.type,
-            itemId: selected.id,
-            mealType: mealType.code,
-            quantity: logQuantity,
-            unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
-            logDate: selectedDate,
-          }),
-        }),
+        async () => {
+          const newLog = await api.request("/api/nutrition/meal-logs", {
+            method: "POST",
+            body: JSON.stringify({
+              itemType: selected.type,
+              itemId: selected.id,
+              mealType: mealType.code,
+              quantity: logQuantity,
+              unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
+              logDate: selectedDate,
+            }),
+          });
+          if (selected.type === "RECIPE" && recipeIngredients && recipeDetail) {
+            const baseIngredients = (recipeDetail.ingredients || []).map((ing) => ({
+              foodId: ing.food?.id,
+              quantity: Number(ing.quantity ?? 0),
+              unit: ing.unit || "GRAM",
+            }));
+            const changed = recipeIngredients.some((ing, i) => {
+              const base = baseIngredients[i];
+              return !base || Number(ing.quantity) !== Number(base.quantity);
+            });
+            if (changed) {
+              await api.request(`/api/nutrition/food-logs/${newLog.id}/recipe-ingredients`, {
+                method: "PUT",
+                body: JSON.stringify({
+                  ingredients: recipeIngredients.map(({ foodId, quantity: ingQty, unit }) => ({
+                    foodId,
+                    quantity: Number(ingQty),
+                    unit,
+                  })),
+                }),
+              });
+            }
+          }
+          return newLog;
+        },
       );
       rememberItem(user, selected);
       rememberMeal(user, mealType.code, log);
@@ -1319,6 +1385,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
             onClose={() => {
               setSelected(null);
               setPreview(null);
+              setRecipeDetail(null);
+              setRecipeIngredients(null);
             }}
             onSubmit={(event) => {
               event.preventDefault();
@@ -1330,6 +1398,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
                 <button type="button" className="secondary" disabled={adding} onClick={() => {
                   setSelected(null);
                   setPreview(null);
+                  setRecipeDetail(null);
+                  setRecipeIngredients(null);
                 }}>
                   Cancelar
                 </button>
@@ -1370,6 +1440,19 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
                   <Select label="Unidad" value={unit} onChange={(event) => changeSelectedUnit(event.target.value)} options={selectedUnitOptions} />
                 )}
               </div>
+              {selected.type === "RECIPE" && recipeIngredients && (
+                <section className="daily-recipe-editor" aria-label="Ingredientes de la receta">
+                  <button type="button" className="daily-recipe-toggle" aria-expanded={true} onClick={() => {}}>
+                    <span><strong>Ingredientes</strong><small>Ajusta las cantidades antes de agregar.</small></span>
+                    <Icon name="expand_less" />
+                  </button>
+                  <div className="daily-recipe-fields">
+                    {recipeIngredients.map((ingredient, index) => (
+                      <Input key={ingredient.foodId} numericOnly label={`${ingredient.name} (g)`} type="number" inputMode="decimal" min="0.1" step="0.1" value={ingredient.quantity} onChange={(event) => setRecipeIngredients(recipeIngredients.map((ing, i) => i === index ? { ...ing, quantity: event.target.value } : ing))} />
+                    ))}
+                  </div>
+                </section>
+              )}
               <div className="nutrition-preview edit-log-preview" aria-label="Resumen nutricional">
                 <span className="edit-log-calories">
                   <small>Kcal</small>
