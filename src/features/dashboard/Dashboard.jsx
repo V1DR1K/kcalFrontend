@@ -6,7 +6,7 @@ import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Macro, Panel } from "../../components/Layout";
 import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
-import { EditFoodLog, FoodLogDialog } from "../foods/Foods";
+import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../foods/Foods";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, readableDate, shiftDate, today } from "../../utils/format";
@@ -1409,68 +1409,27 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
               </footer>
             }
           >
-              {selectedPreparations.length > 1 && (
-                <Select
-                  label="Peso del alimento"
-                  value={String(selected.id)}
-                  onChange={(event) => {
-                    const option = selectedPreparations.find((item) => item.id === Number(event.target.value));
-                    if (option) {
-                      setSelected({ ...option, type: "FOOD" });
-                      setUnit("GRAM");
-                    }
-                  }}
-                  options={selectedPreparations.map((item) => ({
-                    value: String(item.id),
-                    label: preparationLabel(item.preparation),
-                  }))}
-                />
-              )}
-              <div className="edit-log-fields">
-                <div className={`edit-log-quantity ${selected.type === "RECIPE" ? "portions" : ""}`}>
-                  <Input selectOnFocus numericOnly label="Cantidad" type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
-                  <small>{selected.type === "RECIPE" ? "porciones" : unit === "GRAM" ? "g" : "porciones"}</small>
-                </div>
-                {selected.type === "RECIPE" ? (
-                  <div className="recipe-fixed-unit" aria-label="Unidad fija">
-                    <span>Unidad</span>
-                    <strong>Porciones</strong>
-                  </div>
-                ) : (
-                  <Select label="Unidad" value={unit} onChange={(event) => changeSelectedUnit(event.target.value)} options={selectedUnitOptions} />
-                )}
-              </div>
-              {selected.type === "RECIPE" && recipeIngredients && (
-                <section className="daily-recipe-editor" aria-label="Ingredientes de la receta">
-                  <button type="button" className="daily-recipe-toggle" aria-expanded={true} onClick={() => {}}>
-                    <span><strong>Ingredientes</strong><small>Ajusta las cantidades antes de agregar.</small></span>
-                    <Icon name="expand_less" />
-                  </button>
-                  <div className="daily-recipe-fields">
-                    {recipeIngredients.map((ingredient, index) => (
-                      <Input key={ingredient.foodId} numericOnly label={`${ingredient.name} (g)`} type="number" inputMode="decimal" min="0.1" step="0.1" value={ingredient.quantity} onChange={(event) => setRecipeIngredients(recipeIngredients.map((ing, i) => i === index ? { ...ing, quantity: event.target.value } : ing))} />
-                    ))}
-                  </div>
-                </section>
-              )}
-              <div className="nutrition-preview edit-log-preview" aria-label="Resumen nutricional">
-                <span className="edit-log-calories">
-                  <small>Kcal</small>
-                  <strong>{formatNumber(preview?.calories)}</strong>
-                </span>
-                <span className="edit-log-macro protein">
-                  <small>P</small>
-                  <strong>{formatNumber(preview?.proteinGrams, 1)}g</strong>
-                </span>
-                <span className="edit-log-macro carbs">
-                  <small>C</small>
-                  <strong>{formatNumber(preview?.carbsGrams, 1)}g</strong>
-                </span>
-                <span className="edit-log-macro fat">
-                  <small>G</small>
-                  <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
-                </span>
-              </div>
+              <FoodLogForm
+                mode="add"
+                isRecipe={selected.type === "RECIPE"}
+                quantity={quantity}
+                onQuantityChange={(value) => setQuantity(value)}
+                unit={unit}
+                unitOptions={selectedUnitOptions}
+                onUnitChange={changeSelectedUnit}
+                preparations={selectedPreparations}
+                preparationValue={selected.id}
+                onPreparationChange={(id) => {
+                  const option = selectedPreparations.find((item) => item.id === id);
+                  if (option) {
+                    setSelected({ ...option, type: "FOOD" });
+                    setUnit("GRAM");
+                  }
+                }}
+                recipeIngredients={selected.type === "RECIPE" ? recipeIngredients : null}
+                onRecipeIngredientChange={(index, value) => setRecipeIngredients(recipeIngredients.map((ing, i) => i === index ? { ...ing, quantity: value } : ing))}
+                preview={preview}
+              />
           </FoodLogDialog>
         )}
         {pendingMealPhoto && <MealPhotoContextEditor photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}

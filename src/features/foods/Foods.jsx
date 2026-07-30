@@ -338,6 +338,107 @@ export function FoodLogDialog({ item, eyebrow, title = item?.name, isRecipe = fa
   );
 }
 
+export function FoodLogForm({
+  mode,
+  isRecipe,
+  quantity,
+  onQuantityChange,
+  unit,
+  unitOptions,
+  onUnitChange,
+  mealType,
+  mealTypeOptions,
+  onMealTypeChange,
+  preparations,
+  preparationValue,
+  onPreparationChange,
+  recipeIngredients,
+  onRecipeIngredientChange,
+  showIngredients,
+  onToggleIngredients,
+  onResetRecipe,
+  saving,
+  logId,
+  preview,
+}) {
+  return (
+    <>
+      {!isRecipe && preparations.length > 1 && (
+        <Select
+          label="Peso del alimento"
+          value={String(preparationValue)}
+          onChange={(event) => onPreparationChange(Number(event.target.value))}
+          options={preparations.map((item) => ({
+            value: String(item.id),
+            label: preparationLabel(item.preparation),
+          }))}
+        />
+      )}
+      <div className="edit-log-fields">
+        <div className={`edit-log-quantity ${isRecipe ? "portions" : ""}`}>
+          <Input selectOnFocus numericOnly label="Cantidad" type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => onQuantityChange(event.target.value)} />
+          <small>{isRecipe ? "porciones" : unit === "GRAM" ? "g" : "porciones"}</small>
+        </div>
+        {mode === "add" ? (
+          isRecipe ? (
+            <div className="recipe-fixed-unit" aria-label="Unidad fija">
+              <span>Unidad</span>
+              <strong>Porciones</strong>
+            </div>
+          ) : (
+            <Select label="Unidad" value={unit} onChange={(event) => onUnitChange(event.target.value)} options={unitOptions} />
+          )
+        ) : (
+          <Select label="Comida" value={mealType} onChange={(event) => onMealTypeChange(event.target.value)} options={mealTypeOptions} />
+        )}
+      </div>
+      {isRecipe && recipeIngredients && (
+        <section className="daily-recipe-editor" aria-label="Ingredientes de la receta">
+          <button
+            type="button"
+            className="daily-recipe-toggle"
+            aria-expanded={mode === "add" || showIngredients}
+            aria-controls={mode === "edit" ? `daily-recipe-${logId}` : undefined}
+            onClick={mode === "edit" ? onToggleIngredients : undefined}
+          >
+            <span>
+              <strong>Ingredientes</strong>
+              <small>{mode === "add" ? "Ajusta las cantidades antes de agregar." : "Los cambios no modifican la receta base."}</small>
+            </span>
+            <Icon name={mode === "add" || showIngredients ? "expand_less" : "expand_more"} />
+          </button>
+          <div className="daily-recipe-fields" id={mode === "edit" ? `daily-recipe-${logId}` : undefined} hidden={mode === "edit" && !showIngredients}>
+            {recipeIngredients.map((ingredient, index) => (
+              <Input key={ingredient.foodId} numericOnly label={`${ingredient.name} (g)`} type="number" inputMode="decimal" min="0.1" step="0.1" value={ingredient.quantity} onChange={(event) => onRecipeIngredientChange(index, event.target.value)} />
+            ))}
+            {mode === "edit" && showIngredients && onResetRecipe && (
+              <button type="button" className="secondary daily-recipe-reset" disabled={saving} onClick={onResetRecipe}>Restablecer receta base</button>
+            )}
+          </div>
+        </section>
+      )}
+      <div className="nutrition-preview edit-log-preview" aria-label="Resumen nutricional">
+        <span className="edit-log-calories">
+          <small>Kcal</small>
+          <strong>{formatNumber(preview?.calories)}</strong>
+        </span>
+        <span className="edit-log-macro protein" aria-label={`Proteinas: ${formatNumber(preview?.proteinGrams, 1)} gramos`}>
+          <small>P</small>
+          <strong>{formatNumber(preview?.proteinGrams, 1)}g</strong>
+        </span>
+        <span className="edit-log-macro carbs" aria-label={`Carbohidratos: ${formatNumber(preview?.carbsGrams, 1)} gramos`}>
+          <small>C</small>
+          <strong>{formatNumber(preview?.carbsGrams, 1)}g</strong>
+        </span>
+        <span className="edit-log-macro fat" aria-label={`Grasas: ${formatNumber(preview?.fatGrams, 1)} gramos`}>
+          <small>G</small>
+          <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
+        </span>
+      </div>
+    </>
+  );
+}
+
 export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [quantity, setQuantity] = useState(String(log.quantity));
   const [mealType, setMealType] = useState(log.mealType);
@@ -357,7 +458,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [saving, setSaving] = useState(false);
   const [closing, setClosing] = useState(false);
   const [preparations, setPreparations] = useState([]);
-  const [selectedFoodId, setSelectedFoodId] = useState(null);
+  const [selectedFoodId, setSelectedFoodId] = useState(() => log.itemType === "FOOD" ? (log.food?.id || null) : null);
   const item = log.itemType === "RECIPE" ? log.recipe : log.food;
   const isRecipe = log.itemType === "RECIPE";
   const closeWithAnimation = useCallback(() => {
@@ -381,11 +482,12 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   }, []);
   useEffect(() => {
     if (!item || isRecipe) return;
-    setSelectedFoodId(item.id);
-    api
-      .request(`/api/foods/${item.id}/preparations`)
-      .then((result) => setPreparations(result || []))
-      .catch(() => setPreparations([item]));
+    api.runAction(
+      { title: "Cargando opciones", description: "Estamos buscando las presentaciones disponibles..." },
+      () => api.request(`/api/foods/${item.id}/preparations`),
+    )
+    .then((result) => setPreparations(result || []))
+    .catch(() => setPreparations([item]));
   }, [api, isRecipe, item]);
   useEffect(() => {
     const numericQuantity = Number(quantity);
@@ -506,66 +608,27 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
         </footer>
       }
     >
-          <div className="edit-log-fields">
-            <div className={`edit-log-quantity ${isRecipe ? "portions" : ""}`}>
-              <Input selectOnFocus numericOnly label="Cantidad" type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
-              <small>{isRecipe ? "porciones" : "g"}</small>
-            </div>
-            <Select
-              label="Comida"
-              value={mealType}
-              onChange={(event) => setMealType(event.target.value)}
-              options={mealTypes.map((meal) => ({
-                value: meal.code,
-                label: meal.label,
-              }))}
-            />
-          </div>
-          {!isRecipe && preparations.length > 1 && (
-            <Select
-              label="Peso del alimento"
-              value={String(selectedFoodId)}
-              onChange={(event) => {
-                setSelectedFoodId(Number(event.target.value));
-              }}
-              options={preparations.map((item) => ({
-                value: String(item.id),
-                label: preparationLabel(item.preparation),
-              }))}
-            />
-          )}
-          {isRecipe && (
-            <section className="daily-recipe-editor" aria-label="Ingredientes para este día">
-              <button type="button" className="daily-recipe-toggle" aria-expanded={showIngredients} aria-controls={`daily-recipe-${log.id}`} onClick={() => setShowIngredients((current) => !current)}>
-                <span><strong>Ingredientes de hoy</strong><small>Los cambios no modifican la receta base.</small></span>
-                <Icon name={showIngredients ? "expand_less" : "expand_more"} />
-              </button>
-              <div className="daily-recipe-fields" id={`daily-recipe-${log.id}`} hidden={!showIngredients}>
-                {ingredients.map((ingredient, index) => (
-                  <Input key={ingredient.foodId} numericOnly label={`${ingredient.name} (g)`} type="number" inputMode="decimal" min="0.1" step="0.1" value={ingredient.quantity} onChange={(event) => updateIngredient(index, event.target.value)} />
-                ))}
-                {log.recipeAdjusted && <button type="button" className="secondary daily-recipe-reset" disabled={saving} onClick={resetRecipe}>Restablecer receta base</button>}
-              </div>
-            </section>
-          )}
-          <div className="nutrition-preview edit-log-preview" aria-label="Resumen nutricional">
-            <span className="edit-log-calories">
-              <small>Kcal</small>
-              <strong>{formatNumber(preview?.calories)}</strong>
-            </span>
-            <span className="edit-log-macro protein" aria-label={`Proteinas: ${formatNumber(preview?.proteinGrams, 1)} gramos`}>
-              <small>P</small>
-              <strong>{formatNumber(preview?.proteinGrams, 1)}g</strong>
-            </span>
-            <span className="edit-log-macro carbs" aria-label={`Carbohidratos: ${formatNumber(preview?.carbsGrams, 1)} gramos`}>
-              <small>C</small>
-              <strong>{formatNumber(preview?.carbsGrams, 1)}g</strong>
-            </span>
-            <span className="edit-log-macro fat" aria-label={`Grasas: ${formatNumber(preview?.fatGrams, 1)} gramos`}>
-              <small>G</small>
-              <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
-            </span>
-          </div>
+          <FoodLogForm
+            mode="edit"
+            isRecipe={isRecipe}
+            quantity={quantity}
+            onQuantityChange={(value) => setQuantity(value)}
+            unit={log.unit || "GRAM"}
+            mealType={mealType}
+            mealTypeOptions={mealTypes.map((meal) => ({ value: meal.code, label: meal.label }))}
+            onMealTypeChange={(value) => setMealType(value)}
+            preparations={preparations}
+            preparationValue={selectedFoodId}
+            onPreparationChange={(id) => setSelectedFoodId(id)}
+            recipeIngredients={isRecipe ? ingredients : null}
+            onRecipeIngredientChange={updateIngredient}
+            showIngredients={showIngredients}
+            onToggleIngredients={() => setShowIngredients((current) => !current)}
+            onResetRecipe={log.recipeAdjusted ? resetRecipe : null}
+            saving={saving}
+            logId={log.id}
+            preview={preview}
+          />
     </FoodLogDialog>
   );
 }
