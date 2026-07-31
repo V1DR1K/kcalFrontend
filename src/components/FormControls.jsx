@@ -1,25 +1,27 @@
 import React from "react";
 
 export function Input({ label, selectOnFocus = true, numericOnly = false, onFocus, ...props }) {
-  const inputMode = props.inputMode || (props.name === "barcode" ? "numeric" : props.type === "number" ? "decimal" : undefined);
-  const shouldSelect = selectOnFocus && !["file", "checkbox", "radio", "date", "range", "color"].includes(props.type);
+  const isNumeric = numericOnly || props.type === "number";
+  const effectiveType = isNumeric && props.type === "number" ? "text" : props.type;
+  const inputMode = props.inputMode || (props.name === "barcode" ? "numeric" : isNumeric ? "decimal" : undefined);
+  const shouldSelect = selectOnFocus && !["file", "checkbox", "radio", "date", "range", "color"].includes(effectiveType);
   const selectValue = (event) => {
     onFocus?.(event);
     if (shouldSelect) requestAnimationFrame(() => event.currentTarget.select());
   };
   const blockNonNumericKeys = (event) => {
-    if (numericOnly && ["e", "E", "+", "-"].includes(event.key)) event.preventDefault();
+    if (isNumeric && ["e", "E", "+", "-"].includes(event.key)) event.preventDefault();
     props.onKeyDown?.(event);
   };
   const cleanNumericInput = (event) => {
-    if (numericOnly) {
+    if (isNumeric) {
       const cleaned = event.currentTarget.value.replace(",", ".").replace(/[^\d.]/g, "");
       const [whole, ...decimals] = cleaned.split(".");
       event.currentTarget.value = decimals.length ? `${whole}.${decimals.join("")}` : whole;
     }
     props.onInput?.(event);
   };
-  return <label className="field"><span>{label}</span><input {...props} inputMode={inputMode} onFocus={selectValue} onKeyDown={blockNonNumericKeys} onInput={cleanNumericInput} onPointerUp={(event) => { if (shouldSelect) { event.preventDefault(); event.currentTarget.select(); } props.onPointerUp?.(event); }} /></label>;
+  return <label className="field"><span>{label}</span><input {...props} type={effectiveType} inputMode={inputMode} onFocus={selectValue} onKeyDown={blockNonNumericKeys} onInput={cleanNumericInput} onPointerUp={(event) => { if (shouldSelect) { event.preventDefault(); event.currentTarget.select(); } props.onPointerUp?.(event); }} /></label>;
 }
 
 export function Select({ label, options, ...props }) {
