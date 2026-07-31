@@ -1,32 +1,11 @@
 import React from "react";
-import { APP_NAME } from "../config/app";
-import { Icon } from "./Icon";
 import { formatNumber } from "../utils/format";
 
-export function Header({ title, eyebrow, action, compact = false }) {
-  const commitTime = typeof __COMMIT_TIME__ !== "undefined" ? new Date(__COMMIT_TIME__) : null;
-  const versionLabel =
-    commitTime && !Number.isNaN(commitTime.getTime())
-      ? new Intl.DateTimeFormat("es-AR", {
-          hour: "2-digit",
-          minute: "2-digit",
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour12: false,
-        })
-          .format(commitTime)
-          .replace(",", " ·")
-      : "Desarrollo";
+export function Header({ title, action, compact = false }) {
   return (
     <header className={`page-header ${compact ? "dashboard-page-header" : ""}`}>
       <div>
-        <span>{eyebrow || APP_NAME}</span>
         <h1>{title}</h1>
-        <small className="header-build" title="Fecha y hora del commit instalado">
-          <Icon name="verified" />
-          {versionLabel}
-        </small>
       </div>
       {action}
     </header>

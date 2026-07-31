@@ -136,7 +136,6 @@
   }
 
   .mobile-nav button { position: relative; }
-  .header-build { display: none; }
   .toast { bottom: calc(78px + env(safe-area-inset-bottom)); }
 
   .food-card {
@@ -368,7 +367,6 @@
 
   .dashboard-page-header { display: flex; align-items: center; gap: 10px; min-height: 48px; }
   .dashboard-page-header > div:first-child { min-width: 68px; }
-  .dashboard-page-header > div:first-child > span { display: block; max-width: 88px; overflow: hidden; color: var(--primary); font-size: 10px; font-weight: 800; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
   .dashboard-page-header h1 { margin-top: 1px; font-size: 22px; white-space: nowrap; }
   .dashboard-page-header .date-nav { flex: 1; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 4px; width: auto; padding: 0; }
   .dashboard-page-header .date-nav .icon-button { width: 38px; min-width: 38px; min-height: 38px; }

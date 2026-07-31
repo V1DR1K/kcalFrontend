@@ -9,10 +9,15 @@
   --muted: #bbcabf;
   --outline: #3c4a42;
   --primary: #4edea3;
+  --primary-strong: #63efb5;
+  --primary-soft: rgb(78 222 163 / 14%);
   --primary-container: #005236;
   --on-primary: #003924;
   --tertiary: #89ceff;
+  --warning: #ffd166;
   --error: #ffb4ab;
+  --focus: #91f4cc;
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
   --shadow: 0 20px 50px rgb(0 0 0 / 36%);
   --z-content-float: 10;
   --z-nav: 100;
@@ -21,6 +26,8 @@
   --z-blocking: 400;
   --z-critical: 500;
   font-family: "DM Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  letter-spacing: .005em;
 }
 
 html {
@@ -71,7 +78,7 @@ textarea {
 }
 
 :focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--focus);
   outline-offset: 3px;
 }
 
@@ -95,6 +102,8 @@ h2,
 h3,
 .brand strong {
   font-family: "Hanken Grotesk", "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -.025em;
+  text-wrap: balance;
 }
 
 .toast {
