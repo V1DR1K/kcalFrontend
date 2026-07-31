@@ -37,8 +37,8 @@
   .content,
   .auth-page {
     width: min(100% - 24px, 760px);
-    padding-top: 20px;
-    padding-bottom: 24px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
   }
 
   .content {
@@ -87,7 +87,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
     gap: 2px;
-    padding: 6px 10px max(6px, env(safe-area-inset-bottom));
+    padding: 6px max(10px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
     border: 0;
     border-top: 1px solid rgb(60 74 66 / 78%);
     border-radius: 0;
@@ -97,19 +97,7 @@
   }
 
   .mobile-version {
-    grid-row: 2;
-    display: flex;
-    justify-content: center;
-    flex: 0 0 auto;
-    padding: 4px 10px 0;
-    border-top: 1px solid rgb(60 74 66 / 50%);
-    background: rgb(14 21 17 / 96%);
-  }
-
-  .mobile-version .version-badge {
-    margin: 0;
-    font-size: 9px;
-    line-height: 1.2;
+    display: none;
   }
 
   .mobile-nav button {
