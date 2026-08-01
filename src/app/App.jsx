@@ -26,7 +26,14 @@ function PageLoader() {
 }
 
 export function App() {
-  const [page, setPage] = useState(() => (localStorage.getItem(TOKEN_KEY) ? "dashboard" : "login"));
+  const [page, setPageRaw] = useState(() => (localStorage.getItem(TOKEN_KEY) ? "dashboard" : "login"));
+  const pageRef = useRef(page);
+  pageRef.current = page;
+
+  function setPage(next) {
+    setPageRaw(next);
+    window.history.pushState({ kcalPage: next }, "");
+  }
   const [toast, setToast] = useState(null);
   const [user, setUser] = useState(() => getSavedUser(USER_KEY));
   const [selectedFoodId, setSelectedFoodId] = useState(null);
@@ -40,7 +47,8 @@ export function App() {
   const api = useMemo(
     () => ({
       request: apiRequest,
-      async runAction(loading, operation) {
+      async runAction(loading, operation, options = {}) {
+        if (options.quiet) return operation();
         const id = actionSequence.current + 1;
         actionSequence.current = id;
         pendingActions.current.set(id, loading);
@@ -97,10 +105,29 @@ export function App() {
   useEffect(() => {
     const expireSession = () => {
       logout();
-      api.notify("Tu sesion vencio. Volve a ingresar.", "error");
+      api.notify("Tu sesión venció. Volvé a ingresar.", "error");
     };
     window.addEventListener("kazaFitness:session-expired", expireSession);
     return () => window.removeEventListener("kazaFitness:session-expired", expireSession);
+  }, [api]);
+
+  useEffect(() => {
+    let lastExitAttempt = 0;
+    const onPopState = (event) => {
+      const state = event.state;
+      if (state && typeof state.kcalPage === "string") {
+        setPageRaw(state.kcalPage);
+        return;
+      }
+      if (!localStorage.getItem(TOKEN_KEY)) return;
+      const now = Date.now();
+      if (now - lastExitAttempt < 2000) return;
+      lastExitAttempt = now;
+      window.history.pushState({ kcalPage: pageRef.current }, "");
+      api.notify("Tocá atrás de nuevo para salir");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, [api]);
 
   const authenticated = Boolean(localStorage.getItem(TOKEN_KEY));
