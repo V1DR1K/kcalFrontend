@@ -1,7 +1,13 @@
 import Tesseract from "tesseract.js";
 
 export async function recognizeNutrition(image) {
-  const { data } = await Tesseract.recognize(image, "spa", { logger: () => {} });
+  const { data } = await Tesseract.recognize(image, "spa", {
+    workerPath: "/tessdata/worker.min.js",
+    corePath: "/tessdata/tesseract-core-simd-lstm.wasm.js",
+    langPath: "/tessdata",
+    gzip: true,
+    logger: () => {},
+  });
   return parseNutritionTable(data.text);
 }
 

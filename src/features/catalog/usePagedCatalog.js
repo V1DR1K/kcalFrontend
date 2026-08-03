@@ -29,18 +29,25 @@ export function usePagedCatalog({ api, endpoint, query = "", category = "", page
       });
     } catch (error) {
       if (error.name !== "AbortError" && requestId === requestIdRef.current) {
-        setState((current) => ({ ...current, initialLoading: false, loadingMore: false, error: "No se pudo cargar el catalogo.", failedPage: page }));
+        setState((current) => ({ ...current, initialLoading: false, loadingMore: false, error: "No se pudo cargar el catálogo.", failedPage: page }));
       }
     } finally {
       if (requestRef.current === controller) requestRef.current = null;
     }
   }, [api, category, endpoint, pageSize, query]);
 
+  const firstFetchRef = useRef(true);
+
   useEffect(() => {
     requestRef.current?.abort();
     requestRef.current = null;
     requestIdRef.current += 1;
     setState(initialState);
+    if (firstFetchRef.current) {
+      firstFetchRef.current = false;
+      fetchPage(0, true);
+      return undefined;
+    }
     const timer = window.setTimeout(() => fetchPage(0, true), 250);
     return () => {
       window.clearTimeout(timer);

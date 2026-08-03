@@ -9,16 +9,16 @@ export const DEFAULT_MEALS = [
 export const navItems = [
   { id: "dashboard", label: "Dashboard", mobileLabel: "Inicio", icon: "monitoring" }, { id: "foods", label: "Alimentos", mobileLabel: "Buscar", icon: "nutrition" },
   { id: "create", label: "Crear", icon: "add_box" }, { id: "history", label: "Historial", icon: "calendar_month" },
-  { id: "profile", label: "Perfil", icon: "account_circle" }, { id: "scanner", label: "Escaner", icon: "qr_code_scanner" },
+  { id: "profile", label: "Perfil", icon: "account_circle" }, { id: "scanner", label: "Escáner", icon: "qr_code_scanner" },
 ];
 export const CATEGORY_OPTIONS = [
-  { value: "PROTEIN", label: "Proteinas" }, { value: "MEAT", label: "Carnes" }, { value: "DAIRY", label: "Lacteos" }, { value: "FRUIT", label: "Frutas" },
+  { value: "PROTEIN", label: "Proteínas" }, { value: "MEAT", label: "Carnes" }, { value: "DAIRY", label: "Lácteos" }, { value: "FRUIT", label: "Frutas" },
   { value: "VEGETABLE", label: "Verduras" }, { value: "LEGUME", label: "Legumbres" }, { value: "CEREAL", label: "Cereales" }, { value: "BAKERY", label: "Panificados" },
   { value: "BEVERAGE", label: "Bebidas" }, { value: "SWEET", label: "Golosinas" }, { value: "SNACK", label: "Snacks" }, { value: "FAT", label: "Grasas" }, { value: "OTHER", label: "Otros" },
 ];
 export const PREPARATION_OPTIONS = [
   { value: "RAW", label: "Crudo/a" }, { value: "COOKED", label: "Cocido/a" },
-  { value: "AS_SOLD", label: "Segun envase / como se vende" }, { value: "UNSPECIFIED", label: "Sin especificar" },
+  { value: "AS_SOLD", label: "Según envase / como se vende" }, { value: "UNSPECIFIED", label: "Sin especificar" },
 ];
 export const CATEGORY_ART = {
   PROTEIN: "/category-assets/protein.webp", MEAT: "/category-assets/protein.webp", DAIRY: "/category-assets/dairy.webp",
@@ -29,5 +29,5 @@ export const CATEGORY_ART = {
 export const RECIPE_ART = "/category-assets/recipe.webp";
 export const UNIT_OPTIONS = [
   { value: "GRAM", label: "Gramos" }, { value: "MILLILITER", label: "Mililitros" },
-  { value: "UNIT", label: "Unidad" }, { value: "PORTION", label: "Porcion" },
+  { value: "UNIT", label: "Unidad" }, { value: "PORTION", label: "Porción" },
 ];

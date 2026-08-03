@@ -88,7 +88,7 @@ export function Profile({ api, logout }) {
         </div>
       </Panel>
       <Panel title="Registrar peso" className="weight-panel">
-        <form onSubmit={async (event) => { event.preventDefault(); if (savingWeight) return; setSavingWeight(true); try { const updated = await api.runAction({ title: "Actualizando peso", description: "Estamos guardando tu nuevo registro..." }, () => api.request("/api/profile", { method: "PATCH", body: JSON.stringify({ weightKg: Number(weight) }) })); setProfile(updated); setWeight(updated.weightKg || ""); api.notify("Peso actualizado."); } catch { api.notify("No se pudo registrar el peso.", "error"); } finally { setSavingWeight(false); } }}>
+        <form onSubmit={async (event) => { event.preventDefault(); if (savingWeight) return; setSavingWeight(true); try { const updated = await api.runAction({ title: "Actualizando peso", description: "Estamos guardando tu nuevo registro..." }, () => api.request("/api/profile", { method: "PATCH", body: JSON.stringify({ weightKg: Number(weight) }) }), { quiet: true }); setProfile(updated); setWeight(updated.weightKg || ""); api.notify("Peso actualizado."); } catch { api.notify("No se pudo registrar el peso.", "error"); } finally { setSavingWeight(false); } }}>
           <Input label="Peso actual (kg)" type="number" min="20" max="400" step="0.1" inputMode="decimal" value={weight} onChange={(event) => setWeight(event.target.value)} required />
           <button className="secondary" disabled={savingWeight}>{savingWeight ? "Guardando…" : "Anotar peso"}</button>
         </form>
@@ -108,9 +108,9 @@ export function Profile({ api, logout }) {
           className="danger-button"
           onClick={async () => {
             const confirmed = await api.confirm({
-              title: "Cerrar sesion?",
-              description: "Tendras que volver a ingresar para usar tu cuenta en este dispositivo.",
-              confirmLabel: "Cerrar sesion",
+              title: "¿Cerrar sesión?",
+              description: "Tendrás que volver a ingresar para usar tu cuenta en este dispositivo.",
+              confirmLabel: "Cerrar sesión",
               tone: "neutral",
             });
             if (confirmed) logout();
@@ -235,9 +235,10 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
           resetForm();
           await onChanged();
         },
+        { quiet: true },
       );
     } catch {
-      api.notify(editingPlan ? "No se pudo actualizar el plan. Revisa que no se superponga con otro." : "No se pudo guardar el plan. Revisa que no se superponga con otro.", "error");
+      api.notify(editingPlan ? "No se pudo actualizar el plan. Revisá que no se superponga con otro." : "No se pudo guardar el plan. Revisá que no se superponga con otro.", "error");
     } finally {
       setSaving(false);
     }
@@ -255,6 +256,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
           api.notify(`${plan.name} es ahora tu plan actual.`);
           await onChanged();
         },
+        { quiet: true },
       );
     } catch { api.notify("No se pudo cambiar el plan.", "error"); }
     finally { setActivatingId(null); }
@@ -268,7 +270,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
       </div>
       <button type="button" className="primary add-plan-button" onClick={startCreate}><Icon name={creating ? "close" : "add"} />{creating ? "Cancelar" : "Agregar plan"}</button>
       {formVisible && <>
-      {editingPlan && <div className="editing-plan-banner"><Icon name="edit" /><div><strong>Editando {editingPlan.name}</strong><small>Los cambios se guardan sobre este plan del historial.</small></div><button type="button" className="ghost-icon" onClick={resetForm} aria-label="Cancelar edicion"><Icon name="close" /></button></div>}
+      {editingPlan && <div className="editing-plan-banner"><Icon name="edit" /><div><strong>Editando {editingPlan.name}</strong><small>Los cambios se guardan sobre este plan del historial.</small></div><button type="button" className="ghost-icon" onClick={resetForm} aria-label="Cancelar edición"><Icon name="close" /></button></div>}
       <div className="plan-calorie-step">
         <span className="step-number">1</span><div><strong>Definí tus calorías diarias</strong><small>Esta base se usa para calcular los gramos de cada macronutriente.</small></div>
         <Input label="Calorías por día" type="number" min="800" max="10000" step="10" value={form.dailyCalories} onChange={(event) => setField("dailyCalories", event.target.value)} required />
@@ -354,14 +356,14 @@ function MacroControl({ label, value, grams, onChange, tone }) {
 
 function NutritionTutorial() {
   const items = [
-    ["Calorias", "Son tu presupuesto diario de energia. Si el objetivo no se sostiene en la vida real, conviene ajustar antes que abandonar."],
-    ["Proteinas", "Ayudan con saciedad y mantenimiento muscular. Pensalas como una base diaria, no como algo solo para deportistas."],
-    ["Carbohidratos", "Son una fuente practica de energia. Su cantidad puede subir si entrenas mas o bajar si preferis comidas mas grasas."],
-    ["Grasas", "Son importantes para hormonas, absorcion de vitaminas y adherencia. Priorizá fuentes de calidad."],
-    ["Como elegir", "Empeza balanceado, medí adherencia y progreso dos semanas, y ajustá de a poco. Si tenes patologias, consultá a un profesional."],
+    ["Calorías", "Son tu presupuesto diario de energía. Si el objetivo no se sostiene en la vida real, conviene ajustar antes que abandonar."],
+    ["Proteínas", "Ayudan con saciedad y mantenimiento muscular. Pensalas como una base diaria, no como algo solo para deportistas."],
+    ["Carbohidratos", "Son una fuente práctica de energía. Su cantidad puede subir si entrenás más o bajar si preferís comidas más grasas."],
+    ["Grasas", "Son importantes para hormonas, absorción de vitaminas y adherencia. Priorizá fuentes de calidad."],
+    ["Cómo elegir", "Empezá balanceado, medí adherencia y progreso dos semanas, y ajustá de a poco. Si tenés patologías, consultá a un profesional."],
   ];
   return (
-    <Panel title="Mini guia para pensar tu alimentacion">
+    <Panel title="Mini guía para pensar tu alimentación">
       <div className="tutorial-list">
         {items.map(([title, body]) => (
           <details key={title}>

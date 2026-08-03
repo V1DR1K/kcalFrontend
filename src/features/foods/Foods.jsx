@@ -32,9 +32,6 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
         title="Alimentos"
         action={
           <div className="header-actions">
-            <button className="secondary" onClick={() => setPage("create")}>
-              Crear
-            </button>
             <button className="primary pill" onClick={() => setPage("scanner")}>
               <Icon name="barcode_scanner" />
               Escanear
@@ -52,11 +49,11 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
       </div>
       <div className="search-wrap">
         <Icon name="search" />
-        <input className="search" placeholder="Buscar..." value={query} onChange={(event) => setQuery(event.target.value)} />
+        <input className="search" placeholder="Buscar..." value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} />
       </div>
       {tab === "FOOD" && <CategoryChips category={category} setCategory={setCategory} />}
       <QuickItems
-        title="Accesos rapidos"
+        title="Accesos rápidos"
         items={groupFoodVariants(readRecents(user).items.filter((item) => item.type === tab))}
         onPick={(item) => {
           if (item.type === "FOOD") {
@@ -65,75 +62,88 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
           }
         }}
       />
-      <div className="food-grid">
-        {groupFoodVariants(catalog.items).map((item) => {
-          const typedItem = { ...item, type: tab };
-          if (tab === "RECIPE") {
+      {catalog.initialLoading && !catalog.items.length ? (
+        <div className="food-grid" aria-hidden="true">
+          <div className="skeleton skeleton-food-card" />
+          <div className="skeleton skeleton-food-card" />
+          <div className="skeleton skeleton-food-card" />
+          <div className="skeleton skeleton-food-card" />
+          <div className="skeleton skeleton-food-card" />
+          <div className="skeleton skeleton-food-card" />
+        </div>
+      ) : (
+        <div className="food-grid">
+          {groupFoodVariants(catalog.items).map((item) => {
+            const typedItem = { ...item, type: tab };
+            if (tab === "RECIPE") {
+              return (
+                <SwipeableRecipeCard
+                  key={`RECIPE:${item.id}`}
+                  recipe={typedItem}
+                  resetSignal={swipeResetSignal}
+                  disabled={deletingRecipeId === item.id || loadingRecipeId === item.id}
+                  onEdit={async () => {
+                    setSwipeResetSignal((value) => value + 1);
+                    setLoadingRecipeId(item.id);
+                    try {
+                      const fullRecipe = await api.runAction(
+                        { title: "Cargando receta", description: "Estamos preparando los datos para editarla..." },
+                        () => api.request(`/api/recipes/${item.id}`),
+                        { quiet: true },
+                      );
+                      setEditingRecipe({ ...fullRecipe, type: "RECIPE" });
+                    } catch (error) {
+                      api.notify(error.message || "No se pudo cargar la receta.", "error");
+                    } finally {
+                      setLoadingRecipeId(null);
+                    }
+                  }}
+                  onDelete={async () => {
+                    if (deletingRecipeId) return;
+                    const confirmed = await api.confirm({
+                      title: "¿Borrar receta?",
+                      description: `${item.name} se eliminará de tu catálogo.`,
+                      confirmLabel: "Borrar receta",
+                    });
+                    if (!confirmed) {
+                      setSwipeResetSignal((value) => value + 1);
+                      return;
+                    }
+                    setDeletingRecipeId(item.id);
+                    try {
+                      await api.runAction(
+                        { title: "Borrando receta", description: "Estamos eliminando la receta del catálogo..." },
+                        async () => {
+                          await api.request(`/api/recipes/${item.id}`, { method: "DELETE" });
+                          catalog.removeItem(item.id);
+                          api.notify("Receta borrada.");
+                        },
+                        { quiet: true },
+                      );
+                    } catch (error) {
+                      api.notify(error.message || "No se pudo borrar la receta.", "error");
+                    } finally {
+                      setDeletingRecipeId(null);
+                      setSwipeResetSignal((value) => value + 1);
+                    }
+                  }}
+                />
+              );
+            }
             return (
-              <SwipeableRecipeCard
-                key={`RECIPE:${item.id}`}
-                recipe={typedItem}
-                resetSignal={swipeResetSignal}
-                disabled={deletingRecipeId === item.id || loadingRecipeId === item.id}
-                onEdit={async () => {
-                  setSwipeResetSignal((value) => value + 1);
-                  setLoadingRecipeId(item.id);
-                  try {
-                    const fullRecipe = await api.runAction(
-                      { title: "Cargando receta", description: "Estamos preparando los datos para editarla..." },
-                      () => api.request(`/api/recipes/${item.id}`),
-                    );
-                    setEditingRecipe({ ...fullRecipe, type: "RECIPE" });
-                  } catch (error) {
-                    api.notify(error.message || "No se pudo cargar la receta.", "error");
-                  } finally {
-                    setLoadingRecipeId(null);
-                  }
-                }}
-                onDelete={async () => {
-                  if (deletingRecipeId) return;
-                  const confirmed = await api.confirm({
-                    title: "Borrar receta?",
-                    description: `${item.name} se eliminara de tu catalogo.`,
-                    confirmLabel: "Borrar receta",
-                  });
-                  if (!confirmed) {
-                    setSwipeResetSignal((value) => value + 1);
-                    return;
-                  }
-                  setDeletingRecipeId(item.id);
-                  try {
-                    await api.runAction(
-                      { title: "Borrando receta", description: "Estamos eliminando la receta del catalogo..." },
-                      async () => {
-                        await api.request(`/api/recipes/${item.id}`, { method: "DELETE" });
-                        catalog.removeItem(item.id);
-                        api.notify("Receta borrada.");
-                      },
-                    );
-                  } catch (error) {
-                    api.notify(error.message || "No se pudo borrar la receta.", "error");
-                  } finally {
-                    setDeletingRecipeId(null);
-                    setSwipeResetSignal((value) => value + 1);
-                  }
+              <CatalogCard
+                key={`${tab}:${item.preparationGroup || item.id}`}
+                item={typedItem}
+                onAdd={() => {
+                  setSelectedFoodId(item.id);
+                  setPage("configure");
                 }}
               />
             );
-          }
-          return (
-            <CatalogCard
-              key={`${tab}:${item.preparationGroup || item.id}`}
-              item={typedItem}
-              onAdd={() => {
-                setSelectedFoodId(item.id);
-                setPage("configure");
-              }}
-            />
-          );
-        })}
-      </div>
-      {catalog.initialLoading && <CatalogStatus>Buscando alimentos…</CatalogStatus>}
+          })}
+        </div>
+      )}
+      {catalog.initialLoading && !catalog.items.length && <span className="sr-only" role="status">Buscando alimentos…</span>}
       {!catalog.initialLoading && catalog.error && (
         <CatalogStatus error>
           {catalog.error}
@@ -211,8 +221,8 @@ function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }
   }
   return (
     <div className={`swipe-row recipe-swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""}`}>
-      <button className="swipe-action swipe-edit" aria-label="Editar receta" disabled={disabled} onClick={() => { close(); window.setTimeout(onEdit, 120); }}><Icon name="edit" /></button>
-      <button className="swipe-action swipe-delete" aria-label="Borrar receta" disabled={disabled} onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
+      <button className="swipe-action swipe-edit" aria-label="Editar receta" tabIndex={revealed === "edit" ? 0 : -1} aria-hidden={revealed !== "edit"} disabled={disabled} onClick={() => { close(); window.setTimeout(onEdit, 120); }}><Icon name="edit" /></button>
+      <button className="swipe-action swipe-delete" aria-label="Borrar receta" tabIndex={revealed === "delete" ? 0 : -1} aria-hidden={revealed !== "delete"} disabled={disabled} onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
       <article
         className={`food-card recipe-swipe-card ${horizontalDragging ? "swiping" : ""} ${disabled ? "moving" : ""}`}
         style={{ transform: `translate3d(${offset}px, 0, 0)` }}
@@ -262,7 +272,7 @@ function EditRecipeModal({ api, recipe, onClose, onDone }) {
             totalWeightGrams: totalWeight,
             ingredients: ingredients.map((item) => ({ foodId: item.foodId, quantity: Number(item.quantity), unit: item.unit })),
           }),
-        }),
+        }, { quiet: true }),
       );
       api.notify("Receta actualizada.");
       onDone();
@@ -290,7 +300,7 @@ function EditRecipeModal({ api, recipe, onClose, onDone }) {
         <div className="edit-food-fields">
           {error && <div className="form-error recipe-error" role="alert"><Icon name="error" /><span>{error}</span></div>}
           <Input label="Nombre" value={name} onChange={(event) => setName(event.target.value)} required />
-          <Input label="Descripcion opcional" value={description} onChange={(event) => setDescription(event.target.value)} />
+          <Input label="Descripción opcional" value={description} onChange={(event) => setDescription(event.target.value)} />
           <div className="recipe-weight-summary"><Icon name="scale" /><div><small>Peso total calculado</small><strong>{formatNumber(totalWeight, 1)} g</strong></div></div>
           <div className="ingredient-list">
             {ingredients.map((item, index) => (
@@ -422,7 +432,7 @@ export function FoodLogForm({
           <small>Kcal</small>
           <strong>{formatNumber(preview?.calories)}</strong>
         </span>
-        <span className="edit-log-macro protein" aria-label={`Proteinas: ${formatNumber(preview?.proteinGrams, 1)} gramos`}>
+        <span className="edit-log-macro protein" aria-label={`Proteínas: ${formatNumber(preview?.proteinGrams, 1)} gramos`}>
           <small>P</small>
           <strong>{formatNumber(preview?.proteinGrams, 1)}g</strong>
         </span>
@@ -485,6 +495,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     api.runAction(
       { title: "Cargando opciones", description: "Estamos buscando las presentaciones disponibles..." },
       () => api.request(`/api/foods/${item.id}/preparations`),
+      { quiet: true },
     )
     .then((result) => setPreparations(result || []))
     .catch(() => setPreparations([item]));

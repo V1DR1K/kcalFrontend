@@ -1,6 +1,6 @@
 import React from "react";
 
-export function Input({ label, selectOnFocus = true, numericOnly = false, onFocus, ...props }) {
+export function Input({ label, selectOnFocus = true, numericOnly = false, error, onFocus, ...props }) {
   const isNumeric = numericOnly || props.type === "number";
   const effectiveType = isNumeric && props.type === "number" ? "text" : props.type;
   const inputMode = props.inputMode || (props.name === "barcode" ? "numeric" : isNumeric ? "decimal" : undefined);
@@ -21,13 +21,13 @@ export function Input({ label, selectOnFocus = true, numericOnly = false, onFocu
     }
     props.onInput?.(event);
   };
-  return <label className="field"><span>{label}</span><input {...props} type={effectiveType} inputMode={inputMode} onFocus={selectValue} onKeyDown={blockNonNumericKeys} onInput={cleanNumericInput} onPointerUp={(event) => { if (shouldSelect) { event.preventDefault(); event.currentTarget.select(); } props.onPointerUp?.(event); }} /></label>;
+  return <label className="field"><span>{label}</span><input {...props} aria-invalid={Boolean(error)} type={effectiveType} inputMode={inputMode} onFocus={selectValue} onKeyDown={blockNonNumericKeys} onInput={cleanNumericInput} onPointerUp={(event) => { if (shouldSelect) { event.preventDefault(); event.currentTarget.select(); } props.onPointerUp?.(event); }} />{error && <span className="form-error" role="alert">{error}</span>}</label>;
 }
 
-export function Select({ label, options, ...props }) {
-  return <label className="field"><span>{label}</span><select {...props}>{options.map((option) => {
+export function Select({ label, options, error, ...props }) {
+  return <label className="field"><span>{label}</span><select {...props} aria-invalid={Boolean(error)}>{options.map((option) => {
     const value = typeof option === "string" ? option : option.value;
     const optionLabel = typeof option === "string" ? option : option.label;
     return <option key={value} value={value}>{optionLabel}</option>;
-  })}</select></label>;
+  })}</select>{error && <span className="form-error" role="alert">{error}</span>}</label>;
 }

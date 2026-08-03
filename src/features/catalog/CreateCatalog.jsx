@@ -22,7 +22,7 @@ export function CreateCatalog({ api, setPage, prefillBarcode, clearPrefillBarcod
       <button className="back-button" onClick={() => setPage("foods")}>
         <Icon name="arrow_back" />Alimentos
       </button>
-      <Header title="Crear" eyebrow="Catalogo global" />
+      <Header title="Crear" eyebrow="Catálogo global" />
       <div className="tabs create-tabs">
         <button className={tab === "FOOD" ? "selected" : ""} onClick={() => setTab("FOOD")}>
           Alimento
@@ -56,7 +56,7 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
     setSaving(true);
     try {
       await api.runAction(
-        { title: "Creando alimento", description: "Estamos guardando el alimento en el catalogo..." },
+        { title: "Creando alimento", description: "Estamos guardando el alimento en el catálogo..." },
         () => api.request("/api/foods", {
           method: "POST",
           body: JSON.stringify({
@@ -79,7 +79,7 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
                   .filter(Boolean)
               : [],
           }),
-        }),
+        }, { quiet: true }),
       );
       api.notify("Alimento creado.");
       form.reset();
@@ -171,11 +171,11 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
         </div>
         <Input name="name" label="Nombre" required />
         <Input name="brand" label="Marca" />
-        <Input name="barcode" label="Codigo de barras opcional" defaultValue={prefillBarcode || ""} />
-        <Select name="category" label="Categoria" options={CATEGORY_OPTIONS} />
+        <Input name="barcode" label="Código de barras opcional" defaultValue={prefillBarcode || ""} />
+        <Select name="category" label="Categoría" options={CATEGORY_OPTIONS} />
         <Input name="baseQuantity" label="Estos valores corresponden a (gramos)" type="number" defaultValue="100" step="0.1" min="0.1" required />
         <div className="split">
-          <Input numericOnly name="proteinGrams" label="Proteinas g" type="number" step="0.1" min="0" required />
+          <Input numericOnly name="proteinGrams" label="Proteínas g" type="number" step="0.1" min="0" required />
           <Input numericOnly name="carbsGrams" label="Carbohidratos g" type="number" step="0.1" min="0" required />
         </div>
         <div className="split">
@@ -282,8 +282,8 @@ function MyFoods({ api }) {
     const data = Object.fromEntries(new FormData(event.currentTarget));
     try {
       await api.runAction(
-        { title: "Guardando alimento", description: "Estamos actualizando los datos del catalogo..." },
-        () => api.request(`/api/foods/${editing.id}`, { method: "PUT", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), preparation: "UNSPECIFIED", servingName: null, servingWeightGrams: null, tags: [] }) }),
+        { title: "Guardando alimento", description: "Estamos actualizando los datos del catálogo..." },
+        () => api.request(`/api/foods/${editing.id}`, { method: "PUT", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), preparation: "UNSPECIFIED", servingName: null, servingWeightGrams: null, tags: [] }) }, { quiet: true }),
       );
       api.notify("Alimento actualizado.");
       setEditing(null);
@@ -365,7 +365,7 @@ function MyFoods({ api }) {
 
 function recipeFieldLabel(field) {
   if (field === "name") return "Nombre";
-  if (field === "description") return "Descripcion";
+  if (field === "description") return "Descripción";
   if (field === "totalWeightGrams") return "Peso total";
   if (field?.startsWith("ingredients")) return "Ingredientes";
   return field || "Datos";
@@ -440,7 +440,7 @@ function CreateRecipeForm({ api }) {
             totalWeightGrams: totalWeight,
             ingredients: normalizedIngredients,
           }),
-        }),
+        }, { quiet: true }),
       );
       api.notify("Receta creada.");
       form.reset();
@@ -450,7 +450,7 @@ function CreateRecipeForm({ api }) {
       const fieldDetails = Object.entries(error.fields || {})
         .map(([field, message]) => `${recipeFieldLabel(field)}: ${message}`)
         .join(" ");
-      const message = fieldDetails || error.message || "No se pudo crear la receta. Revisa los datos.";
+      const message = fieldDetails || error.message || "No se pudo crear la receta. Revisá los datos.";
       setFormError(message);
       api.notify(message, "error");
     } finally {
@@ -467,7 +467,7 @@ function CreateRecipeForm({ api }) {
           </div>
         )}
         <Input name="name" label="Nombre" required />
-        <Input name="description" label="Descripcion opcional" />
+        <Input name="description" label="Descripción opcional" />
         <div className="recipe-weight-summary" aria-live="polite">
           <Icon name="scale" />
           <div>
@@ -533,7 +533,7 @@ function CreateRecipeForm({ api }) {
         </div>
         <div className="recipe-nutrition-summary" aria-label="Resumen nutricional de la receta">
           <span><strong>{formatNumber(preview?.calories)}</strong><small>Kcal</small></span>
-          <span><strong>{formatNumber(preview?.proteinGrams, 1)}g</strong><small>Proteinas</small></span>
+          <span><strong>{formatNumber(preview?.proteinGrams, 1)}g</strong><small>Proteínas</small></span>
           <span><strong>{formatNumber(preview?.carbsGrams, 1)}g</strong><small>Carbos</small></span>
           <span><strong>{formatNumber(preview?.fatGrams, 1)}g</strong><small>Grasas</small></span>
           {formatNumber(preview?.calories)} kcal · P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g

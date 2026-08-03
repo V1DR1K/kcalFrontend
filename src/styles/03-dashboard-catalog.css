@@ -1285,3 +1285,40 @@ button:disabled {
   18% { opacity: 1; }
   100% { opacity: 0; transform: translate(calc(-50% + var(--x, 42px)), calc(-50% + var(--y, -18px))) scale(.85) rotate(var(--r, 82deg)); }
 }
+
+.dashboard-skeleton {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 24px;
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 5%);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 6%), transparent);
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+.skeleton-hero { height: 128px; }
+.skeleton-meal { height: 68px; }
+.skeleton-panel { height: 96px; }
+.skeleton-food-card { height: 148px; }
+@keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
+
+.meal-item-detail-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+.meal-item-detail-actions button {
+  justify-content: center;
+  padding: 10px;
+}
+.meal-item-detail-actions .danger-text { color: var(--error); }

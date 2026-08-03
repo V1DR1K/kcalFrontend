@@ -11,8 +11,8 @@ export async function request(path, options = {}) {
   });
   if (!response.ok) {
     const text = await response.text();
-    if (response.status === 401) window.dispatchEvent(new Event("kazaFitness:session-expired"));
-    let message = "No se pudo completar la operacion.";
+    if (response.status === 401 && !path.startsWith("/api/auth/")) window.dispatchEvent(new Event("kazaFitness:session-expired"));
+    let message = "No se pudo completar la operación.";
     let payload = null;
     try { payload = JSON.parse(text); message = payload?.message || message; } catch { /* El backend puede responder sin JSON. */ }
     const error = new Error(message);

@@ -12,9 +12,52 @@ import { readRecents, rememberItem, rememberMeal } from "../../services/recents"
 import { formatNumber, readableDate, shiftDate, today } from "../../utils/format";
 
 const SWIPE_ACTION_WIDTH = 84;
+let optimisticSequence = 0;
+
+function macroValue(log, key) {
+  if (key === "PROTEIN") return Number(log.proteinGrams || 0);
+  if (key === "CARBS") return Number(log.carbsGrams || 0);
+  if (key === "FAT") return Number(log.fatGrams || 0);
+  return 0;
+}
+
+function mealTotals(items) {
+  return items.reduce((totals, item) => ({
+    calories: totals.calories + Number(item.calories || 0),
+    proteinGrams: totals.proteinGrams + Number(item.proteinGrams || 0),
+    carbsGrams: totals.carbsGrams + Number(item.carbsGrams || 0),
+    fatGrams: totals.fatGrams + Number(item.fatGrams || 0),
+  }), { calories: 0, proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
+}
+
+async function createMealLogs(api, logs, mealType, logDate) {
+  const created = [];
+  try {
+    for (const log of logs) {
+      const itemType = log.itemType || log.type;
+      const createdLog = await api.request("/api/nutrition/meal-logs", {
+        method: "POST",
+        body: JSON.stringify({
+          itemType,
+          itemId: itemType === "RECIPE" ? log.recipe?.id || log.id : log.food?.id || log.id,
+          mealType,
+          quantity: log.quantity,
+          unit: log.unit || (itemType === "RECIPE" ? "PORTION" : "GRAM"),
+          logDate,
+        }),
+      });
+      created.push(createdLog);
+    }
+    return created;
+  } catch (error) {
+    // Compensate successful requests so the visual rollback matches persisted data.
+    await Promise.allSettled(created.filter(Boolean).map((log) => api.request(`/api/nutrition/food-logs/${log.id}`, { method: "DELETE" })));
+    throw error;
+  }
+}
 
 function formatMealLogAmount(log) {
-  if (log.itemType === "RECIPE") return `${formatNumber(log.quantity, 1)} porcion${Number(log.quantity) === 1 ? "" : "es"}`;
+  if (log.itemType === "RECIPE") return `${formatNumber(log.quantity, 1)} porción${Number(log.quantity) === 1 ? "" : "es"}`;
   if (log.itemType === "AI_ESTIMATE") return "Estimación por foto";
   return `${formatNumber(log.quantity, 1)} g`;
 }
@@ -81,7 +124,6 @@ export function Dashboard({ api, user, setPage }) {
   const [mealClipboard, setMealClipboard] = useState(null);
   const [mealBulkActionLoading, setMealBulkActionLoading] = useState(false);
   const [swipeResetSignal, setSwipeResetSignal] = useState(0);
-  const optimisticLogs = useRef(new Map());
   const dashboardTopRef = useRef(null);
   const balanceRef = useRef(null);
   const [compactBalance, setCompactBalance] = useState(false);
@@ -155,33 +197,102 @@ export function Dashboard({ api, user, setPage }) {
   useEffect(() => {
     resetMealSwipes();
   }, [data, resetMealSwipes, selectedDate]);
-  function showOptimisticRecent(meal) {
-    const optimisticId = `recent:${meal.id}`;
-    optimisticLogs.current.set(optimisticId, meal.mealType);
-    const item = meal.itemType === "RECIPE"
-      ? { recipe: { id: meal.itemId, name: meal.label, imageUrl: meal.imageUrl }, food: null }
-      : { food: { id: meal.itemId, name: meal.label, imageUrl: meal.imageUrl, category: meal.category }, recipe: null };
-    const optimisticLog = { ...item, id: optimisticId, itemType: meal.itemType, mealType: meal.mealType, quantity: meal.quantity, unit: meal.unit, calories: meal.calories || 0, optimistic: true };
+  function addOptimisticLogs(logs, mealType) {
+    const optimisticItems = logs.map((log, index) => {
+      const itemType = log.itemType || log.type;
+      const optimisticId = `optimistic:${Date.now()}:${optimisticSequence + index}`;
+      return {
+        ...log,
+        id: optimisticId,
+        itemType,
+        mealType,
+        unit: log.unit || (itemType === "RECIPE" ? "PORTION" : "GRAM"),
+        food: log.food || (itemType === "FOOD" ? log : null),
+        recipe: log.recipe || (itemType === "RECIPE" ? log : null),
+        optimistic: true,
+      };
+    });
+    optimisticSequence += optimisticItems.length;
     setData((current) => ({
       ...current,
+      caloriesConsumed: Number(current?.caloriesConsumed || 0) + mealTotals(optimisticItems).calories,
+      macros: (current?.macros || []).map((macro) => ({
+        ...macro,
+        consumed: Number(macro.consumed || 0) + optimisticItems.reduce((sum, log) => sum + macroValue(log, String(macro.key).toUpperCase()), 0),
+      })),
       meals: mealTypes.map((type) => {
         const existing = current?.meals?.find((entry) => entry.mealType === type.code) || { mealType: type.code, items: [], calories: 0 };
-        if (type.code !== meal.mealType || existing.items?.some((entry) => entry.id === optimisticId)) return existing;
-        return { ...existing, calories: Number(existing.calories || 0) + Number(meal.calories || 0), items: [...(existing.items || []), optimisticLog] };
+        if (type.code !== mealType) return existing;
+        const items = [...(existing.items || []), ...optimisticItems];
+        return { ...existing, ...mealTotals(items), items };
       }),
     }));
-    return optimisticId;
+    return optimisticItems;
   }
-  function rollbackOptimisticRecent(optimisticId) {
-    const mealType = optimisticLogs.current.get(optimisticId);
-    optimisticLogs.current.delete(optimisticId);
-    setData((current) => ({ ...current, meals: current.meals.map((meal) => meal.mealType !== mealType ? meal : { ...meal, calories: Math.max(0, Number(meal.calories || 0) - Number(meal.items.find((item) => item.id === optimisticId)?.calories || 0)), items: meal.items.filter((item) => item.id !== optimisticId) }) }));
+  function rollbackOptimisticLogs(logs) {
+    const ids = new Set(logs.map((log) => log.id));
+    const totals = mealTotals(logs);
+    setData((current) => ({
+      ...current,
+      caloriesConsumed: Math.max(0, Number(current?.caloriesConsumed || 0) - totals.calories),
+      macros: (current?.macros || []).map((macro) => ({
+        ...macro,
+        consumed: Math.max(0, Number(macro.consumed || 0) - logs.reduce((sum, log) => sum + macroValue(log, String(macro.key).toUpperCase()), 0)),
+      })),
+      meals: (current?.meals || []).map((meal) => {
+        const items = (meal.items || []).filter((item) => !ids.has(item.id));
+        return items.length === (meal.items || []).length ? meal : { ...meal, ...mealTotals(items), items };
+      }),
+    }));
+  }
+  function removeLogsOptimistic(logs) {
+    const ids = new Set(logs.map((log) => log.id));
+    const totals = mealTotals(logs);
+    setData((current) => ({
+      ...current,
+      caloriesConsumed: Math.max(0, Number(current?.caloriesConsumed || 0) - totals.calories),
+      macros: (current?.macros || []).map((macro) => ({
+        ...macro,
+        consumed: Math.max(0, Number(macro.consumed || 0) - logs.reduce((sum, log) => sum + macroValue(log, String(macro.key).toUpperCase()), 0)),
+      })),
+      meals: (current?.meals || []).map((meal) => {
+        const items = (meal.items || []).filter((item) => !ids.has(item.id));
+        return items.length === (meal.items || []).length ? meal : { ...meal, ...mealTotals(items), items };
+      }),
+    }));
+    return () => load();
+  }
+  function moveLogOptimistic(log, targetMealType) {
+    setData((current) => ({
+      ...current,
+      meals: (current?.meals || []).map((meal) => {
+        if (meal.mealType !== log.mealType && meal.mealType !== targetMealType) return meal;
+        const remaining = (meal.items || []).filter((item) => item.id !== log.id);
+        if (meal.mealType === targetMealType) {
+          return { ...meal, calories: Number(meal.calories || 0) + Number(log.calories || 0), items: [...remaining, { ...log, mealType: targetMealType }] };
+        }
+        return { ...meal, calories: remaining.reduce((sum, item) => sum + Number(item.calories || 0), 0), items: remaining };
+      }),
+    }));
+    return () => load();
+  }
+  function adjustWaterOptimistic(deltaLiters) {
+    setData((current) => ({ ...current, waterConsumedLiters: Math.max(0, Math.round((Number(current?.waterConsumedLiters || 0) + deltaLiters) * 100) / 100) }));
+    return () => load();
   }
   if (loading && !data) {
     return (
-      <section className="page">
+      <section className="page" role="status" aria-live="polite">
         <Header title="Mi día" action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
-        <CatalogStatus>Cargando tu día…</CatalogStatus>
+        <span className="sr-only">Cargando tu día…</span>
+        <div className="dashboard-skeleton" aria-hidden="true">
+          <div className="skeleton skeleton-hero" />
+          <div className="skeleton skeleton-meal" />
+          <div className="skeleton skeleton-meal" />
+          <div className="skeleton skeleton-meal" />
+          <div className="skeleton skeleton-meal" />
+          <div className="skeleton skeleton-panel" />
+        </div>
       </section>
     );
   }
@@ -239,7 +350,7 @@ export function Dashboard({ api, user, setPage }) {
           </p>
           {data?.plan && (
             <small>
-              {data.plan.proteinPercent}% proteinas / {data.plan.carbsPercent}% carbs / {data.plan.fatPercent}% grasas
+              {data.plan.proteinPercent}% proteínas / {data.plan.carbsPercent}% carbs / {data.plan.fatPercent}% grasas
             </small>
           )}
         </div>
@@ -259,6 +370,8 @@ export function Dashboard({ api, user, setPage }) {
             targetDate={selectedDate}
             api={api}
             onCopied={load}
+            onOptimisticAdd={addOptimisticLogs}
+            onOptimisticRollback={rollbackOptimisticLogs}
             clipboard={mealClipboard}
             bulkActionLoading={mealBulkActionLoading}
             setBulkActionLoading={setMealBulkActionLoading}
@@ -279,6 +392,7 @@ export function Dashboard({ api, user, setPage }) {
               if (movingLogId || log.mealType === targetMealType) return;
               resetMealSwipes();
               setMovingLogId(log.id);
+              const restore = moveLogOptimistic(log, targetMealType);
               try {
                 await api.runAction(
                   { title: "Moviendo alimento", description: "Estamos actualizando tu comida..." },
@@ -295,8 +409,10 @@ export function Dashboard({ api, user, setPage }) {
                     api.notify("Alimento movido.");
                     await load();
                   },
+                  { quiet: true },
                 );
               } catch (error) {
+                restore();
                 api.notify(error.message || "No se pudo mover el alimento.", "error");
               } finally {
                 setMovingLogId(null);
@@ -306,8 +422,8 @@ export function Dashboard({ api, user, setPage }) {
               if (deletingLogId) return;
               const itemName = mealLogName(log);
               const confirmed = await api.confirm({
-                title: "Eliminar alimento?",
-                description: `${itemName || "Este alimento"} se quitara de tu registro de hoy.`,
+                title: "¿Eliminar alimento?",
+                description: `${itemName || "Este alimento"} se quitará de tu registro de hoy.`,
                 confirmLabel: "Eliminar",
               });
               if (!confirmed) {
@@ -316,6 +432,7 @@ export function Dashboard({ api, user, setPage }) {
               }
               resetMealSwipes();
               setDeletingLogId(log.id);
+              const restore = removeLogsOptimistic([log]);
               try {
                 await api.runAction(
                   { title: "Eliminando alimento", description: "Estamos actualizando tu registro..." },
@@ -324,8 +441,10 @@ export function Dashboard({ api, user, setPage }) {
                     api.notify("Registro eliminado.");
                     await load();
                   },
+                  { quiet: true },
                 );
               } catch (error) {
+                restore();
                 api.notify(error.message || "No se pudo eliminar el registro.", "error");
               } finally {
                 setDeletingLogId(null);
@@ -346,16 +465,19 @@ export function Dashboard({ api, user, setPage }) {
               onClick={async () => {
                 if (waterSaving) return;
                 setWaterSaving(true);
+                const restore = adjustWaterOptimistic(-0.5);
                 try {
                   await api.runAction(
-                    { title: "Deshaciendo hidratacion", description: "Estamos actualizando tu registro de agua..." },
+                    { title: "Deshaciendo hidratación", description: "Estamos actualizando tu registro de agua..." },
                     async () => {
                       await api.request(`/api/nutrition/water-logs/latest?date=${selectedDate}`, { method: "DELETE" });
-                      api.notify("Ultimo registro de agua eliminado.");
+                      api.notify("Último registro de agua eliminado.");
                       await load();
                     },
+                    { quiet: true },
                   );
                 } catch {
+                  restore();
                   api.notify("No hay agua para descontar.", "error");
                 } finally {
                   setWaterSaving(false);
@@ -370,9 +492,10 @@ export function Dashboard({ api, user, setPage }) {
               onClick={async () => {
                 if (waterSaving) return;
                 setWaterSaving(true);
+                const restore = adjustWaterOptimistic(0.5);
                 try {
                   await api.runAction(
-                    { title: "Registrando hidratacion", description: "Estamos guardando el agua consumida..." },
+                    { title: "Registrando hidratación", description: "Estamos guardando el agua consumida..." },
                     async () => {
                       await api.request("/api/nutrition/water-logs", {
                         method: "POST",
@@ -381,11 +504,13 @@ export function Dashboard({ api, user, setPage }) {
                           logDate: selectedDate,
                         }),
                       });
-                      api.notify("Hidratacion registrada.");
+                      api.notify("Hidratación registrada.");
                       await load();
                     },
+                    { quiet: true },
                   );
                 } catch {
+                  restore();
                   api.notify("No se pudo registrar el agua.", "error");
                 } finally {
                   setWaterSaving(false);
@@ -397,24 +522,22 @@ export function Dashboard({ api, user, setPage }) {
           </div>
         </Panel>
         {Boolean(recentMeals.length) && <Panel title="Comidas recientes">
-          <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={showOptimisticRecent} onOptimisticRollback={rollbackOptimisticRecent} />
+          <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
         </Panel>}
       </div>
-      <PastMealsPreview api={api} targetDate={selectedDate} mealTypes={mealTypes} onCopied={load} />
+      <PastMealsPreview api={api} targetDate={selectedDate} mealTypes={mealTypes} onCopied={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
       {pickerMeal && (
         <FoodPicker
           api={api}
           user={user}
           mealType={pickerMeal}
-          selectedDate={selectedDate}
-          onClose={() => setPickerMeal(null)}
+            selectedDate={selectedDate}
+            onClose={() => setPickerMeal(null)}
+            onOptimisticAdd={addOptimisticLogs}
+            onOptimisticRollback={rollbackOptimisticLogs}
           onDone={async () => {
             setPickerMeal(null);
             await load();
-          }}
-          onNavigate={(target) => {
-            setPickerMeal(null);
-            requestAnimationFrame(() => setPage(target));
           }}
         />
       )}
@@ -470,7 +593,7 @@ function DateNavigator({ date, setDate }) {
   );
 }
 
-function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
+function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAdd, onOptimisticRollback }) {
   const [sourceDate, setSourceDate] = useState(() => shiftDate(targetDate, -1));
   const [source, setSource] = useState(null);
   const [status, setStatus] = useState({});
@@ -485,39 +608,32 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
     setStatus({});
     try {
       setSource(await api.runAction(
-        { title: "Cargando comidas", description: "Estamos buscando el dia seleccionado..." },
+        { title: "Cargando comidas", description: "Estamos buscando el día seleccionado..." },
         () => api.request(`/api/nutrition/dashboard?date=${sourceDate}`),
+        { quiet: true },
       ));
     } catch {
-      api.notify("No se pudo cargar ese dia.", "error");
+      api.notify("No se pudo cargar ese día.", "error");
     } finally {
       setLoading(false);
     }
   }
   async function copyMeal(mealType, items) {
     setStatus((current) => ({ ...current, [mealType]: "copying" }));
+    const optimisticLogs = onOptimisticAdd(items, mealType);
     try {
       await api.runAction(
-        { title: "Copiando comida", description: "Estamos guardando los alimentos en tu dia..." },
+        { title: "Copiando comida", description: "Estamos guardando los alimentos en tu día..." },
         async () => {
-          for (const log of items)
-            await api.request("/api/nutrition/meal-logs", {
-              method: "POST",
-              body: JSON.stringify({
-                itemType: log.itemType,
-                  itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id,
-                mealType,
-                quantity: log.quantity,
-                unit: log.unit || "GRAM",
-                logDate: targetDate,
-              }),
-            });
+          await createMealLogs(api, items, mealType, targetDate);
           setStatus((current) => ({ ...current, [mealType]: "copied" }));
           api.notify("Comida copiada respetando su horario.");
           await onCopied();
         },
+        { quiet: true },
       );
     } catch {
+      onOptimisticRollback(optimisticLogs);
       setStatus((current) => ({ ...current, [mealType]: "error" }));
       api.notify("No se pudo copiar la comida completa.", "error");
     }
@@ -528,7 +644,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
       <div className="past-meals-content">
       <div className="past-meals-tools">
         <Input
-          label="Dia de origen"
+          label="Día de origen"
           type="date"
           max={shiftDate(targetDate, -1)}
           value={sourceDate}
@@ -595,7 +711,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied }) {
   );
 }
 
-function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
+function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRollback, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
   const items = meal?.items || [];
   const cardRef = useRef(null);
   const menuRef = useRef(null);
@@ -622,23 +738,21 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
   }, [expandedLogId]);
   async function copyYesterday() {
     setSuggestionState("copying");
+    const optimisticLogs = onOptimisticAdd(yesterdayItems, mealType.code);
     try {
       await api.runAction(
         { title: "Copiando comida", description: "Estamos guardando los alimentos de ayer..." },
         async () => {
-          for (const log of yesterdayItems) {
-            await api.request("/api/nutrition/meal-logs", {
-              method: "POST",
-              body: JSON.stringify({ itemType: log.itemType, itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id, mealType: mealType.code, quantity: log.quantity, unit: log.unit || "GRAM", logDate: targetDate }),
-            });
-          }
+          await createMealLogs(api, yesterdayItems, mealType.code, targetDate);
           setSuggestionState("copied");
           api.notify(`${mealType.label} copiado de ayer.`);
           await new Promise((resolve) => window.setTimeout(resolve, 650));
           await onCopied();
         },
+        { quiet: true },
       );
     } catch {
+      onOptimisticRollback(optimisticLogs);
       setSuggestionState("idle");
       api.notify("No se pudo copiar la comida de ayer.", "error");
     }
@@ -646,27 +760,30 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
   async function addLogs(logs) {
     if (bulkActionLoading) return;
     setBulkActionLoading(true);
+    const optimisticLogs = onOptimisticAdd(logs, mealType.code);
     try {
       await api.runAction(
         { title: "Pegando comida", description: "Estamos guardando los alimentos..." },
         async () => {
-          for (const log of logs) await api.request("/api/nutrition/meal-logs", { method: "POST", body: JSON.stringify({ itemType: log.itemType, itemId: log.itemType === "RECIPE" ? log.recipe?.id : log.food?.id, mealType: mealType.code, quantity: log.quantity, unit: log.unit || "GRAM", logDate: targetDate }) });
+          await createMealLogs(api, logs, mealType.code, targetDate);
           api.notify(`Comida pegada en ${mealType.label}.`);
           await onCopied();
         },
+        { quiet: true },
       );
-    } catch { api.notify("No se pudo pegar la comida.", "error"); }
+    } catch { onOptimisticRollback(optimisticLogs); api.notify("No se pudo pegar la comida. Se revirtieron los cambios.", "error"); }
     finally { setBulkActionLoading(false); }
   }
   async function deleteAll() {
     if (!items.length) return;
     const confirmed = await api.confirm({
-      title: `Borrar ${mealType.label.toLowerCase()}?`,
-      description: "Se eliminaran todos los alimentos de esta comida.",
+      title: `¿Borrar ${mealType.label.toLowerCase()}?`,
+      description: "Se eliminarán todos los alimentos de esta comida.",
       confirmLabel: "Borrar todo",
     });
     if (!confirmed) return;
     setBulkActionLoading(true);
+    const restore = removeLogsOptimistic(items);
     try {
       await api.runAction(
         { title: `Borrando ${mealType.label.toLowerCase()}`, description: "Estamos eliminando los alimentos..." },
@@ -675,9 +792,10 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
           api.notify(`${mealType.label} eliminado.`);
           await onCopied();
         },
+        { quiet: true },
       );
     }
-    catch { api.notify("No se pudo borrar toda la comida.", "error"); }
+    catch { restore(); api.notify("No se pudo borrar toda la comida. Se revirtieron los cambios.", "error"); }
     finally { setBulkActionLoading(false); }
   }
   return (
@@ -761,7 +879,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, cl
           );
         })
       ) : (
-        <p className="empty-state">Todavia no registraste nada.</p>
+        <p className="empty-state">Todavía no registraste nada. Usá el botón + para agregar comida.</p>
       )}
     </article>
   );
@@ -897,8 +1015,8 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
   }
   return (
     <div className={`swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""} ${expanded ? "expanded" : ""}`}>
-      <button className="swipe-action swipe-edit" aria-label="Editar registro" onClick={() => { close(); onEdit(); }}><Icon name="edit" /></button>
-      <button className="swipe-action swipe-delete" aria-label="Eliminar registro" onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
+      <button className="swipe-action swipe-edit" aria-label="Editar registro" tabIndex={revealed === "edit" ? 0 : -1} aria-hidden={revealed !== "edit"} onClick={() => { close(); onEdit(); }}><Icon name="edit" /></button>
+      <button className="swipe-action swipe-delete" aria-label="Eliminar registro" tabIndex={revealed === "delete" ? 0 : -1} aria-hidden={revealed !== "delete"} onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
       <div
         className={`meal-item-shell ${horizontalDragging ? "swiping" : ""} ${className}`}
         style={{ transform: `translate3d(${offset}px, 0, 0)` }}
@@ -913,13 +1031,21 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
           {children}
           <Icon name="expand_more" className="meal-item-chevron" />
         </button>
-        {expanded && details}
+        {expanded && (
+          <>
+            {details}
+            <div className="meal-item-detail-actions">
+              <button type="button" className="secondary" onClick={() => { close(); onEdit(); }}><Icon name="edit" />Editar</button>
+              <button type="button" className="danger-text" onClick={() => { close(); onDelete(); }}><Icon name="delete" />Eliminar</button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavigate }) {
+function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd, onOptimisticRollback }) {
   const modalRef = useRef(null);
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
@@ -1156,6 +1282,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
       .runAction(
         { title: "Cargando opciones", description: "Estamos buscando las presentaciones disponibles..." },
         () => api.request(`/api/foods/${selected.id}/preparations`),
+        { quiet: true },
       )
       .then(setSelectedPreparations)
       .catch(() => setSelectedPreparations([]));
@@ -1247,6 +1374,14 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
     const logQuantity = selected.type === "FOOD" && unit === "SERVING" ? numericQuantity * Number(selected.servingWeightGrams || 0) : numericQuantity;
     if (logQuantity <= 0) return;
     setAdding(true);
+    const optimisticLogs = onOptimisticAdd([{
+      itemType: selected.type,
+      food: selected.type === "FOOD" ? selected : null,
+      recipe: selected.type === "RECIPE" ? { ...selected, ...recipeDetail } : null,
+      quantity: logQuantity,
+      unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
+      ...preview,
+    }], mealType.code);
     try {
       const log = await api.runAction(
         { title: "Agregando alimento", description: `Estamos sumando ${selected.name} a ${mealType.label.toLowerCase()}...` },
@@ -1287,13 +1422,15 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
           }
           return newLog;
         },
+        { quiet: true },
       );
       rememberItem(user, selected);
       rememberMeal(user, mealType.code, log);
       api.notify(`${selected.name} agregado a ${mealType.label}.`);
       onDone();
     } catch {
-      api.notify("No se pudo agregar el alimento.", "error");
+      onOptimisticRollback(optimisticLogs);
+      api.notify("No se pudo agregar el alimento. Se revirtieron los cambios.", "error");
       setAdding(false);
     }
   }
@@ -1354,7 +1491,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
         <div className="picker-tools">
           <div className="search-wrap">
             <Icon name="search" />
-            <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : "recetas"}...`} value={query} onChange={(event) => setQuery(event.target.value)} />
+            <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : "recetas"}...`} value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} />
           </div>
         </div>
         <div className="picker-scroll">
@@ -1434,13 +1571,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onNavi
         )}
         {pendingMealPhoto && <MealPhotoContextEditor photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
         {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} />}
-        <footer>
-          <button className="secondary" onClick={() => onNavigate("scanner")}>
-            <Icon name="barcode_scanner" />Código
-          </button>
-          <button className="secondary" onClick={() => onNavigate("create")}>
-            <Icon name="add" />Crear
-          </button>
+        <footer className="picker-photo-actions">
           <label className={`secondary ai-photo-trigger ai-gallery-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
             <Icon name="photo_library" />
             Elegir foto
@@ -1536,10 +1667,10 @@ function AiEstimateEditor({ estimate, setEstimate, correction, setCorrection, re
               <div className="ai-estimate-item-heading"><strong>Alimento {index + 1}</strong><button type="button" className="icon-button ai-estimate-remove" aria-label={`Eliminar ${item.name || `alimento ${index + 1}`}`} disabled={refining} onClick={() => removeItem(index)}><Icon name="delete" /></button></div>
               <Input label="Alimento" value={item.name} disabled={refining} onChange={(event) => setEstimate((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value } : entry) }))} />
               <div className="ai-estimate-values">
-                <label><span>g</span><input disabled={refining} inputMode="decimal" value={item.estimatedGrams ?? ""} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
-                <label><span>P</span><input disabled={refining} inputMode="decimal" value={item.proteinGrams ?? ""} onChange={(event) => updateItem(index, "proteinGrams", event.target.value)} /></label>
-                <label><span>C</span><input disabled={refining} inputMode="decimal" value={item.carbsGrams ?? ""} onChange={(event) => updateItem(index, "carbsGrams", event.target.value)} /></label>
-                <label><span>G</span><input disabled={refining} inputMode="decimal" value={item.fatGrams ?? ""} onChange={(event) => updateItem(index, "fatGrams", event.target.value)} /></label>
+                <label><span>g</span><input disabled={refining} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
+                <label><span>P</span><input disabled={refining} inputMode="decimal" value={item.proteinGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "proteinGrams", event.target.value)} /></label>
+                <label><span>C</span><input disabled={refining} inputMode="decimal" value={item.carbsGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "carbsGrams", event.target.value)} /></label>
+                <label><span>G</span><input disabled={refining} inputMode="decimal" value={item.fatGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "fatGrams", event.target.value)} /></label>
               </div>
               <small className="ai-estimate-item-calories">{formatNumber(macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))} kcal estimadas</small>
             </article>
@@ -1604,40 +1735,38 @@ function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAdd, onOp
   const [states, setStates] = useState({});
   async function addRecent(meal) {
     if (states[meal.id] === "adding") return;
-    const optimisticId = onOptimisticAdd(meal);
+    const optimisticLogs = onOptimisticAdd([{
+      itemType: meal.itemType,
+      food: meal.itemType === "FOOD" ? { id: meal.itemId, name: meal.label, imageUrl: meal.imageUrl, category: meal.category } : null,
+      recipe: meal.itemType === "RECIPE" ? { id: meal.itemId, name: meal.label, imageUrl: meal.imageUrl } : null,
+      quantity: meal.quantity,
+      unit: meal.unit,
+      calories: meal.calories,
+    }], meal.mealType);
     const startedAt = performance.now();
     setStates((current) => ({ ...current, [meal.id]: "adding" }));
     try {
       await api.runAction(
-        { title: "Agregando comida reciente", description: `Estamos sumando ${meal.label} a tu dia...` },
+        { title: "Agregando comida reciente", description: `Estamos sumando ${meal.label} a tu día...` },
         async () => {
-          await api.request("/api/nutrition/meal-logs", {
-            method: "POST",
-            body: JSON.stringify({
-              itemType: meal.itemType,
-              itemId: meal.itemId,
-              mealType: meal.mealType,
-              quantity: meal.quantity,
-              unit: meal.itemType === "RECIPE" ? "PORTION" : meal.unit,
-              logDate: date,
-            }),
-          });
+          await createMealLogs(api, [meal], meal.mealType, date);
           api.notify(`${meal.label} agregado.`);
           await onDone();
         },
+        { quiet: true },
       );
       const elapsed = performance.now() - startedAt;
       if (elapsed < 520) await new Promise((resolve) => window.setTimeout(resolve, 520 - elapsed));
       setStates((current) => ({ ...current, [meal.id]: "added" }));
       window.setTimeout(() => setStates((current) => ({ ...current, [meal.id]: "idle" })), 1300);
     } catch {
-      onOptimisticRollback(optimisticId);
+      onOptimisticRollback(optimisticLogs);
       setStates((current) => ({ ...current, [meal.id]: "error" }));
       api.notify("No se pudo agregar la comida reciente.", "error");
       window.setTimeout(() => setStates((current) => ({ ...current, [meal.id]: "idle" })), 900);
     }
   }
-  if (!meals.length) return <p className="empty-state">Tus comidas recientes apareceran aca.</p>;
+  if (!meals.length) return <p className="empty-state">Tus comidas recientes aparecerán acá.</p>;
   return (
     <div className="recent-meals">
       {meals.map((meal) => {
@@ -1649,7 +1778,7 @@ function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAdd, onOp
             <FoodThumb item={item} compact />
             <span className="recent-meal-copy">
               <strong>{meal.label}</strong>
-              <small>{mealLabel} · {meal.itemType === "RECIPE" ? `${formatNumber(meal.quantity, 1)} porcion${Number(meal.quantity) === 1 ? "" : "es"}` : `${formatNumber(meal.quantity, 1)} g`}</small>
+              <small>{mealLabel} · {meal.itemType === "RECIPE" ? `${formatNumber(meal.quantity, 1)} porción${Number(meal.quantity) === 1 ? "" : "es"}` : `${formatNumber(meal.quantity, 1)} g`}</small>
             </span>
             <strong className="recent-meal-calories">{formatNumber(meal.calories || 0)}<small> kcal</small></strong>
             <button type="button" disabled={state === "adding" || state === "added"} aria-label={`Agregar ${meal.label} a ${mealLabel}`} onClick={() => addRecent(meal)}>

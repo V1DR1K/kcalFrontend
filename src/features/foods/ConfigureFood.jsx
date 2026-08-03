@@ -27,6 +27,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
         .runAction(
           { title: "Cargando alimento", description: "Estamos preparando sus datos nutricionales..." },
           () => api.request(`/api/foods/${id}`),
+          { quiet: true },
         )
         .then((nextFood) => {
           setFood(nextFood);
@@ -60,6 +61,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
         .runAction(
           { title: "Cargando opciones", description: "Estamos buscando las presentaciones disponibles..." },
           () => api.request(`/api/foods/${foodId}/preparations`),
+          { quiet: true },
         )
         .then(setPreparationOptions)
         .catch(() => setPreparationOptions([]));
@@ -92,7 +94,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
     setAdding(true);
     try {
       const log = await api.runAction(
-        { title: "Agregando alimento", description: `Estamos sumando ${food?.name || "el alimento"} a tu dia...` },
+        { title: "Agregando alimento", description: `Estamos sumando ${food?.name || "el alimento"} a tu día...` },
         () => api.request("/api/nutrition/meal-logs", {
           method: "POST",
           body: JSON.stringify({
@@ -104,6 +106,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
             logDate: today(),
           }),
         }),
+        { quiet: true },
       );
       if (food) rememberItem(user, { ...food, type: "FOOD" });
       rememberMeal(user, mealType, log);

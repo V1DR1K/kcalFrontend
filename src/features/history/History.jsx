@@ -12,16 +12,18 @@ export function History({ api }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedDay, setSelectedDay] = useState(null);
+  const [monthOffset, setMonthOffset] = useState(0);
+  const currentDate = new Date();
+  const viewDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + monthOffset, 1);
   const load = useCallback(() => {
-    const date = new Date();
     setLoading(true);
     setError("");
     api
-      .request(`/api/nutrition/history?year=${date.getFullYear()}&month=${date.getMonth() + 1}`)
+      .request(`/api/nutrition/history?year=${viewDate.getFullYear()}&month=${viewDate.getMonth() + 1}`)
       .then(setData)
       .catch(() => setError("No pudimos cargar tu historial."))
       .finally(() => setLoading(false));
-  }, [api]);
+  }, [api, viewDate.getFullYear(), viewDate.getMonth()]);
   useEffect(load, [load]);
   if (loading)
     return (
@@ -42,10 +44,9 @@ export function History({ api }) {
         </CatalogStatus>
       </section>
     );
-  const currentDate = new Date();
-  const rawMonthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(currentDate);
+  const rawMonthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(viewDate);
   const monthLabel = rawMonthLabel.charAt(0).toUpperCase() + rawMonthLabel.slice(1);
-  const leadingDays = (new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() + 6) % 7;
+  const leadingDays = (new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() + 6) % 7;
   return (
     <section className="page">
       <Header title="Historial" />
@@ -54,10 +55,14 @@ export function History({ api }) {
           <p className="big">{formatNumber(data?.averageCalories)} kcal</p>
         </Panel>
         <Panel title="Objetivos cumplidos">
-          <p className="big">{data?.completedGoalDays || 0} dias</p>
+          <p className="big">{data?.completedGoalDays || 0} días</p>
         </Panel>
       </div>
-      <div className="calendar-heading"><h2>{monthLabel}</h2><span>Tu constancia, día por día</span></div>
+      <div className="calendar-heading">
+        <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset - 1)}><Icon name="chevron_left" />Anterior</button>
+        <div><h2>{monthLabel}</h2><span>Tu constancia, día por día</span></div>
+        <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset + 1)} disabled={monthOffset >= 0}><Icon name="chevron_right" />Siguiente</button>
+      </div>
       <div className="calendar-weekdays" aria-hidden="true">{["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day}>{day}</span>)}</div>
       <div className="calendar-grid">
         {Array.from({ length: leadingDays }, (_, index) => <span className="calendar-spacer" key={`spacer-${index}`} />)}
@@ -81,8 +86,9 @@ function HistoryDayPreview({ api, day, onClose }) {
   useEffect(() => {
     let active = true;
     api.runAction(
-      { title: "Cargando detalle", description: "Estamos preparando el resumen de este dia..." },
+      { title: "Cargando detalle", description: "Estamos preparando el resumen de este día..." },
       () => api.request(`/api/nutrition/dashboard?date=${day.date}`),
+      { quiet: true },
     )
       .then((result) => active && setDetail(result))
       .catch(() => active && setError("No pudimos cargar el detalle de este día."));
@@ -138,7 +144,7 @@ function HistoryDayPreview({ api, day, onClose }) {
                       {meal.items.map((item) => (
                         <div className="history-food" key={item.id}>
                            <FoodThumb compact item={item.itemType === "RECIPE" ? { ...item.recipe, type: "RECIPE" } : item.itemType === "AI_ESTIMATE" ? { name: item.displayName, category: "OTHER", type: "AI_ESTIMATE" } : item.food} />
-                           <p><strong>{item.itemType === "RECIPE" ? item.recipe?.name : item.itemType === "AI_ESTIMATE" ? item.displayName : item.food?.name}</strong><small>{item.itemType === "RECIPE" ? `${formatNumber(item.quantity, 1)} porcion${Number(item.quantity) === 1 ? "" : "es"}` : item.itemType === "AI_ESTIMATE" ? "Estimación por foto" : `${formatNumber(item.quantity)} ${item.unit === "GRAM" ? "g" : item.unit}`}</small></p>
+                           <p><strong>{item.itemType === "RECIPE" ? item.recipe?.name : item.itemType === "AI_ESTIMATE" ? item.displayName : item.food?.name}</strong><small>{item.itemType === "RECIPE" ? `${formatNumber(item.quantity, 1)} porción${Number(item.quantity) === 1 ? "" : "es"}` : item.itemType === "AI_ESTIMATE" ? "Estimación por foto" : `${formatNumber(item.quantity)} ${item.unit === "GRAM" ? "g" : item.unit}`}</small></p>
                           <span>{formatNumber(item.calories)} kcal</span>
                         </div>
                       ))}

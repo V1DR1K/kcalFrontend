@@ -2,6 +2,24 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import { execSync } from "child_process";
+import { readFileSync, writeFileSync, readdirSync } from "fs";
+
+function dashboardPreload() {
+  return {
+    name: "dashboard-preload",
+    closeBundle() {
+      try {
+        const indexPath = "dist/index.html";
+        const dashboardChunk = readdirSync("dist/assets").find((file) => /^Dashboard-[^"]+\.js$/.test(file));
+        const href = `/assets/${dashboardChunk}`;
+        const html = readFileSync(indexPath, "utf8");
+        if (dashboardChunk && !html.includes(href)) {
+          writeFileSync(indexPath, html.replace(/<link rel="icon"/, `<link rel="modulepreload" href="${href}" crossorigin />\n    <link rel="icon"`));
+        }
+      } catch {}
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -21,7 +39,7 @@ export default defineConfig(({ mode }) => {
     __GIT_HASH__: JSON.stringify(gitHash),
     __COMMIT_TIME__: JSON.stringify(commitTime),
   },
-  plugins: [localHttps ? basicSsl() : null, react()].filter(Boolean),
+  plugins: [localHttps ? basicSsl() : null, react(), dashboardPreload()].filter(Boolean),
   server: {
     host: "0.0.0.0",
     port: 5173,
