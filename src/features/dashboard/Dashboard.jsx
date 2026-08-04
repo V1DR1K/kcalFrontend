@@ -775,7 +775,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
     finally { setBulkActionLoading(false); }
   }
   async function deleteAll() {
-    if (!items.length) return;
+    if (!items.length || bulkActionLoading) return;
     const confirmed = await api.confirm({
       title: `¿Borrar ${mealType.label.toLowerCase()}?`,
       description: "Se eliminarán todos los alimentos de esta comida.",
@@ -788,7 +788,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
       await api.runAction(
         { title: `Borrando ${mealType.label.toLowerCase()}`, description: "Estamos eliminando los alimentos..." },
         async () => {
-          for (const log of items) await api.request(`/api/nutrition/food-logs/${log.id}`, { method: "DELETE" });
+          await api.request(`/api/nutrition/food-logs?mealType=${mealType.code}&date=${targetDate}`, { method: "DELETE" });
           api.notify(`${mealType.label} eliminado.`);
           await onCopied();
         },
@@ -1036,7 +1036,7 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
             {details}
             <div className="meal-item-detail-actions">
               <button type="button" className="secondary" onClick={() => { close(); onEdit(); }}><Icon name="edit" />Editar</button>
-              <button type="button" className="danger-text" onClick={() => { close(); onDelete(); }}><Icon name="delete" />Eliminar</button>
+              <button type="button" className="secondary danger-text" onClick={() => { close(); onDelete(); }}><Icon name="delete" />Eliminar</button>
             </div>
           </>
         )}

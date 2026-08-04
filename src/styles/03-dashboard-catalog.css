@@ -1316,6 +1316,7 @@ button:disabled {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-top: 4px;
+  padding: 1em;
 }
 .meal-item-detail-actions button {
   justify-content: center;
