@@ -371,6 +371,7 @@ export function Dashboard({ api, user, setPage }) {
             api={api}
             onCopied={load}
             onOptimisticAdd={addOptimisticLogs}
+            onOptimisticRemove={removeLogsOptimistic}
             onOptimisticRollback={rollbackOptimisticLogs}
             clipboard={mealClipboard}
             bulkActionLoading={mealBulkActionLoading}
@@ -711,7 +712,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAd
   );
 }
 
-function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRollback, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
+function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
   const items = meal?.items || [];
   const cardRef = useRef(null);
   const menuRef = useRef(null);
@@ -783,7 +784,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
     });
     if (!confirmed) return;
     setBulkActionLoading(true);
-    const restore = removeLogsOptimistic(items);
+    const restore = onOptimisticRemove(items);
     try {
       await api.runAction(
         { title: `Borrando ${mealType.label.toLowerCase()}`, description: "Estamos eliminando los alimentos..." },
