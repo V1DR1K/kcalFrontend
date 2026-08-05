@@ -17,13 +17,6 @@ function quotaReset(value) {
   return new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" }).format(new Date(value));
 }
 
-function restoreViewportZoom() {
-  const viewport = document.querySelector('meta[name="viewport"]');
-  viewport?.setAttribute("content", "width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover");
-  window.scrollTo(0, 0);
-  window.setTimeout(() => window.location.reload(), 120);
-}
-
 export function Profile({ api, logout }) {
   const [profile, setProfile] = useState(null);
   const [plans, setPlans] = useState([]);
@@ -100,10 +93,6 @@ export function Profile({ api, logout }) {
       <NutritionTutorial />
       <Panel title="Cuenta" className="account-panel">
         <p>Podés cerrar tu sesión de forma segura en este dispositivo.</p>
-        <div className="viewport-recovery">
-          <div><strong>Vista demasiado ampliada?</strong><small>Restaura el tamaño normal de la pantalla.</small></div>
-          <button type="button" className="secondary" onClick={restoreViewportZoom}><Icon name="refresh" />Restaurar zoom</button>
-        </div>
         <button
           className="danger-button"
           onClick={async () => {

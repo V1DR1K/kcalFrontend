@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { DEFAULT_MEALS } from "../../config/app";
+import { CATEGORY_OPTIONS, DEFAULT_MEALS, PREPARATION_OPTIONS } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Macro, Panel } from "../../components/Layout";
+import { DatePickerDialog } from "../../components/DatePickerDialog";
 import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../foods/Foods";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
@@ -72,6 +73,22 @@ function mealLogItem(log) {
   return { ...log.food, type: "FOOD" };
 }
 
+function savedAiEstimate(log) {
+  try {
+    const details = JSON.parse(log.aiEstimateDetails || "{}");
+    return {
+      name: log.displayName || "Comida estimada",
+      description: details.description || "",
+      context: details.context || "",
+      confidence: log.aiEstimateConfidence ?? 0,
+      assumptions: details.assumptions || [],
+      items: details.items || [],
+    };
+  } catch {
+    return { name: log.displayName || "Comida estimada", description: "", context: "", confidence: log.aiEstimateConfidence ?? 0, assumptions: [], items: [] };
+  }
+}
+
 function aiQuotaReset(usage) {
   if (!usage?.blockedUntil) return "";
   return new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" }).format(new Date(usage.blockedUntil));
@@ -118,6 +135,7 @@ export function Dashboard({ api, user, setPage }) {
   const [mealTypes, setMealTypes] = useState(DEFAULT_MEALS);
   const [pickerMeal, setPickerMeal] = useState(null);
   const [editingLog, setEditingLog] = useState(null);
+  const [editingAiEstimate, setEditingAiEstimate] = useState(null);
   const [deletingLogId, setDeletingLogId] = useState(null);
   const [movingLogId, setMovingLogId] = useState(null);
   const [waterSaving, setWaterSaving] = useState(false);
@@ -192,6 +210,15 @@ export function Dashboard({ api, user, setPage }) {
   const finishEditingLog = useCallback(() => {
     resetMealSwipes();
     setEditingLog(null);
+    load();
+  }, [resetMealSwipes, load]);
+  const closeEditingAiEstimate = useCallback(() => {
+    resetMealSwipes();
+    setEditingAiEstimate(null);
+  }, [resetMealSwipes]);
+  const finishEditingAiEstimate = useCallback(() => {
+    resetMealSwipes();
+    setEditingAiEstimate(null);
     load();
   }, [resetMealSwipes, load]);
   useEffect(() => {
@@ -383,7 +410,8 @@ export function Dashboard({ api, user, setPage }) {
             onAdd={() => setPickerMeal(mealType)}
             onEdit={(log) => {
               if (log.itemType === "AI_ESTIMATE") {
-                api.notify("Las estimaciones se corrigen antes de agregarlas. Podés moverla o eliminarla.");
+                resetMealSwipes();
+                setEditingAiEstimate(log);
                 return;
               }
               resetMealSwipes();
@@ -551,6 +579,7 @@ export function Dashboard({ api, user, setPage }) {
           onDone={finishEditingLog}
         />
       )}
+      {editingAiEstimate && <EditAiEstimateLog api={api} log={editingAiEstimate} mealTypes={mealTypes} onClose={closeEditingAiEstimate} onDone={finishEditingAiEstimate} />}
     </section>
   );
 }
@@ -575,21 +604,20 @@ function CompactBalanceBar({ visible, consumed, goal, macros, onGoTop }) {
 }
 
 function DateNavigator({ date, setDate }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
   return (
     <div className="date-nav">
       <button className="icon-button" aria-label="Día anterior" onClick={() => setDate(shiftDate(date, -1))}>
         <Icon name="chevron_left" />
       </button>
-      <label>
-        <span>{readableDate(date)}</span>
-        <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
-      </label>
+      <button type="button" className="date-picker-trigger" aria-haspopup="dialog" onClick={() => setPickerOpen(true)}><Icon name="calendar_month" /><span>{readableDate(date)}</span></button>
       <button className="icon-button" aria-label="Día siguiente" onClick={() => setDate(shiftDate(date, 1))}>
         <Icon name="chevron_right" />
       </button>
       <button className="secondary today-button" aria-label="Ir a hoy" onClick={() => setDate(today())}>
         <Icon name="today" /><span className="today-label">Hoy</span>
       </button>
+      {pickerOpen && <DatePickerDialog value={date} onSelect={setDate} onClose={() => setPickerOpen(false)} />}
     </div>
   );
 }
@@ -904,6 +932,20 @@ function MealLogDetails({ log, item }) {
             <p className="meal-detail-empty">Esta receta todavia no trae ingredientes.</p>
           )}
         </div>
+      </div>
+    );
+  }
+  if (log.itemType === "AI_ESTIMATE") {
+    const estimate = savedAiEstimate(log);
+    return (
+      <div className="meal-item-detail ai-log-detail">
+        <div className="meal-detail-summary">
+          <span><small>Origen</small><strong>Estimado por IA</strong></span>
+          <span><small>Confianza</small><strong>{estimate.confidence}%</strong></span>
+        </div>
+        <NutritionPills nutrition={log} />
+        {estimate.items.length > 0 && <div className="ai-log-items">{estimate.items.map((entry, index) => <span key={`${entry.name}:${index}`}><strong>{entry.name}</strong><small>{formatNumber(entry.estimatedGrams, 0)} g · {formatNumber(macroCalories(entry.proteinGrams, entry.carbsGrams, entry.fatGrams))} kcal</small></span>)}</div>}
+        {(estimate.assumptions || []).length > 0 && <ul className="ai-estimate-assumptions">{estimate.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}</ul>}
       </div>
     );
   }
@@ -1636,7 +1678,12 @@ function MealPhotoContextEditor({ photoUrl, context, setContext, error, recordin
   );
 }
 
-function AiEstimateEditor({ estimate, setEstimate, correction, setCorrection, refining, refinementError, onRefine, saving, onDiscard, onConfirm }) {
+function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, onDiscard, onConfirm, mode = "create", standalone = false, mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem }) {
+  const [catalogItemIndex, setCatalogItemIndex] = useState(null);
+  const [catalogCategory, setCatalogCategory] = useState("OTHER");
+  const [catalogPreparation, setCatalogPreparation] = useState("UNSPECIFIED");
+  const [catalogSaving, setCatalogSaving] = useState(false);
+  const [catalogMessage, setCatalogMessage] = useState("");
   const totals = (estimate.items || []).reduce((sum, item) => ({
     proteinGrams: sum.proteinGrams + Number(item.proteinGrams || 0),
     carbsGrams: sum.carbsGrams + Number(item.carbsGrams || 0),
@@ -1654,18 +1701,36 @@ function AiEstimateEditor({ estimate, setEstimate, correction, setCorrection, re
   function removeItem(index) {
     setEstimate((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== index) }));
   }
-  return (
-    <div className="selected-subpanel ai-estimate-subpanel">
-      <section className="selected-editor ai-estimate-editor" role="dialog" aria-modal="true" aria-label="Revisar estimación por foto">
+  async function saveCatalogItem() {
+    if (catalogItemIndex == null || catalogSaving) return;
+    setCatalogSaving(true);
+    setCatalogMessage("");
+    try {
+      await onCatalogItem?.(catalogItemIndex, { category: catalogCategory, preparation: catalogPreparation, tags: [] });
+      setCatalogMessage("Alimento guardado como pendiente global.");
+      setCatalogItemIndex(null);
+    } catch (error) {
+      setCatalogMessage(error.message || "No se pudo guardar el alimento.");
+    } finally {
+      setCatalogSaving(false);
+    }
+  }
+  const editor = (
+      <section className="selected-editor ai-estimate-editor" role="dialog" aria-modal="true" aria-label={mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto"}>
         <span className="sheet-handle" aria-hidden="true" />
-        <header><div><span>Estimación IA</span><h3>{estimate.name}</h3><small>Confianza estimada: {estimate.confidence}%</small></div><button className="icon-button" aria-label="Cerrar estimación" onClick={onDiscard}><Icon name="close" /></button></header>
-        {estimate.description && <p className="ai-estimate-description"><strong>Lo que detectó la IA</strong>{estimate.description}</p>}
+        <header><div><span>{mode === "saved" ? "Estimación guardada" : "Estimación IA"}</span><h3>{estimate.name}</h3><small>Confianza estimada: {estimate.confidence}%</small></div><button className="icon-button" aria-label="Cerrar estimación" onClick={onDiscard}><Icon name="close" /></button></header>
+        {mode === "saved" && <>
+          <Input label="Nombre de la comida" value={estimate.name} onChange={(event) => setEstimate((current) => ({ ...current, name: event.target.value }))} />
+          <label className="ai-context-field"><span>Descripción</span><textarea maxLength="240" value={estimate.description || ""} onChange={(event) => setEstimate((current) => ({ ...current, description: event.target.value }))} /></label>
+          <div className="edit-log-fields"><Select label="Comida" value={mealType} options={mealTypes.map((item) => ({ value: item.code, label: item.label }))} onChange={(event) => setMealType(event.target.value)} /><Input label="Fecha" type="date" value={logDate} onChange={(event) => setLogDate(event.target.value)} /></div>
+        </>}
+        {mode === "create" && estimate.description && <p className="ai-estimate-description"><strong>Lo que detectó la IA</strong>{estimate.description}</p>}
         <p className="ai-estimate-warning">Es una aproximación. Revisá especialmente aceites, salsas, queso y el tamaño de las porciones.</p>
         {(estimate.assumptions || []).length > 0 && <ul className="ai-estimate-assumptions">{estimate.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}</ul>}
         <div className="ai-estimate-items">
           {estimate.items.map((item, index) => (
             <article key={`${item.name}:${index}`}>
-              <div className="ai-estimate-item-heading"><strong>Alimento {index + 1}</strong><button type="button" className="icon-button ai-estimate-remove" aria-label={`Eliminar ${item.name || `alimento ${index + 1}`}`} disabled={refining} onClick={() => removeItem(index)}><Icon name="delete" /></button></div>
+              <div className="ai-estimate-item-heading"><strong>Alimento {index + 1}</strong><span>{mode === "saved" && <button type="button" className="secondary ai-estimate-catalog" disabled={refining || saving} onClick={() => { setCatalogItemIndex(index); setCatalogMessage(""); }}>Guardar</button>}<button type="button" className="icon-button ai-estimate-remove" aria-label={`Eliminar ${item.name || `alimento ${index + 1}`}`} disabled={refining || saving} onClick={() => removeItem(index)}><Icon name="delete" /></button></span></div>
               <Input label="Alimento" value={item.name} disabled={refining} onChange={(event) => setEstimate((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value } : entry) }))} />
               <div className="ai-estimate-values">
                 <label><span>g</span><input disabled={refining} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
@@ -1678,15 +1743,45 @@ function AiEstimateEditor({ estimate, setEstimate, correction, setCorrection, re
           ))}
           <button type="button" className="secondary ai-estimate-add-item" disabled={refining || estimate.items.length >= 12} onClick={addItem}><Icon name="add" />Agregar alimento</button>
         </div>
-        <section className="ai-estimate-refinement">
+        {mode === "saved" && catalogItemIndex != null && <section className="ai-estimate-catalog-form"><strong>Guardar {estimate.items[catalogItemIndex]?.name || "alimento"}</strong><p>Se publicará como alimento global pendiente, normalizado a 100 g. No modifica esta comida.</p><div><Select label="Categoría" value={catalogCategory} options={CATEGORY_OPTIONS} onChange={(event) => setCatalogCategory(event.target.value)} /><Select label="Preparación" value={catalogPreparation} options={PREPARATION_OPTIONS} onChange={(event) => setCatalogPreparation(event.target.value)} /></div><footer><button type="button" className="secondary" disabled={catalogSaving} onClick={() => setCatalogItemIndex(null)}>Cancelar</button><button type="button" className="primary" disabled={catalogSaving} onClick={saveCatalogItem}>{catalogSaving ? "Guardando..." : "Guardar pendiente"}</button></footer></section>}
+        {catalogMessage && <p className="ai-estimate-catalog-message" role="status">{catalogMessage}</p>}
+        {saveError && <p className="ai-estimate-error" role="alert">{saveError}</p>}
+        {mode === "create" && <section className="ai-estimate-refinement">
           <label className="ai-context-field"><span>Corregir estimación con IA</span><textarea maxLength="240" disabled={refining} placeholder="Ej.: no había queso, el pollo eran 250 g y faltó una cucharada de aceite" value={correction} onChange={(event) => setCorrection(event.target.value)} /><small>Usa la foto, tu observación original y la revisión actual como referencia.</small></label>
           {refinementError && <p className="ai-estimate-error" role="alert">{refinementError}</p>}
           <button type="button" className="secondary" disabled={refining || !correction.trim()} onClick={onRefine}>{refining ? "Corrigiendo..." : "Aplicar corrección IA"}</button>
-        </section>
+        </section>}
         <div className="ai-estimate-total"><span><small>Kcal aproximadas</small><strong>{formatNumber(calories)}</strong></span><span><small>Macros totales</small><strong>P {formatNumber(totals.proteinGrams, 1)} · C {formatNumber(totals.carbsGrams, 1)} · G {formatNumber(totals.fatGrams, 1)}</strong></span></div>
-        <div className="ai-estimate-actions"><button className="secondary" disabled={refining} onClick={onDiscard}>Descartar</button><button className="primary" disabled={saving || refining || !estimate.items.length || estimate.items.some((item) => !item.name || Number(item.estimatedGrams) <= 0)} onClick={() => onConfirm(estimate)}>{saving ? "Agregando..." : "Agregar estimación"}</button></div>
+        <div className="ai-estimate-actions"><button className="secondary" disabled={refining || saving} onClick={onDiscard}>{mode === "saved" ? "Cancelar" : "Descartar"}</button><button className="primary" disabled={saving || refining || !estimate.name.trim() || !estimate.items.length || estimate.items.some((item) => !item.name || Number(item.estimatedGrams) <= 0)} onClick={() => onConfirm(estimate)}>{saving ? "Guardando..." : mode === "saved" ? "Guardar cambios" : "Agregar estimación"}</button></div>
       </section>
-    </div>
+  );
+  return standalone ? editor : <div className="selected-subpanel ai-estimate-subpanel">{editor}</div>;
+}
+
+function EditAiEstimateLog({ api, log, mealTypes, onClose, onDone }) {
+  const [estimate, setEstimate] = useState(() => savedAiEstimate(log));
+  const [mealType, setMealType] = useState(log.mealType);
+  const [logDate, setLogDate] = useState(log.logDate);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  async function save(updated) {
+    if (saving) return;
+    setSaving(true);
+    setSaveError("");
+    try {
+      await api.request(`/api/nutrition/food-logs/${log.id}/ai-estimate`, { method: "PUT", body: JSON.stringify({ ...updated, mealType, logDate }) });
+      onDone();
+    } catch (error) {
+      setSaveError(error.message || "No se pudieron guardar los cambios.");
+    } finally {
+      setSaving(false);
+    }
+  }
+  return createPortal(
+    <div className="modal-backdrop">
+      <AiEstimateEditor estimate={estimate} setEstimate={setEstimate} saving={saving} saveError={saveError} onDiscard={onClose} onConfirm={save} mode="saved" standalone mealType={mealType} setMealType={setMealType} logDate={logDate} setLogDate={setLogDate} mealTypes={mealTypes} onCatalogItem={(index, payload) => api.request(`/api/nutrition/food-logs/${log.id}/ai-estimate/items/${index}/catalog`, { method: "POST", body: JSON.stringify(payload) })} />
+    </div>,
+    document.body,
   );
 }
 

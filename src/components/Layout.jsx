@@ -1,4 +1,5 @@
 import React from "react";
+import { Icon } from "./Icon";
 import { formatNumber } from "../utils/format";
 
 export function Header({ title, action, compact = false }) {

@@ -336,10 +336,7 @@
     width: 100%;
   }
 
-  .date-nav label {
-    min-width: 0;
-    flex: 1;
-  }
+  .date-picker-trigger { min-width: 0; flex: 1; }
 
   .page-header h1 {
     font-size: 30px;
@@ -369,10 +366,13 @@
   .dashboard-page-header h1 { margin-top: 1px; font-size: 22px; white-space: nowrap; }
   .dashboard-page-header .date-nav { flex: 1; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 4px; width: auto; padding: 0; }
   .dashboard-page-header .date-nav .icon-button { width: 38px; min-width: 38px; min-height: 38px; }
-  .dashboard-page-header .date-nav label { position: relative; flex: 0 1 92px; min-width: 72px; height: 38px; justify-content: center; overflow: hidden; border: 1px solid var(--outline); border-radius: 10px; background: var(--surface-high); }
-  .dashboard-page-header .date-nav label span { position: static; overflow: hidden; padding: 0 6px; color: var(--text); font-size: 11px; line-height: 38px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
-  .dashboard-page-header .date-nav input { position: absolute; inset: 0; width: 100%; min-height: 0; opacity: 0; cursor: pointer; }
+  .dashboard-page-header .date-picker-trigger { flex: 0 1 92px; min-width: 72px; min-height: 38px; padding: 0 6px; overflow: hidden; font-size: 11px; }
+  .dashboard-page-header .date-picker-trigger .material-symbols-outlined { display: none; }
+  .dashboard-page-header .date-picker-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dashboard-page-header .today-button { min-height: 38px; padding: 0 10px; font-size: 12px; }
+
+  .date-picker-backdrop { align-items: end; padding: 0; }
+  .date-picker-dialog { width: 100%; max-height: min(90dvh, 640px); padding: 18px 16px max(18px, env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; overflow: auto; }
 
   .yesterday-suggestion { gap: 7px; }
   .yesterday-suggestion .copy-accept, .yesterday-suggestion .copy-reject { width: 40px; height: 40px; border: none; background: transparent; }
@@ -484,7 +484,7 @@
   .history-summary .panel .big { font-size: 22px; }
   .calendar-grid, .calendar-weekdays { gap: 6px; }
   .calendar-grid span { border-radius: 10px; font-size: 12px; }
-  .calendar-heading { align-items: start; flex-direction: column; gap: 2px; }
+  .calendar-heading { align-items: center; flex-direction: row; gap: 2px; }
 
   .panel > .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .panel > .grid.three .stat { min-width: 0; padding: 10px 8px; }
