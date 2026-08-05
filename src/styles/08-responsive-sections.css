@@ -136,7 +136,6 @@
   }
 
   .mobile-nav button { position: relative; }
-  .toast { bottom: calc(78px + env(safe-area-inset-bottom)); }
 
   .food-card {
     grid-template-columns: 64px minmax(0, 1fr) auto;

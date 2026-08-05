@@ -5,7 +5,6 @@ import { TOKEN_KEY, USER_KEY } from "../config/app";
 import { getSavedUser } from "../services/recents";
 import { Shell } from "./Shell";
 import { AuthScreen } from "../features/auth/AuthScreen";
-import { Toast } from "../components/Layout";
 import { ActionLoader } from "../components/ActionLoader";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
 
@@ -34,7 +33,6 @@ export function App() {
     setPageRaw(next);
     window.history.pushState({ kcalPage: next }, "");
   }
-  const [toast, setToast] = useState(null);
   const [user, setUser] = useState(() => getSavedUser(USER_KEY));
   const [selectedFoodId, setSelectedFoodId] = useState(null);
   const [prefillBarcode, setPrefillBarcode] = useState("");
@@ -67,10 +65,7 @@ export function App() {
           setConfirmation(options);
         });
       },
-      notify(message, tone = "success") {
-        setToast({ message, tone });
-        window.setTimeout(() => setToast(null), 3500);
-      },
+      notify() {},
     }),
     [],
   );
@@ -148,7 +143,6 @@ export function App() {
       ) : (
         <AuthScreen api={api} page={page} setPage={setPage} saveSession={saveSession} notify={api.notify} />
       )}
-      {toast && <Toast {...toast} />}
       {actionLoading && <ActionLoader {...actionLoading} />}
       {confirmation && <ConfirmationDialog {...confirmation} onCancel={() => resolveConfirmation(false)} onConfirm={() => resolveConfirmation(true)} />}
     </>

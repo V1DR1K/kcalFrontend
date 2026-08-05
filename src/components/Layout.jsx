@@ -40,10 +40,3 @@ export function Stat({ icon, label, value }) {
     </div>
   );
 }
-export function Toast({ message, tone }) {
-  return (
-    <div className={`toast ${tone}`} role={tone === "error" ? "alert" : "status"}>
-      {message}
-    </div>
-  );
-}
