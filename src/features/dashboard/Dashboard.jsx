@@ -1244,7 +1244,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         () => api.request("/api/nutrition/ai-estimates", { method: "POST", body: form }),
       );
       if (!result?.items?.length) throw new Error("La IA no pudo identificar alimentos en esta foto. Probá con mejor luz.");
-      setAiEstimate(result);
+      setAiEstimate(aiEstimateWithServings(result));
       setAiUsage(result.usage);
       setAiEstimatePhoto(image);
       setAiCorrection("");
@@ -1267,13 +1267,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       form.append("image", aiEstimatePhoto);
       if (aiContext.trim()) form.append("context", aiContext.trim());
       form.append("request", new Blob([JSON.stringify({
-        currentEstimate: {
-          name: aiEstimate.name,
-          description: aiEstimate.description || null,
-          confidence: aiEstimate.confidence,
-          assumptions: aiEstimate.assumptions || [],
-          items: aiEstimate.items,
-        },
+        currentEstimate: aiEstimateDraft(aiEstimate),
         correction: aiCorrection.trim(),
       })], { type: "application/json" }));
       const result = await api.runAction(
@@ -1281,7 +1275,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         () => api.request("/api/nutrition/ai-estimates/refinements", { method: "POST", body: form }),
       );
       if (!result?.items?.length) throw new Error("La IA no pudo corregir esta estimación. Probá con una indicación más precisa.");
-      setAiEstimate(result);
+      setAiEstimate(aiEstimateWithServings(result));
       setAiUsage(result.usage);
       setAiCorrection("");
     } catch (error) {
@@ -1307,10 +1301,29 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         { title: "Agregando estimación", description: "Estamos sumando los macros revisados a tu comida..." },
         () => api.request("/api/nutrition/ai-estimates/confirm", {
           method: "POST",
-          body: JSON.stringify({ name: estimate.name, description: estimate.description || null, context: aiContext.trim() || null, confidence: estimate.confidence, items: estimate.items, mealType: mealType.code, logDate: selectedDate }),
+          body: JSON.stringify({
+            mealType: mealType.code,
+            logDate: selectedDate,
+            items: estimate.items.map((item) => {
+              const servedGrams = Number(item.servedGrams);
+              if (item.foodId) return { foodId: item.foodId, servedGrams };
+              const proposal = aiProposalFood(item);
+              return {
+                servedGrams,
+                proposal: {
+                  name: proposal.name,
+                  category: proposal.category,
+                  preparation: proposal.preparation,
+                  proteinGrams: proposal.proteinGrams,
+                  carbsGrams: proposal.carbsGrams,
+                  fatGrams: proposal.fatGrams,
+                },
+              };
+            }),
+          }),
         }),
       );
-      api.notify("Estimación agregada. Revisá siempre las porciones y salsas.");
+      api.notify("Alimentos agregados. Revisá siempre las porciones y salsas.");
       discardAiEstimate();
       onDone();
     } catch (error) {
@@ -1613,7 +1626,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           </FoodLogDialog>
         )}
         {pendingMealPhoto && <MealPhotoContextEditor photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
-        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} />}
+        {aiEstimate && <AiEstimateEditor api={api} estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} />}
         <footer className="picker-photo-actions">
           <label className={`secondary ai-photo-trigger ai-gallery-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
             <Icon name="photo_library" />
@@ -1678,16 +1691,33 @@ function MealPhotoContextEditor({ photoUrl, context, setContext, error, recordin
   );
 }
 
-function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, onDiscard, onConfirm, mode = "create", standalone = false, mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem }) {
+function AiEstimateEditor({ api, estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, onDiscard, onConfirm, mode = "create", standalone = false, mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem }) {
   const [catalogItemIndex, setCatalogItemIndex] = useState(null);
   const [catalogCategory, setCatalogCategory] = useState("OTHER");
   const [catalogPreparation, setCatalogPreparation] = useState("UNSPECIFIED");
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [catalogMessage, setCatalogMessage] = useState("");
-  const totals = (estimate.items || []).reduce((sum, item) => ({
-    proteinGrams: sum.proteinGrams + Number(item.proteinGrams || 0),
-    carbsGrams: sum.carbsGrams + Number(item.carbsGrams || 0),
-    fatGrams: sum.fatGrams + Number(item.fatGrams || 0),
+  const [catalogMatches, setCatalogMatches] = useState({});
+  const itemNames = (estimate.items || []).map((item) => item.name.trim()).join("\u001f");
+  useEffect(() => {
+    if (mode !== "create" || !api) return undefined;
+    let active = true;
+    const names = (estimate.items || []).map((item) => item.name.trim());
+    Promise.all(names.map((name) => name.length >= 2
+      ? api.request(`/api/foods?q=${encodeURIComponent(name)}&size=5`).then((result) => result.items || []).catch(() => [])
+      : Promise.resolve([])))
+      .then((matches) => {
+        if (active) setCatalogMatches(Object.fromEntries(matches.map((items, index) => [index, items])));
+      });
+    return () => { active = false; };
+  }, [api, itemNames, mode]);
+  const itemNutrition = (estimate.items || []).map((item) => mode === "saved"
+    ? { proteinGrams: Number(item.proteinGrams || 0), carbsGrams: Number(item.carbsGrams || 0), fatGrams: Number(item.fatGrams || 0) }
+    : scaleFoodNutrition(item.catalogFood || aiProposalFood(item), item.servedGrams));
+  const totals = itemNutrition.reduce((sum, nutrition) => ({
+    proteinGrams: sum.proteinGrams + nutrition.proteinGrams,
+    carbsGrams: sum.carbsGrams + nutrition.carbsGrams,
+    fatGrams: sum.fatGrams + nutrition.fatGrams,
   }), { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
   const calories = macroCalories(totals.proteinGrams, totals.carbsGrams, totals.fatGrams);
   function updateItem(index, field, value) {
@@ -1696,7 +1726,7 @@ function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrectio
   }
   function addItem() {
     if (estimate.items.length >= 12) return;
-    setEstimate((current) => ({ ...current, items: [...current.items, { name: "", estimatedGrams: "100", proteinGrams: "0", carbsGrams: "0", fatGrams: "0" }] }));
+    setEstimate((current) => ({ ...current, items: [...current.items, { name: "", estimatedGrams: "100", servedGrams: "100", proteinGrams: "0", carbsGrams: "0", fatGrams: "0", foodId: null, catalogFood: null, category: "OTHER", preparation: "UNSPECIFIED" }] }));
   }
   function removeItem(index) {
     setEstimate((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== index) }));
@@ -1715,6 +1745,24 @@ function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrectio
       setCatalogSaving(false);
     }
   }
+  function selectCatalogFood(index, foodId) {
+    const food = (catalogMatches[index] || []).find((item) => String(item.id) === foodId) || null;
+    setEstimate((current) => ({
+      ...current,
+      items: current.items.map((item, itemIndex) => itemIndex === index
+        ? { ...item, foodId: food?.id || null, catalogFood: food }
+        : item),
+    }));
+  }
+  function updateProposal(index, field, value) {
+    setEstimate((current) => ({
+      ...current,
+      items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item),
+    }));
+  }
+  const canConfirm = estimate.name.trim() && estimate.items.length && estimate.items.every((item) => item.name?.trim()
+    && Number(item.estimatedGrams) > 0 && Number(item.servedGrams) > 0 && Number(item.servedGrams) <= 3000
+    && (!item.foodId || item.catalogFood));
   const editor = (
       <section className="selected-editor ai-estimate-editor" role="dialog" aria-modal="true" aria-label={mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto"}>
         <span className="sheet-handle" aria-hidden="true" />
@@ -1731,14 +1779,30 @@ function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrectio
           {estimate.items.map((item, index) => (
             <article key={`${item.name}:${index}`}>
               <div className="ai-estimate-item-heading"><strong>Alimento {index + 1}</strong><span>{mode === "saved" && <button type="button" className="secondary ai-estimate-catalog" disabled={refining || saving} onClick={() => { setCatalogItemIndex(index); setCatalogMessage(""); }}>Guardar</button>}<button type="button" className="icon-button ai-estimate-remove" aria-label={`Eliminar ${item.name || `alimento ${index + 1}`}`} disabled={refining || saving} onClick={() => removeItem(index)}><Icon name="delete" /></button></span></div>
-              <Input label="Alimento" value={item.name} disabled={refining} onChange={(event) => setEstimate((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value } : entry) }))} />
-              <div className="ai-estimate-values">
-                <label><span>g</span><input disabled={refining} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
-                <label><span>P</span><input disabled={refining} inputMode="decimal" value={item.proteinGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "proteinGrams", event.target.value)} /></label>
-                <label><span>C</span><input disabled={refining} inputMode="decimal" value={item.carbsGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "carbsGrams", event.target.value)} /></label>
-                <label><span>G</span><input disabled={refining} inputMode="decimal" value={item.fatGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "fatGrams", event.target.value)} /></label>
-              </div>
-              <small className="ai-estimate-item-calories">{formatNumber(macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))} kcal estimadas</small>
+              <Input label="Alimento" value={item.name} disabled={refining} onChange={(event) => setEstimate((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value, foodId: null, catalogFood: null } : entry) }))} />
+              {mode === "create" ? <>
+                <label className="field ai-estimate-food-choice"><span>Alimento para registrar</span><select disabled={refining || saving} value={item.foodId || ""} onChange={(event) => selectCatalogFood(index, event.target.value)}><option value="">Crear ficha con propuesta IA</option>{(catalogMatches[index] || []).map((food) => <option key={food.id} value={food.id}>{food.name}{foodPreparationSuffix(food)}</option>)}</select></label>
+                {!item.foodId && <div className="ai-estimate-proposal-fields"><Select label="Categoría" value={item.category} options={CATEGORY_OPTIONS} disabled={refining || saving} onChange={(event) => updateProposal(index, "category", event.target.value)} /><Select label="Preparación" value={item.preparation} options={PREPARATION_OPTIONS} disabled={refining || saving} onChange={(event) => updateProposal(index, "preparation", event.target.value)} /></div>}
+                <div className="ai-estimate-serving-values">
+                  <label><span>Detectados (g)</span><input disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
+                  <label><span>Servidos (g)</span><input disabled={refining || saving} inputMode="decimal" value={item.servedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "servedGrams", event.target.value)} /></label>
+                </div>
+                {!item.foodId && <div className="ai-estimate-values ai-estimate-proposal-macros">
+                  <label><span>P estimada</span><input disabled={refining || saving} inputMode="decimal" value={item.proteinGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "proteinGrams", event.target.value)} /></label>
+                  <label><span>C estimada</span><input disabled={refining || saving} inputMode="decimal" value={item.carbsGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "carbsGrams", event.target.value)} /></label>
+                  <label><span>G estimada</span><input disabled={refining || saving} inputMode="decimal" value={item.fatGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "fatGrams", event.target.value)} /></label>
+                </div>}
+                <small className="ai-estimate-item-calories">{item.foodId ? "Macros del alimento seleccionado" : "Propuesta IA normalizada a 100 g"}: P {formatNumber((item.catalogFood || aiProposalFood(item)).proteinGrams, 1)} · C {formatNumber((item.catalogFood || aiProposalFood(item)).carbsGrams, 1)} · G {formatNumber((item.catalogFood || aiProposalFood(item)).fatGrams, 1)}</small>
+                <small className="ai-estimate-item-calories"><strong>{formatNumber(itemNutrition[index]?.calories)} kcal</strong> para {formatNumber(item.servedGrams, 1)} g servidos</small>
+              </> : <>
+                <div className="ai-estimate-values">
+                  <label><span>g</span><input disabled={refining} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
+                  <label><span>P</span><input disabled={refining} inputMode="decimal" value={item.proteinGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "proteinGrams", event.target.value)} /></label>
+                  <label><span>C</span><input disabled={refining} inputMode="decimal" value={item.carbsGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "carbsGrams", event.target.value)} /></label>
+                  <label><span>G</span><input disabled={refining} inputMode="decimal" value={item.fatGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "fatGrams", event.target.value)} /></label>
+                </div>
+                <small className="ai-estimate-item-calories">{formatNumber(macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))} kcal estimadas</small>
+              </>}
             </article>
           ))}
           <button type="button" className="secondary ai-estimate-add-item" disabled={refining || estimate.items.length >= 12} onClick={addItem}><Icon name="add" />Agregar alimento</button>
@@ -1751,8 +1815,8 @@ function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrectio
           {refinementError && <p className="ai-estimate-error" role="alert">{refinementError}</p>}
           <button type="button" className="secondary" disabled={refining || !correction.trim()} onClick={onRefine}>{refining ? "Corrigiendo..." : "Aplicar corrección IA"}</button>
         </section>}
-        <div className="ai-estimate-total"><span><small>Kcal aproximadas</small><strong>{formatNumber(calories)}</strong></span><span><small>Macros totales</small><strong>P {formatNumber(totals.proteinGrams, 1)} · C {formatNumber(totals.carbsGrams, 1)} · G {formatNumber(totals.fatGrams, 1)}</strong></span></div>
-        <div className="ai-estimate-actions"><button className="secondary" disabled={refining || saving} onClick={onDiscard}>{mode === "saved" ? "Cancelar" : "Descartar"}</button><button className="primary" disabled={saving || refining || !estimate.name.trim() || !estimate.items.length || estimate.items.some((item) => !item.name || Number(item.estimatedGrams) <= 0)} onClick={() => onConfirm(estimate)}>{saving ? "Guardando..." : mode === "saved" ? "Guardar cambios" : "Agregar estimación"}</button></div>
+        <div className="ai-estimate-total"><span><small>{mode === "create" ? "Kcal servidas" : "Kcal aproximadas"}</small><strong>{formatNumber(calories)}</strong></span><span><small>Macros totales</small><strong>P {formatNumber(totals.proteinGrams, 1)} · C {formatNumber(totals.carbsGrams, 1)} · G {formatNumber(totals.fatGrams, 1)}</strong></span></div>
+        <div className="ai-estimate-actions"><button className="secondary" disabled={refining || saving} onClick={onDiscard}>{mode === "saved" ? "Cancelar" : "Descartar"}</button><button className="primary" disabled={saving || refining || !canConfirm} onClick={() => onConfirm(estimate)}>{saving ? "Guardando..." : mode === "saved" ? "Guardar cambios" : "Agregar alimentos"}</button></div>
       </section>
   );
   return standalone ? editor : <div className="selected-subpanel ai-estimate-subpanel">{editor}</div>;
