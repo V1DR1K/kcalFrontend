@@ -349,6 +349,8 @@
   .dashboard-hero,
   .dashboard-hero-full { grid-template-columns: 1fr; text-align: center; }
 
+  .calorie-ring { width: clamp(184px, 62vw, 208px); }
+
   .macro-card {
     text-align: left;
   }
