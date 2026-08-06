@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "../styles.css";
 import { request as apiRequest } from "../services/http";
-import { TOKEN_KEY, USER_KEY } from "../config/app";
+import { REFRESH_KEY, TOKEN_KEY, USER_KEY } from "../config/app";
 import { getSavedUser } from "../services/recents";
 import { Shell } from "./Shell";
 import { AuthScreen } from "../features/auth/AuthScreen";
@@ -87,13 +87,21 @@ export function App() {
 
   function saveSession(payload) {
     localStorage.setItem(TOKEN_KEY, payload.token);
+    if (payload.refreshToken) localStorage.setItem(REFRESH_KEY, payload.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
     setUser(payload.user);
     setPage("dashboard");
   }
 
   function logout() {
+    const refreshToken = localStorage.getItem(REFRESH_KEY);
+    if (refreshToken) {
+      api
+        .request("/api/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken }) })
+        .catch(() => {});
+    }
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(USER_KEY);
     setUser(null);
     setPage("login");

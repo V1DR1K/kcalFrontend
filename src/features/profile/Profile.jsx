@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { REFRESH_KEY, TOKEN_KEY } from "../../config/app";
 import { Input } from "../../components/FormControls";
 import { Icon } from "../../components/Icon";
 import { Header, Panel, Stat } from "../../components/Layout";
@@ -92,7 +93,8 @@ export function Profile({ api, logout }) {
       </Panel>
       <NutritionTutorial />
       <Panel title="Cuenta" className="account-panel">
-        <p>Podés cerrar tu sesión de forma segura en este dispositivo.</p>
+        <p>Podés actualizar tu contraseña o cerrar tu sesión de forma segura en este dispositivo.</p>
+        <ChangePasswordForm api={api} />
         <button
           className="danger-button"
           onClick={async () => {
@@ -109,6 +111,61 @@ export function Profile({ api, logout }) {
         </button>
       </Panel>
     </section>
+  );
+}
+
+function ChangePasswordForm({ api }) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  async function submit(event) {
+    event.preventDefault();
+    setFieldErrors({});
+    if (newPassword.length < 8) {
+      setFieldErrors({ newPassword: "La contraseña debe tener al menos 8 caracteres." });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setFieldErrors({ confirmPassword: "Las contraseñas no coinciden." });
+      return;
+    }
+    if (saving) return;
+    setSaving(true);
+    try {
+      const session = await api.runAction(
+        { title: "Actualizando contraseña", description: "Creamos una nueva sesión segura..." },
+        () =>
+          api.request("/api/auth/change-password", {
+            method: "PUT",
+            body: JSON.stringify({ currentPassword, newPassword }),
+          }),
+        { quiet: true },
+      );
+      if (session?.token) localStorage.setItem(TOKEN_KEY, session.token);
+      if (session?.refreshToken) localStorage.setItem(REFRESH_KEY, session.refreshToken);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      api.notify("Contraseña actualizada. Tu sesión sigue activa.");
+    } catch (error) {
+      const message = error?.message || "No se pudo actualizar la contraseña.";
+      api.notify(message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+  return (
+    <form className="change-password-form" onSubmit={submit}>
+      <strong>Cambiar contraseña</strong>
+      <Input label="Contraseña actual" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required error={fieldErrors.currentPassword} />
+      <div className="split">
+        <Input label="Nueva contraseña" type="password" autoComplete="new-password" minLength="8" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required error={fieldErrors.newPassword} />
+        <Input label="Repetir nueva" type="password" autoComplete="new-password" minLength="8" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required error={fieldErrors.confirmPassword} />
+      </div>
+      <button className="secondary" disabled={saving}>{saving ? "Guardando..." : "Cambiar contraseña"}</button>
+    </form>
   );
 }
 

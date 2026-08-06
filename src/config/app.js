@@ -1,5 +1,6 @@
 export const APP_NAME = "ScaleGrams";
 export const TOKEN_KEY = "scalegrams.token";
+export const REFRESH_KEY = "scalegrams.refreshToken";
 export const USER_KEY = "scalegrams.user";
 const LEGACY_TOKEN_KEY = "kazaFitness.token";
 const LEGACY_USER_KEY = "kazaFitness.user";
