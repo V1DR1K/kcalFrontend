@@ -23,6 +23,7 @@ export function Profile({ api, logout }) {
   const [plans, setPlans] = useState([]);
   const [presets, setPresets] = useState([]);
   const [aiUsage, setAiUsage] = useState(null);
+  const [weightEntries, setWeightEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [weight, setWeight] = useState("");
@@ -38,13 +39,14 @@ export function Profile({ api, logout }) {
   const load = useCallback(() => {
     setLoading(true);
     setError("");
-    Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans"), api.request("/api/profile/nutrition-plan-presets"), api.request("/api/nutrition/ai-estimates/usage").catch(() => null)])
-      .then(([nextProfile, nextPlans, nextPresets, nextAiUsage]) => {
+    Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans"), api.request("/api/profile/nutrition-plan-presets"), api.request("/api/nutrition/ai-estimates/usage").catch(() => null), api.request("/api/profile/weight-entries").catch(() => [])])
+      .then(([nextProfile, nextPlans, nextPresets, nextAiUsage, nextWeightEntries]) => {
         setProfile(nextProfile);
         setWeight(nextProfile.weightKg || "");
         setPlans(nextPlans);
         setPresets(nextPresets);
         setAiUsage(nextAiUsage);
+        setWeightEntries(nextWeightEntries);
       })
       .catch(() => setError("No pudimos cargar tu perfil."))
       .finally(() => setLoading(false));
@@ -81,12 +83,7 @@ export function Profile({ api, logout }) {
           <Stat icon="local_fire_department" label="Meta diaria" value={`${formatNumber(profile?.dailyCalorieGoal)} kcal`} />
         </div>
       </Panel>
-      <Panel title="Registrar peso" className="weight-panel">
-        <form onSubmit={async (event) => { event.preventDefault(); if (savingWeight) return; setSavingWeight(true); try { const updated = await api.runAction({ title: "Actualizando peso", description: "Estamos guardando tu nuevo registro..." }, () => api.request("/api/profile", { method: "PATCH", body: JSON.stringify({ weightKg: Number(weight) }) }), { quiet: true }); setProfile(updated); setWeight(updated.weightKg || ""); api.notify("Peso actualizado."); } catch { api.notify("No se pudo registrar el peso.", "error"); } finally { setSavingWeight(false); } }}>
-          <Input label="Peso actual (kg)" type="number" min="20" max="400" step="0.1" inputMode="decimal" value={weight} onChange={(event) => setWeight(event.target.value)} required />
-          <button className="secondary" disabled={savingWeight}>{savingWeight ? "Guardando…" : "Anotar peso"}</button>
-        </form>
-      </Panel>
+      <WeightPanel api={api} profile={profile} setProfile={setProfile} entries={weightEntries} setEntries={setWeightEntries} setWeight={setWeight} weight={weight} savingWeight={savingWeight} setSavingWeight={setSavingWeight} />
       <NutritionPlanManager api={api} presets={presets} plans={plans} onChanged={loadPlans} />
       <Panel title="Fotos con IA" className="ai-usage-panel">
         {aiUsage?.available ? <><div><Icon name="photo_camera" /><span><strong>{aiUsage.blockedUntil ? "Gemini sin cuota" : "Sin límite interno"}</strong><small>{aiUsage.blockedUntil ? `Probá nuevamente desde ${quotaReset(aiUsage.blockedUntil)}` : `${aiUsage.used} consultas realizadas hoy`}</small></span></div><p>{aiUsage.blockedUntil ? "Gemini informó que no quedan solicitudes disponibles por ahora. La hora mostrada proviene de Gemini; si no la informa, se usa su próximo reinicio diario estimado." : "ScaleGrams no limita tus fotos: solo registra el uso y mostrará cuándo Gemini vuelva a aceptar consultas."}</p></> : <p>La estimación por foto no está disponible por el momento.</p>}
@@ -112,6 +109,130 @@ export function Profile({ api, logout }) {
       </Panel>
     </section>
   );
+}
+
+function WeightPanel({ api, profile, setProfile, entries, setEntries, weight, setWeight, savingWeight, setSavingWeight }) {
+  async function record(event) {
+    event.preventDefault();
+    if (savingWeight) return;
+    setSavingWeight(true);
+    try {
+      const payload = await api.runAction(
+        { title: "Anotando peso", description: "Estamos guardando tu registro..." },
+        () => api.request("/api/profile/weight-entries", { method: "POST", body: JSON.stringify({ weightKg: Number(weight) }) }),
+        { quiet: true },
+      );
+      setEntries((current) => {
+        const rest = current.filter((entry) => entry.entryDate !== payload.entryDate);
+        return [...rest, payload].sort((a, b) => a.entryDate.localeCompare(b.entryDate));
+      });
+      setProfile({ ...profile, weightKg: Number(payload.weightKg) });
+      setWeight(payload.weightKg);
+      api.notify("Peso registrado.");
+    } catch {
+      api.notify("No se pudo registrar el peso.", "error");
+    } finally {
+      setSavingWeight(false);
+    }
+  }
+  async function remove(entry) {
+    const confirmed = await api.confirm({
+      title: "¿Quitar este registro?",
+      description: `Se borrará el peso del ${entry.entryDate} (${formatNumber(entry.weightKg, 1)} kg).`,
+      confirmLabel: "Quitar",
+      tone: "neutral",
+    });
+    if (!confirmed) return;
+    try {
+      await api.request(`/api/profile/weight-entries/${entry.id}`, { method: "DELETE" });
+      setEntries((current) => current.filter((item) => item.id !== entry.id));
+      api.notify("Registro eliminado.");
+    } catch {
+      api.notify("No se pudo eliminar el registro.", "error");
+    }
+  }
+  const filtered = entries.filter((entry) => entry.entryDate <= today());
+  return (
+    <Panel title="Peso" className="weight-panel">
+      <div className="weight-summary">
+        <Stat icon="monitor_weight" label="Actual" value={`${formatNumber(profile?.weightKg, 1)} kg`} />
+        {entries.length === 0 ? <Stat icon="trending_up" label="Tendencia" value="Sin datos" /> : <Stat icon={latestDelta(entries) >= 0 ? "trending_up" : "trending_down"} label={latestDelta(entries) === 0 ? "Último cambio" : "Cambio últ. registro"} value={`${latestDelta(entries) > 0 ? "+" : ""}${formatNumber(latestDelta(entries), 1)} kg`} />}
+        <Stat icon="flag" label="Meta" value={profile?.targetWeightKg ? `${formatNumber(profile.targetWeightKg, 1)} kg` : "—"} />
+      </div>
+      <WeightChart entries={filtered} />
+      <form onSubmit={record} className="weight-record-form">
+        <Input label="Peso actual (kg)" type="number" min="20" max="400" step="0.1" inputMode="decimal" value={weight} onChange={(event) => setWeight(event.target.value)} required />
+        <button className="secondary" disabled={savingWeight}>{savingWeight ? "Guardando…" : "Anotar peso"}</button>
+      </form>
+      {entries.length > 0 && <div className="weight-history">
+        {entries.slice().reverse().map((entry) => (
+          <div className="weight-history-row" key={entry.id}>
+            <span className="weight-history-date">{readableDate(entry.entryDate)}</span>
+            <strong>{formatNumber(entry.weightKg, 1)} kg</strong>
+            <button type="button" className="ghost-icon" onClick={() => remove(entry)} aria-label={`Quitar peso del ${entry.entryDate}`}><Icon name="delete" /></button>
+          </div>
+        ))}
+      </div>}
+    </Panel>
+  );
+}
+
+function latestDelta(entries) {
+  const last = entries[entries.length - 1];
+  const previous = entries[entries.length - 2];
+  if (!last || !previous) return 0;
+  return Number(last.weightKg) - Number(previous.weightKg);
+}
+
+function WeightChart({ entries }) {
+  if (entries.length < 2) {
+    return <p className="weight-chart-empty">Anotá tu peso dos o más veces para ver la curva.</p>;
+  }
+  const width = 640;
+  const height = 170;
+  const padX = 34;
+  const padTop = 18;
+  const padBottom = 34;
+  const values = entries.map((entry) => Number(entry.weightKg));
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const plotHeight = height - padTop - padBottom;
+  const xFor = (index) => padX + (index / (entries.length - 1)) * (width - padX * 2);
+  const yFor = (value) => padTop + ((max - value) / span) * plotHeight;
+  const points = entries.map((entry, index) => `${xFor(index)},${yFor(Number(entry.weightKg))}`).join(" ");
+  const areaPoints = `${padX},${padTop + plotHeight} ${points} ${xFor(entries.length - 1)},${padTop + plotHeight}`;
+  const midY = yFor((min + max) / 2);
+  return (
+    <div className="weight-chart">
+      <svg viewBox={`0 0 ${width} ${height}`} className="weight-curve" role="img" aria-label="Curva de peso">
+        <defs>
+          <linearGradient id="weightArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <line x1={padX} y1={yFor(min)} x2={width - padX} y2={yFor(min)} stroke="var(--outline)" strokeDasharray="3 4" />
+        <line x1={padX} y1={midY} x2={width - padX} y2={midY} stroke="var(--outline)" strokeDasharray="3 4" />
+        <line x1={padX} y1={yFor(max)} x2={width - padX} y2={yFor(max)} stroke="var(--outline)" strokeDasharray="3 4" />
+        <polygon points={areaPoints} fill="url(#weightArea)" />
+        <polyline points={points} fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        {entries.map((entry, index) => (
+          <circle key={entry.id} cx={xFor(index)} cy={yFor(Number(entry.weightKg))} r="4.5" fill="var(--background)" stroke="var(--primary)" strokeWidth="2.5" />
+        ))}
+        <text x={8} y={yFor(max) + 4} fontSize="11" fill="var(--muted)">{formatNumber(max, 1)}</text>
+        <text x={8} y={yFor(min) + 4} fontSize="11" fill="var(--muted)">{formatNumber(min, 1)}</text>
+        <text x={xFor(0)} y={height - 8} fontSize="11" fill="var(--muted)">{dateLabel(entries[0].entryDate)}</text>
+        <text x={xFor(entries.length - 1)} y={height - 8} fontSize="11" fill="var(--muted)" textAnchor="end">{dateLabel(entries[entries.length - 1].entryDate)}</text>
+        <text x={(padX + width - padX) / 2} y={12} fontSize="11" fill="var(--muted)" textAnchor="middle">{`${formatNumber(min, 1)} – ${formatNumber(max, 1)} kg`}</text>
+      </svg>
+    </div>
+  );
+}
+
+function dateLabel(value) {
+  const parts = String(value || "").split("-");
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}` : value;
 }
 
 function ChangePasswordForm({ api }) {

@@ -52,6 +52,22 @@
 .ai-usage-panel small, .ai-usage-panel p { color: var(--muted); }
 .ai-usage-panel p { margin: 12px 0 0; font-size: 13px; line-height: 1.4; }
 
+.weight-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.weight-summary .stat { display: grid; gap: 3px; padding: 12px; border: 1px solid var(--outline); border-radius: var(--radius-panel); background: var(--surface-low); }
+.weight-chart { position: relative; margin-bottom: 16px; }
+.weight-curve { display: block; width: 100%; height: auto; overflow: visible; }
+.weight-chart-empty { margin: 0 0 16px; padding: 18px; text-align: center; border: 1px dashed var(--outline); border-radius: 12px; color: var(--muted); font-size: 13px; }
+.weight-record-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; margin-bottom: 16px; }
+.weight-history { display: grid; gap: 6px; }
+.weight-history-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface-low); }
+.weight-history-date { color: var(--muted); font-size: 12px; }
+.weight-history-row strong { font-size: 14px; }
+
+@media (max-width: 520px) {
+  .weight-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .weight-record-form { grid-template-columns: minmax(0, 1fr) auto; }
+}
+
 @media (max-width: 520px) {
   .viewport-recovery { align-items: stretch; flex-direction: column; }
   .viewport-recovery button { width: 100%; }
