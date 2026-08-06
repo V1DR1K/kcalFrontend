@@ -124,7 +124,8 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode }) 
             </button>
             {manualOpen && (
               <div className="manual-panel">
-                <input inputMode="numeric" value={barcode} onChange={(event) => { setBarcode(event.target.value.replace(/\D/g, "")); setBarcodeError(""); }} placeholder="Ingresar código" aria-invalid={Boolean(barcodeError)} />
+                <label className="sr-only" htmlFor="manual-barcode">Código de barras</label>
+                <input id="manual-barcode" inputMode="numeric" value={barcode} onChange={(event) => { setBarcode(event.target.value.replace(/\D/g, "")); setBarcodeError(""); }} placeholder="Ingresar código" aria-invalid={Boolean(barcodeError)} />
                 {barcodeError && <span className="form-error" role="alert">{barcodeError}</span>}
                 <button className="secondary" onClick={() => search()}>
                   Buscar

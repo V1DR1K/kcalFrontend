@@ -1139,14 +1139,16 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     const syncViewport = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        modalRef.current?.style.setProperty("--picker-height", `${Math.round(window.innerHeight)}px`);
+        modalRef.current?.style.setProperty("--picker-height", `${Math.round(window.visualViewport?.height || window.innerHeight)}px`);
       });
     };
     syncViewport();
     window.addEventListener("orientationchange", syncViewport);
+    window.visualViewport?.addEventListener("resize", syncViewport);
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("orientationchange", syncViewport);
+      window.visualViewport?.removeEventListener("resize", syncViewport);
     };
   }, []);
   useEffect(() => {

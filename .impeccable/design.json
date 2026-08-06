@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-06T00:00:00.000Z",
+  "title": "Design System: ScaleGrams",
+  "extensions": {
+    "colorMeta": {
+      "night": { "role": "neutral", "displayName": "Night Field", "canonical": "#0e1511", "tonalRamp": ["#0b100d", "#121b15", "#1b2720", "#304036", "#586a5e", "#8c9b91", "#c2cbc4", "#eef2ee"] },
+      "mint": { "role": "primary", "displayName": "Measured Mint", "canonical": "#4edea3", "tonalRamp": ["#003924", "#005236", "#087451", "#15956a", "#2abd86", "#4edea3", "#8af3c5", "#d4ffeb"] },
+      "sky": { "role": "secondary", "displayName": "Reference Sky", "canonical": "#89ceff", "tonalRamp": ["#10354f", "#1c4f74", "#2c719e", "#4694c6", "#66b4e8", "#89ceff", "#b8e4ff", "#e2f5ff"] },
+      "amber": { "role": "tertiary", "displayName": "Plan Amber", "canonical": "#ffd166", "tonalRamp": ["#4c3900", "#6d5300", "#977300", "#bd9400", "#e5b91e", "#ffd166", "#ffe49b", "#fff5d8"] },
+      "coral": { "role": "tertiary", "displayName": "Recovery Coral", "canonical": "#ffb4ab", "tonalRamp": ["#4b0905", "#6c1912", "#943129", "#bb5048", "#dc766e", "#ffb4ab", "#ffd9d4", "#fff0ed"] }
+    },
+    "tokenGroups": [
+      { "name": "Primitive colors", "prefix": "--color-", "purpose": "Canonical palette values, state inks and the named copy-confetti feedback signature." },
+      { "name": "Semantic surfaces", "prefix": "--surface-", "purpose": "Composited working, transient, dialog and feedback surfaces that preserve the incumbent dark field." },
+      { "name": "Scrims", "prefix": "--scrim-", "purpose": "Backdrop opacity roles for modal, action, confirmation and selected-editor layers." },
+      { "name": "Spacing", "prefix": "--space-", "purpose": "Four-pixel rhythm with documented half-steps for dense controls and visual hairlines." },
+      { "name": "Type scale", "prefix": "--type-", "purpose": "Named text and measurement sizes; scanner-icon is the deliberate scanner-only display size." },
+      { "name": "Elevation", "prefix": "--shadow-", "purpose": "Raised, floating, dialog, sheet and recent-item depth roles." },
+      { "name": "Motion", "prefix": "--duration- and --ease-", "purpose": "Shared timing and easing roles for existing transitions and feedback." }
+    ],
+    "typographyMeta": {
+      "micro": { "displayName": "Micro", "purpose": "Captions, short measurement context and compact timestamps." },
+      "meta": { "displayName": "Meta", "purpose": "Status labels and compact supporting information." },
+      "small": { "displayName": "Small", "purpose": "Supporting daily-log copy." },
+      "display": { "displayName": "Hanken Grotesk Display", "purpose": "Public statements, primary page titles and high-level task headings." },
+      "landing-display": { "displayName": "Landing Display", "purpose": "The root landing statement." },
+      "ledger-value": { "displayName": "Ledger Value", "purpose": "High-priority energy totals." },
+      "title": { "displayName": "Title", "purpose": "Meal, panel and task names." },
+      "action": { "displayName": "Action", "purpose": "Buttons and navigation labels." },
+      "brand": { "displayName": "Brand", "purpose": "The ScaleGrams wordmark." },
+      "body-emphasis": { "displayName": "Body Emphasis", "purpose": "Prominent explanatory or procedural copy." },
+      "icon-heading": { "displayName": "Icon Heading", "purpose": "Medium icon-led headings." },
+      "body-fluid": { "displayName": "Fluid Body", "purpose": "Responsive public landing explanations." },
+      "landing-display-mobile": { "displayName": "Landing Display Mobile", "purpose": "The public statement at narrow viewport widths." },
+      "body": { "displayName": "DM Sans Body", "purpose": "Instructions, fields, navigation and repeated nutritional values." },
+      "label": { "displayName": "DM Sans Label", "purpose": "Compact field, macro and helper labels." }
+    },
+    "shadows": [
+      { "name": "raised", "value": "0 20px 50px rgb(0 0 0 / 36%)", "purpose": "Dialogs, blocking actions and the public daily ledger." }
+    ],
+    "motion": [
+      { "name": "fast", "value": "120ms", "purpose": "Pressed control response." },
+      { "name": "enter", "value": "220ms", "purpose": "Short sheet and state entrance." },
+      { "name": "quick", "value": "160ms", "purpose": "Control hover and focus response." },
+      { "name": "standard", "value": "180ms", "purpose": "State and surface transitions." },
+      { "name": "slow", "value": "280ms", "purpose": "Dialog and sheet entrance." },
+      { "name": "emphasis", "value": "320ms", "purpose": "Recipe and auth entrance." },
+      { "name": "scan", "value": "2600ms", "purpose": "Barcode scanner sweep." },
+      { "name": "ease-out", "value": "cubic-bezier(.16, 1, .3, 1)", "purpose": "Default forward motion." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "520px" },
+      { "name": "compact", "value": "800px" },
+      { "name": "app-mobile", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Moves the user forward in a task.",
+      "html": "<button class=\"ds-btn-primary\">GUARDAR REGISTRO</button>",
+      "css": ".ds-btn-primary { min-height:46px; padding:0 18px; border:0; border-radius:10px; background:#4edea3; color:#003924; font:800 14px/1 DM Sans, sans-serif; cursor:pointer; transition:transform 120ms cubic-bezier(.16,1,.3,1),background 160ms ease; } .ds-btn-primary:hover { background:#63efb5; transform:translateY(-2px); } .ds-btn-primary:focus-visible { outline:3px solid #91f4cc; outline-offset:3px; } .ds-btn-primary:active { transform:scale(.96); }"
+    },
+    {
+      "name": "Nutrition Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A labeled field for a measured food value.",
+      "html": "<label class=\"ds-field\"><span>Cantidad en gramos</span><input value=\"150\" aria-label=\"Cantidad en gramos\"></label>",
+      "css": ".ds-field { display:grid; gap:6px; color:#bbcabf; font:800 12px/1.3 DM Sans,sans-serif; } .ds-field input { min-height:48px; border:1px solid #3c4a42; border-radius:10px; padding:0 12px; background:#272f2a; color:#e1e3df; font:700 16px DM Sans,sans-serif; } .ds-field input:focus { border-color:#4edea3; box-shadow:0 0 0 3px rgb(78 222 163 / 14%); outline:0; }"
+    },
+    {
+      "name": "Navigation Item",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Current location in the daily application shell.",
+      "html": "<button class=\"ds-nav-current\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3.5 18.49 9 13l4 4L22 7.92V13h2V4h-9v2h5.58L13 13.59l-4-4-6.91 6.9 1.41 1.41Z\"/></svg>Mi dia</button>",
+      "css": ".ds-nav-current { display:flex; align-items:center; gap:12px; min-height:46px; padding:0 14px; border:1px solid transparent; border-radius:10px; background:rgb(78 222 163 / 14%); color:#4edea3; font:800 14px DM Sans,sans-serif; } .ds-nav-current svg { width:20px; height:20px; fill:currentColor; } .ds-nav-current:focus-visible { outline:3px solid #91f4cc; outline-offset:3px; }"
+    },
+    {
+      "name": "Working Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "A bounded group of daily work without excess visual elevation.",
+      "html": "<section class=\"ds-panel\"><strong>Agua</strong><span>1.5L / 2.0L</span></section>",
+      "css": ".ds-panel { display:grid; gap:8px; padding:20px; border:1px solid rgb(60 74 66 / 55%); border-radius:14px; background:linear-gradient(180deg,rgb(22 29 25 / 96%),rgb(14 21 17 / 96%)); color:#e1e3df; box-shadow:0 20px 50px rgb(0 0 0 / 36%); font:700 15px DM Sans,sans-serif; } .ds-panel span { color:#bbcabf; font-size:13px; }"
+    },
+    {
+      "name": "Public Entry Link",
+      "kind": "custom",
+      "refersTo": "button-primary",
+      "description": "The landing action that takes an existing account holder to sign in.",
+      "html": "<a class=\"ds-entry\" href=\"#\">INGRESAR A SCALEGRAMS <span>→</span></a>",
+      "css": ".ds-entry { display:inline-flex; align-items:center; gap:8px; min-height:50px; padding:0 19px; border-radius:12px; background:#4edea3; color:#003924; font:850 14px DM Sans,sans-serif; text-decoration:none; transition:transform 120ms cubic-bezier(.16,1,.3,1),background 160ms ease; } .ds-entry:hover { background:#63efb5; transform:translateY(-2px); } .ds-entry:focus-visible { outline:3px solid #91f4cc; outline-offset:3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Bitacora cotidiana",
+    "overview": "ScaleGrams is a calm instrument for a moment that repeats several times a day. Its dark field belongs to the phone-at-the-table scene: light enough to read in a kitchen or after training, quiet enough that a logged meal never feels like a verdict. The interface gives measurements a physical place, then makes the next action obvious.",
+    "keyCharacteristics": ["Dark, low-glare surfaces with mint reserved for forward motion and completion.", "Dense but breathable daily records with tabular figures and explicit states.", "Rounded, tactile controls sized for touch without turning every element into a card.", "Calm motion that confirms a state change instead of competing with the data."],
+    "rules": [
+      { "name": "Signal Budget Rule", "body": "Mint is for a decision, a current position or a completed step. A screen may contain many measurements, but only one forward action should read as mint-first.", "section": "colors" },
+      { "name": "Measurement Rule", "body": "Nutritional values use tabular figures when alignment matters; a number should read as data before it reads as decoration.", "section": "typography" },
+      { "name": "Calm Surface Rule", "body": "Do not stack a prominent border, bright glow and heavy shadow on the same resting container. Depth has one job at a time.", "section": "elevation" }
+    ],
+    "dos": ["Do use semantic tokens from the foundation before introducing a new color, radius, shadow or timing value.", "Do make the current task and its next action visible within a single viewport on mobile.", "Do use mint for active, selected, completed or forward-moving states.", "Do keep public product claims limited to functions that exist in the application."],
+    "donts": ["Don't use color as the only indicator of validation, completion or selection.", "Don't turn every informational group into an equally styled card.", "Don't use bright mint as decorative background coverage or body copy.", "Don't offer public registration while ScaleGrams remains account-access only."]
+  }
+}

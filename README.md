@@ -1,6 +1,6 @@
-# kcalFrontend
+# ScaleGrams Frontend
 
-Frontend React de **KazaFitness**, producto de **KazaDesarrollos**, construido con Vite.
+Frontend React de **ScaleGrams**, construido con Vite.
 
 ## Estructura
 
@@ -48,7 +48,7 @@ Usar la IPv4 de tu adaptador WiFi, por ejemplo `192.168.0.25`.
 2. Levantar el backend escuchando en la red:
 
 ```powershell
-cd C:\Users\Tomas\Desktop\Proyectos\KCALS\kcalBackend
+cd C:\Users\Tomas\Desktop\Proyectos\ScaleGrams\backend
 $env:SERVER_ADDRESS="0.0.0.0"
 .\mvnw.cmd spring-boot:run
 ```
@@ -68,7 +68,7 @@ VITE_API_BASE_URL=http://192.168.0.25:8081
 4. Levantar el frontend para LAN:
 
 ```powershell
-cd C:\Users\Tomas\Desktop\Proyectos\KCALS\kcalFrontend
+cd C:\Users\Tomas\Desktop\Proyectos\ScaleGrams\frontend
 npm run dev:lan
 ```
 
@@ -97,7 +97,7 @@ VITE_API_BASE_URL=http://localhost:8081
 Credenciales demo:
 
 ```text
-Email: alex@kazadesarrollos.com
+Email: alex@scalegrams.local
 Password: password123
 ```
 

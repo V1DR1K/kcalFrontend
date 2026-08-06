@@ -1,5 +1,5 @@
 export function getSavedUser(userKey) { const saved = localStorage.getItem(userKey); return saved ? JSON.parse(saved) : null; }
-const key = (user) => `kazaFitness.recents.${user?.id || "guest"}`;
+const key = (user) => `scalegrams.recents.${user?.id || "guest"}`;
 export function readRecents(user) { try { return JSON.parse(localStorage.getItem(key(user))) || { items: [], meals: [] }; } catch { return { items: [], meals: [] }; } }
 function write(user, value) { localStorage.setItem(key(user), JSON.stringify(value)); }
 export function rememberItem(user, item) { const value = readRecents(user); const id = `${item.type}:${item.id}`; value.items = [item, ...value.items.filter((saved) => `${saved.type}:${saved.id}` !== id)].slice(0, 20); write(user, value); }

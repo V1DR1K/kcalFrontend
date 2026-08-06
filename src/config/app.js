@@ -1,6 +1,23 @@
-export const APP_NAME = "KazaFitness";
-export const TOKEN_KEY = "kazaFitness.token";
-export const USER_KEY = "kazaFitness.user";
+export const APP_NAME = "ScaleGrams";
+export const TOKEN_KEY = "scalegrams.token";
+export const USER_KEY = "scalegrams.user";
+const LEGACY_TOKEN_KEY = "kazaFitness.token";
+const LEGACY_USER_KEY = "kazaFitness.user";
+
+export function migrateStoredSession() {
+  if (!localStorage.getItem(TOKEN_KEY) && localStorage.getItem(LEGACY_TOKEN_KEY)) {
+    localStorage.setItem(TOKEN_KEY, localStorage.getItem(LEGACY_TOKEN_KEY));
+  }
+  if (!localStorage.getItem(USER_KEY) && localStorage.getItem(LEGACY_USER_KEY)) {
+    localStorage.setItem(USER_KEY, localStorage.getItem(LEGACY_USER_KEY));
+  }
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key?.startsWith("kazaFitness.recents.")) continue;
+    const nextKey = key.replace("kazaFitness.recents.", "scalegrams.recents.");
+    if (!localStorage.getItem(nextKey)) localStorage.setItem(nextKey, localStorage.getItem(key));
+  }
+}
 export const REGISTRATION_ENABLED = import.meta.env.VITE_REGISTRATION_ENABLED === "true";
 export const DEFAULT_MEALS = [
   { code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" },
