@@ -1354,9 +1354,23 @@ button:disabled {
   background: linear-gradient(90deg, transparent, var(--surface-hover), transparent);
   animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
-.skeleton-hero { height: 128px; }
-.skeleton-meal { height: 68px; }
-.skeleton-panel { height: 96px; }
+.dashboard-skeleton-hero {
+  display: grid;
+  grid-template-columns: minmax(104px, 0.45fr) minmax(0, 0.55fr);
+  gap: var(--space-4);
+  align-items: center;
+  justify-items: center;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--outline) 55%, transparent);
+  border-radius: var(--radius-panel);
+  background: var(--surface-low);
+}
+.skeleton-ring { width: clamp(124px, 14vw, 170px); aspect-ratio: 1; border-radius: 50%; }
+.skeleton-copy { width: 100%; height: 88px; }
+.skeleton-strip { grid-column: 1 / -1; display: grid; gap: 10px; width: 100%; }
+.skeleton-macro { height: 30px; }
+.skeleton-meal-card { min-height: 138px; }
+.skeleton-panel { height: 120px; }
 .skeleton-food-card { height: 148px; }
 @keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
 

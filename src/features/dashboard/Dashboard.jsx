@@ -313,11 +313,19 @@ export function Dashboard({ api, user, setPage }) {
         <Header title="Mi día" action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
         <span className="sr-only">Cargando tu día…</span>
         <div className="dashboard-skeleton" aria-hidden="true">
-          <div className="skeleton skeleton-hero" />
-          <div className="skeleton skeleton-meal" />
-          <div className="skeleton skeleton-meal" />
-          <div className="skeleton skeleton-meal" />
-          <div className="skeleton skeleton-meal" />
+          <div className="dashboard-skeleton-hero">
+            <div className="skeleton skeleton-ring" />
+            <div className="skeleton skeleton-copy" />
+            <div className="skeleton-strip">
+              <div className="skeleton skeleton-macro" />
+              <div className="skeleton skeleton-macro" />
+              <div className="skeleton skeleton-macro" />
+            </div>
+          </div>
+          <div className="skeleton skeleton-meal-card" />
+          <div className="skeleton skeleton-meal-card" />
+          <div className="skeleton skeleton-meal-card" />
+          <div className="skeleton skeleton-meal-card" />
           <div className="skeleton skeleton-panel" />
         </div>
       </section>

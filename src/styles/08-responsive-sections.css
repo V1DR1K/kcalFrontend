@@ -347,9 +347,9 @@
   .page-header .header-actions button { width: 100%; min-width: 0; justify-content: center; }
 
   .dashboard-hero,
-  .dashboard-hero-full { grid-template-columns: 1fr; text-align: center; }
+  .dashboard-hero-full { text-align: center; }
 
-  .calorie-ring { width: clamp(184px, 62vw, 208px); }
+  .calorie-ring { width: clamp(124px, 62vw, 180px); }
 
   .macro-card {
     text-align: left;
