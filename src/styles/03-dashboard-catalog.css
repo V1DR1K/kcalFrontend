@@ -985,7 +985,7 @@ summary:focus-visible {
   color: var(--muted);
   font-size: 12px;
 }
-.yesterday-suggestion { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; overflow: hidden; padding: 10px 0; border-top: 1px solid color-mix(in srgb, var(--outline) 55%, transparent); animation: yesterday-suggestion-in 220ms cubic-bezier(.2,.8,.2,1); }
+.yesterday-suggestion { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; overflow: hidden; padding: 10px; border-top: 1px solid color-mix(in srgb, var(--outline) 55%, transparent); animation: yesterday-suggestion-in 220ms cubic-bezier(.2,.8,.2,1); }
 .yesterday-suggestion > .material-symbols-outlined { color: var(--primary); transition: transform 180ms ease, color 180ms ease; }
 .yesterday-suggestion > span:nth-child(2) { display: grid; line-height: 1.2; }
 .yesterday-suggestion small { color: var(--muted); }

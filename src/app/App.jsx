@@ -7,7 +7,6 @@ import { Shell } from "./Shell";
 import { AuthScreen } from "../features/auth/AuthScreen";
 import { ActionLoader } from "../components/ActionLoader";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
-import { Notification } from "../components/Notification";
 
 function lazyPage(load, name) {
   return lazy(() => load().then((module) => ({ default: module[name] })));
@@ -39,11 +38,9 @@ export function App() {
   const [prefillBarcode, setPrefillBarcode] = useState("");
   const [actionLoading, setActionLoading] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
-  const [notification, setNotification] = useState(null);
   const actionSequence = useRef(0);
   const pendingActions = useRef(new Map());
   const confirmationResolver = useRef(null);
-  const notificationTimer = useRef(null);
 
   const api = useMemo(
     () => ({
@@ -68,11 +65,7 @@ export function App() {
           setConfirmation(options);
         });
       },
-      notify(message, tone = "success") {
-        window.clearTimeout(notificationTimer.current);
-        setNotification({ message, tone });
-        notificationTimer.current = window.setTimeout(() => setNotification(null), tone === "error" ? 6500 : 4200);
-      },
+      notify() {},
     }),
     [],
   );
@@ -82,8 +75,6 @@ export function App() {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
   }, [page]);
-
-  useEffect(() => () => window.clearTimeout(notificationTimer.current), []);
 
   function saveSession(payload) {
     localStorage.setItem(TOKEN_KEY, payload.token);
@@ -171,7 +162,6 @@ export function App() {
       )}
       {actionLoading && <ActionLoader {...actionLoading} />}
       {confirmation && <ConfirmationDialog {...confirmation} onCancel={() => resolveConfirmation(false)} onConfirm={() => resolveConfirmation(true)} />}
-      <Notification {...notification} onDismiss={() => setNotification(null)} />
     </>
   );
 }
