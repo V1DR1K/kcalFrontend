@@ -11,6 +11,7 @@ import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../foods/Foods";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, readableDate, shiftDate, today } from "../../utils/format";
+import "../../styles/12-dashboard-summary.css";
 
 const SWIPE_ACTION_WIDTH = 84;
 let optimisticSequence = 0;
@@ -398,9 +399,10 @@ export function Dashboard({ api, user, setPage }) {
         </div>
       </div>
       <div className="meal-grid">
-        {mealTypes.map((mealType) => (
+        {mealTypes.map((mealType, mealIndex) => (
           <MealCard
             key={mealType.code}
+            entryDelay={mealIndex * 45}
             mealType={mealType}
             meal={mealByCode.get(mealType.code)}
             yesterdayMeal={yesterdayData?.meals?.find((meal) => meal.mealType === mealType.code)}
@@ -493,10 +495,9 @@ export function Dashboard({ api, user, setPage }) {
         ))}
       </div>
       <div className={`grid ${recentMeals.length ? "two" : ""}`}>
-        <Panel title="Agua">
-          <p className="big">
-            {formatNumber(data?.waterConsumedLiters, 1)}L / {formatNumber(data?.waterGoalLiters, 1)}L
-          </p>
+        <div className="dashboard-water">
+          <Icon name="water_drop" />
+          <p><strong>Hidratación</strong><small>{formatNumber(data?.waterConsumedLiters, 1)} L de {formatNumber(data?.waterGoalLiters, 1)} L</small></p>
           <div className="water-actions">
             <button
               className="secondary"
@@ -559,7 +560,7 @@ export function Dashboard({ api, user, setPage }) {
               {waterSaving ? "Guardando…" : "Sumar 0.5L"}
             </button>
           </div>
-        </Panel>
+        </div>
         {Boolean(recentMeals.length) && <Panel title="Comidas recientes">
           <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
         </Panel>}
@@ -750,7 +751,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAd
   );
 }
 
-function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove }) {
+function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove, entryDelay = 0 }) {
   const items = meal?.items || [];
   const cardRef = useRef(null);
   const menuRef = useRef(null);
@@ -842,6 +843,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
       ref={cardRef}
       className={`meal-card ${dragOver ? "drag-over" : ""}`}
       data-meal-type={mealType.code}
+      style={{ "--meal-delay": `${entryDelay}ms` }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setExpandedLogId(null);
       }}
@@ -864,9 +866,9 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
       }}
     >
       <header>
-        <div>
-          <span>{mealType.label}</span>
-          <strong>{meal?.calories || 0} kcal</strong>
+        <div className="meal-heading">
+          <Icon name="restaurant" />
+          <div><span>{mealType.label}</span><strong>{meal?.calories || 0} kcal</strong></div>
         </div>
         <div className="meal-header-actions">
           <details className="meal-menu" ref={menuRef}><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button disabled={!items.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); onCopyMeal(items); }}>Copiar todo</button><button disabled={!clipboard?.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); addLogs(clipboard); }}>Pegar</button><button className="danger-text" disabled={!items.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); deleteAll(); }}>Borrar todo</button></div></details>
@@ -918,7 +920,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
           );
         })
       ) : (
-        <p className="empty-state">Todavía no registraste nada. Usá el botón + para agregar comida.</p>
+        <div className="history-empty dashboard-food-empty"><Icon name="no_meals" /><strong>Sin alimentos registrados</strong><small>Todavía no cargaste nada. Usá el botón + para agregar comida.</small></div>
       )}
     </article>
   );

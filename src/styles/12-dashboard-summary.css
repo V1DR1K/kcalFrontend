@@ -1,0 +1,181 @@
+.meal-card {
+  gap: 0;
+  padding: 0;
+  border-radius: var(--radius-surface);
+  background: var(--surface-low);
+  animation: dashboard-meal-in 300ms var(--ease-emphasized) both;
+  animation-delay: var(--meal-delay, 0ms);
+}
+
+.meal-card > header {
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--outline);
+  border-radius: var(--radius-surface) var(--radius-surface) 0 0;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 9%, transparent), transparent 60%);
+}
+
+.meal-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.meal-heading > .material-symbols-outlined {
+  flex: 0 0 auto;
+  color: var(--primary);
+  font-size: 20px;
+}
+
+.meal-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.meal-heading > div > span {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meal-heading > div > strong {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.meal-macros {
+  justify-content: flex-start;
+  padding: 10px 15px;
+  border-bottom: 1px solid color-mix(in srgb, var(--outline) 45%, transparent);
+}
+
+.meal-card .swipe-row {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.meal-card .swipe-row .meal-item-shell {
+  background: var(--surface-low);
+}
+
+.meal-card .swipe-row.expanded .meal-item-shell {
+  background: linear-gradient(180deg, var(--surface-swipe-expanded), var(--surface-swipe));
+}
+
+.meal-card .swipe-row + .swipe-row .meal-item-shell {
+  border-top: 1px solid color-mix(in srgb, var(--outline) 45%, transparent);
+}
+
+.meal-card .meal-item {
+  padding: 12px 15px;
+}
+
+.meal-card .meal-item .food-thumb.compact {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+}
+
+.dashboard-food-empty {
+  display: grid;
+  place-items: center;
+  gap: 5px;
+  margin: 14px;
+  padding: 24px 20px;
+  border: 1px dashed var(--outline);
+  border-radius: var(--radius-surface);
+  color: var(--muted);
+  text-align: center;
+}
+
+.dashboard-food-empty .material-symbols-outlined {
+  color: var(--primary);
+  font-size: 30px;
+}
+
+.dashboard-food-empty small {
+  color: var(--muted);
+}
+
+.dashboard-water {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 14px var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--tertiary) 25%, transparent);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--tertiary) 7%, transparent);
+}
+
+.dashboard-water > .material-symbols-outlined {
+  flex: 0 0 auto;
+  color: var(--tertiary);
+}
+
+.dashboard-water p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.dashboard-water small {
+  color: var(--muted);
+}
+
+.dashboard-water .water-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.dashboard-water .water-actions .secondary {
+  min-height: 38px;
+  padding: 6px 12px;
+  border-radius: var(--radius-control);
+  font-size: 13px;
+}
+
+@keyframes dashboard-meal-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+@media (max-width: 600px) {
+  .meal-card > header {
+    padding: 16px 14px 14px;
+  }
+
+  .meal-card .meal-item {
+    padding: 10px 12px;
+  }
+
+  .meal-macros {
+    padding: 9px 14px;
+  }
+
+  .dashboard-water .water-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  .dashboard-food-empty {
+    margin: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meal-card {
+    animation: none;
+  }
+}
