@@ -158,7 +158,7 @@ export function App() {
           </Suspense>
         </Shell>
       ) : (
-        <AuthScreen api={api} page={page} setPage={setPage} saveSession={saveSession} notify={api.notify} />
+        <AuthScreen api={api} page={page} setPage={setPage} saveSession={saveSession} />
       )}
       {actionLoading && <ActionLoader {...actionLoading} />}
       {confirmation && <ConfirmationDialog {...confirmation} onCancel={() => resolveConfirmation(false)} onConfirm={() => resolveConfirmation(true)} />}

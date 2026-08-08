@@ -3,10 +3,11 @@ import { APP_NAME, REGISTRATION_ENABLED } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 
-export function AuthScreen({ api, page, setPage, saveSession, notify }) {
+export function AuthScreen({ api, page, setPage, saveSession }) {
   const isRegister = REGISTRATION_ENABLED && page === "register";
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [formError, setFormError] = useState("");
   function messageFor(error, fallback) {
     if (error?.fields && typeof error.fields === "object") {
       setFieldErrors(
@@ -26,6 +27,7 @@ export function AuthScreen({ api, page, setPage, saveSession, notify }) {
     const data = Object.fromEntries(new FormData(event.currentTarget));
     setLoading(true);
     setFieldErrors({});
+    setFormError("");
     try {
       const payload = await api.runAction(
         {
@@ -37,10 +39,9 @@ export function AuthScreen({ api, page, setPage, saveSession, notify }) {
         } : { email: data.email, password: data.password }) }),
       );
       saveSession(payload);
-      notify(isRegister ? "Cuenta creada." : "Sesión iniciada.");
     } catch (error) {
       const message = messageFor(error, isRegister ? "No se pudo crear la cuenta." : "No se pudo iniciar sesión.");
-      notify(message, "error");
+      setFormError(message);
     } finally {
       setLoading(false);
     }
@@ -50,6 +51,7 @@ export function AuthScreen({ api, page, setPage, saveSession, notify }) {
     <Input name="email" label="Email" type="email" defaultValue={!isRegister && import.meta.env.DEV ? "alex@scalegrams.local" : ""} autoComplete="email" required error={fieldErrors.email} />
     <Input name="password" label="Contraseña" type="password" defaultValue={!isRegister && import.meta.env.DEV ? "password123" : ""} autoComplete={isRegister ? "new-password" : "current-password"} minLength="8" required error={fieldErrors.password} />
     {isRegister && <><div className="split"><Input name="weightKg" label="Peso kg" type="number" defaultValue="75" required /><Input name="heightCm" label="Altura cm" type="number" defaultValue="175" required /></div><Input name="birthDate" label="Fecha de nacimiento" type="date" defaultValue="1995-01-01" /><div className="split"><Select name="gender" label="Género" options={["MALE", "FEMALE", "OTHER"]} /><Select name="activityLevel" label="Actividad" options={["SEDENTARY", "LIGHTLY_ACTIVE", "MODERATELY_ACTIVE", "VERY_ACTIVE"]} /></div><Select name="goal" label="Objetivo" options={["LOSE", "MAINTAIN", "GAIN"]} /></>}
+    {formError && <p className="form-error" role="alert">{formError}</p>}
     <button className="primary" disabled={loading}>{loading ? "Procesando..." : isRegister ? "Crear cuenta" : "Ingresar"}</button>
    </form>{REGISTRATION_ENABLED && <button className="link-button" onClick={() => { setFieldErrors({}); setPage(isRegister ? "login" : "register"); }}>{isRegister ? "Ya tengo cuenta" : "Crear una cuenta nueva"}</button>}</section></main>;
 }
