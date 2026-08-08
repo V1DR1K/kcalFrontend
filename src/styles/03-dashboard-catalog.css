@@ -628,6 +628,28 @@ select:focus,
   justify-content: flex-end;
   padding-top: 18px;
 }
+
+.dashboard-page-header {
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: 14px;
+}
+.dashboard-page-header .date-nav {
+  width: 100%;
+  padding-top: 0;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+.dashboard-page-header .date-picker-trigger {
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+}
+.dashboard-page-header .date-picker-trigger .material-symbols-outlined {
+  flex: 0 0 auto;
+  font-size: 18px;
+  color: var(--primary);
+}
 .meal-card.drag-over { border-color: var(--primary); background: color-mix(in srgb, var(--primary-container) 32%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent); }
 .meal-item.moving { opacity: .45; }
 

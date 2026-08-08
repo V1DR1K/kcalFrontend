@@ -415,11 +415,10 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     setActivatingId(plan.id);
     try {
       const payload = { name: plan.name, dailyCalories: plan.dailyCalories, proteinPercent: Number(plan.proteinPercent), carbsPercent: Number(plan.carbsPercent), fatPercent: Number(plan.fatPercent), startDate: today(), endDate: null };
-      const replaceCurrentPlan = currentPlan?.id && currentPlan.startDate === today();
       await api.runAction(
         { title: "Cambiando plan", description: "Estamos activando tu plan alimenticio..." },
         async () => {
-          await api.request(replaceCurrentPlan ? `/api/profile/nutrition-plans/${currentPlan.id}` : "/api/profile/nutrition-plans", { method: replaceCurrentPlan ? "PUT" : "POST", body: JSON.stringify(payload) });
+          await api.request("/api/profile/nutrition-plans", { method: "POST", body: JSON.stringify(payload) });
           api.notify(`${plan.name} es ahora tu plan actual.`);
           await onChanged();
         },
@@ -479,10 +478,6 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
           <summary>Detalles del plan</summary>
           <div className="form-grid">
             <Input label="Nombre del plan" value={form.name} onChange={(event) => setField("name", event.target.value)} minLength="2" required />
-            <div className="split">
-              <Input label="Fecha inicio" type="date" value={form.startDate} onChange={(event) => setField("startDate", event.target.value)} required />
-              <Input label="Fecha fin opcional" type="date" min={form.startDate} value={form.endDate} onChange={(event) => setField("endDate", event.target.value)} />
-            </div>
           </div>
         </details>
         <button className="primary" disabled={saving || Math.round(total * 10) / 10 !== 100}>
@@ -492,9 +487,9 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
       </>}
       <div className="plan-history">
         <h3>Historial de planes</h3>
-        {plans.map((plan) => (
-          <article className={plan.id === currentPlan?.id ? "active" : ""} key={plan.id || `${plan.name}-${plan.startDate}`}>
-            <div className="plan-history-heading"><strong>{plan.name}</strong><div className="plan-history-actions">{plan.id === currentPlan?.id && <span className="active-plan-badge">Actual</span>}<button type="button" className="secondary use-plan-button" onClick={() => startEdit(plan)}><Icon name="edit" />Editar</button>{plan.id !== currentPlan?.id && <button className="secondary use-plan-button" disabled={Boolean(activatingId)} onClick={() => activatePlan(plan)}>{activatingId === plan.id ? "Cambiando..." : "Usar este plan"}</button>}</div></div>
+        {plans.filter((plan) => plan.id !== currentPlan?.id).map((plan) => (
+          <article key={plan.id || `${plan.name}-${plan.startDate}`}>
+            <div className="plan-history-heading"><strong>{plan.name}</strong><div className="plan-history-actions"><button type="button" className="secondary use-plan-button" onClick={() => startEdit(plan)}><Icon name="edit" />Editar</button><button className="secondary use-plan-button" disabled={Boolean(activatingId)} onClick={() => activatePlan(plan)}>{activatingId === plan.id ? "Cambiando..." : "Usar este plan"}</button></div></div>
             <span>
               {plan.startDate} - {plan.endDate || "actual"}
             </span>

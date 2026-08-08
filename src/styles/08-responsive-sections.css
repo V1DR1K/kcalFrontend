@@ -362,12 +362,10 @@
   }
 
   .dashboard-page-header { display: flex; align-items: center; gap: 10px; min-height: 48px; }
-  .dashboard-page-header > div:first-child { min-width: 68px; }
-  .dashboard-page-header h1 { margin-top: 1px; font-size: 22px; white-space: nowrap; }
-  .dashboard-page-header .date-nav { flex: 1; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 4px; width: auto; padding: 0; }
+  .dashboard-page-header .date-nav { flex: 1; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 4px; width: auto; padding: 0; }
   .dashboard-page-header .date-nav .icon-button { width: 44px; min-width: 44px; min-height: 44px; }
-  .dashboard-page-header .date-picker-trigger { flex: 0 1 104px; min-width: 84px; min-height: 44px; padding: 0 8px; overflow: hidden; font-size: 11px; }
-  .dashboard-page-header .date-picker-trigger .material-symbols-outlined { display: none; }
+  .dashboard-page-header .date-picker-trigger { flex: 0 1 auto; min-width: 0; min-height: 44px; gap: 6px; padding: 0 12px; overflow: hidden; font-size: 12px; }
+  .dashboard-page-header .date-picker-trigger .material-symbols-outlined { flex: 0 0 auto; font-size: 18px; color: var(--primary); }
   .dashboard-page-header .date-picker-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dashboard-page-header .today-button { min-height: 44px; padding: 0 10px; font-size: 12px; }
 

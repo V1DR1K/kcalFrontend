@@ -5,9 +5,7 @@ import { formatNumber } from "../utils/format";
 export function Header({ title, action, compact = false }) {
   return (
     <header className={`page-header ${compact ? "dashboard-page-header" : ""}`}>
-      <div>
-        <h1>{title}</h1>
-      </div>
+      {title && <div><h1>{title}</h1></div>}
       {action}
     </header>
   );

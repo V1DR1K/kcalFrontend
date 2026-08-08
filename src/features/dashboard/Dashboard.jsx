@@ -310,7 +310,8 @@ export function Dashboard({ api, user, setPage }) {
   if (loading && !data) {
     return (
       <section className="page" role="status" aria-live="polite">
-        <Header title="Mi día" action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
+        <h1 className="sr-only">Mi día</h1>
+        <Header compact action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
         <span className="sr-only">Cargando tu día…</span>
         <div className="dashboard-skeleton" aria-hidden="true">
           <div className="dashboard-skeleton-hero">
@@ -334,7 +335,7 @@ export function Dashboard({ api, user, setPage }) {
   if (error && !data) {
     return (
       <section className="page">
-        <Header title="Mi día" action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
+        <Header compact action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
         <CatalogStatus error>
           {error}
           <button className="secondary" onClick={() => load(selectedDate)}>
@@ -346,7 +347,8 @@ export function Dashboard({ api, user, setPage }) {
   }
   return (
     <section className="page dashboard-page" ref={dashboardTopRef}>
-      <Header title="Mi día" eyebrow={data?.plan?.name || "Plan alimenticio"} compact action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
+      <h1 className="sr-only">Mi día</h1>
+      <Header compact action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
       <CompactBalanceBar
         visible={compactBalance}
         consumed={data?.caloriesConsumed}
