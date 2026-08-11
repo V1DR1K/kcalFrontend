@@ -665,6 +665,12 @@ select:focus,
   z-index: 1;
 }
 
+/* Keep meal overflow menus above the item rows inside the action surface. */
+.meal-card > header {
+  position: relative;
+  z-index: 4;
+}
+
 .action-surface::before {
   position: absolute;
   inset: 0;
