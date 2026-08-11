@@ -140,6 +140,7 @@ export function Dashboard({ api, user, setPage }) {
   const [deletingLogId, setDeletingLogId] = useState(null);
   const [movingLogId, setMovingLogId] = useState(null);
   const [waterSaving, setWaterSaving] = useState(false);
+  const [waterActionState, setWaterActionState] = useState("idle");
   const [mealClipboard, setMealClipboard] = useState(null);
   const [mealBulkActionLoading, setMealBulkActionLoading] = useState(false);
   const [swipeResetSignal, setSwipeResetSignal] = useState(0);
@@ -147,6 +148,7 @@ export function Dashboard({ api, user, setPage }) {
   const balanceRef = useRef(null);
   const [compactBalance, setCompactBalance] = useState(false);
   const [selectedDate, setSelectedDate] = useState(today());
+  const [dateChanging, setDateChanging] = useState(false);
   const [yesterdayData, setYesterdayData] = useState(null);
   const load = (date = selectedDate) => {
     if (!data) setLoading(true);
@@ -158,8 +160,16 @@ export function Dashboard({ api, user, setPage }) {
         setError("No pudimos cargar tu día.");
         api.notify("No se pudo cargar el dashboard.", "error");
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setDateChanging(false);
+      });
   };
+  function changeDate(nextDate) {
+    if (nextDate === selectedDate) return;
+    setDateChanging(true);
+    setSelectedDate(nextDate);
+  }
   useEffect(() => {
     load(selectedDate);
     api
@@ -312,7 +322,7 @@ export function Dashboard({ api, user, setPage }) {
     return (
       <section className="page" role="status" aria-live="polite">
         <h1 className="sr-only">Mi día</h1>
-        <Header compact action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
+        <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
         <span className="sr-only">Cargando tu día…</span>
         <div className="dashboard-skeleton" aria-hidden="true">
           <div className="dashboard-skeleton-hero">
@@ -336,7 +346,7 @@ export function Dashboard({ api, user, setPage }) {
   if (error && !data) {
     return (
       <section className="page">
-        <Header compact action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
+        <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
         <CatalogStatus error>
           {error}
           <button className="secondary" onClick={() => load(selectedDate)}>
@@ -494,73 +504,83 @@ export function Dashboard({ api, user, setPage }) {
           />
         ))}
       </div>
-      <div className={`grid ${recentMeals.length ? "two" : ""}`}>
-        <div className="dashboard-water">
-          <Icon name="water_drop" />
-          <p><strong>Hidratación</strong><small>{formatNumber(data?.waterConsumedLiters, 1)} L de {formatNumber(data?.waterGoalLiters, 1)} L</small></p>
-          <div className="water-actions">
-            <button
-              className="secondary"
-              disabled={waterSaving || !Number(data?.waterConsumedLiters)}
-              onClick={async () => {
-                if (waterSaving) return;
-                setWaterSaving(true);
-                const restore = adjustWaterOptimistic(-0.5);
-                try {
-                  await api.runAction(
-                    { title: "Deshaciendo hidratación", description: "Estamos actualizando tu registro de agua..." },
-                    async () => {
-                      await api.request(`/api/nutrition/water-logs/latest?date=${selectedDate}`, { method: "DELETE" });
-                      api.notify("Último registro de agua eliminado.");
-                      await load();
-                    },
-                    { quiet: true },
-                  );
-                } catch {
-                  restore();
-                  api.notify("No hay agua para descontar.", "error");
-                } finally {
-                  setWaterSaving(false);
-                }
-              }}
-            >
-              Deshacer
-            </button>
-            <button
-              className="secondary"
-              disabled={waterSaving}
-              onClick={async () => {
-                if (waterSaving) return;
-                setWaterSaving(true);
-                const restore = adjustWaterOptimistic(0.5);
-                try {
-                  await api.runAction(
-                    { title: "Registrando hidratación", description: "Estamos guardando el agua consumida..." },
-                    async () => {
-                      await api.request("/api/nutrition/water-logs", {
-                        method: "POST",
-                        body: JSON.stringify({
-                          liters: 0.5,
-                          logDate: selectedDate,
-                        }),
-                      });
-                      api.notify("Hidratación registrada.");
-                      await load();
-                    },
-                    { quiet: true },
-                  );
-                } catch {
-                  restore();
-                  api.notify("No se pudo registrar el agua.", "error");
-                } finally {
-                  setWaterSaving(false);
-                }
-              }}
-            >
-              {waterSaving ? "Guardando…" : "Sumar 0.5L"}
-            </button>
-          </div>
-        </div>
+       <div className={`grid ${recentMeals.length ? "two" : ""}`}>
+         <div className="dashboard-water action-surface" data-action-state={waterActionState}>
+           <Icon name="water_drop" />
+           <p><strong>Hidratación</strong><small>{formatNumber(data?.waterConsumedLiters, 1)} L de {formatNumber(data?.waterGoalLiters, 1)} L</small></p>
+           <div className="water-actions">
+             <button
+               className="secondary action-control"
+               disabled={waterSaving || !Number(data?.waterConsumedLiters)}
+               onClick={async () => {
+                 if (waterSaving) return;
+                 setWaterSaving(true);
+                 setWaterActionState("undoing");
+                 const restore = adjustWaterOptimistic(-0.5);
+                 try {
+                   await api.runAction(
+                     { title: "Deshaciendo hidratación", description: "Estamos actualizando tu registro de agua..." },
+                     async () => {
+                       await api.request(`/api/nutrition/water-logs/latest?date=${selectedDate}`, { method: "DELETE" });
+                       api.notify("Último registro de agua eliminado.");
+                       await load();
+                     },
+                     { quiet: true },
+                   );
+                   setWaterActionState("success");
+                   window.setTimeout(() => setWaterActionState("idle"), 700);
+                 } catch {
+                   restore();
+                   setWaterActionState("error");
+                   api.notify("No hay agua para descontar.", "error");
+                   window.setTimeout(() => setWaterActionState("idle"), 700);
+                 } finally {
+                   setWaterSaving(false);
+                 }
+               }}
+             >
+               {waterActionState === "undoing" ? "Deshaciendo..." : "Deshacer"}
+             </button>
+             <button
+               className="secondary action-control"
+               disabled={waterSaving}
+               onClick={async () => {
+                 if (waterSaving) return;
+                 setWaterSaving(true);
+                 setWaterActionState("adding");
+                 const restore = adjustWaterOptimistic(0.5);
+                 try {
+                   await api.runAction(
+                     { title: "Registrando hidratación", description: "Estamos guardando el agua consumida..." },
+                     async () => {
+                       await api.request("/api/nutrition/water-logs", {
+                         method: "POST",
+                         body: JSON.stringify({
+                           liters: 0.5,
+                           logDate: selectedDate,
+                         }),
+                       });
+                       api.notify("Hidratación registrada.");
+                       await load();
+                     },
+                     { quiet: true },
+                   );
+                   setWaterActionState("success");
+                   window.setTimeout(() => setWaterActionState("idle"), 700);
+                 } catch {
+                   restore();
+                   setWaterActionState("error");
+                   api.notify("No se pudo registrar el agua.", "error");
+                   window.setTimeout(() => setWaterActionState("idle"), 700);
+                 } finally {
+                   setWaterSaving(false);
+                 }
+               }}
+             >
+               {waterActionState === "adding" ? "Guardando..." : "Sumar 0.5L"}
+             </button>
+           </div>
+         </div>
         {Boolean(recentMeals.length) && <Panel title="Comidas recientes">
           <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
         </Panel>}
@@ -614,21 +634,21 @@ function CompactBalanceBar({ visible, consumed, goal, macros, onGoTop }) {
   );
 }
 
-function DateNavigator({ date, setDate }) {
+function DateNavigator({ date, setDate, changing = false }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   return (
-    <div className="date-nav">
-      <button className="icon-button" aria-label="Día anterior" onClick={() => setDate(shiftDate(date, -1))}>
+    <div className={`date-nav action-surface ${changing ? "date-changing" : ""}`} data-action-state={changing ? "pending" : "idle"}>
+      <button className="icon-button action-control" aria-label="Día anterior" disabled={changing} onClick={() => setDate(shiftDate(date, -1))}>
         <Icon name="chevron_left" />
       </button>
-      <button type="button" className="date-picker-trigger" aria-haspopup="dialog" onClick={() => setPickerOpen(true)}><Icon name="calendar_month" /><span>{readableDate(date)}</span></button>
-      <button className="icon-button" aria-label="Día siguiente" onClick={() => setDate(shiftDate(date, 1))}>
+      <button type="button" className="date-picker-trigger action-control" aria-haspopup="dialog" disabled={changing} onClick={() => setPickerOpen(true)}><Icon name="calendar_month" /><span>{readableDate(date)}</span></button>
+      <button className="icon-button action-control" aria-label="Día siguiente" disabled={changing} onClick={() => setDate(shiftDate(date, 1))}>
         <Icon name="chevron_right" />
       </button>
-      <button className="secondary today-button" aria-label="Ir a hoy" onClick={() => setDate(today())}>
+      <button className="secondary today-button action-control" aria-label="Ir a hoy" disabled={changing} onClick={() => setDate(today())}>
         <Icon name="today" /><span className="today-label">Hoy</span>
       </button>
-      {pickerOpen && <DatePickerDialog value={date} onSelect={setDate} onClose={() => setPickerOpen(false)} />}
+      {pickerOpen && !changing && <DatePickerDialog value={date} onSelect={setDate} onClose={() => setPickerOpen(false)} />}
     </div>
   );
 }
@@ -706,7 +726,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAd
             const state = status[type.code];
             if (!items.length || state === "dismissed") return null;
             return (
-              <article className={`ghost-meal ${state || ""}`} key={type.code}>
+              <article className={`ghost-meal action-surface ${state || ""}`} data-action-state={state || "idle"} key={type.code}>
                 <header>
                   <div>
                     <span>
@@ -758,6 +778,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
   const [dragOver, setDragOver] = useState(false);
   const [expandedLogId, setExpandedLogId] = useState(null);
   const [suggestionState, setSuggestionState] = useState("idle");
+  const [bulkActionState, setBulkActionState] = useState("idle");
   const yesterdayItems = yesterdayMeal?.items || [];
   useEffect(() => setSuggestionState("idle"), [targetDate, mealType.code]);
   useEffect(() => setExpandedLogId(null), [targetDate, mealType.code, resetSignal]);
@@ -800,6 +821,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
   async function addLogs(logs) {
     if (bulkActionLoading) return;
     setBulkActionLoading(true);
+    setBulkActionState("pasting");
     const optimisticLogs = onOptimisticAdd(logs, mealType.code);
     try {
       await api.runAction(
@@ -808,10 +830,17 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
           await createMealLogs(api, logs, mealType.code, targetDate);
           api.notify(`Comida pegada en ${mealType.label}.`);
           await onCopied();
+          setBulkActionState("success");
+          window.setTimeout(() => setBulkActionState("idle"), 700);
         },
         { quiet: true },
       );
-    } catch { onOptimisticRollback(optimisticLogs); api.notify("No se pudo pegar la comida. Se revirtieron los cambios.", "error"); }
+    } catch {
+      onOptimisticRollback(optimisticLogs);
+      setBulkActionState("error");
+      api.notify("No se pudo pegar la comida. Se revirtieron los cambios.", "error");
+      window.setTimeout(() => setBulkActionState("idle"), 700);
+    }
     finally { setBulkActionLoading(false); }
   }
   async function deleteAll() {
@@ -823,6 +852,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
     });
     if (!confirmed) return;
     setBulkActionLoading(true);
+    setBulkActionState("deleting");
     const restore = onOptimisticRemove(items);
     try {
       await api.runAction(
@@ -831,17 +861,32 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
           await api.request(`/api/nutrition/food-logs?mealType=${mealType.code}&date=${targetDate}`, { method: "DELETE" });
           api.notify(`${mealType.label} eliminado.`);
           await onCopied();
+          setBulkActionState("success");
+          window.setTimeout(() => setBulkActionState("idle"), 700);
         },
         { quiet: true },
       );
     }
-    catch { restore(); api.notify("No se pudo borrar toda la comida. Se revirtieron los cambios.", "error"); }
+    catch {
+      restore();
+      setBulkActionState("error");
+      api.notify("No se pudo borrar toda la comida. Se revirtieron los cambios.", "error");
+      window.setTimeout(() => setBulkActionState("idle"), 700);
+    }
     finally { setBulkActionLoading(false); }
+  }
+  function copyAll() {
+    if (!items.length || bulkActionLoading) return;
+    menuRef.current?.removeAttribute("open");
+    onCopyMeal(items);
+    setBulkActionState("success");
+    window.setTimeout(() => setBulkActionState("idle"), 700);
   }
   return (
     <article
       ref={cardRef}
-      className={`meal-card ${dragOver ? "drag-over" : ""}`}
+      className={`meal-card action-surface ${dragOver ? "drag-over" : ""}`}
+      data-action-state={bulkActionState}
       data-meal-type={mealType.code}
       style={{ "--meal-delay": `${entryDelay}ms` }}
       onBlur={(event) => {
@@ -871,8 +916,8 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
           <div><span>{mealType.label}</span><strong>{meal?.calories || 0} kcal</strong></div>
         </div>
         <div className="meal-header-actions">
-          <details className="meal-menu" ref={menuRef}><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button disabled={!items.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); onCopyMeal(items); }}>Copiar todo</button><button disabled={!clipboard?.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); addLogs(clipboard); }}>Pegar</button><button className="danger-text" disabled={!items.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); deleteAll(); }}>Borrar todo</button></div></details>
-          <button className="icon-button" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><Icon name="add" /></button>
+          <details className="meal-menu" ref={menuRef}><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button className="action-control" disabled={!items.length || bulkActionLoading} onClick={copyAll}>Copiar todo</button><button className="action-control" disabled={!clipboard?.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); addLogs(clipboard); }}>Pegar</button><button className="danger-text action-control" disabled={!items.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); deleteAll(); }}>Borrar todo</button></div></details>
+          <button className="icon-button action-control" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><Icon name="add" /></button>
         </div>
       </header>
       <div className="meal-macros">
@@ -905,12 +950,14 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
             const item = mealLogItem(log);
           return (
             <SwipeableMealItem
-              className={`${movingLogId === log.id ? "moving" : ""} ${log.optimistic ? "optimistic" : ""}`}
+              className={`${movingLogId === log.id ? "moving" : ""} ${deletingLogId === log.id ? "deleting" : ""} ${log.optimistic ? "optimistic" : ""}`}
               key={log.id}
               resetSignal={resetSignal}
               expanded={expandedLogId === log.id}
               onToggle={() => setExpandedLogId((current) => (current === log.id ? null : log.id))}
               onEdit={() => onEdit(log)} onDelete={() => onDelete(log)}
+              disabled={Boolean(deletingLogId) || Boolean(movingLogId) || bulkActionLoading}
+              dragData={{ ...log, mealType: mealType.code }}
               details={<MealLogDetails log={log} item={item} />}
             >
               <FoodThumb item={item} compact />
@@ -1012,7 +1059,7 @@ function RecipeIngredientDetail({ ingredient }) {
   );
 }
 
-function SwipeableMealItem({ children, className = "", resetSignal, expanded = false, onToggle, details, onEdit, onDelete }) {
+function SwipeableMealItem({ children, className = "", resetSignal, expanded = false, onToggle, details, onEdit, onDelete, disabled = false, dragData }) {
   const gesture = useRef(null);
   const offsetRef = useRef(0);
   const suppressClick = useRef(false);
@@ -1070,8 +1117,8 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
   }
   return (
     <div className={`swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""} ${expanded ? "expanded" : ""}`}>
-      <button className="swipe-action swipe-edit" aria-label="Editar registro" tabIndex={revealed === "edit" ? 0 : -1} aria-hidden={revealed !== "edit"} onClick={() => { close(); onEdit(); }}><Icon name="edit" /></button>
-      <button className="swipe-action swipe-delete" aria-label="Eliminar registro" tabIndex={revealed === "delete" ? 0 : -1} aria-hidden={revealed !== "delete"} onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
+      <button className="swipe-action swipe-edit" aria-label="Editar registro" disabled={disabled} tabIndex={revealed === "edit" ? 0 : -1} aria-hidden={revealed !== "edit"} onClick={() => { close(); onEdit(); }}><Icon name="edit" /></button>
+      <button className="swipe-action swipe-delete" aria-label="Eliminar registro" disabled={disabled} tabIndex={revealed === "delete" ? 0 : -1} aria-hidden={revealed !== "delete"} onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
       <div
         className={`meal-item-shell ${horizontalDragging ? "swiping" : ""} ${className}`}
         style={{ transform: `translate3d(${offset}px, 0, 0)` }}
@@ -1082,7 +1129,18 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
         onTouchEnd={finish}
         onTouchCancel={finish}
       >
-        <button type="button" className="meal-item" aria-expanded={expanded} onClick={() => !horizontalDragging && !suppressClick.current && onToggle?.()}>
+        <button
+          type="button"
+          className="meal-item"
+          draggable={Boolean(dragData) && !disabled}
+          aria-expanded={expanded}
+          onDragStart={(event) => {
+            if (!dragData || disabled) return;
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("application/json", JSON.stringify(dragData));
+          }}
+          onClick={() => !horizontalDragging && !suppressClick.current && onToggle?.()}
+        >
           {children}
           <Icon name="expand_more" className="meal-item-chevron" />
         </button>
@@ -1610,7 +1668,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
                 }}>
                   Cancelar
                 </button>
-                <button className="primary" disabled={adding || Number(quantity) <= 0}>
+                <button className="primary action-control" data-action-state={adding ? "pending" : "idle"} disabled={adding || Number(quantity) <= 0}>
                   {adding ? "Agregando…" : `Agregar a ${mealType.label}`}
                 </button>
               </footer>

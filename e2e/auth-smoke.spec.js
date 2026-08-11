@@ -7,17 +7,14 @@ test("renders the public landing and links to account access", async ({ page }) 
   await expect(page.getByRole("link", { name: /ingresar a scalegrams/i })).toHaveAttribute("href", "/ingresar");
 });
 
-test("keeps public access controls touch-safe and browser zoom available", async ({ page }) => {
+test("keeps public access controls touch-safe and blocks browser zoom gestures", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   const access = page.locator(".landing-header").getByRole("link", { name: "Ingresar", exact: true });
   await expect(access).toBeVisible();
   expect((await access.boundingBox())?.height).toBeGreaterThanOrEqual(44);
-  await expect.poll(() => page.evaluate(() => {
-    const event = new Event("gesturestart", { cancelable: true });
-    document.dispatchEvent(event);
-    return event.defaultPrevented;
-  })).toBe(false);
+  await expect(access).toHaveCSS("touch-action", "pan-x pan-y");
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute("content", /user-scalable=no/);
 });
 
 test("renders account access with a route-specific title and return path", async ({ page }) => {

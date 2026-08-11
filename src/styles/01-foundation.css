@@ -194,6 +194,7 @@ html {
 *::before,
 *::after {
   box-sizing: border-box;
+  touch-action: inherit;
 }
 
 body {
@@ -209,6 +210,14 @@ body {
   max-width: 100%;
   min-height: 100dvh;
   scroll-padding-bottom: 45dvh;
+  touch-action: inherit;
+}
+
+#root {
+  touch-action: inherit;
+}
+
+html {
   touch-action: pan-x pan-y;
 }
 

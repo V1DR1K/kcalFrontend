@@ -653,6 +653,63 @@ select:focus,
 }
 .meal-card.drag-over { border-color: var(--primary); background: color-mix(in srgb, var(--primary-container) 32%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent); }
 .meal-item.moving { opacity: .45; }
+.meal-item.deleting { opacity: .45; }
+
+.action-surface {
+  position: relative;
+  overflow: hidden;
+}
+
+.action-surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+.action-surface::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  content: "";
+  pointer-events: none;
+  transform: translateX(-100%);
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--primary) 22%, transparent), transparent);
+}
+
+.action-surface[data-action-state="pending"]::before,
+.action-surface[data-action-state="adding"]::before,
+.action-surface[data-action-state="undoing"]::before,
+.action-surface[data-action-state="copying"]::before,
+.action-surface[data-action-state="pasting"]::before,
+.action-surface[data-action-state="deleting"]::before {
+  animation: action-sweep 760ms cubic-bezier(.22,.75,.18,1) forwards;
+}
+
+.action-surface[data-action-state="pending"],
+.action-surface[data-action-state="adding"],
+.action-surface[data-action-state="undoing"],
+.action-surface[data-action-state="copying"],
+.action-surface[data-action-state="pasting"],
+.action-surface[data-action-state="deleting"] {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--outline));
+}
+
+.action-surface[data-action-state="success"] {
+  border-color: var(--primary);
+  animation: action-success 620ms cubic-bezier(.2,.8,.2,1);
+}
+
+.action-surface[data-action-state="error"] {
+  border-color: var(--error);
+  animation: action-error 380ms ease;
+}
+
+.action-control:not(:disabled):active {
+  transform: scale(.96);
+}
+
+.date-nav[data-action-state="pending"] {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
+}
 
 .action-loader {
   position: fixed;
@@ -1338,6 +1395,13 @@ button:disabled {
   100% { opacity: 0; transform: translateY(-50%) scale(4.6); box-shadow: 0 0 0 18px color-mix(in srgb, var(--primary) 0%, transparent), -58px -34px 0 -4px var(--warning), -66px 32px 0 -5px var(--tertiary), 40px -44px 0 -5px var(--color-confetti-rose), 48px 36px 0 -5px var(--color-confetti-lilac); }
 }
 @keyframes recent-error { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
+@keyframes action-sweep {
+  0% { opacity: 0; transform: translateX(-100%); }
+  18% { opacity: .8; }
+  100% { opacity: 0; transform: translateX(100%); }
+}
+@keyframes action-success { 40% { transform: scale(1.012); box-shadow: 0 0 0 5px color-mix(in srgb, var(--primary) 10%, transparent); } }
+@keyframes action-error { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
 @keyframes optimistic-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } }
 @keyframes meal-detail-in { from { opacity: 0; transform: translateY(-6px) scale(.992); } }
 @keyframes meal-menu-in { from { opacity: 0; transform: translateY(-6px) scale(.96); } }
