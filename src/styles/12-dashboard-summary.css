@@ -74,6 +74,11 @@
 .meal-card .swipe-row + .swipe-row .meal-item-shell {
   border-top: 1px solid color-mix(in srgb, var(--outline) 45%, transparent);
 }
+.meal-card .swipe-row:last-child,
+.meal-card .swipe-row:last-child .meal-item-shell {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
 
 .meal-card .meal-item {
   padding: 12px 15px;

@@ -337,7 +337,7 @@
     width: 100%;
   }
 
-  .date-picker-trigger { min-width: 0; flex: 1; }
+  .date-picker-trigger { min-width: 12rem; flex: 1; }
 
   .page-header h1 {
     font-size: 30px;
@@ -349,7 +349,7 @@
   .dashboard-hero,
   .dashboard-hero-full { text-align: center; }
 
-  .calorie-ring { width: clamp(124px, 62vw, 180px); }
+  .calorie-ring { width: clamp(124px, 50vw, 160px); }
 
   .macro-card {
     text-align: left;
@@ -364,7 +364,7 @@
   .dashboard-page-header { display: flex; align-items: center; gap: 10px; min-height: 48px; }
   .dashboard-page-header .date-nav { flex: 1; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 4px; width: auto; padding: 0; }
   .dashboard-page-header .date-nav .icon-button { width: 44px; min-width: 44px; min-height: 44px; }
-  .dashboard-page-header .date-picker-trigger { flex: 0 1 auto; min-width: 0; min-height: 44px; gap: 6px; padding: 0 12px; overflow: hidden; font-size: 12px; }
+  .dashboard-page-header .date-picker-trigger { flex: 0 1 auto; min-width: 12rem; min-height: 44px; gap: 6px; padding: 0 12px; overflow: hidden; font-size: 12px; }
   .dashboard-page-header .date-picker-trigger .material-symbols-outlined { flex: 0 0 auto; font-size: 18px; color: var(--primary); }
   .dashboard-page-header .date-picker-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dashboard-page-header .today-button { min-height: 44px; padding: 0 10px; font-size: 12px; }

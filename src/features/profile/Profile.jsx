@@ -154,7 +154,7 @@ function WeightPanel({ api, profile, setProfile, entries, setEntries, weight, se
   const filtered = entries.filter((entry) => entry.entryDate <= today());
   return (
     <Panel title="Peso" className="weight-panel">
-      <div className="weight-summary">
+      <div className="grid three weight-summary">
         <Stat icon="monitor_weight" label="Actual" value={`${formatNumber(profile?.weightKg, 1)} kg`} />
         {entries.length === 0 ? <Stat icon="trending_up" label="Tendencia" value="Sin datos" /> : <Stat icon={latestDelta(entries) >= 0 ? "trending_up" : "trending_down"} label={latestDelta(entries) === 0 ? "Último cambio" : "Cambio últ. registro"} value={`${latestDelta(entries) > 0 ? "+" : ""}${formatNumber(latestDelta(entries), 1)} kg`} />}
         <Stat icon="flag" label="Meta" value={profile?.targetWeightKg ? `${formatNumber(profile.targetWeightKg, 1)} kg` : "—"} />
@@ -296,6 +296,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
   const [selectedPreset, setSelectedPreset] = useState(null);
   const [saving, setSaving] = useState(false);
   const [activatingId, setActivatingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const initialForm = {
     name: "Plan manual",
     dailyCalories: 2200,
@@ -427,6 +428,31 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     } catch { api.notify("No se pudo cambiar el plan.", "error"); }
     finally { setActivatingId(null); }
   }
+  async function deletePlan(plan) {
+    if (deletingId || activatingId) return;
+    const confirmed = await api.confirm({
+      title: "¿Borrar plan?",
+      description: `${plan.name} dejará de estar disponible en tu historial, pero sus datos se conservarán.`,
+      confirmLabel: "Borrar plan",
+    });
+    if (!confirmed) return;
+    setDeletingId(plan.id);
+    try {
+      await api.runAction(
+        { title: "Borrando plan", description: "Estamos desactivando el plan de tu historial..." },
+        async () => {
+          await api.request(`/api/profile/nutrition-plans/${plan.id}`, { method: "DELETE" });
+          api.notify("Plan borrado.");
+          await onChanged();
+        },
+        { quiet: true },
+      );
+    } catch (error) {
+      api.notify(error.message || "No se pudo borrar el plan.", "error");
+    } finally {
+      setDeletingId(null);
+    }
+  }
   return (
     <Panel title="Plan alimenticio">
       <div className="current-plan-panel">
@@ -489,13 +515,18 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
         <h3>Historial de planes</h3>
         {plans.filter((plan) => plan.id !== currentPlan?.id).map((plan) => (
           <article key={plan.id || `${plan.name}-${plan.startDate}`}>
-            <div className="plan-history-heading"><strong>{plan.name}</strong><div className="plan-history-actions"><button type="button" className="secondary use-plan-button" onClick={() => startEdit(plan)}><Icon name="edit" />Editar</button><button className="secondary use-plan-button" disabled={Boolean(activatingId)} onClick={() => activatePlan(plan)}>{activatingId === plan.id ? "Cambiando..." : "Usar este plan"}</button></div></div>
+            <div className="plan-history-heading"><strong>{plan.name}</strong></div>
             <span>
               {plan.startDate} - {plan.endDate || "actual"}
             </span>
             <small>
               {plan.dailyCalories} kcal / {plan.proteinPercent}% P / {plan.carbsPercent}% C / {plan.fatPercent}% G
             </small>
+            <div className="plan-history-actions">
+              <button type="button" className="secondary use-plan-button" onClick={() => startEdit(plan)}><Icon name="edit" />Editar</button>
+              <button type="button" className="secondary use-plan-button" disabled={Boolean(activatingId) || Boolean(deletingId)} onClick={() => activatePlan(plan)}>{activatingId === plan.id ? "Cambiando..." : "Usar este plan"}</button>
+              <button type="button" className="secondary use-plan-button danger-text" disabled={Boolean(activatingId) || Boolean(deletingId)} onClick={() => deletePlan(plan)}><Icon name="delete" />{deletingId === plan.id ? "Borrando..." : "Borrar"}</button>
+            </div>
           </article>
         ))}
       </div>

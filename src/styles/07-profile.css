@@ -7,7 +7,7 @@
 .current-plan-macros span { padding: 5px 7px; border-radius: 999px; background: var(--surface-high); color: var(--text); }
 .plan-history article.active { border-color: color-mix(in srgb, var(--primary) 55%, transparent); }
 .plan-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.plan-history-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 7px; }
+.plan-history-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 7px; padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--outline) 45%, transparent); }
 .active-plan-badge { padding: var(--space-1) var(--space-2); border-radius: 999px; background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); font-size: 11px; font-weight: 900; }
 .use-plan-button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px; padding: 5px 9px; font-size: 12px; }
 .use-plan-button .material-symbols-outlined { font-size: 17px; }
@@ -52,9 +52,9 @@
 .ai-usage-panel small, .ai-usage-panel p { color: var(--muted); }
 .ai-usage-panel p { margin: 12px 0 0; font-size: 13px; line-height: 1.4; }
 
-.weight-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.weight-summary { gap: 10px; margin-bottom: 16px; }
 .weight-summary .stat { display: grid; gap: 3px; padding: 12px; border: 1px solid var(--outline); border-radius: var(--radius-panel); background: var(--surface-low); }
-.weight-chart { position: relative; margin-bottom: 16px; }
+.weight-chart { position: relative; margin-top: 10px; margin-bottom: 16px; }
 .weight-curve { display: block; width: 100%; height: auto; overflow: visible; }
 .weight-chart-empty { margin: 0 0 16px; padding: 18px; text-align: center; border: 1px dashed var(--outline); border-radius: 12px; color: var(--muted); font-size: 13px; }
 .weight-record-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; margin-bottom: 16px; }
@@ -64,8 +64,10 @@
 .weight-history-row strong { font-size: 14px; }
 
 @media (max-width: 520px) {
-  .weight-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .weight-record-form { grid-template-columns: minmax(0, 1fr) auto; }
+  .plan-history-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .plan-history-actions .use-plan-button { min-height: 44px; }
+  .plan-history-actions .danger-text { grid-column: 1 / -1; }
 }
 
 @media (max-width: 520px) {

@@ -634,6 +634,7 @@ select:focus,
   gap: var(--space-4);
   margin-bottom: 14px;
 }
+.dashboard-page { gap: 10px; }
 .dashboard-page-header .date-nav {
   width: 100%;
   padding-top: 0;
