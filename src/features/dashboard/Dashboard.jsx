@@ -11,9 +11,11 @@ import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../foods/Foods";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, readableDate, shiftDate, today } from "../../utils/format";
+import { buildMealLogPayload } from "./mealLogPayload";
 import "../../styles/12-dashboard-summary.css";
 
 const SWIPE_ACTION_WIDTH = 84;
+const LONG_PRESS_DURATION = 2000;
 let optimisticSequence = 0;
 
 function macroValue(log, key) {
@@ -36,17 +38,9 @@ async function createMealLogs(api, logs, mealType, logDate) {
   const created = [];
   try {
     for (const log of logs) {
-      const itemType = log.itemType || log.type;
       const createdLog = await api.request("/api/nutrition/meal-logs", {
         method: "POST",
-        body: JSON.stringify({
-          itemType,
-          itemId: itemType === "RECIPE" ? log.recipe?.id || log.id : log.food?.id || log.id,
-          mealType,
-          quantity: log.quantity,
-          unit: log.unit || (itemType === "RECIPE" ? "PORTION" : "GRAM"),
-          logDate,
-        }),
+        body: JSON.stringify(buildMealLogPayload(log, mealType, logDate)),
       });
       created.push(createdLog);
     }
@@ -307,9 +301,9 @@ export function Dashboard({ api, user, setPage }) {
         if (meal.mealType !== log.mealType && meal.mealType !== targetMealType) return meal;
         const remaining = (meal.items || []).filter((item) => item.id !== log.id);
         if (meal.mealType === targetMealType) {
-          return { ...meal, calories: Number(meal.calories || 0) + Number(log.calories || 0), items: [...remaining, { ...log, mealType: targetMealType }] };
+          return { ...meal, ...mealTotals([...remaining, { ...log, mealType: targetMealType }]), items: [...remaining, { ...log, mealType: targetMealType }] };
         }
-        return { ...meal, calories: remaining.reduce((sum, item) => sum + Number(item.calories || 0), 0), items: remaining };
+        return { ...meal, ...mealTotals(remaining), items: remaining };
       }),
     }));
     return () => load();
@@ -440,7 +434,7 @@ export function Dashboard({ api, user, setPage }) {
               setEditingLog(log);
             }}
             onMove={async (log, targetMealType) => {
-              if (movingLogId || log.mealType === targetMealType) return;
+              if (!targetMealType || movingLogId || log.mealType === targetMealType) return;
               resetMealSwipes();
               setMovingLogId(log.id);
               const restore = moveLogOptimistic(log, targetMealType);
@@ -775,7 +769,6 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
   const items = meal?.items || [];
   const cardRef = useRef(null);
   const menuRef = useRef(null);
-  const [dragOver, setDragOver] = useState(false);
   const [expandedLogId, setExpandedLogId] = useState(null);
   const [suggestionState, setSuggestionState] = useState("idle");
   const [bulkActionState, setBulkActionState] = useState("idle");
@@ -885,29 +878,12 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
   return (
     <article
       ref={cardRef}
-      className={`meal-card action-surface ${dragOver ? "drag-over" : ""}`}
+      className="meal-card action-surface"
       data-action-state={bulkActionState}
       data-meal-type={mealType.code}
       style={{ "--meal-delay": `${entryDelay}ms` }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setExpandedLogId(null);
-      }}
-      onDragOver={(event) => {
-        event.preventDefault();
-        setDragOver(true);
-      }}
-      onDragLeave={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setDragOver(false);
-      }}
-      onDrop={(event) => {
-        event.preventDefault();
-        setDragOver(false);
-        try {
-          const log = JSON.parse(event.dataTransfer.getData("application/json"));
-          onMove(log, mealType.code);
-        } catch {
-          /* gesto cancelado */
-        }
       }}
     >
       <header>
@@ -956,8 +932,9 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
               expanded={expandedLogId === log.id}
               onToggle={() => setExpandedLogId((current) => (current === log.id ? null : log.id))}
               onEdit={() => onEdit(log)} onDelete={() => onDelete(log)}
+              onMove={onMove}
               disabled={Boolean(deletingLogId) || Boolean(movingLogId) || bulkActionLoading}
-              dragData={{ ...log, mealType: mealType.code }}
+              dragData={log.optimistic ? null : { ...log, mealType: mealType.code }}
               details={<MealLogDetails log={log} item={item} />}
             >
               <FoodThumb item={item} compact />
@@ -1059,28 +1036,37 @@ function RecipeIngredientDetail({ ingredient }) {
   );
 }
 
-function SwipeableMealItem({ children, className = "", resetSignal, expanded = false, onToggle, details, onEdit, onDelete, disabled = false, dragData }) {
+function SwipeableMealItem({ children, className = "", resetSignal, expanded = false, onToggle, details, onEdit, onDelete, disabled = false, dragData, onMove }) {
   const gesture = useRef(null);
+  const holdTimer = useRef(null);
+  const shellRef = useRef(null);
   const offsetRef = useRef(0);
   const suppressClick = useRef(false);
   const [offset, setOffset] = useState(0);
   const [revealed, setRevealed] = useState("");
   const [horizontalDragging, setHorizontalDragging] = useState(false);
+  const [interactionMode, setInteractionMode] = useState("idle");
+  const [dragPosition, setDragPosition] = useState(null);
   const setSwipeOffset = useCallback((nextOffset) => {
     offsetRef.current = nextOffset;
     setOffset(nextOffset);
   }, []);
   const close = useCallback(() => {
+    if (holdTimer.current) window.clearTimeout(holdTimer.current);
+    holdTimer.current = null;
     gesture.current = null;
     setHorizontalDragging(false);
+    setInteractionMode("idle");
+    setDragPosition(null);
     setRevealed("");
     setSwipeOffset(0);
+    document.querySelectorAll(".meal-card.drag-over").forEach((card) => card.classList.remove("drag-over"));
   }, [setSwipeOffset]);
   useEffect(() => close(), [close, resetSignal]);
   useEffect(() => {
     if (expanded && revealed) close();
   }, [expanded, close, revealed]);
-  function finish() {
+  function finishSwipe() {
     const finalOffset = offsetRef.current;
     if (gesture.current?.axis === "x" && finalOffset > SWIPE_ACTION_WIDTH * 0.65) {
       suppressClick.current = true;
@@ -1097,48 +1083,113 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
     gesture.current = null;
     setHorizontalDragging(false);
     if (suppressClick.current) window.setTimeout(() => { suppressClick.current = false; }, 220);
+    setInteractionMode("idle");
   }
-  function move(event) {
-    if (!gesture.current) return;
-    const dx = event.touches[0].clientX - gesture.current.x;
-    const dy = event.touches[0].clientY - gesture.current.y;
-    if (!gesture.current.axis && Math.max(Math.abs(dx), Math.abs(dy)) > 10) {
-      gesture.current.axis = Math.abs(dx) > Math.abs(dy) * 1.8 ? "x" : "y";
-      if (gesture.current.axis === "y") {
+  function clearDropTarget() {
+    document.querySelectorAll(".meal-card.drag-over").forEach((card) => card.classList.remove("drag-over"));
+  }
+  function updateDropTarget(clientX, clientY) {
+    clearDropTarget();
+    const target = document.elementFromPoint(clientX, clientY)?.closest(".meal-card[data-meal-type]");
+    target?.classList.add("drag-over");
+    return target?.dataset.mealType || null;
+  }
+  function startLongPress() {
+    if (!gesture.current || gesture.current.mode !== "holding") return;
+    gesture.current.mode = "dragging";
+    shellRef.current?.setPointerCapture?.(gesture.current.pointerId);
+    suppressClick.current = true;
+    setInteractionMode("dragging");
+    setDragPosition({ x: gesture.current.x, y: gesture.current.y });
+  }
+  function handlePointerDown(event) {
+    if (disabled || !dragData || event.target.closest(".meal-item-detail-actions, .swipe-action") || event.pointerType === "mouse" && event.button !== 0) return;
+    gesture.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, axis: null, mode: "holding", target: event.currentTarget };
+    setInteractionMode("holding");
+    holdTimer.current = window.setTimeout(startLongPress, LONG_PRESS_DURATION);
+  }
+  function handlePointerMove(event) {
+    const current = gesture.current;
+    if (!current || current.pointerId !== event.pointerId) return;
+    if (current.mode === "dragging") {
+      if (event.cancelable) event.preventDefault();
+      setDragPosition({ x: event.clientX, y: event.clientY });
+      updateDropTarget(event.clientX, event.clientY);
+      return;
+    }
+    const dx = event.clientX - current.x;
+    const dy = event.clientY - current.y;
+    if (!current.axis && Math.max(Math.abs(dx), Math.abs(dy)) > 10) {
+      if (holdTimer.current) window.clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+      current.axis = Math.abs(dx) > Math.abs(dy) * 1.8 ? "x" : "y";
+      setInteractionMode(current.axis === "x" ? "swiping" : "scrolling");
+      if (current.axis === "y") {
         setHorizontalDragging(false);
         setSwipeOffset(0);
       }
     }
-    if (gesture.current.axis === "x") {
+    if (current.axis === "x") {
       if (event.cancelable) event.preventDefault();
       setHorizontalDragging(true);
       setSwipeOffset(Math.max(-SWIPE_ACTION_WIDTH, Math.min(SWIPE_ACTION_WIDTH, dx)));
     }
   }
+  function handlePointerUp(event) {
+    const current = gesture.current;
+    if (!current || current.pointerId !== event.pointerId) return;
+    if (current.mode === "dragging") {
+      if (event.cancelable) event.preventDefault();
+      const targetMealType = updateDropTarget(event.clientX, event.clientY);
+      clearDropTarget();
+      onMove?.(dragData, targetMealType);
+      close();
+      window.setTimeout(() => { suppressClick.current = false; }, 220);
+      return;
+    }
+    if (current.axis === "x") {
+      finishSwipe();
+      return;
+    }
+    close();
+  }
+  function handlePointerCancel(event) {
+    if (!gesture.current || gesture.current.pointerId !== event.pointerId) return;
+    close();
+    if (suppressClick.current) window.setTimeout(() => { suppressClick.current = false; }, 220);
+  }
+  useEffect(() => {
+    if (interactionMode === "idle") return undefined;
+    const options = { passive: false };
+    document.addEventListener("pointermove", handlePointerMove, options);
+    document.addEventListener("pointerup", handlePointerUp, options);
+    document.addEventListener("pointercancel", handlePointerCancel, options);
+    return () => {
+      document.removeEventListener("pointermove", handlePointerMove, options);
+      document.removeEventListener("pointerup", handlePointerUp, options);
+      document.removeEventListener("pointercancel", handlePointerCancel, options);
+    };
+  }, [interactionMode]);
   return (
     <div className={`swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""} ${expanded ? "expanded" : ""}`}>
       <button className="swipe-action swipe-edit" aria-label="Editar registro" disabled={disabled} tabIndex={revealed === "edit" ? 0 : -1} aria-hidden={revealed !== "edit"} onClick={() => { close(); onEdit(); }}><Icon name="edit" /></button>
       <button className="swipe-action swipe-delete" aria-label="Eliminar registro" disabled={disabled} tabIndex={revealed === "delete" ? 0 : -1} aria-hidden={revealed !== "delete"} onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
       <div
-        className={`meal-item-shell ${horizontalDragging ? "swiping" : ""} ${className}`}
+        ref={shellRef}
+        className={`meal-item-shell ${horizontalDragging ? "swiping" : ""} ${interactionMode === "holding" ? "holding" : ""} ${interactionMode === "dragging" ? "dragging" : ""} ${className}`}
         style={{ transform: `translate3d(${offset}px, 0, 0)` }}
-        onTouchStart={(event) => {
-          gesture.current = { x: event.touches[0].clientX, y: event.touches[0].clientY, axis: null };
+        onPointerDown={handlePointerDown}
+        onContextMenu={(event) => {
+          if (dragData) event.preventDefault();
         }}
-        onTouchMove={move}
-        onTouchEnd={finish}
-        onTouchCancel={finish}
       >
         <button
           type="button"
           className="meal-item"
-          draggable={Boolean(dragData) && !disabled}
+          draggable={false}
           aria-expanded={expanded}
-          onDragStart={(event) => {
-            if (!dragData || disabled) return;
-            event.dataTransfer.effectAllowed = "move";
-            event.dataTransfer.setData("application/json", JSON.stringify(dragData));
-          }}
+          aria-grabbed={interactionMode === "dragging"}
+          title="Mantené apretado 2 segundos para mover este registro a otra comida"
           onClick={() => !horizontalDragging && !suppressClick.current && onToggle?.()}
         >
           {children}
@@ -1154,6 +1205,12 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
           </>
         )}
       </div>
+      {interactionMode === "dragging" && dragPosition && createPortal(
+        <div className="meal-drag-preview" style={{ left: dragPosition.x, top: dragPosition.y }} aria-hidden="true">
+          {children}
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
