@@ -1,6 +1,7 @@
 import { REFRESH_KEY, TOKEN_KEY } from "../config/app";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+let refreshPromise = null;
 
 async function refreshTokens() {
   const refreshToken = localStorage.getItem(REFRESH_KEY);
@@ -16,6 +17,15 @@ async function refreshTokens() {
   localStorage.setItem(TOKEN_KEY, payload.token);
   localStorage.setItem(REFRESH_KEY, payload.refreshToken);
   return payload.token;
+}
+
+function refreshTokensOnce() {
+  if (!refreshPromise) {
+    refreshPromise = refreshTokens().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
 }
 
 async function requestInner(path, options, accessToken) {
@@ -49,10 +59,17 @@ export async function request(path, options = {}) {
   let accessToken = localStorage.getItem(TOKEN_KEY);
   let result = await requestInner(path, options, accessToken);
   if (!result.ok && result.status === 401 && !path.startsWith("/api/auth/")) {
-    const fresh = await refreshTokens();
+    let fresh = null;
+    let refreshFailed = false;
+    try {
+      fresh = await refreshTokensOnce();
+    } catch {
+      // A network failure is not proof that the session is invalid.
+      refreshFailed = true;
+    }
     if (fresh) {
       result = await requestInner(path, options, fresh);
-    } else {
+    } else if (!refreshFailed) {
       window.dispatchEvent(new Event("scalegrams:session-expired"));
     }
   }

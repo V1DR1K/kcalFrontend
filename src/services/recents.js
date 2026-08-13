@@ -21,8 +21,15 @@ export function readRecents(user) {
     return { items: [], meals: [] };
   }
 }
-function write(user, value) { localStorage.setItem(key(user), JSON.stringify(value)); }
-export function rememberItem(user, item) { const value = readRecents(user); const id = `${item.type}:${item.id}`; value.items = [item, ...value.items.filter((saved) => `${saved.type}:${saved.id}` !== id)].slice(0, 20); write(user, value); }
+function write(user, value) {
+  try {
+    localStorage.setItem(key(user), JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
+}
+export function rememberItem(user, item) { const value = readRecents(user); const id = `${item.type}:${item.id}`; value.items = [item, ...value.items.filter((saved) => `${saved.type}:${saved.id}` !== id)].slice(0, 20); return write(user, value); }
 export function rememberMeal(user, mealType, log) {
   const value = readRecents(user); const item = log.itemType === "RECIPE" ? log.recipe : log.food;
   const entry = {
@@ -41,5 +48,5 @@ export function rememberMeal(user, mealType, log) {
     category: item?.category,
     lastUsedAt: new Date().toISOString(),
   };
-  value.meals = [entry, ...value.meals.filter((saved) => saved.itemId !== entry.itemId || saved.itemType !== entry.itemType)].slice(0, 10); write(user, value);
+  value.meals = [entry, ...value.meals.filter((saved) => saved.itemId !== entry.itemId || saved.itemType !== entry.itemType)].slice(0, 10); return write(user, value);
 }

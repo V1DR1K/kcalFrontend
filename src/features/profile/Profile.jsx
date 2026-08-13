@@ -119,7 +119,7 @@ function WeightPanel({ api, profile, setProfile, entries, setEntries, weight, se
     try {
       const payload = await api.runAction(
         { title: "Anotando peso", description: "Estamos guardando tu registro..." },
-        () => api.request("/api/profile/weight-entries", { method: "POST", body: JSON.stringify({ weightKg: Number(weight) }) }),
+        () => api.request("/api/profile/weight-entries", { method: "POST", body: JSON.stringify({ weightKg: Number(weight), entryDate: today() }) }),
         { quiet: true },
       );
       setEntries((current) => {

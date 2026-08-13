@@ -570,24 +570,20 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
       await api.runAction(
         { title: "Guardando cambios", description: "Estamos actualizando tu registro..." },
         async () => {
-          if (isRecipe) {
-            await api.request(`/api/nutrition/food-logs/${log.id}/recipe-ingredients`, {
-              method: "PUT",
-              body: JSON.stringify({ ingredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit }) => ({ foodId, quantity: Number(ingredientQuantity), unit })) }),
-            });
-          }
           const body = {
             mealType,
             quantity: numericQuantity,
-            unit: isRecipe ? "PORTION" : log.unit || "GRAM",
+            unit: log.unit || "GRAM",
             logDate: log.logDate,
           };
           if (!isRecipe && selectedFoodId && selectedFoodId !== log.food?.id) {
             body.itemId = selectedFoodId;
           }
-          await api.request(`/api/nutrition/food-logs/${log.id}`, {
+          await api.request(isRecipe ? `/api/nutrition/food-logs/${log.id}/recipe` : `/api/nutrition/food-logs/${log.id}`, {
             method: "PUT",
-            body: JSON.stringify(body),
+            body: JSON.stringify(isRecipe
+              ? { mealType, quantity: numericQuantity, logDate: log.logDate, recipeIngredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit }) => ({ foodId, quantity: Number(ingredientQuantity), unit })) }
+              : body),
           });
         },
       );

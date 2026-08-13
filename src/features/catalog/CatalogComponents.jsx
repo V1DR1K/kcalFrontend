@@ -100,6 +100,8 @@ export function FoodThumb({ item, compact = false, hero = false }) {
           event.currentTarget.onerror = null;
           event.currentTarget.src = fallback;
         }}
+        loading="lazy"
+        decoding="async"
         alt=""
       />
     </div>

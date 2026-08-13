@@ -7,6 +7,7 @@ import { Shell } from "./Shell";
 import { AuthScreen } from "../features/auth/AuthScreen";
 import { ActionLoader } from "../components/ActionLoader";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
+import { Notification } from "../components/Notification";
 
 function lazyPage(load, name) {
   return lazy(() => load().then((module) => ({ default: module[name] })));
@@ -38,9 +39,13 @@ export function App() {
   const [prefillBarcode, setPrefillBarcode] = useState("");
   const [actionLoading, setActionLoading] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
+  const [notification, setNotification] = useState(null);
   const actionSequence = useRef(0);
   const pendingActions = useRef(new Map());
   const confirmationResolver = useRef(null);
+  const notify = React.useCallback((message, tone = "success") => {
+    if (message) setNotification({ message, tone });
+  }, []);
 
   const api = useMemo(
     () => ({
@@ -65,10 +70,16 @@ export function App() {
           setConfirmation(options);
         });
       },
-      notify() {},
+      notify,
     }),
-    [],
+    [notify],
   );
+
+  useEffect(() => {
+    if (!notification) return undefined;
+    const timeout = window.setTimeout(() => setNotification(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [notification]);
 
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
@@ -162,6 +173,7 @@ export function App() {
       )}
       {actionLoading && <ActionLoader {...actionLoading} />}
       {confirmation && <ConfirmationDialog {...confirmation} onCancel={() => resolveConfirmation(false)} onConfirm={() => resolveConfirmation(true)} />}
+      {notification && <Notification message={notification.message} tone={notification.tone} onDismiss={() => setNotification(null)} />}
     </>
   );
 }

@@ -2,7 +2,7 @@ import React from "react";
 
 export function Input({ label, selectOnFocus = true, numericOnly = false, error, onFocus, ...props }) {
   const isNumeric = numericOnly || props.type === "number";
-  const effectiveType = isNumeric && props.type === "number" ? "text" : props.type;
+  const effectiveType = props.type;
   const inputMode = props.inputMode || (props.name === "barcode" ? "numeric" : isNumeric ? "decimal" : undefined);
   const shouldSelect = selectOnFocus && !["file", "checkbox", "radio", "date", "range", "color"].includes(effectiveType);
   const selectValue = (event) => {

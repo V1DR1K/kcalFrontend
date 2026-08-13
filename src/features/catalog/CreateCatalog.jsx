@@ -283,7 +283,7 @@ function MyFoods({ api }) {
     try {
       await api.runAction(
         { title: "Guardando alimento", description: "Estamos actualizando los datos del catálogo..." },
-        () => api.request(`/api/foods/${editing.id}`, { method: "PUT", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: "GRAM", baseQuantity: Number(data.baseQuantity), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), preparation: "UNSPECIFIED", servingName: null, servingWeightGrams: null, tags: [] }) }, { quiet: true }),
+         () => api.request(`/api/foods/${editing.id}`, { method: "PUT", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: editing.baseUnit || "GRAM", baseQuantity: Number(data.baseQuantity), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), preparation: editing.preparation || "UNSPECIFIED", servingName: editing.servingName || null, servingWeightGrams: editing.servingWeightGrams || null, tags: editing.tags || [] }) }, { quiet: true }),
       );
       api.notify("Alimento actualizado.");
       setEditing(null);
@@ -434,12 +434,11 @@ function CreateRecipeForm({ api }) {
         { title: "Creando receta", description: "Estamos guardando los ingredientes..." },
         () => api.request("/api/recipes", {
           method: "POST",
-          body: JSON.stringify({
-            name: data.name,
-            description: data.description,
-            totalWeightGrams: totalWeight,
-            ingredients: normalizedIngredients,
-          }),
+           body: JSON.stringify({
+             name: data.name,
+             description: data.description,
+             ingredients: normalizedIngredients,
+           }),
         }, { quiet: true }),
       );
       api.notify("Receta creada.");

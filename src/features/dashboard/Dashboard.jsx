@@ -19,6 +19,55 @@ const LONG_PRESS_DURATION = 500;
 const LONG_PRESS_MOVE_TOLERANCE = 18;
 let optimisticSequence = 0;
 
+function isCopyableMealLog(log) {
+  return ["FOOD", "RECIPE"].includes(log?.itemType || log?.type);
+}
+
+function aiProposalFood(item) {
+  const estimatedGrams = Math.max(1, Number(item?.estimatedGrams) || 100);
+  const factor = 100 / estimatedGrams;
+  return {
+    name: item?.name?.trim() || "Alimento estimado",
+    category: item?.category || "OTHER",
+    preparation: item?.preparation || "UNSPECIFIED",
+    baseQuantity: 100,
+    proteinGrams: Number(item?.proteinGrams || 0) * factor,
+    carbsGrams: Number(item?.carbsGrams || 0) * factor,
+    fatGrams: Number(item?.fatGrams || 0) * factor,
+  };
+}
+
+function aiEstimateWithServings(result) {
+  return {
+    ...result,
+    items: (result.items || []).map((item) => ({
+      ...item,
+      estimatedGrams: String(item.estimatedGrams ?? 100),
+      servedGrams: String(item.estimatedGrams ?? 100),
+      foodId: null,
+      catalogFood: null,
+      category: "OTHER",
+      preparation: "UNSPECIFIED",
+    })),
+  };
+}
+
+function aiEstimateDraft(estimate) {
+  return {
+    name: estimate.name,
+    description: estimate.description || "",
+    confidence: Number(estimate.confidence) || 0,
+    assumptions: estimate.assumptions || [],
+    items: (estimate.items || []).map(({ name, estimatedGrams, proteinGrams, carbsGrams, fatGrams }) => ({
+      name,
+      estimatedGrams: Number(estimatedGrams),
+      proteinGrams: Number(proteinGrams),
+      carbsGrams: Number(carbsGrams),
+      fatGrams: Number(fatGrams),
+    })),
+  };
+}
+
 function macroValue(log, key) {
   if (key === "PROTEIN") return Number(log.proteinGrams || 0);
   if (key === "CARBS") return Number(log.carbsGrams || 0);
@@ -36,21 +85,14 @@ function mealTotals(items) {
 }
 
 async function createMealLogs(api, logs, mealType, logDate) {
-  const created = [];
-  try {
-    for (const log of logs) {
-      const createdLog = await api.request("/api/nutrition/meal-logs", {
-        method: "POST",
-        body: JSON.stringify(buildMealLogPayload(log, mealType, logDate)),
-      });
-      created.push(createdLog);
-    }
-    return created;
-  } catch (error) {
-    // Compensate successful requests so the visual rollback matches persisted data.
-    await Promise.allSettled(created.filter(Boolean).map((log) => api.request(`/api/nutrition/food-logs/${log.id}`, { method: "DELETE" })));
-    throw error;
+  if (logs.some((log) => !isCopyableMealLog(log))) {
+    throw new Error("Las estimaciones por foto no se pueden copiar como una comida guardada.");
   }
+  const payloads = logs.map((log) => buildMealLogPayload(log, mealType, logDate));
+  return api.request("/api/nutrition/meal-logs/batch", {
+    method: "POST",
+    body: JSON.stringify({ logs: payloads }),
+  });
 }
 
 function formatMealLogAmount(log) {
@@ -718,6 +760,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAd
           {mealTypes.map((type) => {
             const meal = source.meals?.find((item) => item.mealType === type.code);
             const items = meal?.items || [];
+            const copyableItems = items.filter(isCopyableMealLog);
             const state = status[type.code];
             if (!items.length || state === "dismissed") return null;
             return (
@@ -730,7 +773,7 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAd
                     <strong>{meal.calories} kcal</strong>
                   </div>
                   <div className="ghost-actions">
-                    <button className="copy-accept" disabled={state === "copying" || state === "copied"} aria-label={`Copiar ${type.label}`} onClick={() => copyMeal(type.code, items)}>
+                    <button className="copy-accept" disabled={!copyableItems.length || state === "copying" || state === "copied"} aria-label={`Copiar ${type.label}`} onClick={() => copyMeal(type.code, copyableItems)}>
                       <Icon name={state === "copied" ? "check_circle" : "check"} />
                     </button>
                     <button
@@ -773,7 +816,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
   const [expandedLogId, setExpandedLogId] = useState(null);
   const [suggestionState, setSuggestionState] = useState("idle");
   const [bulkActionState, setBulkActionState] = useState("idle");
-  const yesterdayItems = yesterdayMeal?.items || [];
+  const yesterdayItems = (yesterdayMeal?.items || []).filter(isCopyableMealLog);
   useEffect(() => setSuggestionState("idle"), [targetDate, mealType.code]);
   useEffect(() => setExpandedLogId(null), [targetDate, mealType.code, resetSignal]);
   useEffect(() => {
@@ -814,14 +857,16 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
   }
   async function addLogs(logs) {
     if (bulkActionLoading) return;
+    const copyableLogs = logs.filter(isCopyableMealLog);
+    if (!copyableLogs.length) return;
     setBulkActionLoading(true);
     setBulkActionState("pasting");
-    const optimisticLogs = onOptimisticAdd(logs, mealType.code);
+    const optimisticLogs = onOptimisticAdd(copyableLogs, mealType.code);
     try {
       await api.runAction(
         { title: "Pegando comida", description: "Estamos guardando los alimentos..." },
         async () => {
-          await createMealLogs(api, logs, mealType.code, targetDate);
+          await createMealLogs(api, copyableLogs, mealType.code, targetDate);
           api.notify(`Comida pegada en ${mealType.label}.`);
           await onCopied();
           setBulkActionState("success");
@@ -870,9 +915,10 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
     finally { setBulkActionLoading(false); }
   }
   function copyAll() {
-    if (!items.length || bulkActionLoading) return;
+    const copyableItems = items.filter(isCopyableMealLog);
+    if (!copyableItems.length || bulkActionLoading) return;
     menuRef.current?.removeAttribute("open");
-    onCopyMeal(items);
+    onCopyMeal(copyableItems);
     setBulkActionState("success");
     window.setTimeout(() => setBulkActionState("idle"), 700);
   }
@@ -1654,19 +1700,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       const log = await api.runAction(
         { title: "Agregando alimento", description: `Estamos sumando ${selected.name} a ${mealType.label.toLowerCase()}...` },
         async () => {
-          const newLog = await api.request("/api/nutrition/meal-logs", {
-            method: "POST",
-            body: JSON.stringify({
-              itemType: selected.type,
-              itemId: selected.id,
-              mealType: mealType.code,
-              quantity: logQuantity,
-              unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
-              logDate: selectedDate,
-            }),
-          });
-          if (selected.type === "RECIPE" && recipeIngredients && recipeDetail) {
-            const baseIngredients = (recipeDetail.ingredients || []).map((ing) => ({
+           if (selected.type === "RECIPE" && recipeIngredients && recipeDetail) {
+             const baseIngredients = (recipeDetail.ingredients || []).map((ing) => ({
               foodId: ing.food?.id,
               quantity: Number(ing.quantity ?? 0),
               unit: ing.unit || "GRAM",
@@ -1674,21 +1709,31 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             const changed = recipeIngredients.some((ing, i) => {
               const base = baseIngredients[i];
               return !base || Number(ing.quantity) !== Number(base.quantity);
-            });
-            if (changed) {
-              await api.request(`/api/nutrition/food-logs/${newLog.id}/recipe-ingredients`, {
-                method: "PUT",
-                body: JSON.stringify({
-                  ingredients: recipeIngredients.map(({ foodId, quantity: ingQty, unit }) => ({
-                    foodId,
-                    quantity: Number(ingQty),
-                    unit,
-                  })),
-                }),
-              });
-            }
-          }
-          return newLog;
+             });
+             if (changed) {
+               return api.request("/api/nutrition/meal-logs/recipe", {
+                 method: "POST",
+                 body: JSON.stringify({
+                   recipeId: selected.id,
+                   mealType: mealType.code,
+                   quantity: logQuantity,
+                   logDate: selectedDate,
+                   ingredients: recipeIngredients.map(({ foodId, quantity: ingQty, unit }) => ({ foodId, quantity: Number(ingQty), unit })),
+                 }),
+               });
+             }
+           }
+           return api.request("/api/nutrition/meal-logs", {
+             method: "POST",
+             body: JSON.stringify({
+               itemType: selected.type,
+               itemId: selected.id,
+               mealType: mealType.code,
+               quantity: logQuantity,
+               unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
+               logDate: selectedDate,
+             }),
+           });
         },
         { quiet: true },
       );
