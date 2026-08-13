@@ -26,8 +26,8 @@ export const DEFAULT_MEALS = [
 ];
 export const navItems = [
   { id: "dashboard", label: "Dashboard", mobileLabel: "Inicio", icon: "monitoring" }, { id: "foods", label: "Alimentos", mobileLabel: "Buscar", icon: "nutrition" },
-  { id: "create", label: "Crear", icon: "add_box" }, { id: "history", label: "Historial", icon: "calendar_month" },
-  { id: "profile", label: "Perfil", icon: "account_circle" }, { id: "scanner", label: "Escáner", icon: "qr_code_scanner" },
+  { id: "history", label: "Historial", icon: "calendar_month" }, { id: "profile", label: "Perfil", icon: "account_circle" },
+  { id: "scanner", label: "Registrar", mobileLabel: "Registrar", icon: "qr_code_scanner" },
 ];
 export const CATEGORY_OPTIONS = [
   { value: "PROTEIN", label: "Proteínas" }, { value: "MEAT", label: "Carnes" }, { value: "DAIRY", label: "Lácteos" }, { value: "FRUIT", label: "Frutas" },

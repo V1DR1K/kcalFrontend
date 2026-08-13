@@ -33,8 +33,8 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
         action={
           <div className="header-actions">
             <button className="primary pill" onClick={() => setPage("scanner")}>
-              <Icon name="barcode_scanner" />
-              Escanear
+              <Icon name="qr_code_scanner" />
+              Registrar
             </button>
           </div>
         }

@@ -4,8 +4,8 @@ import { CATEGORY_OPTIONS } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Input, Select } from "../../components/FormControls";
-import { Header, Panel } from "../../components/Layout";
-import { CatalogRowWithImage, CatalogStatus, groupFoodVariants, categoryLabel } from "./CatalogComponents";
+import { Panel } from "../../components/Layout";
+import { CatalogStatus, groupFoodVariants, categoryLabel } from "./CatalogComponents";
 import { usePagedCatalog } from "./usePagedCatalog";
 import { formatNumber } from "../../utils/format";
 
@@ -15,33 +15,121 @@ function macroCalories(proteinGrams, carbsGrams, fatGrams) {
 
 const OCR_MACRO_FIELDS = ["proteinGrams", "carbsGrams", "fatGrams"];
 
-export function CreateCatalog({ api, setPage, prefillBarcode, clearPrefillBarcode }) {
+export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClose }) {
   const [tab, setTab] = useState("FOOD");
-  return (
-    <section className="page narrow">
-      <button className="back-button" onClick={() => setPage("foods")}>
-        <Icon name="arrow_back" />Alimentos
-      </button>
-      <Header title="Crear" eyebrow="Catálogo global" />
-      <div className="tabs create-tabs">
-        <button className={tab === "FOOD" ? "selected" : ""} onClick={() => setTab("FOOD")}>
-          Alimento
-        </button>
-        <button className={tab === "RECIPE" ? "selected" : ""} onClick={() => setTab("RECIPE")}>
-          Receta
-        </button>
-        <button className={tab === "MINE" ? "selected" : ""} onClick={() => setTab("MINE")}>
-          Mis alimentos
-        </button>
-      </div>
-      {tab === "FOOD" && <CreateFoodForm api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} />}
-      {tab === "RECIPE" && <CreateRecipeForm api={api} />}
-      {tab === "MINE" && <MyFoods api={api} />}
-    </section>
+  const [dirtyState, setDirtyState] = useState({ food: false, recipe: false });
+  const [busyState, setBusyState] = useState({ food: false, recipe: false });
+  const dirty = Object.values(dirtyState).some(Boolean);
+  const busy = Object.values(busyState).some(Boolean);
+  const closeRef = useRef(null);
+  const dialogRef = useRef(null);
+  const previousFocusRef = useRef(null);
+  const modalHistoryStateRef = useRef(null);
+  const dirtyRef = useRef(false);
+  const busyRef = useRef(false);
+  dirtyRef.current = dirty;
+  busyRef.current = busy;
+
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement;
+    const previousBodyOverflow = document.body.style.overflow;
+    const content = document.querySelector(".content");
+    const previousContentOverflow = content?.style.overflow;
+    document.body.style.overflow = "hidden";
+    if (content) content.style.overflow = "hidden";
+    closeRef.current?.focus();
+    modalHistoryStateRef.current = { ...(window.history.state || {}), scalegramsModal: "catalog" };
+    window.history.pushState(modalHistoryStateRef.current, "");
+    function onKeyDown(event) {
+      if (!dialogRef.current?.contains(document.activeElement)) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        requestClose();
+        return;
+      }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = [...dialogRef.current.querySelectorAll("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])")].filter((element) => !element.closest("[hidden]"));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    function onPopState(event) {
+      if (event.state?.scalegramsModal === "catalog") return;
+      if (!dirtyRef.current) {
+        onClose?.({ fromHistory: true });
+        return;
+      }
+      event.stopImmediatePropagation();
+      window.history.pushState(modalHistoryStateRef.current, "");
+      requestClose();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("popstate", onPopState, true);
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      if (content) content.style.overflow = previousContentOverflow || "";
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("popstate", onPopState, true);
+      previousFocusRef.current?.focus?.();
+    };
+  }, []);
+
+  async function requestClose() {
+    if (busyRef.current || !onClose) return;
+    if (dirtyRef.current) {
+      const confirmed = await api.confirm({
+        title: "¿Descartar cambios?",
+        description: "Lo que completaste en este registro se va a perder.",
+        confirmLabel: "Descartar cambios",
+      });
+      if (!confirmed) return;
+    }
+    dirtyRef.current = false;
+    onClose();
+  }
+
+  return createPortal(
+    <div className="catalog-dialog-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) requestClose(); }}>
+      <section ref={dialogRef} className="catalog-dialog" role="dialog" aria-modal="true" aria-labelledby="catalog-dialog-title" onPointerDown={(event) => event.stopPropagation()}>
+        <header className="catalog-dialog-header">
+          <div>
+            <span>Catálogo</span>
+            <h2 id="catalog-dialog-title">Crear alimentos</h2>
+          </div>
+          <button ref={closeRef} type="button" className="icon-button" aria-label="Cerrar registro" disabled={busy} onClick={requestClose}>
+            <Icon name="close" />
+          </button>
+        </header>
+        <div className="catalog-dialog-tabs tabs" role="tablist" aria-label="Opciones del catálogo">
+          <button type="button" role="tab" aria-selected={tab === "FOOD"} aria-controls="catalog-panel-food" id="catalog-tab-food" className={tab === "FOOD" ? "selected" : ""} onClick={() => setTab("FOOD")}>Alimento</button>
+          <button type="button" role="tab" aria-selected={tab === "RECIPE"} aria-controls="catalog-panel-recipe" id="catalog-tab-recipe" className={tab === "RECIPE" ? "selected" : ""} onClick={() => setTab("RECIPE")}>Receta</button>
+          <button type="button" role="tab" aria-selected={tab === "MINE"} aria-controls="catalog-panel-mine" id="catalog-tab-mine" className={tab === "MINE" ? "selected" : ""} onClick={() => setTab("MINE")}>Mis alimentos</button>
+        </div>
+        <div className="catalog-dialog-content">
+          <div id="catalog-panel-food" role="tabpanel" aria-labelledby="catalog-tab-food" hidden={tab !== "FOOD"}>
+            <CreateFoodForm api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, food: value }))} />
+          </div>
+          <div id="catalog-panel-recipe" role="tabpanel" aria-labelledby="catalog-tab-recipe" hidden={tab !== "RECIPE"}>
+            <CreateRecipeForm api={api} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, recipe: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, recipe: value }))} />
+          </div>
+          <div id="catalog-panel-mine" role="tabpanel" aria-labelledby="catalog-tab-mine" hidden={tab !== "MINE"}>
+            <MyFoods api={api} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} />
+          </div>
+        </div>
+      </section>
+    </div>,
+    document.body,
   );
 }
 
-function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
+function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode, onDirtyChange, onBusyChange }) {
   const [saving, setSaving] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [ocrStatus, setOcrStatus] = useState("");
@@ -54,6 +142,7 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
     setSaving(true);
+    onBusyChange?.(true);
     try {
       await api.runAction(
         { title: "Creando alimento", description: "Estamos guardando el alimento en el catálogo..." },
@@ -85,11 +174,13 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
       form.reset();
       setOcrData(null);
       clearPrefillBarcode?.();
+      onDirtyChange?.(false);
     } catch (error) {
       const details = Object.values(error.fields || {}).join(" · ");
       api.notify(details || error.message || "No se pudo crear el alimento. Revisá los datos.", "error");
     } finally {
       setSaving(false);
+      onBusyChange?.(false);
     }
   }
   function setField(name, value) {
@@ -110,6 +201,8 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
   async function handleOcrImage(file) {
     if (!file) return;
     setScanning(true);
+    onBusyChange?.(true);
+    onDirtyChange?.(true);
     setOcrStatus("Procesando imagen con OCR...");
     try {
       const { recognizeNutrition } = await import("../../services/nutritionOcr");
@@ -126,14 +219,15 @@ function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode }) {
       api.notify("Error al escanear la tabla.", "error");
     } finally {
       setScanning(false);
+      onBusyChange?.(false);
     }
   }
   const ocrStatusClass = scanning ? "loading" : ocrData || ocrStatus.startsWith("Valores aplicados") ? "ok" : "bad";
   return (
     <Panel title="Nuevo alimento">
-      <form className="form-grid" ref={formRef} onSubmit={submit}>
+      <form className="form-grid" ref={formRef} onInput={() => onDirtyChange?.(true)} onSubmit={submit}>
         {ocrStatus && (
-          <div className={`ocr-status ${ocrStatusClass}`}>
+          <div className={`ocr-status ${ocrStatusClass}`} role="status" aria-live="polite" aria-busy={scanning}>
             {scanning ? <span className="ocr-loading" /> : null}
             <span>{ocrStatus}</span>
           </div>
@@ -259,7 +353,7 @@ function DerivedCaloriesHint({ values }) {
   );
 }
 
-function MyFoods({ api }) {
+function MyFoods({ api, onDirtyChange }) {
   const [items, setItems] = useState([]);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -287,6 +381,7 @@ function MyFoods({ api }) {
       );
       api.notify("Alimento actualizado.");
       setEditing(null);
+      onDirtyChange?.(false);
       await load();
     } catch (error) {
       api.notify(error.message || "No se pudo actualizar.", "error");
@@ -318,14 +413,14 @@ function MyFoods({ api }) {
           ))}
         </div>
       )}
-      {editing && createPortal(
+       {editing && createPortal(
         <div
           className="edit-food-backdrop"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setEditing(null);
           }}
         >
-          <form className="edit-food-sheet" onSubmit={save}>
+          <form className="edit-food-sheet" onInput={() => onDirtyChange?.(true)} onSubmit={save}>
             <header>
               <div>
                 <span>Editar alimento</span>
@@ -371,7 +466,7 @@ function recipeFieldLabel(field) {
   return field || "Datos";
 }
 
-function CreateRecipeForm({ api }) {
+function CreateRecipeForm({ api, onDirtyChange, onBusyChange }) {
   const [query, setQuery] = useState("");
   const [ingredients, setIngredients] = useState([]);
   const [preview, setPreview] = useState(null);
@@ -424,6 +519,7 @@ function CreateRecipeForm({ api }) {
       return;
     }
     setSaving(true);
+    onBusyChange?.(true);
     try {
       const normalizedIngredients = ingredients.map((item) => ({
         foodId: item.foodId,
@@ -445,6 +541,7 @@ function CreateRecipeForm({ api }) {
       form.reset();
       setIngredients([]);
       setPreview(null);
+      onDirtyChange?.(false);
     } catch (error) {
       const fieldDetails = Object.entries(error.fields || {})
         .map(([field, message]) => `${recipeFieldLabel(field)}: ${message}`)
@@ -454,11 +551,12 @@ function CreateRecipeForm({ api }) {
       api.notify(message, "error");
     } finally {
       setSaving(false);
+      onBusyChange?.(false);
     }
   }
   return (
     <Panel title="Nueva receta" className="recipe-panel">
-      <form className="form-grid recipe-form" onSubmit={submit}>
+      <form className="form-grid recipe-form" onInput={() => onDirtyChange?.(true)} onSubmit={submit}>
         {formError && (
           <div className="form-error recipe-error" role="alert">
             <Icon name="error" />
@@ -484,7 +582,7 @@ function CreateRecipeForm({ api }) {
               type="button"
               className="catalog-row ingredient-pick"
               key={food.id}
-              onClick={() =>
+              onClick={() => {
                 setIngredients([
                   ...ingredients,
                   {
@@ -493,8 +591,9 @@ function CreateRecipeForm({ api }) {
                     unit: "GRAM",
                     name: food.name,
                   },
-                ])
-              }
+                ]);
+                onDirtyChange?.(true);
+              }}
             >
               <span>
                 <strong>{food.name}</strong>
@@ -524,7 +623,7 @@ function CreateRecipeForm({ api }) {
                 <input aria-label={`Cantidad de ${item.name} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.1" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(",", ".").replace(/[^\d.]/g, ""); }} onChange={(event) => setIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: event.target.value } : ingredient)))} />
                 <small>g</small>
               </span>
-              <button type="button" className="ingredient-remove" onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}>
+              <button type="button" className="ingredient-remove" onClick={() => { setIngredients(ingredients.filter((_, i) => i !== index)); onDirtyChange?.(true); }}>
                 <Icon name="remove" />Quitar
               </button>
             </label>

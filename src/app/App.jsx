@@ -150,7 +150,7 @@ export function App() {
       document.title = "Ingresar | ScaleGrams";
       return;
     }
-    const titles = { dashboard: "Mi día", foods: "Alimentos", create: "Crear", configure: "Configurar alimento", scanner: "Escáner", history: "Historial", profile: "Perfil" };
+    const titles = { dashboard: "Mi día", foods: "Alimentos", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", profile: "Perfil" };
     document.title = `${titles[page] || "ScaleGrams"} | ScaleGrams`;
   }, [authenticated, page]);
 
@@ -161,9 +161,8 @@ export function App() {
           <Suspense fallback={<PageLoader />}>
             {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
             {page === "foods" && <Foods api={api} user={user} setPage={setPage} setSelectedFoodId={setSelectedFoodId} />}
-            {page === "create" && <CreateCatalog api={api} setPage={setPage} prefillBarcode={prefillBarcode} clearPrefillBarcode={() => setPrefillBarcode("")} />}
             {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
-            {page === "scanner" && <Scanner api={api} setPage={setPage} setSelectedFoodId={setSelectedFoodId} setPrefillBarcode={setPrefillBarcode} />}
+            {page === "scanner" && <Scanner api={api} setPage={setPage} setSelectedFoodId={setSelectedFoodId} setPrefillBarcode={setPrefillBarcode} CatalogComponent={CreateCatalog} />}
             {page === "history" && <History api={api} />}
             {page === "profile" && <Profile api={api} logout={logout} />}
           </Suspense>
