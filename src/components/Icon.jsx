@@ -3,6 +3,7 @@ const paths = {
   add: "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2Z",
   add_box: "M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2Zm0 16H5V5h14v14Zm-6-2v-4h4v-2h-4V7h-2v4H7v2h4v4h2Z",
   arrow_back: "M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2Z",
+  arrow_forward: "m12 4-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8Z",
   barcode_scanner: "M3 5V3h4v2H5v2H3Zm14-2v2h2v2h2V3h-4ZM3 17v4h4v-2H5v-2H3Zm16 0v2h-2v2h4v-4h-2ZM7 7h2v10H7V7Zm3 0h1v10h-1V7Zm3 0h2v10h-2V7Zm3 0h1v10h-1V7Z",
   calendar_month: "M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 16H5V9h14v11ZM5 7V6h14v1H5Zm2 4h5v5H7v-5Z",
   check: "m9 16.17-3.5-3.5-1.41 1.41L9 19 20 8l-1.41-1.41L9 16.17Z",

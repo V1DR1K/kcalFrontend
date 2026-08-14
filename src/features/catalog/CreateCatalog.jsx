@@ -353,7 +353,7 @@ function DerivedCaloriesHint({ values }) {
   );
 }
 
-function MyFoods({ api, onDirtyChange }) {
+export function MyFoods({ api, onDirtyChange }) {
   const [items, setItems] = useState([]);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);

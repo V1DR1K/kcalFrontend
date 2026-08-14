@@ -1,5 +1,5 @@
 /* Desktop composition. Mobile keeps the existing responsive surfaces untouched. */
-.dashboard-page-header > div { display: none; }
+.dashboard-page-header > div:not(.date-nav) { display: none; }
 .history-calendar-aside { display: none; }
 .history-calendar-shell,
 .history-calendar-main,
@@ -68,7 +68,7 @@
 
   .dashboard-page { gap: 18px; }
   .dashboard-page-header { align-items: center; margin-bottom: 4px; }
-  .dashboard-page-header > div { display: block; flex: 0 0 auto; }
+  .dashboard-page-header > div:not(.date-nav) { display: block; flex: 0 0 auto; }
   .dashboard-page-header h1 { margin: 0; font-size: 34px; }
   .dashboard-page-header .date-nav { width: auto; margin-left: auto; justify-content: flex-end; }
   .dashboard-page-header .date-picker-trigger { min-width: 190px; }

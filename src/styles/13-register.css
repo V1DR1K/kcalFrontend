@@ -5,8 +5,6 @@
   gap: var(--space-6);
 }
 
-.register-back { justify-self: start; }
-
 .register-heading {
   display: flex;
   align-items: end;
@@ -41,6 +39,7 @@
 .register-option:focus-visible { border-color: color-mix(in srgb, var(--primary) 66%, var(--outline)); background: color-mix(in srgb, var(--primary) 8%, var(--surface-low)); }
 .register-option:active { transform: translateY(1px); }
 .register-option-primary { border-color: color-mix(in srgb, var(--primary) 42%, var(--outline)); }
+.register-option-compact { min-height: 84px; }
 .register-option-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: var(--radius-control); background: var(--primary-soft); color: var(--primary); }
 .register-option-icon .material-symbols-outlined { font-size: 27px; }
 .register-option strong, .register-option small { display: block; }

@@ -13,18 +13,13 @@ import { formatNumber } from "../../utils/format";
 const SWIPE_ACTION_WIDTH = 84;
 
 export function Foods({ api, user, setPage, setSelectedFoodId }) {
-  const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
-  const [editingRecipe, setEditingRecipe] = useState(null);
-  const [deletingRecipeId, setDeletingRecipeId] = useState(null);
-  const [loadingRecipeId, setLoadingRecipeId] = useState(null);
-  const [swipeResetSignal, setSwipeResetSignal] = useState(0);
   const catalog = usePagedCatalog({
     api,
-    endpoint: tab === "FOOD" ? "/api/foods" : "/api/recipes",
+    endpoint: "/api/foods",
     query,
-    category: tab === "FOOD" ? category : "",
+    category,
   });
   return (
     <section className="page">
@@ -39,22 +34,14 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
           </div>
         }
       />
-      <div className="tabs">
-        <button className={tab === "FOOD" ? "selected" : ""} onClick={() => setTab("FOOD")}>
-          Alimentos
-        </button>
-        <button className={tab === "RECIPE" ? "selected" : ""} onClick={() => setTab("RECIPE")}>
-          Recetas
-        </button>
-      </div>
       <div className="search-wrap">
         <Icon name="search" />
         <input className="search" placeholder="Buscar..." value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} />
       </div>
-      {tab === "FOOD" && <CategoryChips category={category} setCategory={setCategory} />}
+      <CategoryChips category={category} setCategory={setCategory} />
       <QuickItems
         title="Accesos rápidos"
-        items={groupFoodVariants(readRecents(user).items.filter((item) => item.type === tab))}
+        items={groupFoodVariants(readRecents(user).items.filter((item) => item.type === "FOOD"))}
         onPick={(item) => {
           if (item.type === "FOOD") {
             setSelectedFoodId(item.id);
@@ -74,64 +61,10 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
       ) : (
         <div className="food-grid">
           {groupFoodVariants(catalog.items).map((item) => {
-            const typedItem = { ...item, type: tab };
-            if (tab === "RECIPE") {
-              return (
-                <SwipeableRecipeCard
-                  key={`RECIPE:${item.id}`}
-                  recipe={typedItem}
-                  resetSignal={swipeResetSignal}
-                  disabled={deletingRecipeId === item.id || loadingRecipeId === item.id}
-                  onEdit={async () => {
-                    setSwipeResetSignal((value) => value + 1);
-                    setLoadingRecipeId(item.id);
-                    try {
-                      const fullRecipe = await api.runAction(
-                        { title: "Cargando receta", description: "Estamos preparando los datos para editarla..." },
-                        () => api.request(`/api/recipes/${item.id}`),
-                      );
-                      setEditingRecipe({ ...fullRecipe, type: "RECIPE" });
-                    } catch (error) {
-                      api.notify(error.message || "No se pudo cargar la receta.", "error");
-                    } finally {
-                      setLoadingRecipeId(null);
-                    }
-                  }}
-                  onDelete={async () => {
-                    if (deletingRecipeId) return;
-                    const confirmed = await api.confirm({
-                      title: "¿Borrar receta?",
-                      description: `${item.name} se eliminará de tu catálogo.`,
-                      confirmLabel: "Borrar receta",
-                    });
-                    if (!confirmed) {
-                      setSwipeResetSignal((value) => value + 1);
-                      return;
-                    }
-                    setDeletingRecipeId(item.id);
-                    try {
-                      await api.runAction(
-                        { title: "Borrando receta", description: "Estamos eliminando la receta del catálogo..." },
-                        async () => {
-                          await api.request(`/api/recipes/${item.id}`, { method: "DELETE" });
-                          catalog.removeItem(item.id);
-                          api.notify("Receta borrada.");
-                        },
-                        { quiet: true },
-                      );
-                    } catch (error) {
-                      api.notify(error.message || "No se pudo borrar la receta.", "error");
-                    } finally {
-                      setDeletingRecipeId(null);
-                      setSwipeResetSignal((value) => value + 1);
-                    }
-                  }}
-                />
-              );
-            }
+            const typedItem = { ...item, type: "FOOD" };
             return (
               <CatalogCard
-                key={`${tab}:${item.preparationGroup || item.id}`}
+                key={`FOOD:${item.preparationGroup || item.id}`}
                 item={typedItem}
                 onAdd={() => {
                   setSelectedFoodId(item.id);
@@ -154,22 +87,11 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
       {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>No encontramos resultados.</CatalogStatus>}
       {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && !catalog.hasNext && <CatalogStatus>Viste todos los resultados.</CatalogStatus>}
       <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
-      {editingRecipe && (
-        <EditRecipeModal
-          api={api}
-          recipe={editingRecipe}
-          onClose={() => setEditingRecipe(null)}
-          onDone={() => {
-            setEditingRecipe(null);
-            catalog.refresh();
-          }}
-        />
-      )}
     </section>
   );
 }
 
-function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }) {
+export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }) {
   const gesture = useRef(null);
   const offsetRef = useRef(0);
   const [offset, setOffset] = useState(0);
@@ -240,7 +162,7 @@ function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }
   );
 }
 
-function EditRecipeModal({ api, recipe, onClose, onDone }) {
+export function EditRecipeModal({ api, recipe, onClose, onDone }) {
   const [name, setName] = useState(recipe.name || "");
   const [description, setDescription] = useState(recipe.description || "");
   const [ingredients, setIngredients] = useState(() => (recipe.ingredients || []).map((item) => ({

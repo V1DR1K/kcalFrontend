@@ -125,9 +125,6 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode, Ca
   if (mode === "choices") {
     return (
       <section className="page register-page">
-        <button className="back-button register-back" onClick={() => setPage("foods")}>
-          <Icon name="arrow_back" />Alimentos
-        </button>
         <header className="register-heading">
           <div>
             <span className="register-kicker">Catálogo</span>
@@ -145,6 +142,11 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode, Ca
           <button className="register-option" type="button" onClick={openCatalog}>
             <span className="register-option-icon"><Icon name="add_box" /></span>
             <span><strong>Crear alimentos</strong><small>Creá un alimento, una receta o revisá tus alimentos.</small></span>
+            <Icon name="arrow_forward" />
+          </button>
+          <button className="register-option register-option-compact" type="button" onClick={() => setPage("my-foods")}>
+            <span className="register-option-icon"><Icon name="nutrition" /></span>
+            <span><strong>Mis alimentos</strong><small>Consultá y editá los alimentos que creaste.</small></span>
             <Icon name="arrow_forward" />
           </button>
         </div>
