@@ -2,9 +2,9 @@ import React from "react";
 import { Icon } from "./Icon";
 import { formatNumber } from "../utils/format";
 
-export function Header({ title, action, compact = false }) {
+export function Header({ title, action, compact = false, className = "" }) {
   return (
-    <header className={`page-header ${compact ? "dashboard-page-header" : ""}`}>
+    <header className={`page-header ${compact ? "dashboard-page-header" : ""} ${className}`.trim()}>
       {title && <div><h1>{title}</h1></div>}
       {action}
     </header>

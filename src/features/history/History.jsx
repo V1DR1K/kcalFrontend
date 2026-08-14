@@ -51,28 +51,38 @@ export function History({ api }) {
     <section className="page">
       <Header title="Historial" />
       <div className="grid two history-summary">
-        <Panel title="Promedio">
+        <Panel title="Promedio del mes">
           <p className="big">{formatNumber(data?.averageCalories)} kcal</p>
         </Panel>
-        <Panel title="Objetivos cumplidos">
+        <Panel title="Días con objetivo cumplido">
           <p className="big">{data?.completedGoalDays || 0} días</p>
         </Panel>
       </div>
-      <div className="calendar-heading">
-        <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset - 1)}><Icon name="chevron_left" />Anterior</button>
-        <div><h2>{monthLabel}</h2><span>Tu constancia, día por día</span></div>
-        <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset + 1)} disabled={monthOffset >= 0}><Icon name="chevron_right" />Siguiente</button>
+      <div className="history-calendar-shell">
+        <div className="history-calendar-main">
+          <div className="calendar-heading">
+            <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset - 1)}><Icon name="chevron_left" />Anterior</button>
+            <div><h2>{monthLabel}</h2><span>Tu constancia, día por día</span></div>
+            <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset + 1)} disabled={monthOffset >= 0}><Icon name="chevron_right" />Siguiente</button>
+          </div>
+          <div className="calendar-weekdays" aria-hidden="true">{["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day}>{day}</span>)}</div>
+          <div className="calendar-grid">
+            {Array.from({ length: leadingDays }, (_, index) => <span className="calendar-spacer" key={`spacer-${index}`} />)}
+            {(data?.days || []).map((day) => (
+              <button type="button" key={day.date} className={day.goalReached ? "done" : ""} style={{ "--plan-color": planColor(day.planId || day.planName) }} title={`Ver detalle del ${readableDate(day.date)}`} aria-label={`${readableDate(day.date)}, ${day.goalReached ? "objetivo cumplido" : "día registrado"}. Ver detalle`} onClick={() => setSelectedDay(day)}>
+                <b>{new Date(`${day.date}T00:00:00`).getDate()}</b><small>{day.planName}</small>{day.goalReached && <Icon name="check_circle" />}
+              </button>
+            ))}
+          </div>
+          <div className="plan-legend">{[...new Map((data?.days || []).map((day) => [day.planId || day.planName, day])).values()].map((day) => <span key={day.planId || day.planName}><i style={{ background: planColor(day.planId || day.planName) }} />{day.planName}</span>)}</div>
+        </div>
+        <aside className="history-calendar-aside">
+          <Icon name="calendar_month" />
+          <h3>Un día a la vez</h3>
+          <p>Elegí cualquier fecha para revisar tus comidas, macros e hidratación con el contexto completo.</p>
+          <div><span><i className="history-status-dot complete" />Objetivo cumplido</span><span><i className="history-status-dot recorded" />Día registrado</span></div>
+        </aside>
       </div>
-      <div className="calendar-weekdays" aria-hidden="true">{["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day}>{day}</span>)}</div>
-      <div className="calendar-grid">
-        {Array.from({ length: leadingDays }, (_, index) => <span className="calendar-spacer" key={`spacer-${index}`} />)}
-        {(data?.days || []).map((day) => (
-          <button type="button" key={day.date} className={day.goalReached ? "done" : ""} style={{ "--plan-color": planColor(day.planId || day.planName) }} title={`Ver detalle del ${readableDate(day.date)}`} onClick={() => setSelectedDay(day)}>
-            <b>{new Date(`${day.date}T00:00:00`).getDate()}</b><small>{day.planName}</small>
-          </button>
-        ))}
-      </div>
-      <div className="plan-legend">{[...new Map((data?.days || []).map((day) => [day.planId || day.planName, day])).values()].map((day) => <span key={day.planId || day.planName}><i style={{ background: planColor(day.planId || day.planName) }} />{day.planName}</span>)}</div>
       {selectedDay && <HistoryDayPreview api={api} day={selectedDay} onClose={() => setSelectedDay(null)} />}
     </section>
   );

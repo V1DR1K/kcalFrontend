@@ -1,0 +1,187 @@
+/* Desktop composition. Mobile keeps the existing responsive surfaces untouched. */
+.dashboard-page-header > div { display: none; }
+.history-calendar-aside { display: none; }
+.history-calendar-shell,
+.history-calendar-main,
+.profile-overview-grid,
+.profile-support-grid { display: contents; }
+.calendar-grid > button > .material-symbols-outlined { display: none; }
+
+@media (min-width: 901px) {
+  .app-shell { position: relative; grid-template-columns: 248px minmax(0, 1fr); min-height: 100dvh; }
+  .app-shell::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 0;
+    width: 248px;
+    border-right: 1px solid color-mix(in srgb, var(--outline) 70%, transparent);
+    background: var(--surface-sidebar);
+    content: "";
+    pointer-events: none;
+  }
+
+  .sidebar {
+    z-index: 1;
+    height: 100dvh;
+    gap: 16px;
+    padding: 16px;
+    border-right: 0;
+    background: transparent;
+    backdrop-filter: none;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--outline) transparent;
+  }
+
+  .sidebar nav { gap: 4px; }
+  .sidebar nav button { min-height: 42px; padding-inline: 12px; font-size: 13px; }
+  .sidebar nav button .material-symbols-outlined { color: color-mix(in srgb, currentColor 78%, transparent); }
+  .sidebar nav button.active { box-shadow: inset 3px 0 var(--primary); transform: none; }
+  .sidebar-profile {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 52px;
+    margin-top: auto;
+    padding: 7px 8px;
+    border: 1px solid color-mix(in srgb, var(--outline) 68%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--surface-low) 82%, transparent);
+    color: var(--text);
+    text-align: left;
+    transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  }
+  .sidebar-profile:hover { border-color: color-mix(in srgb, var(--primary) 52%, var(--outline)); background: var(--surface-high); transform: translateY(-1px); }
+  .sidebar-profile > .material-symbols-outlined:first-child { color: var(--primary); font-size: 25px; }
+  .sidebar-profile > span { display: grid; min-width: 0; gap: 2px; }
+  .sidebar-profile strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar-profile small { color: var(--muted); font-size: 11px; }
+  .sidebar-profile > .material-symbols-outlined:last-child { color: var(--muted); font-size: 18px; }
+  .sidebar > .ghost { min-height: 42px; margin-top: 0; padding-inline: 12px; }
+
+  .content { position: relative; z-index: 1; width: min(1240px, calc(100% - 56px)); padding-top: 42px; }
+  .page { gap: 26px; }
+  .page-header { min-height: 56px; }
+  .page-header h1 { font-size: clamp(36px, 3.8vw, 48px); }
+
+  .dashboard-page { gap: 18px; }
+  .dashboard-page-header { align-items: center; margin-bottom: 4px; }
+  .dashboard-page-header > div { display: block; flex: 0 0 auto; }
+  .dashboard-page-header h1 { margin: 0; font-size: 34px; }
+  .dashboard-page-header .date-nav { width: auto; margin-left: auto; justify-content: flex-end; }
+  .dashboard-page-header .date-picker-trigger { min-width: 190px; }
+  .dashboard-hero { min-height: 226px; padding: 26px 30px; }
+  .dashboard-hero-full { grid-template-columns: 190px minmax(210px, .82fr) minmax(280px, 1fr); gap: 28px; }
+  .dashboard-hero .calorie-ring { width: 176px; }
+  .dashboard-hero h2 { font-size: 28px; }
+  .dashboard-hero .balance-copy p { max-width: 28ch; font-size: 16px; }
+  .dashboard-hero .macro-strip { gap: 14px; }
+  .meal-grid { align-items: start; gap: 18px; }
+  .meal-card { min-height: 0; background: var(--surface-low); }
+  .meal-card > header { background: var(--surface-low); }
+  .meal-card.action-surface::before { opacity: 0; transform: none; }
+  .meal-card header { padding: 16px 18px; }
+  .meal-card .meal-item { padding: 14px 18px; }
+  .meal-card .meal-item-detail-actions { display: flex; }
+  .meal-card .meal-item-detail-actions button { min-height: 40px; }
+  .panel:hover { transform: none; border-color: color-mix(in srgb, var(--outline) 70%, transparent); }
+  .food-card:hover, .recent-meal-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 55%, transparent); }
+
+  .history-summary { grid-template-columns: repeat(2, minmax(0, 220px)); gap: 14px; }
+  .history-summary .panel { padding: 18px 20px; }
+  .history-summary .panel h2 { margin-bottom: 8px; font-size: 13px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+  .history-summary .panel .big { margin: 0; font-size: 30px; }
+  .history-calendar-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 238px;
+    gap: 20px;
+    padding: 22px;
+    border: 1px solid color-mix(in srgb, var(--outline) 58%, transparent);
+    border-radius: var(--radius-surface);
+    background: color-mix(in srgb, var(--surface-low) 68%, transparent);
+  }
+  .history-calendar-main { display: block; min-width: 0; }
+  .history-calendar-aside {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    min-height: 250px;
+    padding: 20px;
+    border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--outline));
+    border-radius: var(--radius-panel);
+    background: linear-gradient(155deg, color-mix(in srgb, var(--primary-container) 24%, transparent), color-mix(in srgb, var(--surface) 86%, transparent));
+  }
+  .history-calendar-aside > .material-symbols-outlined { color: var(--primary); font-size: 28px; }
+  .history-calendar-aside h3 { margin: 0; font-size: 20px; }
+  .history-calendar-aside p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .history-calendar-aside > div { display: grid; gap: 8px; margin-top: auto; }
+  .history-calendar-aside > div span { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+  .history-status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--outline); }
+  .history-status-dot.complete { background: var(--primary); }
+  .history-status-dot.recorded { background: var(--tertiary); }
+  .calendar-heading { margin-bottom: 18px; }
+  .calendar-heading h2 { font-size: 25px; }
+  .calendar-heading span { font-size: 12px; }
+  .calendar-weekdays, .calendar-grid { gap: 8px; }
+  .calendar-grid > span,
+  .calendar-grid > button {
+    aspect-ratio: auto;
+    min-height: 84px;
+    align-content: start;
+    justify-items: start;
+    padding: 11px 12px;
+    border-radius: var(--radius-control);
+  }
+  .calendar-grid > button { gap: 6px; }
+  .calendar-grid > button b { font-size: 18px; }
+  .calendar-grid > button small { width: 100%; padding: 0; font-size: 11px; line-height: 1.2; text-align: left; }
+  .calendar-grid > button > .material-symbols-outlined { display: grid; justify-self: end; width: 18px; height: 18px; margin-top: auto; color: var(--primary); }
+  .calendar-grid .done { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent); }
+  .plan-legend { margin-top: 16px; }
+
+  .profile-page { gap: 22px; }
+  .profile-page > .page-header { margin-bottom: 2px; }
+  .profile-overview-grid { display: grid; grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr); gap: 22px; align-items: stretch; }
+  .profile-overview-grid > .panel { min-width: 0; }
+  .profile-overview-grid .panel { height: 100%; }
+  .profile-overview-grid .grid.three { gap: 10px; }
+  .profile-overview-grid .stat { padding: 14px; }
+  .profile-overview-grid .stat strong { font-size: 20px; }
+  .profile-support-grid { display: grid; grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); gap: 22px; align-items: start; }
+  .profile-support-grid .account-panel { grid-column: 1 / -1; }
+  .profile-support-grid .panel { min-width: 0; }
+  .profile-page .panel h2 { font-size: 20px; }
+  .weight-panel .weight-chart { min-height: 190px; }
+  .weight-panel .weight-record-form { max-width: 540px; }
+  .macro-editor { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .macro-control { min-width: 0; padding: 12px; }
+  .preset-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .plan-calorie-step { grid-template-columns: auto minmax(0, 1fr) minmax(210px, .5fr); }
+  .nutrition-plan-form > .primary { justify-self: start; min-width: 220px; }
+  .account-panel .change-password-form { max-width: 760px; }
+
+  .modal-backdrop { place-items: center; padding: 32px; }
+  .picker-modal { max-height: min(820px, calc(100dvh - 64px)); border-radius: var(--radius-modal); }
+  .compact-modal { place-items: center; padding: 32px; }
+  .edit-log-modal { max-height: min(760px, calc(100dvh - 64px)); overflow: auto; }
+  .date-picker-dialog { width: min(480px, 100%); padding: 24px; border-radius: var(--radius-modal); }
+  .confirmation-dialog { width: min(480px, 100%); padding: 24px; }
+  .confirmation-dialog footer { grid-template-columns: auto auto; justify-content: end; }
+  .confirmation-dialog footer button { min-width: 142px; }
+  .notification-region { left: auto; width: min(420px, calc(100% - 48px)); }
+}
+
+@media (min-width: 901px) and (max-width: 1099px) {
+  .content { width: min(100% - 40px, 980px); }
+  .dashboard-hero,
+  .dashboard-hero-full { grid-template-columns: minmax(136px, .46fr) minmax(0, 1fr); gap: 20px; }
+  .dashboard-hero .macro-strip { grid-column: 1 / -1; }
+  .dashboard-hero .calorie-ring { width: 148px; }
+  .dashboard-hero h2 { font-size: 24px; }
+  .history-calendar-shell { grid-template-columns: minmax(0, 1fr) 200px; gap: 14px; padding: 16px; }
+  .history-calendar-aside { padding: 16px; }
+  .calendar-grid > span, .calendar-grid > button { min-height: 72px; padding: 9px; }
+  .profile-overview-grid, .profile-support-grid { gap: 16px; }
+}

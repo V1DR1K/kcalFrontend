@@ -395,8 +395,7 @@ export function Dashboard({ api, user, setPage }) {
   }
   return (
     <section className="page dashboard-page" ref={dashboardTopRef}>
-      <h1 className="sr-only">Mi día</h1>
-      <Header compact action={<DateNavigator date={selectedDate} setDate={setSelectedDate} />} />
+      <Header title="Mi día" compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
       <CompactBalanceBar
         visible={compactBalance}
         consumed={data?.caloriesConsumed}

@@ -74,39 +74,43 @@ export function Profile({ api, logout }) {
       </section>
     );
   return (
-    <section className="page">
+    <section className="page profile-page">
       <Header title="Mi perfil" />
-      <Panel title={profile?.fullName || "Perfil"}>
-        <div className="grid three">
-          <Stat icon="monitor_weight" label="Peso" value={`${formatNumber(profile?.weightKg, 1)} kg`} />
-          <Stat icon="height" label="Altura" value={`${formatNumber(profile?.heightCm)} cm`} />
-          <Stat icon="local_fire_department" label="Meta diaria" value={`${formatNumber(profile?.dailyCalorieGoal)} kcal`} />
-        </div>
-      </Panel>
-      <WeightPanel api={api} profile={profile} setProfile={setProfile} entries={weightEntries} setEntries={setWeightEntries} setWeight={setWeight} weight={weight} savingWeight={savingWeight} setSavingWeight={setSavingWeight} />
+      <div className="profile-overview-grid">
+        <Panel title={profile?.fullName || "Perfil"}>
+          <div className="grid three">
+            <Stat icon="monitor_weight" label="Peso" value={`${formatNumber(profile?.weightKg, 1)} kg`} />
+            <Stat icon="height" label="Altura" value={`${formatNumber(profile?.heightCm)} cm`} />
+            <Stat icon="local_fire_department" label="Meta diaria" value={`${formatNumber(profile?.dailyCalorieGoal)} kcal`} />
+          </div>
+        </Panel>
+        <WeightPanel api={api} profile={profile} setProfile={setProfile} entries={weightEntries} setEntries={setWeightEntries} setWeight={setWeight} weight={weight} savingWeight={savingWeight} setSavingWeight={setSavingWeight} />
+      </div>
       <NutritionPlanManager api={api} presets={presets} plans={plans} onChanged={loadPlans} />
-      <Panel title="Fotos con IA" className="ai-usage-panel">
-        {aiUsage?.available ? <><div><Icon name="photo_camera" /><span><strong>{aiUsage.blockedUntil ? "Gemini sin cuota" : "Sin límite interno"}</strong><small>{aiUsage.blockedUntil ? `Probá nuevamente desde ${quotaReset(aiUsage.blockedUntil)}` : `${aiUsage.used} consultas realizadas hoy`}</small></span></div><p>{aiUsage.blockedUntil ? "Gemini informó que no quedan solicitudes disponibles por ahora. La hora mostrada proviene de Gemini; si no la informa, se usa su próximo reinicio diario estimado." : "ScaleGrams no limita tus fotos: solo registra el uso y mostrará cuándo Gemini vuelva a aceptar consultas."}</p></> : <p>La estimación por foto no está disponible por el momento.</p>}
-      </Panel>
-      <NutritionTutorial />
-      <Panel title="Cuenta" className="account-panel">
-        <p>Podés actualizar tu contraseña o cerrar tu sesión de forma segura en este dispositivo.</p>
-        <ChangePasswordForm api={api} />
-        <button
-          className="danger-button"
-          onClick={async () => {
-            const confirmed = await api.confirm({
-              title: "¿Cerrar sesión?",
-              description: "Tendrás que volver a ingresar para usar tu cuenta en este dispositivo.",
-              confirmLabel: "Cerrar sesión",
-              tone: "neutral",
-            });
-            if (confirmed) logout();
-          }}
-        >
-          <Icon name="logout" />Cerrar sesión
-        </button>
-      </Panel>
+      <div className="profile-support-grid">
+        <Panel title="Fotos con IA" className="ai-usage-panel">
+          {aiUsage?.available ? <><div><Icon name="photo_camera" /><span><strong>{aiUsage.blockedUntil ? "Gemini sin cuota" : "Sin límite interno"}</strong><small>{aiUsage.blockedUntil ? `Probá nuevamente desde ${quotaReset(aiUsage.blockedUntil)}` : `${aiUsage.used} consultas realizadas hoy`}</small></span></div><p>{aiUsage.blockedUntil ? "Gemini informó que no quedan solicitudes disponibles por ahora. La hora mostrada proviene de Gemini; si no la informa, se usa su próximo reinicio diario estimado." : "ScaleGrams no limita tus fotos: solo registra el uso y mostrará cuándo Gemini vuelva a aceptar consultas."}</p></> : <p>La estimación por foto no está disponible por el momento.</p>}
+        </Panel>
+        <NutritionTutorial />
+        <Panel title="Cuenta" className="account-panel">
+          <p>Podés actualizar tu contraseña o cerrar tu sesión de forma segura en este dispositivo.</p>
+          <ChangePasswordForm api={api} />
+          <button
+            className="danger-button"
+            onClick={async () => {
+              const confirmed = await api.confirm({
+                title: "¿Cerrar sesión?",
+                description: "Tendrás que volver a ingresar para usar tu cuenta en este dispositivo.",
+                confirmLabel: "Cerrar sesión",
+                tone: "neutral",
+              });
+              if (confirmed) logout();
+            }}
+          >
+            <Icon name="logout" />Cerrar sesión
+          </button>
+        </Panel>
+      </div>
     </section>
   );
 }

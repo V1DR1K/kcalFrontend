@@ -25,7 +25,7 @@ export const DEFAULT_MEALS = [
   { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" },
 ];
 export const navItems = [
-  { id: "dashboard", label: "Dashboard", mobileLabel: "Inicio", icon: "monitoring" }, { id: "foods", label: "Alimentos", mobileLabel: "Buscar", icon: "nutrition" },
+  { id: "dashboard", label: "Mi día", mobileLabel: "Inicio", icon: "monitoring" }, { id: "foods", label: "Alimentos", mobileLabel: "Buscar", icon: "nutrition" },
   { id: "history", label: "Historial", icon: "calendar_month" }, { id: "profile", label: "Perfil", icon: "account_circle" },
   { id: "scanner", label: "Registrar", mobileLabel: "Registrar", icon: "qr_code_scanner" },
 ];
