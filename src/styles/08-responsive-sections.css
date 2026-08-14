@@ -143,9 +143,16 @@
     grid-template-columns: 64px minmax(0, 1fr) auto;
   }
 
+  .modal-backdrop {
+    top: var(--app-viewport-top, 0px);
+    right: 0;
+    bottom: auto;
+    left: 0;
+    height: var(--app-viewport-height, 100dvh);
+  }
   .picker-modal {
     width: 100%;
-    height: var(--picker-height, 100dvh);
+    height: 100%;
     max-height: none;
     padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
     border: 0;
@@ -249,7 +256,7 @@
   }
   .selected-editor {
     width: 100%;
-    height: var(--picker-height, 100dvh);
+    height: 100%;
     max-height: none;
     padding: max(12px, env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
     border: 0;

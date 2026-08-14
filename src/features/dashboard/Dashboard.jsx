@@ -1342,7 +1342,6 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
 }
 
 function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd, onOptimisticRollback }) {
-  const modalRef = useRef(null);
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
@@ -1387,23 +1386,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [onClose]);
-  useEffect(() => {
-    let frame = 0;
-    const syncViewport = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        modalRef.current?.style.setProperty("--picker-height", `${Math.round(window.visualViewport?.height || window.innerHeight)}px`);
-      });
-    };
-    syncViewport();
-    window.addEventListener("orientationchange", syncViewport);
-    window.visualViewport?.addEventListener("resize", syncViewport);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("orientationchange", syncViewport);
-      window.visualViewport?.removeEventListener("resize", syncViewport);
-    };
-  }, []);
   useEffect(() => {
     api.request("/api/nutrition/ai-estimates/usage").then(setAiUsage).catch(() => setAiUsage(null));
   }, [api]);
@@ -1768,7 +1750,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   }
   return createPortal(
     <div className="modal-backdrop">
-      <section ref={modalRef} className="picker-modal" role="dialog" aria-modal="true" aria-labelledby="food-picker-title">
+      <section className="picker-modal" role="dialog" aria-modal="true" aria-labelledby="food-picker-title">
         <header>
           <div>
             <span>{mealType.label}</span>
