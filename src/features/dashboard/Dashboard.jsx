@@ -357,10 +357,9 @@ export function Dashboard({ api, user, setPage }) {
   }
   if (loading && !data) {
     return (
-      <section className="page" role="status" aria-live="polite">
+      <section className="page" role="status" aria-live="polite" aria-label="Preparando tu día">
         <h1 className="sr-only">Mi día</h1>
         <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
-        <span className="sr-only">Cargando tu día…</span>
         <div className="dashboard-skeleton" aria-hidden="true">
           <div className="dashboard-skeleton-hero">
             <div className="skeleton skeleton-ring" />
@@ -706,7 +705,6 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAd
       setSource(await api.runAction(
         { title: "Cargando comidas", description: "Estamos buscando el día seleccionado..." },
         () => api.request(`/api/nutrition/dashboard?date=${sourceDate}`),
-        { quiet: true },
       ));
     } catch {
       api.notify("No se pudo cargar ese día.", "error");
@@ -1822,7 +1820,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             </CatalogStatus>
           )}
           {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>No encontramos resultados.</CatalogStatus>}
-          {catalog.loadingMore && <CatalogStatus>Cargando más…</CatalogStatus>}
           {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && !catalog.hasNext && <CatalogStatus>Fin de los resultados.</CatalogStatus>}
           <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
         </div>

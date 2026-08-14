@@ -303,6 +303,7 @@
 .catalog-dialog-content .panel > h2 { margin-top: 0; }
 .catalog-dialog-content .form-grid { padding-bottom: 2px; }
 .catalog-dialog-content .my-foods-panel { min-height: 0; }
+.my-foods-loading { min-height: 72px; }
 
 @keyframes catalog-dialog-in {
   from { opacity: 0; transform: translateY(18px) scale(.985); }

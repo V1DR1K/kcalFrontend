@@ -20,7 +20,11 @@ export function usePagedCatalog({ api, endpoint, query = "", category = "", page
     setState((current) => ({ ...current, initialLoading: replace, loadingMore: !replace, error: "", failedPage: null }));
     try {
       const params = buildCatalogQuery({ page, pageSize, query, category });
-      const data = await api.request(`${endpoint}?${params}`, { signal: controller.signal });
+      const data = await api.runAction(
+        { title: replace ? "Cargando catálogo" : "Cargando más resultados", description: "Estamos actualizando la lista..." },
+        () => api.request(`${endpoint}?${params}`, { signal: controller.signal }),
+        { quiet: replace },
+      );
       const incoming = data?.items || [];
       setState((current) => {
         if (requestId !== requestIdRef.current) return current;

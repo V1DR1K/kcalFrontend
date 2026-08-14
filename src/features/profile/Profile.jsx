@@ -39,7 +39,10 @@ export function Profile({ api, logout }) {
   const load = useCallback(() => {
     setLoading(true);
     setError("");
-    Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans"), api.request("/api/profile/nutrition-plan-presets"), api.request("/api/nutrition/ai-estimates/usage").catch(() => null), api.request("/api/profile/weight-entries").catch(() => [])])
+    api.runAction(
+      { title: "Cargando perfil", description: "Estamos preparando tus datos y planes..." },
+      () => Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans"), api.request("/api/profile/nutrition-plan-presets"), api.request("/api/nutrition/ai-estimates/usage").catch(() => null), api.request("/api/profile/weight-entries").catch(() => [])]),
+    )
       .then(([nextProfile, nextPlans, nextPresets, nextAiUsage, nextWeightEntries]) => {
         setProfile(nextProfile);
         setWeight(nextProfile.weightKg || "");
@@ -58,7 +61,6 @@ export function Profile({ api, logout }) {
     return (
       <section className="page">
         <Header title="Mi perfil" />
-        <CatalogStatus>Cargando perfil…</CatalogStatus>
       </section>
     );
   if (error)

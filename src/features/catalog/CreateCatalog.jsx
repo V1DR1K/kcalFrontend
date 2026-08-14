@@ -361,7 +361,10 @@ function MyFoods({ api, onDirtyChange }) {
   const load = useCallback(() => {
     setLoading(true);
     return api
-      .request("/api/foods/mine")
+      .runAction(
+        { title: "Cargando tus alimentos", description: "Estamos preparando tu catálogo personal..." },
+        () => api.request("/api/foods/mine"),
+      )
       .then(setItems)
       .catch((error) => api.notify(error.message || "No se pudieron cargar tus alimentos.", "error"))
       .finally(() => setLoading(false));
@@ -392,7 +395,7 @@ function MyFoods({ api, onDirtyChange }) {
   if (loading)
     return (
       <Panel title="Mis alimentos">
-        <CatalogStatus>Cargando tus alimentos…</CatalogStatus>
+        <div className="my-foods-loading" aria-busy="true" />
       </Panel>
     );
   return (
@@ -614,7 +617,6 @@ function CreateRecipeForm({ api, onDirtyChange, onBusyChange }) {
         )}
         {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>No encontramos ingredientes.</CatalogStatus>}
         <InfiniteSentinel enabled={!catalog.initialLoading && !catalog.error && catalog.hasNext} onLoad={catalog.loadNext} />
-        {catalog.loadingMore && <CatalogStatus>Cargando más…</CatalogStatus>}
         <div className="ingredient-list">
           {ingredients.map((item, index) => (
             <label className="ingredient-row" key={`${item.foodId}:${index}`}>

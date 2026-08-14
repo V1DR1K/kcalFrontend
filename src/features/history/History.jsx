@@ -19,7 +19,10 @@ export function History({ api }) {
     setLoading(true);
     setError("");
     api
-      .request(`/api/nutrition/history?year=${viewDate.getFullYear()}&month=${viewDate.getMonth() + 1}`)
+      .runAction(
+        { title: "Cargando historial", description: "Estamos preparando tu calendario..." },
+        () => api.request(`/api/nutrition/history?year=${viewDate.getFullYear()}&month=${viewDate.getMonth() + 1}`),
+      )
       .then(setData)
       .catch(() => setError("No pudimos cargar tu historial."))
       .finally(() => setLoading(false));
@@ -29,7 +32,6 @@ export function History({ api }) {
     return (
       <section className="page">
         <Header title="Historial" />
-        <CatalogStatus>Cargando historial…</CatalogStatus>
       </section>
     );
   if (error)
@@ -98,7 +100,6 @@ function HistoryDayPreview({ api, day, onClose }) {
     api.runAction(
       { title: "Cargando detalle", description: "Estamos preparando el resumen de este día..." },
       () => api.request(`/api/nutrition/dashboard?date=${day.date}`),
-      { quiet: true },
     )
       .then((result) => active && setDetail(result))
       .catch(() => active && setError("No pudimos cargar el detalle de este día."));
@@ -165,7 +166,7 @@ function HistoryDayPreview({ api, day, onClose }) {
               </div>
               <div className="history-water"><Icon name="water_drop" /><p><strong>Hidratación</strong><small>{formatNumber(detail.waterConsumedLiters, 1)} L de {formatNumber(detail.waterGoalLiters, 1)} L</small></p></div>
             </>
-          ) : error ? <CatalogStatus error>{error}</CatalogStatus> : <div className="history-preview-loading"><span className="spinner" /><span>Cargando detalle…</span></div>}
+          ) : error ? <CatalogStatus error>{error}</CatalogStatus> : <div className="history-preview-loading" aria-busy="true" />}
         </div>
       </section>
     </div>,

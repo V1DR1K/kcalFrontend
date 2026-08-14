@@ -27,7 +27,6 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
         .runAction(
           { title: "Cargando alimento", description: "Estamos preparando sus datos nutricionales..." },
           () => api.request(`/api/foods/${id}`),
-          { quiet: true },
         )
         .then((nextFood) => {
           setFood(nextFood);
@@ -61,7 +60,6 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
         .runAction(
           { title: "Cargando opciones", description: "Estamos buscando las presentaciones disponibles..." },
           () => api.request(`/api/foods/${foodId}/preparations`),
-          { quiet: true },
         )
         .then(setPreparationOptions)
         .catch(() => setPreparationOptions([]));
@@ -156,7 +154,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
           <FoodThumb item={{ ...food, type: "FOOD" }} hero />
           <div>
             <span>Porción</span>
-            <h2>{food?.name || "Cargando..."}</h2>
+            <h2>{food?.name || "Alimento"}</h2>
             <small>{food?.brand || categoryLabel(food?.category)}</small>
             <PreparationBadge food={food} showUnknown />
           </div>

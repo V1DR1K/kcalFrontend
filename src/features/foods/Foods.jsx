@@ -89,7 +89,6 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
                       const fullRecipe = await api.runAction(
                         { title: "Cargando receta", description: "Estamos preparando los datos para editarla..." },
                         () => api.request(`/api/recipes/${item.id}`),
-                        { quiet: true },
                       );
                       setEditingRecipe({ ...fullRecipe, type: "RECIPE" });
                     } catch (error) {
@@ -153,7 +152,6 @@ export function Foods({ api, user, setPage, setSelectedFoodId }) {
         </CatalogStatus>
       )}
       {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>No encontramos resultados.</CatalogStatus>}
-      {catalog.loadingMore && <CatalogStatus>Cargando más…</CatalogStatus>}
       {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && !catalog.hasNext && <CatalogStatus>Viste todos los resultados.</CatalogStatus>}
       <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
       {editingRecipe && (
@@ -495,7 +493,6 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     api.runAction(
       { title: "Cargando opciones", description: "Estamos buscando las presentaciones disponibles..." },
       () => api.request(`/api/foods/${item.id}/preparations`),
-      { quiet: true },
     )
     .then((result) => setPreparations(result || []))
     .catch(() => setPreparations([item]));

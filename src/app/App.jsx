@@ -8,6 +8,8 @@ import { AuthScreen } from "../features/auth/AuthScreen";
 import { ActionLoader } from "../components/ActionLoader";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
 import { Notification } from "../components/Notification";
+import { History } from "../features/history/History";
+import { Profile } from "../features/profile/Profile";
 
 function lazyPage(load, name) {
   return lazy(() => load().then((module) => ({ default: module[name] })));
@@ -18,11 +20,15 @@ const Foods = lazyPage(() => import("../features/foods/Foods"), "Foods");
 const CreateCatalog = lazyPage(() => import("../features/catalog/CreateCatalog"), "CreateCatalog");
 const ConfigureFood = lazyPage(() => import("../features/foods/ConfigureFood"), "ConfigureFood");
 const Scanner = lazyPage(() => import("../features/scanner/Scanner"), "Scanner");
-const History = lazyPage(() => import("../features/history/History"), "History");
-const Profile = lazyPage(() => import("../features/profile/Profile"), "Profile");
-
-function PageLoader() {
-  return <section className="page"><div className="catalog-status" role="status">Cargando…</div></section>;
+function PageLoader({ page }) {
+  const labels = {
+    dashboard: ["Cargando tu día", "Estamos preparando tu resumen diario..."],
+    foods: ["Cargando alimentos", "Estamos preparando el catálogo..."],
+    configure: ["Cargando alimento", "Estamos preparando sus datos nutricionales..."],
+    scanner: ["Cargando Registrar", "Estamos preparando las opciones de registro..."],
+  };
+  const [title, description] = labels[page] || ["Cargando vista", "Estamos preparando la información..."];
+  return <ActionLoader title={title} description={description} />;
 }
 
 export function App() {
@@ -158,7 +164,7 @@ export function App() {
     <>
       {authenticated ? (
         <Shell user={user} page={page} setPage={setPage} logout={logout}>
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<PageLoader page={page} />}>
             {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
             {page === "foods" && <Foods api={api} user={user} setPage={setPage} setSelectedFoodId={setSelectedFoodId} />}
             {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
