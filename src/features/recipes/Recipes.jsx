@@ -6,7 +6,7 @@ import { Header, Panel } from "../../components/Layout";
 import { CatalogStatus, FoodThumb } from "../catalog/CatalogComponents";
 import { formatNumber } from "../../utils/format";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
-import { EditRecipeModal, SwipeableRecipeCard } from "../foods/Foods";
+import { EditRecipeModal, SwipeableRecipeCard } from "../foods/FoodComponents";
 
 export function Recipes({ api, setPage }) {
   const [tab, setTab] = useState("mine");

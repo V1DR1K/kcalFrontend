@@ -112,14 +112,6 @@
   color: var(--on-primary);
 }
 
-.add-food {
-  width: 52px;
-  min-height: 52px;
-  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
-  background: color-mix(in srgb, var(--primary) 16%, transparent);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--background) 22%, transparent);
-}
-
 .configure-food-heading { display: flex; align-items: center; gap: 18px; }
 .configure-food-heading h2 { margin: 3px 0; }
 .configure-food-heading span { color: var(--primary); font-weight: 800; }

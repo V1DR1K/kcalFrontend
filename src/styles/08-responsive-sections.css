@@ -239,7 +239,6 @@
   .edit-log-modal .edit-log-preview .fat strong { color: var(--warning); }
   .picker-modal > header { position: relative; z-index: 2; }
   .picker-modal > .selected-subpanel { z-index: 3; }
-  .chips { flex-wrap: wrap; overflow: visible; padding-right: 0; }
   .quick-items div { flex-wrap: wrap; overflow: visible; padding-bottom: 0; }
   .quick-items button { flex: 1 1 calc(50% - 4px); min-width: 0; }
   .quick-items button span,
@@ -495,10 +494,6 @@
   .macro-control, .macro-control input[type="range"] { min-width: 0; width: 100%; }
 
   .content { width: 100%; padding-left: 14px; padding-right: 14px; }
-  .food-grid { grid-template-columns: 1fr; gap: 12px; }
-  .food-card { grid-template-columns: 72px minmax(0, 1fr) auto; gap: 12px; padding: 12px; }
-  .food-card > strong { grid-column: 2; justify-self: start; font-size: 14px; color: var(--muted); }
-  .food-card .add-food { grid-column: 3; grid-row: 1 / span 2; }
   .configure-food-heading { align-items: center; gap: 12px; }
   .configure-food-heading .food-thumb.hero { width: 62px; height: 62px; }
   .configure-food-heading h2 { font-size: 20px; }

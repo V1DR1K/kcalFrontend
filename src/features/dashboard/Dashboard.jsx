@@ -7,7 +7,7 @@ import { Input, Select } from "../../components/FormControls";
 import { Header, Macro, Panel } from "../../components/Layout";
 import { DatePickerDialog } from "../../components/DatePickerDialog";
 import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
-import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../foods/Foods";
+import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../foods/FoodComponents";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, readableDate, shiftDate, today } from "../../utils/format";

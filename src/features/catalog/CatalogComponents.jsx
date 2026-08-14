@@ -20,18 +20,6 @@ function foodMeta(item) {
   return parts.join(" · ");
 }
 
-export function CategoryChips({ category, setCategory }) {
-  return (
-    <div className="chips" aria-label="Filtrar por categoría">
-      {[{ value: "", label: "Todos" }, ...CATEGORY_OPTIONS].map(({ value, label }) => (
-        <button key={label} className={category === value ? "selected" : ""} aria-pressed={category === value} onClick={() => setCategory(value)}>
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export function CatalogRow({ item, onPick }) {
   return (
     <button className="catalog-row" onClick={() => onPick(item)}>
@@ -55,24 +43,6 @@ export function groupFoodVariants(items) {
   return [...grouped.values()];
 }
 
-export function CatalogCard({ item, onAdd }) {
-  return (
-    <article className="food-card">
-      <FoodThumb item={item} />
-      <div>
-        <h3>{item.name}</h3>
-        <p>{item.type === "RECIPE" ? `Receta completa · ${formatNumber(item.totalWeightGrams)}g internos` : foodMeta(item) || categoryLabel(item.category)}</p>
-        {item.type === "FOOD" && <PreparationBadge food={item} />}
-      </div>
-      <strong>{item.calories} kcal</strong>
-      {item.type === "FOOD" && (
-        <button className="icon-button add-food" onClick={onAdd} aria-label={`Agregar ${item.name}`}>
-          <Icon name="add" />
-        </button>
-      )}
-    </article>
-  );
-}
 export function CatalogRowWithImage({ item, onPick }) {
   return (
     <button className="catalog-row catalog-row-image" onClick={() => onPick(item)}>

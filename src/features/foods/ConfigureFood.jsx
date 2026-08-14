@@ -131,8 +131,8 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
   if (foodError)
     return (
       <section className="page narrow configure-page">
-        <button className="back-button configure-back" onClick={() => setPage("foods")}>
-          <Icon name="arrow_back" />Alimentos
+        <button className="back-button configure-back" onClick={() => setPage("scanner")}>
+          <Icon name="arrow_back" />Registrar
         </button>
         <Header title="Configurar alimento" />
         <CatalogStatus error>
@@ -145,8 +145,8 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
     );
   return (
     <section className="page narrow configure-page">
-      <button className="back-button configure-back" onClick={() => setPage("foods")}>
-        <Icon name="arrow_back" />Alimentos
+      <button className="back-button configure-back" onClick={() => setPage("scanner")}>
+        <Icon name="arrow_back" />Registrar
       </button>
       <Header title="Configurar alimento" />
       <Panel className="configure-panel">

@@ -1,95 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
-import { Header } from "../../components/Layout";
-import { CatalogCard, CatalogStatus, CategoryChips, FoodThumb, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
-import { QuickItems } from "../dashboard/Dashboard";
-import { usePagedCatalog } from "../catalog/usePagedCatalog";
-import { readRecents } from "../../services/recents";
+import { CatalogStatus, FoodThumb, preparationLabel } from "../catalog/CatalogComponents";
 import { formatNumber } from "../../utils/format";
 
 const SWIPE_ACTION_WIDTH = 84;
-
-export function Foods({ api, user, setPage, setSelectedFoodId }) {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("");
-  const catalog = usePagedCatalog({
-    api,
-    endpoint: "/api/foods",
-    query,
-    category,
-  });
-  return (
-    <section className="page">
-      <Header
-        title="Alimentos"
-        action={
-          <div className="header-actions">
-            <button className="primary pill" onClick={() => setPage("scanner")}>
-              <Icon name="qr_code_scanner" />
-              Registrar
-            </button>
-          </div>
-        }
-      />
-      <div className="search-wrap">
-        <Icon name="search" />
-        <input className="search" placeholder="Buscar..." value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} />
-      </div>
-      <CategoryChips category={category} setCategory={setCategory} />
-      <QuickItems
-        title="Accesos rápidos"
-        items={groupFoodVariants(readRecents(user).items.filter((item) => item.type === "FOOD"))}
-        onPick={(item) => {
-          if (item.type === "FOOD") {
-            setSelectedFoodId(item.id);
-            setPage("configure");
-          }
-        }}
-      />
-      {catalog.initialLoading && !catalog.items.length ? (
-        <div className="food-grid" aria-hidden="true">
-          <div className="skeleton skeleton-food-card" />
-          <div className="skeleton skeleton-food-card" />
-          <div className="skeleton skeleton-food-card" />
-          <div className="skeleton skeleton-food-card" />
-          <div className="skeleton skeleton-food-card" />
-          <div className="skeleton skeleton-food-card" />
-        </div>
-      ) : (
-        <div className="food-grid">
-          {groupFoodVariants(catalog.items).map((item) => {
-            const typedItem = { ...item, type: "FOOD" };
-            return (
-              <CatalogCard
-                key={`FOOD:${item.preparationGroup || item.id}`}
-                item={typedItem}
-                onAdd={() => {
-                  setSelectedFoodId(item.id);
-                  setPage("configure");
-                }}
-              />
-            );
-          })}
-        </div>
-      )}
-      {catalog.initialLoading && !catalog.items.length && <span className="sr-only" role="status">Buscando alimentos…</span>}
-      {!catalog.initialLoading && catalog.error && (
-        <CatalogStatus error>
-          {catalog.error}
-          <button className="secondary" onClick={catalog.retry}>
-            Reintentar
-          </button>
-        </CatalogStatus>
-      )}
-      {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>No encontramos resultados.</CatalogStatus>}
-      {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && !catalog.hasNext && <CatalogStatus>Viste todos los resultados.</CatalogStatus>}
-      <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
-    </section>
-  );
-}
 
 export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }) {
   const gesture = useRef(null);

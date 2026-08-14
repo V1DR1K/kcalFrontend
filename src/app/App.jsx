@@ -16,7 +16,6 @@ function lazyPage(load, name) {
 }
 
 const Dashboard = lazyPage(() => import("../features/dashboard/Dashboard"), "Dashboard");
-const Foods = lazyPage(() => import("../features/foods/Foods"), "Foods");
 const MyFoodsPage = lazyPage(() => import("../features/foods/MyFoodsPage"), "MyFoodsPage");
 const Recipes = lazyPage(() => import("../features/recipes/Recipes"), "Recipes");
 const CreateCatalog = lazyPage(() => import("../features/catalog/CreateCatalog"), "CreateCatalog");
@@ -25,7 +24,6 @@ const Scanner = lazyPage(() => import("../features/scanner/Scanner"), "Scanner")
 function PageLoader({ page }) {
   const labels = {
     dashboard: ["Cargando tu día", "Estamos preparando tu resumen diario..."],
-    foods: ["Cargando alimentos", "Estamos preparando el catálogo..."],
     "my-foods": ["Cargando tus alimentos", "Estamos preparando tu catálogo personal..."],
     recipes: ["Cargando recetas", "Estamos preparando la biblioteca de recetas..."],
     configure: ["Cargando alimento", "Estamos preparando sus datos nutricionales..."],
@@ -160,7 +158,7 @@ export function App() {
       document.title = "Ingresar | ScaleGrams";
       return;
     }
-    const titles = { dashboard: "Mi día", foods: "Alimentos", "my-foods": "Mis alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", profile: "Perfil" };
+    const titles = { dashboard: "Mi día", "my-foods": "Mis alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", profile: "Perfil" };
     document.title = `${titles[page] || "ScaleGrams"} | ScaleGrams`;
   }, [authenticated, page]);
 
@@ -170,7 +168,6 @@ export function App() {
         <Shell user={user} page={page} setPage={setPage} logout={logout}>
           <Suspense fallback={<PageLoader page={page} />}>
             {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
-            {page === "foods" && <Foods api={api} user={user} setPage={setPage} setSelectedFoodId={setSelectedFoodId} />}
             {page === "my-foods" && <MyFoodsPage api={api} setPage={setPage} />}
             {page === "recipes" && <Recipes api={api} user={user} setPage={setPage} />}
             {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
