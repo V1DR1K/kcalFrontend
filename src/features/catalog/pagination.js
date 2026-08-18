@@ -7,5 +7,5 @@ export function buildCatalogQuery({ page, pageSize, query = "", category = "" })
 
 export function mergeCatalogItems(current, incoming, replace = false) {
   const merged = replace ? incoming : [...current, ...incoming];
-  return [...new Map(merged.map((item) => [item.id, item])).values()];
+  return [...new Map(merged.map((item) => [item.id ?? `${item.sourceDate}:${item.mealType}`, item])).values()];
 }

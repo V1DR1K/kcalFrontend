@@ -25,11 +25,11 @@ export function usePagedCatalog({ api, endpoint, query = "", category = "", page
         () => api.request(`${endpoint}?${params}`, { signal: controller.signal }),
         { quiet: replace },
       );
-      const incoming = data?.items || [];
+      const incoming = Array.isArray(data) ? data : data?.items || [];
       setState((current) => {
         if (requestId !== requestIdRef.current) return current;
         const unique = mergeCatalogItems(current.items, incoming, replace);
-        return { items: unique, page: data?.page ?? page, hasNext: data?.hasNext ?? page + 1 < Number(data?.totalPages || 0), initialLoading: false, loadingMore: false, error: "", failedPage: null };
+        return { items: unique, page: Array.isArray(data) ? 0 : data?.page ?? page, hasNext: Array.isArray(data) ? false : data?.hasNext ?? page + 1 < Number(data?.totalPages || 0), initialLoading: false, loadingMore: false, error: "", failedPage: null };
       });
     } catch (error) {
       if (error.name !== "AbortError" && requestId === requestIdRef.current) {

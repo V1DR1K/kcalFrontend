@@ -319,7 +319,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
     carbs: macroGrams(form.dailyCalories, form.carbsPercent, 4),
     fat: macroGrams(form.dailyCalories, form.fatPercent, 9),
   };
-  const currentPlan = plans.find((plan) => plan.startDate <= today() && (!plan.endDate || plan.endDate >= today()));
+  const currentPlan = plans.find((plan) => plan.current) || plans.find((plan) => plan.startDate <= today() && (!plan.endDate || plan.endDate >= today()));
   const formVisible = creating || Boolean(editingPlan);
   const formMode = editingPlan ? "edit" : "create";
   function resetForm() {
@@ -519,7 +519,7 @@ function NutritionPlanManager({ api, presets, plans, onChanged }) {
       </>}
       <div className="plan-history">
         <h3>Historial de planes</h3>
-        {plans.filter((plan) => plan.id !== currentPlan?.id).map((plan) => (
+        {plans.filter((plan) => !plan.current && plan.id !== currentPlan?.id).map((plan) => (
           <article key={plan.id || `${plan.name}-${plan.startDate}`}>
             <div className="plan-history-heading"><strong>{plan.name}</strong></div>
             <span>

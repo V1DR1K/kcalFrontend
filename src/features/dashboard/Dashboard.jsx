@@ -1371,7 +1371,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const aiQuotaBlocked = Boolean(aiUsage?.blockedUntil && new Date(aiUsage.blockedUntil) > new Date());
   const catalog = usePagedCatalog({
     api,
-    endpoint: tab === "FOOD" ? "/api/foods" : "/api/recipes",
+    endpoint: tab === "FOOD" ? "/api/foods" : tab === "RECIPE" ? "/api/recipes" : tab === "MINE" ? "/api/foods/mine" : "/api/nutrition/recent-meals",
     query,
   });
   useEffect(() => {
@@ -1748,6 +1748,39 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     }
     setUnit(nextUnit);
   }
+  function changeTab(nextTab) {
+    setTab(nextTab);
+    setQuery("");
+    setSelected(null);
+    setPreview(null);
+    setRecipeDetail(null);
+    setRecipeIngredients(null);
+  }
+  const localQuery = query.trim().toLocaleLowerCase();
+  const addedFoods = catalog.items.filter((item) => !localQuery || `${item.name || ""} ${item.brand || ""}`.toLocaleLowerCase().includes(localQuery));
+  const recentBrackets = catalog.items.filter((meal) => !localQuery || `${meal.label || ""} ${(meal.items || []).map((item) => mealLogName(item)).join(" ")}`.toLocaleLowerCase().includes(localQuery));
+  async function addRecentMeal(bracket) {
+    if (adding || !bracket?.items?.length) return;
+    setAdding(true);
+    const optimisticLogs = onOptimisticAdd(bracket.items, mealType.code);
+    try {
+      await api.runAction(
+        { title: "Agregando comida reciente", description: `Estamos sumando ${bracket.label.toLowerCase()} a ${mealType.label.toLowerCase()}...` },
+        async () => {
+          await createMealLogs(api, bracket.items, mealType.code, selectedDate);
+          api.notify(`${bracket.label} agregado a ${mealType.label}.`);
+          await onDone();
+          onClose();
+        },
+        { quiet: true },
+      );
+    } catch {
+      onOptimisticRollback(optimisticLogs);
+      api.notify("No se pudo agregar la comida reciente.", "error");
+    } finally {
+      setAdding(false);
+    }
+  }
   return createPortal(
     <div className="modal-backdrop">
       <section className="picker-modal" role="dialog" aria-modal="true" aria-labelledby="food-picker-title">
@@ -1760,38 +1793,52 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             <Icon name="close" />
           </button>
         </header>
-        <div className="tabs">
+        <div className="tabs picker-tabs" role="tablist" aria-label="Opciones para agregar comida">
           <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "FOOD"}
+            aria-controls="picker-panel-food"
             className={tab === "FOOD" ? "selected" : ""}
-            onClick={() => {
-              setTab("FOOD");
-              setSelected(null);
-            }}
+            onClick={() => changeTab("FOOD")}
           >
             Alimentos
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "RECIPE"}
+            aria-controls="picker-panel-recipe"
             className={tab === "RECIPE" ? "selected" : ""}
-            onClick={() => {
-              setTab("RECIPE");
-              setSelected(null);
-            }}
+            onClick={() => changeTab("RECIPE")}
           >
             Recetas
           </button>
+          <button type="button" role="tab" aria-selected={tab === "MINE"} aria-controls="picker-panel-mine" className={tab === "MINE" ? "selected" : ""} onClick={() => changeTab("MINE")}>Agregados</button>
+          <button type="button" role="tab" aria-selected={tab === "RECENT"} aria-controls="picker-panel-recent" className={tab === "RECENT" ? "selected" : ""} onClick={() => changeTab("RECENT")}>Recientes</button>
         </div>
         <div className="picker-tools">
           <div className="search-wrap">
             <Icon name="search" />
-            <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : "recetas"}...`} value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} />
+            <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} />
           </div>
         </div>
-        <div className="picker-scroll">
-          <div className="picker-results">
+        <div className="picker-scroll" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
+          {(tab === "FOOD" || tab === "RECIPE") && <div className="picker-results">
             {groupFoodVariants(catalog.items).map((item) => (
               <CatalogRowWithImage key={`${tab}:${item.preparationGroup || item.id}`} item={{ ...item, type: tab }} onPick={setSelected} />
             ))}
-          </div>
+          </div>}
+          {tab === "MINE" && <div className="picker-results">
+            {groupFoodVariants(addedFoods).map((item) => <CatalogRowWithImage key={`MINE:${item.preparationGroup || item.id}`} item={{ ...item, type: "FOOD" }} onPick={setSelected} />)}
+          </div>}
+          {tab === "RECENT" && <div className="recent-meals picker-recent-meals">
+            {recentBrackets.map((bracket) => <article className="recent-meal-card recent-bracket-card" key={`${bracket.sourceDate}:${bracket.mealType}`}>
+              <div className="recent-bracket-heading"><div><strong>{bracket.label}</strong><small>{readableDate(bracket.sourceDate)}</small></div><strong>{formatNumber(bracket.calories)} <small>kcal</small></strong></div>
+              <div className="recent-bracket-items">{bracket.items.map((item) => <span key={item.id}>{mealLogName(item)} · {formatMealLogAmount(item)}</span>)}</div>
+              <button type="button" className="primary recent-bracket-add" disabled={adding} onClick={() => addRecentMeal(bracket)}><Icon name="add" />Agregar comida completa</button>
+            </article>)}
+          </div>}
           {catalog.initialLoading && <CatalogStatus>Buscando alimentos…</CatalogStatus>}
           {!catalog.initialLoading && catalog.error && (
             <CatalogStatus error>
@@ -1801,7 +1848,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               </button>
             </CatalogStatus>
           )}
-          {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>No encontramos resultados.</CatalogStatus>}
+          {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>{tab === "MINE" ? "Todavía no agregaste alimentos propios." : tab === "RECENT" ? "Tus comidas anteriores aparecerán acá." : "No encontramos resultados."}</CatalogStatus>}
+          {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && ((tab === "MINE" && !addedFoods.length) || (tab === "RECENT" && !recentBrackets.length)) && <CatalogStatus>No encontramos resultados para esa búsqueda.</CatalogStatus>}
           {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && !catalog.hasNext && <CatalogStatus>Fin de los resultados.</CatalogStatus>}
           <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
         </div>
