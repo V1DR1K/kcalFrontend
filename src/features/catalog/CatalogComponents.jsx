@@ -95,3 +95,33 @@ export function preparationLabel(preparation) {
 export function categoryLabel(category) {
   return CATEGORY_OPTIONS.find((option) => option.value === category)?.label || "Otros";
 }
+
+const NUTRIENT_GROUPS = [["MACRO", "Macronutrientes"], ["FAT", "Grasas"], ["CARBOHYDRATE", "Carbohidratos"], ["MINERAL", "Minerales"], ["VITAMIN", "Vitaminas"]];
+
+function nutrientStatusLabel(status) {
+  if (status === "ESTIMATED") return "Estimado por IA";
+  if (status === "VERIFIED") return "Fuente externa";
+  if (status === "PARTIAL" || status === "LEGACY") return "Perfil parcial";
+  return "Sin dato";
+}
+
+export function NutrientDetails({ nutrients = [], label = "Información nutricional" }) {
+  return (
+    <details className="nutrient-details">
+      <summary>{label}<span>Ver detalle</span></summary>
+      <div className="nutrient-groups">
+        {NUTRIENT_GROUPS.map(([group, title]) => {
+          const values = (nutrients || []).filter((item) => item.group === group);
+          if (!values.length) return null;
+          return <section key={group}><h4>{title}</h4><div className="nutrient-grid">{values.map((item) => (
+            <span key={item.code} className={item.status === "MISSING" ? "missing" : ""}>
+              <small>{item.name}</small>
+              <strong>{item.value == null ? "Sin dato" : `${formatNumber(item.value, 1)} ${item.unit}`}</strong>
+              <em>{nutrientStatusLabel(item.status)}</em>
+            </span>
+          ))}</div></section>;
+        })}
+      </div>
+    </details>
+  );
+}

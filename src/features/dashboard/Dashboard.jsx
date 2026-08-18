@@ -26,6 +26,7 @@ function isCopyableMealLog(log) {
 function aiProposalFood(item) {
   const estimatedGrams = Math.max(1, Number(item?.estimatedGrams) || 100);
   const factor = 100 / estimatedGrams;
+  const nutrients = Object.fromEntries(Object.entries(item?.nutrients || {}).map(([code, value]) => [code, Number(value || 0) * factor]));
   return {
     name: item?.name?.trim() || "Alimento estimado",
     category: item?.category || "OTHER",
@@ -34,6 +35,7 @@ function aiProposalFood(item) {
     proteinGrams: Number(item?.proteinGrams || 0) * factor,
     carbsGrams: Number(item?.carbsGrams || 0) * factor,
     fatGrams: Number(item?.fatGrams || 0) * factor,
+    nutrients,
   };
 }
 
@@ -57,7 +59,7 @@ function aiEstimateDraft(estimate) {
     description: estimate.description || "",
     confidence: Number(estimate.confidence) || 0,
     assumptions: estimate.assumptions || [],
-    items: (estimate.items || []).map(({ name, estimatedGrams, category, preparation, proteinGrams, carbsGrams, fatGrams }) => ({
+    items: (estimate.items || []).map(({ name, estimatedGrams, category, preparation, proteinGrams, carbsGrams, fatGrams, nutrients }) => ({
       name,
       estimatedGrams: Number(estimatedGrams),
       category: category || "OTHER",
@@ -65,6 +67,7 @@ function aiEstimateDraft(estimate) {
       proteinGrams: Number(proteinGrams),
       carbsGrams: Number(carbsGrams),
       fatGrams: Number(fatGrams),
+      nutrients: nutrients || {},
     })),
   };
 }
@@ -1554,6 +1557,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
                   proteinGrams: proposal.proteinGrams,
                   carbsGrams: proposal.carbsGrams,
                   fatGrams: proposal.fatGrams,
+                  nutrients: proposal.nutrients,
                 },
               };
             }),

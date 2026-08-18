@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
-import { CatalogStatus, FoodThumb, preparationLabel } from "../catalog/CatalogComponents";
+import { CatalogStatus, FoodThumb, NutrientDetails, preparationLabel } from "../catalog/CatalogComponents";
 import { formatNumber } from "../../utils/format";
 
 const SWIPE_ACTION_WIDTH = 84;
@@ -281,6 +281,7 @@ export function FoodLogForm({
           <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
         </span>
       </div>
+      {preview?.nutrients?.length > 0 && <NutrientDetails nutrients={preview.nutrients} label="Más nutrientes" />}
     </>
   );
 }

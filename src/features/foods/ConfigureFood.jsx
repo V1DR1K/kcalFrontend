@@ -3,7 +3,7 @@ import { DEFAULT_MEALS } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Panel } from "../../components/Layout";
-import { CatalogStatus, FoodThumb, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
+import { CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
 import { rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, today } from "../../utils/format";
 
@@ -190,6 +190,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
             P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g
           </small>
         </div>
+        {food && <NutrientDetails nutrients={food.nutrients} />}
         <button className="primary configure-submit" disabled={adding || !food || !activeFoodId || Number(quantity) <= 0} onClick={add}>
           {adding ? "Agregando…" : "Agregar producto"}
         </button>
