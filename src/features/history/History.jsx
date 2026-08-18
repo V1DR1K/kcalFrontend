@@ -12,6 +12,8 @@ export function History({ api }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedDay, setSelectedDay] = useState(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0);
   const currentDate = new Date();
   const viewDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + monthOffset, 1);
@@ -65,7 +67,10 @@ export function History({ api }) {
           <div className="calendar-heading">
             <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset - 1)}><Icon name="chevron_left" />Anterior</button>
             <div><h2>{monthLabel}</h2><span>Tu constancia, día por día</span></div>
-            <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset + 1)} disabled={monthOffset >= 0}><Icon name="chevron_right" />Siguiente</button>
+            <div className="calendar-heading-actions">
+              <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset + 1)} disabled={monthOffset >= 0}><Icon name="chevron_right" />Siguiente</button>
+              <button className="primary calendar-export" type="button" onClick={() => setExportOpen(true)}><Icon name="download" />Exportar a Excel</button>
+            </div>
           </div>
           <div className="calendar-weekdays" aria-hidden="true">{["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day}>{day}</span>)}</div>
           <div className="calendar-grid">
@@ -86,8 +91,81 @@ export function History({ api }) {
         </aside>
       </div>
       {selectedDay && <HistoryDayPreview api={api} day={selectedDay} onClose={() => setSelectedDay(null)} />}
+      {exportOpen && <HistoryExportDialog api={api} monthDate={viewDate} selectedDay={selectedDay} exporting={exporting} setExporting={setExporting} onClose={() => setExportOpen(false)} />}
     </section>
   );
+}
+
+function HistoryExportDialog({ api, monthDate, selectedDay, exporting, setExporting, onClose }) {
+  const [range, setRange] = useState(selectedDay ? "day" : "month");
+  const closeRef = useRef(null);
+  const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(monthDate);
+  const dayLabel = selectedDay ? readableDate(selectedDay.date) : "Elegí un día en el calendario";
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    const handleKeyDown = (event) => { if (event.key === "Escape" && !exporting) onClose(); };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [exporting, onClose]);
+
+  async function exportSelection() {
+    setExporting(true);
+    try {
+      const dates = range === "day"
+        ? [selectedDay.date]
+        : (await api.request(`/api/nutrition/history?year=${monthDate.getFullYear()}&month=${monthDate.getMonth() + 1}`)).days.map((day) => day.date);
+      const details = await Promise.all(dates.map((date) => api.request(`/api/nutrition/dashboard?date=${date}`)));
+      downloadMealsExcel(details, range === "day" ? `scalegrams-comidas-${selectedDay.date}` : `scalegrams-comidas-${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`);
+      onClose();
+      api.notify(`Excel exportado: ${range === "day" ? dayLabel : monthLabel}.`);
+    } catch {
+      api.notify("No se pudo exportar el historial.", "error");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return createPortal(
+    <div className="history-export-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !exporting) onClose(); }}>
+      <section className="history-export-dialog" role="dialog" aria-modal="true" aria-labelledby="history-export-title">
+        <header>
+          <div><span className="eyebrow">Historial</span><h2 id="history-export-title">Exportar comidas</h2><p>Descargá un Excel con todos los alimentos, cantidades y macros registrados.</p></div>
+          <button ref={closeRef} type="button" className="history-preview-close" onClick={onClose} disabled={exporting} aria-label="Cerrar exportación"><Icon name="close" /></button>
+        </header>
+        <div className="history-export-options">
+          <button type="button" className={`history-export-option ${range === "day" ? "selected" : ""}`} disabled={!selectedDay || exporting} onClick={() => setRange("day")}>
+            <Icon name="today" /><span><strong>Un día</strong><small>{dayLabel}</small></span>{range === "day" && <Icon name="check_circle" />}
+          </button>
+          <button type="button" className={`history-export-option ${range === "month" ? "selected" : ""}`} disabled={exporting} onClick={() => setRange("month")}>
+            <Icon name="calendar_month" /><span><strong>Un mes</strong><small>{monthLabel}</small></span>{range === "month" && <Icon name="check_circle" />}
+          </button>
+        </div>
+        <footer><button type="button" className="secondary" onClick={onClose} disabled={exporting}>Cancelar</button><button type="button" className="primary" onClick={exportSelection} disabled={exporting || (range === "day" && !selectedDay)}><Icon name="download" />{exporting ? "Preparando Excel…" : "Descargar Excel"}</button></footer>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
+function downloadMealsExcel(details, filename) {
+  const headers = ["Fecha", "Comida", "Alimento", "Tipo", "Cantidad", "Unidad", "Calorías (kcal)", "Proteínas (g)", "Carbohidratos (g)", "Grasas (g)"];
+  const rows = details.flatMap((detail) => (detail.meals || []).flatMap((meal) => (meal.items || []).map((item) => {
+    const name = item.itemType === "RECIPE" ? item.recipe?.name : item.itemType === "AI_ESTIMATE" ? item.displayName : item.food?.name;
+    return [detail.date, meal.label, name || "Sin nombre", item.itemType === "RECIPE" ? "Receta" : item.itemType === "AI_ESTIMATE" ? "Estimación" : "Alimento", item.quantity ?? "", item.unit === "GRAM" ? "g" : item.unit || "", item.calories ?? 0, item.proteinGrams ?? 0, item.carbsGrams ?? 0, item.fatGrams ?? 0];
+  })));
+  const table = `<table><thead><tr>${headers.map((header) => `<th>${escapeExcel(header)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeExcel(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  const html = `<html><head><meta charset="UTF-8"></head><body>${table}</body></html>`;
+  const blob = new Blob([`\ufeff${html}`], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${filename}.xls`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function escapeExcel(value) {
+  return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function HistoryDayPreview({ api, day, onClose }) {
