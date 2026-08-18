@@ -1838,8 +1838,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           </div>}
           {tab === "RECENT" && <div className="recent-meals picker-recent-meals">
             {recentBrackets.map((bracket) => <button type="button" className="catalog-row recent-meal-card recent-bracket-card" key={`${bracket.sourceDate}:${bracket.mealType}`} disabled={adding} aria-label={`Agregar ${bracket.label} completo`} onClick={() => addRecentMeal(bracket)}>
-              <div className="recent-bracket-heading"><div><strong>{bracket.label}</strong><small>{readableDate(bracket.sourceDate)}</small></div><strong>{formatNumber(bracket.calories)} <small>kcal</small></strong></div>
-              <div className="recent-bracket-items">{(Array.isArray(bracket.items) ? bracket.items : []).map((item) => <span key={item.id}>{mealLogName(item)} · {formatMealLogAmount(item)}</span>)}</div>
+              <div className="recent-bracket-heading"><div><strong>{bracket.label}</strong><small>{readableDate(bracket.sourceDate)}</small></div><span className="recent-bracket-total"><strong>{formatNumber(bracket.calories)} kcal</strong><small>P {formatNumber(bracket.proteinGrams, 1)}g · C {formatNumber(bracket.carbsGrams, 1)}g · G {formatNumber(bracket.fatGrams, 1)}g</small></span></div>
+              <div className="recent-bracket-items">{(Array.isArray(bracket.items) ? bracket.items : []).map((item) => <span className="recent-bracket-item" key={item.id}><strong>{mealLogName(item)}</strong><small>{formatMealLogAmount(item)} · {formatNumber(item.calories)} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></span>)}</div>
               <Icon name="chevron_right" className="row-action recent-bracket-action" />
             </button>)}
           </div>}
@@ -2032,10 +2032,10 @@ function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrectio
         {mode === "create" && estimate.description && <p className="ai-estimate-description"><strong>Lo que detectó la IA</strong>{estimate.description}</p>}
         {(estimate.assumptions || []).length > 0 && <details className="ai-estimate-assumptions"><summary>Supuestos de la estimación</summary><ul>{estimate.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}</ul></details>}
         <section className="ai-estimate-summary" aria-label="Resumen nutricional de la estimación">
-          <span className="ai-summary-calories"><small>{mode === "create" ? "Kcal" : "Kcal aprox."}</small><strong>{formatNumber(calories)}</strong></span>
           <span className="ai-summary-protein"><small>Proteínas</small><strong>{formatNumber(totals.proteinGrams, 1)}<b>g</b></strong></span>
           <span className="ai-summary-carbs"><small>Carbos</small><strong>{formatNumber(totals.carbsGrams, 1)}<b>g</b></strong></span>
           <span className="ai-summary-fat"><small>Grasas</small><strong>{formatNumber(totals.fatGrams, 1)}<b>g</b></strong></span>
+          <span className="ai-summary-calories"><small>{mode === "create" ? "Kcal totales" : "Kcal aprox."}</small><strong>{formatNumber(calories)}</strong></span>
         </section>
         <div className="ai-estimate-items-heading"><div><h4>Alimentos detectados</h4><span>{estimate.items.length} {estimate.items.length === 1 ? "elemento" : "elementos"} · editá cantidades si hace falta</span></div></div>
         <div className="ai-estimate-items">
