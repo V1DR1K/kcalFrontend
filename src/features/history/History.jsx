@@ -62,15 +62,15 @@ export function History({ api }) {
           <p className="big">{data?.completedGoalDays || 0} días</p>
         </Panel>
       </div>
+      <div className="history-calendar-toolbar">
+        <button className="primary calendar-export" type="button" onClick={() => setExportOpen(true)}><Icon name="download" />Exportar a Excel</button>
+      </div>
       <div className="history-calendar-shell">
         <div className="history-calendar-main">
           <div className="calendar-heading">
             <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset - 1)}><Icon name="chevron_left" />Anterior</button>
             <div><h2>{monthLabel}</h2><span>Tu constancia, día por día</span></div>
-            <div className="calendar-heading-actions">
-              <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset + 1)} disabled={monthOffset >= 0}><Icon name="chevron_right" />Siguiente</button>
-              <button className="primary calendar-export" type="button" onClick={() => setExportOpen(true)}><Icon name="download" />Exportar a Excel</button>
-            </div>
+            <button className="secondary calendar-nav" onClick={() => setMonthOffset((offset) => offset + 1)} disabled={monthOffset >= 0}><Icon name="chevron_right" />Siguiente</button>
           </div>
           <div className="calendar-weekdays" aria-hidden="true">{["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day}>{day}</span>)}</div>
           <div className="calendar-grid">
@@ -91,16 +91,14 @@ export function History({ api }) {
         </aside>
       </div>
       {selectedDay && <HistoryDayPreview api={api} day={selectedDay} onClose={() => setSelectedDay(null)} />}
-      {exportOpen && <HistoryExportDialog api={api} monthDate={viewDate} selectedDay={selectedDay} exporting={exporting} setExporting={setExporting} onClose={() => setExportOpen(false)} />}
+      {exportOpen && <HistoryExportDialog api={api} monthDate={viewDate} exporting={exporting} setExporting={setExporting} onClose={() => setExportOpen(false)} />}
     </section>
   );
 }
 
-function HistoryExportDialog({ api, monthDate, selectedDay, exporting, setExporting, onClose }) {
-  const [range, setRange] = useState(selectedDay ? "day" : "month");
+function HistoryExportDialog({ api, monthDate, exporting, setExporting, onClose }) {
   const closeRef = useRef(null);
   const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(monthDate);
-  const dayLabel = selectedDay ? readableDate(selectedDay.date) : "Elegí un día en el calendario";
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -112,13 +110,11 @@ function HistoryExportDialog({ api, monthDate, selectedDay, exporting, setExport
   async function exportSelection() {
     setExporting(true);
     try {
-      const dates = range === "day"
-        ? [selectedDay.date]
-        : (await api.request(`/api/nutrition/history?year=${monthDate.getFullYear()}&month=${monthDate.getMonth() + 1}`)).days.map((day) => day.date);
+      const dates = (await api.request(`/api/nutrition/history?year=${monthDate.getFullYear()}&month=${monthDate.getMonth() + 1}`)).days.map((day) => day.date);
       const details = await Promise.all(dates.map((date) => api.request(`/api/nutrition/dashboard?date=${date}`)));
-      downloadMealsExcel(details, range === "day" ? `scalegrams-comidas-${selectedDay.date}` : `scalegrams-comidas-${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`);
+      downloadMealsExcel(details, `scalegrams-comidas-${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`);
       onClose();
-      api.notify(`Excel exportado: ${range === "day" ? dayLabel : monthLabel}.`);
+      api.notify(`Excel exportado: ${monthLabel}.`);
     } catch {
       api.notify("No se pudo exportar el historial.", "error");
     } finally {
@@ -134,14 +130,9 @@ function HistoryExportDialog({ api, monthDate, selectedDay, exporting, setExport
           <button ref={closeRef} type="button" className="history-preview-close" onClick={onClose} disabled={exporting} aria-label="Cerrar exportación"><Icon name="close" /></button>
         </header>
         <div className="history-export-options">
-          <button type="button" className={`history-export-option ${range === "day" ? "selected" : ""}`} disabled={!selectedDay || exporting} onClick={() => setRange("day")}>
-            <Icon name="today" /><span><strong>Un día</strong><small>{dayLabel}</small></span>{range === "day" && <Icon name="check_circle" />}
-          </button>
-          <button type="button" className={`history-export-option ${range === "month" ? "selected" : ""}`} disabled={exporting} onClick={() => setRange("month")}>
-            <Icon name="calendar_month" /><span><strong>Un mes</strong><small>{monthLabel}</small></span>{range === "month" && <Icon name="check_circle" />}
-          </button>
+          <div className="history-export-option selected"><Icon name="calendar_month" /><span><strong>Mes completo</strong><small>{monthLabel} · todas las comidas registradas</small></span><Icon name="check_circle" /></div>
         </div>
-        <footer><button type="button" className="secondary" onClick={onClose} disabled={exporting}>Cancelar</button><button type="button" className="primary" onClick={exportSelection} disabled={exporting || (range === "day" && !selectedDay)}><Icon name="download" />{exporting ? "Preparando Excel…" : "Descargar Excel"}</button></footer>
+        <footer><button type="button" className="secondary" onClick={onClose} disabled={exporting}>Cancelar</button><button type="button" className="primary" onClick={exportSelection} disabled={exporting}><Icon name="download" />{exporting ? "Preparando Excel…" : "Descargar Excel"}</button></footer>
       </section>
     </div>,
     document.body,
@@ -171,6 +162,7 @@ function escapeExcel(value) {
 function HistoryDayPreview({ api, day, onClose }) {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
   const closeRef = useRef(null);
 
   useEffect(() => {
@@ -200,6 +192,17 @@ function HistoryDayPreview({ api, day, onClose }) {
   const goal = detail?.calorieGoal ?? day.calorieGoal ?? 0;
   const progress = Math.min(100, Math.round((consumed / (goal || 1)) * 100));
 
+  function exportDay() {
+    if (!detail || exporting) return;
+    setExporting(true);
+    try {
+      downloadMealsExcel([detail], `scalegrams-comidas-${day.date}`);
+      api.notify(`Excel exportado: ${readableDate(day.date)}.`);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return createPortal(
     <div className="history-preview-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="history-preview" role="dialog" aria-modal="true" aria-labelledby="history-preview-title">
@@ -209,7 +212,10 @@ function HistoryDayPreview({ api, day, onClose }) {
             <h2 id="history-preview-title">{readableDate(day.date)}</h2>
             <small>{day.planName || detail?.plan?.name}</small>
           </div>
-          <button ref={closeRef} type="button" className="history-preview-close" onClick={onClose} aria-label="Cerrar detalle"><Icon name="close" /></button>
+          <div className="history-preview-header-actions">
+            <button type="button" className="secondary history-day-export" onClick={exportDay} disabled={!detail || exporting}><Icon name="download" />{exporting ? "Exportando…" : "Exportar día"}</button>
+            <button ref={closeRef} type="button" className="history-preview-close" onClick={onClose} aria-label="Cerrar detalle"><Icon name="close" /></button>
+          </div>
         </header>
 
         <div className="history-preview-scroll">
