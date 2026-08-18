@@ -942,6 +942,8 @@ summary:focus-visible {
   display: grid;
   gap: 14px;
   width: min(920px, 100%);
+  min-width: 0;
+  max-width: 100%;
   max-height: min(86vh, 860px);
   overflow: auto;
   padding: 20px;
@@ -950,6 +952,15 @@ summary:focus-visible {
   background: var(--surface-low);
   box-shadow: var(--shadow);
   animation: modal-in 220ms ease-out;
+}
+
+.picker-modal > *,
+.picker-modal > header > *,
+.picker-modal .picker-tools,
+.picker-modal .picker-scroll,
+.picker-modal .search-wrap {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .meal-item > span {
@@ -1167,6 +1178,11 @@ button:disabled {
 }
 
 .picker-scroll { overflow: auto; overscroll-behavior: contain; }
+
+.picker-tabs {
+  min-width: 0;
+  max-width: 100%;
+}
 
 .picker-modal > header,
 .picker-modal footer {

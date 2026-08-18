@@ -152,6 +152,8 @@
   }
   .picker-modal {
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     height: 100%;
     max-height: none;
     padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
@@ -511,9 +513,24 @@
   .configure-panel .field select { min-height: 44px; padding: 0 12px; }
   .configure-preview { padding: 11px; font-size: 24px; }
   .configure-submit { min-height: 48px; }
-  .picker-modal { gap: 9px; padding-left: 12px; padding-right: 12px; }
-  .picker-modal .tabs { width: 100%; }
-  .picker-modal .tabs button { flex: 1; }
+  .picker-modal { gap: 9px; padding-left: 12px; padding-right: 12px; overflow-x: hidden; }
+  .picker-modal .tabs.picker-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .picker-modal .tabs.picker-tabs button {
+    width: 100%;
+    min-width: 0;
+    padding-right: 4px;
+    padding-left: 4px;
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .ai-context-tools { grid-template-columns: 1fr; }
   .ai-note-record { width: 100%; }
   .picker-modal footer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
