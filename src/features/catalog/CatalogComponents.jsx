@@ -105,9 +105,9 @@ function nutrientStatusLabel(status) {
   return "Sin dato";
 }
 
-export function NutrientDetails({ nutrients = [], label = "Información nutricional" }) {
+export function NutrientDetails({ nutrients = [], label = "Información nutricional", defaultOpen = false }) {
   return (
-    <details className="nutrient-details">
+    <details className="nutrient-details" open={defaultOpen || undefined}>
       <summary>{label}<span>Ver detalle</span></summary>
       <div className="nutrient-groups">
         {NUTRIENT_GROUPS.map(([group, title]) => {

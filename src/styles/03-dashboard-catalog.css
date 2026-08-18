@@ -83,6 +83,12 @@
   gap: 10px;
 }
 
+.dashboard-hero .macro-strip .nutrient-details {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top-color: color-mix(in srgb, var(--outline) 70%, transparent);
+}
+
 .macro-card {
   min-width: 0;
   display: grid;

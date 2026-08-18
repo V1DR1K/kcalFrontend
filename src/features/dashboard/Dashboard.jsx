@@ -168,7 +168,7 @@ function NutritionPills({ nutrition }) {
         <span><small>C</small><strong>{formatNumber(nutrition?.carbsGrams, 1)}g</strong></span>
         <span><small>G</small><strong>{formatNumber(nutrition?.fatGrams, 1)}g</strong></span>
       </div>
-      {nutrition?.nutrients?.length > 0 && <NutrientDetails nutrients={nutrition.nutrients} label="Ver micronutrientes" />}
+      {nutrition?.nutrients?.length > 0 && <NutrientDetails nutrients={nutrition.nutrients} label="Más nutrientes" defaultOpen />}
     </>
   );
 }
@@ -448,6 +448,12 @@ export function Dashboard({ api, user, setPage }) {
           {macros.map((macro) => (
             <Macro key={macro.key} macro={macro} />
           ))}
+          {data?.nutrients?.length > 0 && (
+            <NutrientDetails
+              nutrients={data.nutrients}
+              label="Resumen nutricional del día"
+            />
+          )}
         </div>
       </div>
       <div className="meal-grid">
