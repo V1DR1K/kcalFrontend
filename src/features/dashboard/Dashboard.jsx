@@ -6,7 +6,7 @@ import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Macro, Panel } from "../../components/Layout";
 import { DatePickerDialog } from "../../components/DatePickerDialog";
-import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
+import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, categoryLabel, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../foods/FoodComponents";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../services/recents";
@@ -43,7 +43,6 @@ function aiEstimateWithServings(result) {
     items: (result.items || []).map((item) => ({
       ...item,
       estimatedGrams: String(item.estimatedGrams ?? 100),
-      servedGrams: String(item.estimatedGrams ?? 100),
       foodId: null,
       catalogFood: null,
       category: item.category || "OTHER",
@@ -1838,11 +1837,11 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             {groupFoodVariants(addedFoods).map((item) => <CatalogRowWithImage key={`MINE:${item.preparationGroup || item.id}`} item={{ ...item, type: "FOOD" }} onPick={setSelected} />)}
           </div>}
           {tab === "RECENT" && <div className="recent-meals picker-recent-meals">
-            {recentBrackets.map((bracket) => <article className="recent-meal-card recent-bracket-card" key={`${bracket.sourceDate}:${bracket.mealType}`}>
+            {recentBrackets.map((bracket) => <button type="button" className="catalog-row recent-meal-card recent-bracket-card" key={`${bracket.sourceDate}:${bracket.mealType}`} disabled={adding} aria-label={`Agregar ${bracket.label} completo`} onClick={() => addRecentMeal(bracket)}>
               <div className="recent-bracket-heading"><div><strong>{bracket.label}</strong><small>{readableDate(bracket.sourceDate)}</small></div><strong>{formatNumber(bracket.calories)} <small>kcal</small></strong></div>
               <div className="recent-bracket-items">{(Array.isArray(bracket.items) ? bracket.items : []).map((item) => <span key={item.id}>{mealLogName(item)} · {formatMealLogAmount(item)}</span>)}</div>
-              <button type="button" className="primary recent-bracket-add" disabled={adding} onClick={() => addRecentMeal(bracket)}><Icon name="add" />Agregar comida completa</button>
-            </article>)}
+              <Icon name="chevron_right" className="row-action recent-bracket-action" />
+            </button>)}
           </div>}
           {catalog.initialLoading && <CatalogStatus>Buscando alimentos…</CatalogStatus>}
           {!catalog.initialLoading && catalog.error && (
@@ -2035,7 +2034,7 @@ function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrectio
         <section className="ai-estimate-summary" aria-label="Resumen nutricional de la estimación">
           <span className="ai-summary-calories"><small>{mode === "create" ? "Kcal" : "Kcal aprox."}</small><strong>{formatNumber(calories)}</strong></span>
           <span className="ai-summary-protein"><small>Proteínas</small><strong>{formatNumber(totals.proteinGrams, 1)}<b>g</b></strong></span>
-          <span className="ai-summary-carbs"><small>Carbohidratos</small><strong>{formatNumber(totals.carbsGrams, 1)}<b>g</b></strong></span>
+          <span className="ai-summary-carbs"><small>Carbos</small><strong>{formatNumber(totals.carbsGrams, 1)}<b>g</b></strong></span>
           <span className="ai-summary-fat"><small>Grasas</small><strong>{formatNumber(totals.fatGrams, 1)}<b>g</b></strong></span>
         </section>
         <div className="ai-estimate-items-heading"><div><h4>Alimentos detectados</h4><span>{estimate.items.length} {estimate.items.length === 1 ? "elemento" : "elementos"} · editá cantidades si hace falta</span></div></div>
@@ -2045,13 +2044,13 @@ function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrectio
               <div className="ai-estimate-item-heading"><div><span>Alimento {index + 1}</span><strong>{item.name || "Sin nombre"}</strong></div><span className="ai-estimate-item-heading-actions"><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))} kcal</strong>{mode === "saved" && <button type="button" className="secondary ai-estimate-catalog" disabled={refining || saving} onClick={() => { setCatalogItemIndex(index); setCatalogMessage(""); }}>Guardar</button>}<button type="button" className="icon-button ai-estimate-remove" aria-label={`Eliminar ${item.name || `alimento ${index + 1}`}`} disabled={refining || saving} onClick={() => removeItem(index)}><Icon name="delete" /></button></span></div>
               <Input label="Alimento" value={item.name} disabled={refining} onChange={(event) => setEstimate((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value, foodId: null, catalogFood: null } : entry) }))} />
               {mode === "create" ? <>
-                <div className="ai-estimate-item-section ai-estimate-readonly-meta"><span className="ai-estimate-section-label">Clasificación IA</span><div className="ai-estimate-meta-values"><span><small>Categoría</small><strong>{item.category || "OTHER"}</strong></span><span><small>Preparación</small><strong>{item.preparation || "UNSPECIFIED"}</strong></span></div></div>
+                <div className="ai-estimate-item-section ai-estimate-readonly-meta"><span className="ai-estimate-section-label">Clasificación IA</span><div className="ai-estimate-meta-values"><span><small>Categoría</small><strong>{categoryLabel(item.category || "OTHER")}</strong></span><span><small>Preparación</small><strong>{preparationLabel(item.preparation || "UNSPECIFIED")}</strong></span></div></div>
                 <label className="ai-estimate-grams-field"><span>Gramos detectados (g)</span><input disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
-                <div className="ai-estimate-item-section ai-estimate-readonly-nutrition"><span className="ai-estimate-section-label">Resumen nutricional</span><div className="ai-estimate-item-nutrition"><span><small>Kcal</small><strong>{formatNumber(itemNutrition[index]?.calories)}</strong></span><span><small>Proteínas</small><strong>{formatNumber(itemNutrition[index]?.proteinGrams, 1)}g</strong></span><span><small>Carbohidratos</small><strong>{formatNumber(itemNutrition[index]?.carbsGrams, 1)}g</strong></span><span><small>Grasas</small><strong>{formatNumber(itemNutrition[index]?.fatGrams, 1)}g</strong></span></div></div>
+                <div className="ai-estimate-item-section ai-estimate-readonly-nutrition"><span className="ai-estimate-section-label">Resumen nutricional</span><div className="ai-estimate-item-nutrition"><span><small>Kcal</small><strong>{formatNumber(itemNutrition[index]?.calories)}</strong></span><span><small>Proteínas</small><strong>{formatNumber(itemNutrition[index]?.proteinGrams, 1)}g</strong></span><span><small>Carbos</small><strong>{formatNumber(itemNutrition[index]?.carbsGrams, 1)}g</strong></span><span><small>Grasas</small><strong>{formatNumber(itemNutrition[index]?.fatGrams, 1)}g</strong></span></div></div>
               </> : <>
-                <div className="ai-estimate-item-section ai-estimate-readonly-meta"><span className="ai-estimate-section-label">Clasificación IA</span><div className="ai-estimate-meta-values"><span><small>Categoría</small><strong>{item.category || "OTHER"}</strong></span><span><small>Preparación</small><strong>{item.preparation || "UNSPECIFIED"}</strong></span></div></div>
+                <div className="ai-estimate-item-section ai-estimate-readonly-meta"><span className="ai-estimate-section-label">Clasificación IA</span><div className="ai-estimate-meta-values"><span><small>Categoría</small><strong>{categoryLabel(item.category || "OTHER")}</strong></span><span><small>Preparación</small><strong>{preparationLabel(item.preparation || "UNSPECIFIED")}</strong></span></div></div>
                 <label className="ai-estimate-grams-field"><span>Gramos detectados (g)</span><input disabled={refining} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
-                <div className="ai-estimate-item-section ai-estimate-readonly-nutrition"><span className="ai-estimate-section-label">Resumen nutricional</span><div className="ai-estimate-item-nutrition"><span><small>Kcal</small><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))}</strong></span><span><small>Proteínas</small><strong>{formatNumber(itemNutrition[index]?.proteinGrams ?? item.proteinGrams, 1)}g</strong></span><span><small>Carbohidratos</small><strong>{formatNumber(itemNutrition[index]?.carbsGrams ?? item.carbsGrams, 1)}g</strong></span><span><small>Grasas</small><strong>{formatNumber(itemNutrition[index]?.fatGrams ?? item.fatGrams, 1)}g</strong></span></div></div>
+                <div className="ai-estimate-item-section ai-estimate-readonly-nutrition"><span className="ai-estimate-section-label">Resumen nutricional</span><div className="ai-estimate-item-nutrition"><span><small>Kcal</small><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))}</strong></span><span><small>Proteínas</small><strong>{formatNumber(itemNutrition[index]?.proteinGrams ?? item.proteinGrams, 1)}g</strong></span><span><small>Carbos</small><strong>{formatNumber(itemNutrition[index]?.carbsGrams ?? item.carbsGrams, 1)}g</strong></span><span><small>Grasas</small><strong>{formatNumber(itemNutrition[index]?.fatGrams ?? item.fatGrams, 1)}g</strong></span></div></div>
               </>}
             </article>
           ))}
