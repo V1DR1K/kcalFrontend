@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Icon } from "../../components/Icon";
 import { Header, Panel } from "../../components/Layout";
-import { CatalogStatus, FoodThumb } from "../catalog/CatalogComponents";
+import { CatalogStatus, FoodThumb, NutrientDetails } from "../catalog/CatalogComponents";
 import { formatNumber } from "../../utils/format";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { EditRecipeModal, SwipeableRecipeCard } from "../foods/FoodComponents";
@@ -262,6 +262,7 @@ function RecipeDetailDialog({ api, recipe, onClose }) {
           <span><small>Kcal</small><strong>{formatNumber(recipe.calories)}</strong></span>
           <span><small>Macros</small><strong>P {formatNumber(recipe.proteinGrams, 1)}g</strong></span>
         </div>
+        <NutrientDetails nutrients={recipe.nutrients} label="Ver nutrientes de la receta" />
         <div className="recipe-detail-ingredients">
           <h3>Ingredientes</h3>
           {recipe.ingredients.map((ingredient, index) => (

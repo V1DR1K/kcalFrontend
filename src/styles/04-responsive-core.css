@@ -131,6 +131,12 @@
 .nutrient-grid strong { color: var(--text); font-size: 13px; font-variant-numeric: tabular-nums; }
 .nutrient-grid em { color: var(--muted); font-size: 10px; font-style: normal; }
 .nutrient-grid .missing strong, .nutrient-grid .missing em { color: var(--warning); }
+.nutrient-editor { display: grid; gap: 8px; margin-top: 12px; }
+.nutrient-editor-fields { display: grid; gap: 8px; max-height: 360px; overflow: auto; padding: 10px; border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-high); }
+.nutrient-editor-fields label { display: grid; grid-template-columns: minmax(0, 1fr) 92px; align-items: center; gap: 8px; color: var(--text); font-size: 12px; }
+.nutrient-editor-fields label small { color: var(--muted); }
+.nutrient-editor-fields input { width: 100%; min-height: 40px; padding: 0 8px; color: var(--text); background: var(--surface-highest); border: 1px solid var(--outline); border-radius: var(--radius-control); }
+.nutrient-editor-message { color: var(--muted); }
 
 .danger-button {
   display: inline-flex;

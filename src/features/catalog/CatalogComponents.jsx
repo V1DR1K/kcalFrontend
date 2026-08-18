@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { CATEGORY_OPTIONS, PREPARATION_OPTIONS, CATEGORY_ART, RECIPE_ART } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { formatNumber } from "../../utils/format";
@@ -124,4 +124,37 @@ export function NutrientDetails({ nutrients = [], label = "Información nutricio
       </div>
     </details>
   );
+}
+
+export function NutrientEditor({ api, food, onSaved }) {
+  const [open, setOpen] = useState(false);
+  const [definitions, setDefinitions] = useState([]);
+  const [values, setValues] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  async function start() {
+    if (open) return setOpen(false);
+    setMessage("");
+    try {
+      const result = await api.request("/api/foods/nutrient-definitions");
+      setDefinitions(result || []);
+      setValues(Object.fromEntries((food?.nutrients || []).filter((item) => item.value != null).map((item) => [item.code, item.value])));
+      setOpen(true);
+    } catch (error) { setMessage(error.message || "No se pudieron cargar los nutrientes."); }
+  }
+  async function save() {
+    if (saving) return;
+    setSaving(true); setMessage("");
+    try {
+      const nutrients = Object.entries(values).filter(([, value]) => value !== "" && Number.isFinite(Number(value))).map(([code, value]) => ({ code, value: Number(value) }));
+      const updated = await api.request(`/api/foods/${food.id}/nutrients`, { method: "PUT", body: JSON.stringify({ nutrients }) });
+      onSaved?.(updated); setOpen(false); setMessage("Nutrientes actualizados.");
+    } catch (error) { setMessage(error.message || "No se pudieron guardar los nutrientes."); }
+    finally { setSaving(false); }
+  }
+  return <section className="nutrient-editor">
+    <button type="button" className="secondary" onClick={start}>{open ? "Cerrar edición" : "Editar nutrientes"}</button>
+    {open && <div className="nutrient-editor-fields">{definitions.map((item) => <label key={item.code}><span>{item.name} <small>({item.unit})</small></span><input inputMode="decimal" min="0" step="0.1" value={values[item.code] ?? ""} onChange={(event) => setValues((current) => ({ ...current, [item.code]: event.target.value.replace(",", ".").replace(/[^\d.]/g, "") }))} placeholder="Sin dato" /></label>)}<button type="button" className="primary" disabled={saving} onClick={save}>{saving ? "Guardando…" : "Guardar nutrientes"}</button></div>}
+    {message && <small className="nutrient-editor-message" role="status">{message}</small>}
+  </section>;
 }

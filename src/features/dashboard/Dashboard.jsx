@@ -6,7 +6,7 @@ import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Macro, Panel } from "../../components/Layout";
 import { DatePickerDialog } from "../../components/DatePickerDialog";
-import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, categoryLabel, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
+import { CatalogRowWithImage, CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, groupFoodVariants, preparationLabel } from "../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../foods/FoodComponents";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../services/recents";
@@ -161,12 +161,15 @@ function macroCalories(proteinGrams, carbsGrams, fatGrams) {
 
 function NutritionPills({ nutrition }) {
   return (
-    <div className="meal-detail-pills">
-      <span><small>Kcal</small><strong>{formatNumber(nutrition?.calories)}</strong></span>
-      <span><small>P</small><strong>{formatNumber(nutrition?.proteinGrams, 1)}g</strong></span>
-      <span><small>C</small><strong>{formatNumber(nutrition?.carbsGrams, 1)}g</strong></span>
-      <span><small>G</small><strong>{formatNumber(nutrition?.fatGrams, 1)}g</strong></span>
-    </div>
+    <>
+      <div className="meal-detail-pills">
+        <span><small>Kcal</small><strong>{formatNumber(nutrition?.calories)}</strong></span>
+        <span><small>P</small><strong>{formatNumber(nutrition?.proteinGrams, 1)}g</strong></span>
+        <span><small>C</small><strong>{formatNumber(nutrition?.carbsGrams, 1)}g</strong></span>
+        <span><small>G</small><strong>{formatNumber(nutrition?.fatGrams, 1)}g</strong></span>
+      </div>
+      {nutrition?.nutrients?.length > 0 && <NutrientDetails nutrients={nutrition.nutrients} label="Ver micronutrientes" />}
+    </>
   );
 }
 

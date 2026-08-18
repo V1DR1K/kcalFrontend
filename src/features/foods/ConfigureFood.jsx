@@ -3,7 +3,7 @@ import { DEFAULT_MEALS } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Panel } from "../../components/Layout";
-import { CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
+import { CatalogStatus, FoodThumb, NutrientDetails, NutrientEditor, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
 import { rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, today } from "../../utils/format";
 
@@ -17,6 +17,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
   const [preparationOptions, setPreparationOptions] = useState([]);
   const [preview, setPreview] = useState(null);
   const [adding, setAdding] = useState(false);
+  const [enriching, setEnriching] = useState(false);
   const [foodError, setFoodError] = useState("");
   const loadFood = useCallback(
     (id) => {
@@ -115,6 +116,16 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
       setAdding(false);
     }
   }
+  async function enrich() {
+    if (!food || enriching) return;
+    setEnriching(true);
+    try {
+      const updated = await api.request(`/api/foods/${food.id}/enrich`, { method: "POST" });
+      setFood(updated);
+      api.notify("Perfil nutricional actualizado.");
+    } catch (error) { api.notify(error.message || "No encontramos más datos nutricionales.", "error"); }
+    finally { setEnriching(false); }
+  }
   const configureUnitOptions = food?.servingWeightGrams
     ? [
         { value: "GRAM", label: "Gramos" },
@@ -191,6 +202,8 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
           </small>
         </div>
         {food && <NutrientDetails nutrients={food.nutrients} />}
+        {food && <button type="button" className="secondary nutrient-enrich-button" disabled={enriching} onClick={enrich}>{enriching ? "Buscando nutrientes…" : "Completar perfil nutricional"}</button>}
+        {food && (food.createdById === user?.id || user?.role === "ADMIN") && <NutrientEditor api={api} food={food} onSaved={setFood} />}
         <button className="primary configure-submit" disabled={adding || !food || !activeFoodId || Number(quantity) <= 0} onClick={add}>
           {adding ? "Agregando…" : "Agregar producto"}
         </button>
