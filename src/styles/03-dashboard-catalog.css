@@ -328,7 +328,7 @@
 .ai-photo-context-editor header small { color: var(--muted); font-size: 12px; line-height: 1.35; }
 .ai-photo-context-preview { width: 100%; max-height: min(34vh, 260px); border: 1px solid var(--outline); border-radius: 14px; object-fit: cover; }
 .ai-photo-context-actions { display: grid; grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); gap: 8px; }
-.ai-estimate-editor { display: grid; gap: 12px; }
+.ai-estimate-editor { display: grid; gap: 16px; }
 .ai-estimate-editor > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
 .ai-estimate-editor > header > div { display: grid; gap: 3px; min-width: 0; }
 .ai-estimate-editor h3 { margin: 0; font-size: 18px; }
@@ -339,10 +339,31 @@
 .ai-estimate-error { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--error) 48%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--error) 10%, transparent); color: var(--error); font-size: 13px; line-height: 1.35; }
 .ai-estimate-error button { flex: 0 0 auto; min-height: 38px; }
 .ai-estimate-assumptions { display: grid; gap: 4px; margin: 0; padding-left: 18px; color: var(--muted); font-size: 12px; }
-.ai-estimate-items { display: grid; gap: 8px; }
-.ai-estimate-items article { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface-inset); }
-.ai-estimate-item-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; }
-.ai-estimate-item-heading > span { display: inline-flex; align-items: center; gap: 6px; }
+.ai-estimate-summary { display: grid; grid-template-columns: minmax(150px, .72fr) minmax(0, 1.28fr); gap: 12px; padding: 14px; border: 1px solid color-mix(in srgb, var(--primary) 34%, var(--outline)); border-radius: 16px; background: color-mix(in srgb, var(--primary) 8%, var(--surface-high)); }
+.ai-estimate-summary-calories { display: grid; align-content: center; gap: 2px; min-width: 0; padding: 2px 4px; }
+.ai-estimate-summary-calories small, .ai-estimate-summary-macros small { color: var(--muted); font-size: 11px; font-weight: 800; }
+.ai-estimate-summary-calories strong { color: var(--primary); font-family: "Hanken Grotesk", sans-serif; font-size: clamp(32px, 6vw, 48px); font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: .95; }
+.ai-estimate-summary-calories span { color: var(--muted); font-size: 11px; }
+.ai-estimate-summary-macros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ai-estimate-summary-macros > span { display: grid; align-content: center; gap: 4px; min-width: 0; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--surface-highest) 72%, transparent); }
+.ai-estimate-summary-macros strong { color: var(--text); font-size: 19px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ai-estimate-summary-macros strong b { margin-left: 2px; color: var(--muted); font-size: 12px; }
+.ai-summary-protein { box-shadow: inset 0 2px var(--primary); }
+.ai-summary-carbs { box-shadow: inset 0 2px var(--tertiary); }
+.ai-summary-fat { box-shadow: inset 0 2px var(--warning); }
+.ai-estimate-items-heading { display: flex; align-items: end; justify-content: space-between; gap: 10px; margin-top: 2px; }
+.ai-estimate-items-heading h4 { margin: 0; font-size: 16px; }
+.ai-estimate-items-heading span { color: var(--muted); font-size: 12px; }
+.ai-estimate-items { display: grid; gap: 10px; }
+.ai-estimate-items article { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--outline); border-radius: 14px; background: var(--surface-inset); }
+.ai-estimate-item-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; }
+.ai-estimate-item-heading > div { display: grid; gap: 2px; min-width: 0; }
+.ai-estimate-item-heading > div > span { font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.ai-estimate-item-heading > div > strong { overflow: hidden; color: var(--text); font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.ai-estimate-item-heading-actions { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; }
+.ai-estimate-item-heading-actions > strong { color: var(--primary); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ai-estimate-item-section { display: grid; gap: 6px; padding-top: 2px; }
+.ai-estimate-section-label { color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 .ai-estimate-remove { width: 34px; min-height: 34px; color: var(--error); }
 .ai-estimate-catalog { min-height: 34px; padding: 0 10px; font-size: 12px; }
 .ai-estimate-add-item { justify-self: start; }
@@ -355,11 +376,12 @@
 .ai-estimate-proposal-fields,
 .ai-estimate-serving-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .ai-estimate-serving-values label { display: grid; gap: 3px; color: var(--muted); font-size: 11px; font-weight: 800; }
-.ai-estimate-serving-values input { min-width: 0; min-height: 40px; padding: 0 8px; font-weight: 800; }
+.ai-estimate-serving-values input { min-width: 0; min-height: 44px; padding: 0 8px; font-weight: 800; }
 .ai-estimate-values { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .ai-estimate-proposal-macros { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .ai-estimate-values label { display: grid; gap: 3px; color: var(--muted); font-size: 11px; font-weight: 800; }
-.ai-estimate-values input { min-width: 0; min-height: 40px; padding: 0 8px; font-weight: 800; }
+.ai-estimate-values input { min-width: 0; min-height: 44px; padding: 0 8px; font-weight: 800; }
+.ai-estimate-item-reference { color: color-mix(in srgb, var(--muted) 82%, var(--surface)); font-size: 11px; line-height: 1.35; }
 .ai-estimate-item-calories { color: var(--muted); font-size: 12px; font-weight: 800; }
 .ai-estimate-total { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: var(--space-2); padding: 10px; border-radius: 12px; background: color-mix(in srgb, var(--primary) 10%, transparent); }
 .ai-estimate-total span { display: grid; gap: 2px; min-width: 0; }

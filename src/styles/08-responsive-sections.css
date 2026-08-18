@@ -523,6 +523,23 @@
   .ai-estimate-editor .edit-log-fields .field,
   .ai-estimate-editor .edit-log-fields input[type="date"] { min-width: 0; max-width: 100%; }
   .ai-estimate-editor .edit-log-fields input[type="date"] { inline-size: 100%; padding-inline: 10px; }
+  .ai-estimate-summary { grid-template-columns: 1fr; gap: 10px; padding: 12px; }
+  .ai-estimate-summary-calories { grid-template-columns: auto 1fr; align-items: baseline; column-gap: 8px; }
+  .ai-estimate-summary-calories strong { font-size: 36px; }
+  .ai-estimate-summary-calories span { grid-column: 2; }
+  .ai-estimate-summary-macros { gap: 6px; }
+  .ai-estimate-summary-macros > span { padding: 8px 7px; }
+  .ai-estimate-summary-macros small { font-size: 10px; line-height: 1.15; }
+  .ai-estimate-summary-macros strong { font-size: 17px; }
+  .ai-estimate-items-heading { align-items: start; }
+  .ai-estimate-items article { padding: 12px; }
+  .ai-estimate-item-heading { align-items: start; }
+  .ai-estimate-item-heading-actions { flex-wrap: wrap; justify-content: end; }
+  .ai-estimate-item-heading-actions > strong { font-size: 13px; }
+  .ai-estimate-items .field input,
+  .ai-estimate-serving-values input,
+  .ai-estimate-values input { min-height: 44px; }
+  .ai-estimate-actions { min-height: 52px; }
   .selected-heading .food-thumb.compact { width: 38px; height: 38px; }
   .selected-heading strong { font-size: 14px; }
   .selected-heading .preparation-badge { margin-top: 3px; padding: 2px 6px; font-size: 10px; }
