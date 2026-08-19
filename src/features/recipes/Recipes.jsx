@@ -7,16 +7,19 @@ import { formatNumber } from "../../utils/format";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { EditRecipeModal, SwipeableRecipeCard } from "../foods/FoodComponents";
 import { RecipeDetailDialog } from "./dialogs/RecipeDetailDialog";
+import { RecipeCreateDialog } from "./dialogs/RecipeCreateDialog";
 
 export function Recipes({ api, setPage }) {
   const [tab, setTab] = useState("mine");
+  const [creating, setCreating] = useState(false);
+  const [refreshSignal, setRefreshSignal] = useState(0);
   return (
     <section className="page recipes-page">
       <Header
         title="Recetas"
         action={
           <div className="header-actions">
-            <button className="primary pill" onClick={() => setPage("scanner")}>
+            <button className="primary pill recipe-create-trigger" onClick={() => setCreating(true)}>
               <Icon name="add" />
               Crear receta
             </button>
@@ -31,16 +34,21 @@ export function Recipes({ api, setPage }) {
           Explorar recetas
         </button>
       </div>
-      {tab === "mine" ? <MyRecipes api={api} /> : <ExploreRecipes api={api} />}
+      {tab === "mine" ? <MyRecipes api={api} refreshSignal={refreshSignal} /> : <ExploreRecipes api={api} />}
+      {creating && <RecipeCreateDialog api={api} onClose={() => setCreating(false)} onDone={() => setRefreshSignal((value) => value + 1)} />}
     </section>
   );
 }
-function MyRecipes({ api }) {
+function MyRecipes({ api, refreshSignal }) {
   const [editing, setEditing] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
   const [resetSignal, setResetSignal] = useState(0);
   const catalog = usePagedCatalog({ api, endpoint: "/api/recipes/mine" });
+
+  useEffect(() => {
+    if (refreshSignal > 0) catalog.refresh();
+  }, [catalog.refresh, refreshSignal]);
 
   async function edit(recipe) {
     setResetSignal((value) => value + 1);
@@ -107,7 +115,7 @@ function MyRecipes({ api }) {
       {catalog.items.length > 0 && (
         <div className="recipe-list">
           {catalog.items.map((item) => (
-            <SwipeableRecipeCard
+              <SwipeableRecipeCard
               key={item.id}
               recipe={{ ...item, type: "RECIPE" }}
               resetSignal={resetSignal}

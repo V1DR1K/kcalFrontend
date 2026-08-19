@@ -15,6 +15,7 @@ export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onD
   const [offset, setOffset] = useState(0);
   const [revealed, setRevealed] = useState("");
   const [horizontalDragging, setHorizontalDragging] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const setSwipeOffset = useCallback((nextOffset) => {
     offsetRef.current = nextOffset;
     setOffset(nextOffset);
@@ -57,6 +58,21 @@ export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onD
       setSwipeOffset(Math.max(-SWIPE_ACTION_WIDTH, Math.min(SWIPE_ACTION_WIDTH, dx)));
     }
   }
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    function closeOnOutside(event) {
+      if (!event.target.closest(`[data-recipe-menu="${recipe.id}"]`)) setMenuOpen(false);
+    }
+    function closeOnEscape(event) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("pointerdown", closeOnOutside);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutside);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [menuOpen, recipe.id]);
   return (
     <div className={`swipe-row recipe-swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""}`}>
       <button className="swipe-action swipe-edit" aria-label="Editar receta" tabIndex={revealed === "edit" ? 0 : -1} aria-hidden={revealed !== "edit"} disabled={disabled} onClick={() => { close(); window.setTimeout(onEdit, 120); }}><Icon name="edit" /></button>
@@ -75,6 +91,17 @@ export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onD
           <p>Receta completa · {formatNumber(recipe.totalWeightGrams, 1)}g internos</p>
         </div>
         <strong>{recipe.calories} kcal</strong>
+        <div className="recipe-card-menu" data-recipe-menu={recipe.id}>
+          <button type="button" className="icon-button recipe-card-menu-trigger" aria-label={`Acciones para ${recipe.name}`} aria-expanded={menuOpen} disabled={disabled} onClick={() => { close(); setMenuOpen((value) => !value); }}>
+            <Icon name="more_vert" />
+          </button>
+          {menuOpen && (
+            <div className="recipe-card-menu-popover" role="menu">
+              <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Icon name="edit" />Editar receta</button>
+              <button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Icon name="delete" />Borrar receta</button>
+            </div>
+          )}
+        </div>
       </article>
     </div>
   );

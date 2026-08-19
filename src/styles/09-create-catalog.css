@@ -1,8 +1,25 @@
 .my-foods-list { display: grid; gap: var(--space-2); }
-.my-foods-list > button { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; width: 100%; min-height: 62px; padding: 10px var(--space-3); border: 1px solid var(--outline); border-radius: var(--radius-compact); background: var(--surface); color: var(--text); text-align: left; }
-.my-foods-list > button > span:first-child { display: grid; gap: 3px; min-width: 0; }
+.my-food-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; width: 100%; min-height: 62px; padding: 10px var(--space-3); border: 1px solid var(--outline); border-radius: var(--radius-compact); background: var(--surface); color: var(--text); text-align: left; }
+.my-food-row > span:first-child { display: grid; gap: 3px; min-width: 0; }
 .my-foods-list strong, .my-foods-list small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.my-food-row > span:nth-child(2) { color: var(--muted); font-size: 13px; white-space: nowrap; }
 .my-foods-list .material-symbols-outlined { color: var(--primary); }
+.food-card-menu,
+.recipe-card-menu { position: relative; z-index: 4; }
+.food-card-menu-trigger,
+.recipe-card-menu-trigger { display: grid; place-items: center; width: 40px; min-height: 40px; padding: 0; border-color: transparent; color: var(--muted); }
+.food-card-menu-trigger:hover,
+.recipe-card-menu-trigger:hover { color: var(--primary); }
+.food-card-menu-popover,
+.recipe-card-menu-popover { position: absolute; top: calc(100% + 6px); right: 0; z-index: 8; display: grid; min-width: 178px; padding: 5px; border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-high); box-shadow: var(--shadow-dialog); }
+.food-card-menu-popover button,
+.recipe-card-menu-popover button { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 40px; padding: 0 10px; border: 0; border-radius: var(--radius-tight); background: transparent; color: var(--text); text-align: left; }
+.food-card-menu-popover button:hover,
+.recipe-card-menu-popover button:hover { background: var(--primary-soft); color: var(--primary); }
+.food-card-menu-popover button.danger:hover,
+.recipe-card-menu-popover button.danger:hover { background: color-mix(in srgb, var(--error) 12%, transparent); color: var(--error); }
+.food-card-menu-popover .material-symbols-outlined,
+.recipe-card-menu-popover .material-symbols-outlined { color: inherit; font-size: 19px; }
 .recipe-list { display: grid; gap: var(--space-3); }
 .recipe-owners-panel { display: grid; gap: var(--space-3); }
 .section-intro { margin: -4px 0 2px; }
@@ -88,7 +105,7 @@
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) auto;
+  grid-template-columns: 64px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
   width: 100%;
@@ -121,6 +138,13 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+.recipe-create-backdrop { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: end center; padding: 18px; background: var(--scrim-modal); backdrop-filter: blur(8px); animation: fade-in var(--duration-standard) var(--ease-out); }
+.recipe-create-dialog { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--space-3); width: min(760px, 100%); height: min(calc(var(--app-viewport-height, 100dvh) - 36px), 860px); max-height: 100%; overflow: hidden; padding: 20px; border: 1px solid var(--outline); border-radius: var(--radius-modal); background: linear-gradient(180deg, var(--surface-low), var(--surface)); box-shadow: var(--shadow-dialog); }
+.recipe-create-content { min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 3px; }
+.recipe-create-content .panel { min-height: 100%; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.recipe-create-content .panel > h2 { margin-top: 0; }
+.recipe-create-content .form-grid { padding-bottom: 2px; }
+.recipe-create-trigger { white-space: nowrap; }
 .recipe-swipe-card.swiping {
   transition-duration: 90ms;
 }
@@ -305,6 +329,14 @@
     color: var(--muted);
     font-size: 13px;
   }
+  .recipe-swipe-card { grid-template-columns: 52px minmax(0, 1fr) auto; gap: 9px; }
+  .recipe-swipe-card .recipe-card-menu { grid-column: 3; grid-row: 1 / span 2; }
+  .recipe-create-backdrop { place-items: stretch; padding: 0; }
+  .recipe-create-dialog { width: 100%; height: var(--app-viewport-height, 100dvh); max-height: none; padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); border: 0; border-radius: 0; }
+  .recipe-create-dialog .modal-shell-header h2 { font-size: 21px; }
+  .my-food-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .food-card-menu-popover,
+  .recipe-card-menu-popover { right: 0; min-width: 170px; }
   .explore-recipe-card { grid-template-columns: 48px minmax(0, 1fr) auto; }
   .explore-recipe-card > b { grid-column: 2; justify-self: start; min-width: 0; text-align: left; }
   .explore-recipe-card > .material-symbols-outlined { grid-column: 3; grid-row: 1 / span 2; }

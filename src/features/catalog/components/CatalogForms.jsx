@@ -175,7 +175,7 @@ function recipeFieldLabel(field) {
   return field || "Datos";
 }
 
-export function CreateRecipeForm({ api, onDirtyChange, onBusyChange }) {
+export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone }) {
   const [query, setQuery] = useState("");
   const [ingredients, setIngredients] = useState([]);
   const [preview, setPreview] = useState(null);
@@ -190,6 +190,7 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange }) {
     endpoint: "/api/foods",
     query,
     pageSize: 10,
+    enabled: query.trim().length >= 2,
   });
   useEffect(() => {
     if (!ingredients.length || totalWeight <= 0) return setPreview(null);
@@ -251,6 +252,7 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange }) {
       setIngredients([]);
       setPreview(null);
       onDirtyChange?.(false);
+      onDone?.();
     } catch (error) {
       const fieldDetails = Object.entries(error.fields || {})
         .map(([field, message]) => `${recipeFieldLabel(field)}: ${message}`)
@@ -285,7 +287,9 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange }) {
           <Icon name="search" />
           <input className="search" placeholder="Buscar ingredientes..." value={query} onChange={(event) => setQuery(event.target.value)} />
         </div>
-        <div className="picker-results">
+        {catalog.initialLoading && <CatalogStatus>Buscando ingredientes…</CatalogStatus>}
+        {!catalog.initialLoading && query.trim().length < 2 && <CatalogStatus>Buscá un ingrediente para comenzar.</CatalogStatus>}
+        {query.trim().length >= 2 && <div className="picker-results">
           {groupFoodVariants(catalog.items).map((food) => (
             <button
               type="button"
@@ -311,8 +315,7 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange }) {
               <em><Icon name="add" />Agregar</em>
             </button>
           ))}
-        </div>
-        {catalog.initialLoading && <CatalogStatus>Buscando ingredientes…</CatalogStatus>}
+        </div>}
         {!catalog.initialLoading && catalog.error && (
           <CatalogStatus error>
             {catalog.error}
@@ -321,8 +324,8 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange }) {
             </button>
           </CatalogStatus>
         )}
-        {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>No encontramos ingredientes.</CatalogStatus>}
-        <InfiniteSentinel enabled={!catalog.initialLoading && !catalog.error && catalog.hasNext} onLoad={catalog.loadNext} />
+        {query.trim().length >= 2 && !catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>No encontramos ingredientes.</CatalogStatus>}
+        <InfiniteSentinel enabled={query.trim().length >= 2 && !catalog.initialLoading && !catalog.error && catalog.hasNext} onLoad={catalog.loadNext} />
         <div className="ingredient-list">
           {ingredients.map((item, index) => (
             <label className="ingredient-row" key={`${item.foodId}:${index}`}>
@@ -351,4 +354,3 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange }) {
     </Panel>
   );
 }
-

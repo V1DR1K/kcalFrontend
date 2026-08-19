@@ -15,6 +15,23 @@ export function MyFoods({ api, onDirtyChange }) {
   const { dialogRef: editDialogRef, onBackdropPointerDown: onEditBackdropPointerDown } = useDialogLifecycle({ open: Boolean(editing), onClose: () => setEditing(null), initialFocusRef: editCloseRef });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [menuId, setMenuId] = useState(null);
+  useEffect(() => {
+    if (menuId == null) return undefined;
+    function closeOnOutside(event) {
+      if (!event.target.closest(`[data-food-menu="${menuId}"]`)) setMenuId(null);
+    }
+    function closeOnEscape(event) {
+      if (event.key === "Escape") setMenuId(null);
+    }
+    document.addEventListener("pointerdown", closeOnOutside);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutside);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [menuId]);
   const load = useCallback(() => {
     setLoading(true);
     return api
@@ -49,6 +66,30 @@ export function MyFoods({ api, onDirtyChange }) {
       setSaving(false);
     }
   }
+  async function remove(item) {
+    if (deletingId) return;
+    const confirmed = await api.confirm({
+      title: "¿Borrar alimento?",
+      description: `${item.name} dejará de aparecer en tus búsquedas y selecciones nuevas.`,
+      confirmLabel: "Borrar alimento",
+    });
+    if (!confirmed) return;
+    setDeletingId(item.id);
+    setMenuId(null);
+    try {
+      await api.runAction(
+        { title: "Borrando alimento", description: "Estamos ocultando el alimento de tu catálogo..." },
+        () => api.request(`/api/foods/${item.id}`, { method: "DELETE" }),
+        { quiet: true },
+      );
+      setItems((current) => current.filter((currentItem) => currentItem.id !== item.id));
+      api.notify("Alimento borrado.");
+    } catch (error) {
+      api.notify(error.message || "No se pudo borrar el alimento.", "error");
+    } finally {
+      setDeletingId(null);
+    }
+  }
   if (loading)
     return (
       <Panel title="Mis alimentos">
@@ -62,14 +103,24 @@ export function MyFoods({ api, onDirtyChange }) {
       ) : (
         <div className="my-foods-list">
           {items.map((item) => (
-            <button type="button" key={item.id} onClick={() => setEditing(item)}>
+            <article className="my-food-row" key={item.id}>
               <span>
                 <strong>{item.name}</strong>
                 <small>{item.brand || categoryLabel(item.category)}</small>
               </span>
               <span>{item.calories} kcal</span>
-              <Icon name="edit" />
-            </button>
+              <div className="food-card-menu" data-food-menu={item.id}>
+                <button type="button" className="icon-button food-card-menu-trigger" aria-label={`Acciones para ${item.name}`} aria-expanded={menuId === item.id} disabled={deletingId === item.id} onClick={() => setMenuId((current) => current === item.id ? null : item.id)}>
+                  <Icon name="more_vert" />
+                </button>
+                {menuId === item.id && (
+                  <div className="food-card-menu-popover" role="menu">
+                    <button type="button" role="menuitem" onClick={() => { setMenuId(null); setEditing(item); }}><Icon name="edit" />Editar alimento</button>
+                    <button type="button" role="menuitem" className="danger" onClick={() => remove(item)}><Icon name="delete" />Borrar alimento</button>
+                  </div>
+                )}
+              </div>
+            </article>
           ))}
         </div>
       )}
@@ -111,4 +162,3 @@ export function MyFoods({ api, onDirtyChange }) {
     </Panel>
   );
 }
-
