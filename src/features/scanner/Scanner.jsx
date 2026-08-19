@@ -141,7 +141,12 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode, Ca
           </button>
           <button className="register-option" type="button" onClick={openCatalog}>
             <span className="register-option-icon"><Icon name="add_box" /></span>
-            <span><strong>Crear alimentos</strong><small>Creá un alimento, una receta o revisá tus alimentos.</small></span>
+            <span><strong>Crear alimento</strong><small>Agregá un alimento nuevo al catálogo personal.</small></span>
+            <Icon name="arrow_forward" />
+          </button>
+          <button className="register-option" type="button" onClick={() => setPage("recipes")}>
+            <span className="register-option-icon"><Icon name="restaurant" /></span>
+            <span><strong>Recetas</strong><small>Consultá tus recetas o explorá las que compartió la comunidad.</small></span>
             <Icon name="arrow_forward" />
           </button>
           <button className="register-option register-option-compact" type="button" onClick={() => setPage("my-foods")}>

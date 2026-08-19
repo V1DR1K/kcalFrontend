@@ -19,16 +19,20 @@ export function migrateStoredSession() {
     if (!localStorage.getItem(nextKey)) localStorage.setItem(nextKey, localStorage.getItem(key));
   }
 }
-export const REGISTRATION_ENABLED = import.meta.env.VITE_REGISTRATION_ENABLED === "true";
+const viteEnv = import.meta.env || {};
+export const REGISTRATION_ENABLED = viteEnv.VITE_REGISTRATION_ENABLED === "true";
 export const DEFAULT_MEALS = [
   { code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" },
   { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" },
 ];
 export const navItems = [
-  { id: "dashboard", label: "Mi día", mobileLabel: "Inicio", icon: "monitoring" }, { id: "recipes", label: "Recetas", mobileLabel: "Recetas", icon: "restaurant" },
+  { id: "dashboard", label: "Mi día", mobileLabel: "Inicio", icon: "monitoring" },
   { id: "history", label: "Historial", icon: "calendar_month" }, { id: "profile", label: "Perfil", icon: "account_circle" },
-  { id: "scanner", label: "Registrar", mobileLabel: "Registrar", icon: "qr_code_scanner" },
+  { id: "scanner", label: "Registrar", mobileLabel: "Registrar", icon: "qr_code_scanner", activePages: ["my-foods", "recipes", "configure"] },
 ];
+export function isNavItemActive(item, page) {
+  return item.id === page || item.activePages?.includes(page);
+}
 export const CATEGORY_OPTIONS = [
   { value: "PROTEIN", label: "Proteínas" }, { value: "MEAT", label: "Carnes" }, { value: "DAIRY", label: "Lácteos" }, { value: "FRUIT", label: "Frutas" },
   { value: "VEGETABLE", label: "Verduras" }, { value: "LEGUME", label: "Legumbres" }, { value: "CEREAL", label: "Cereales" }, { value: "BAKERY", label: "Panificados" },
