@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Icon } from "../../../components/Icon";
+import { FoodThumb } from "../../catalog/CatalogComponents";
 import { readRecents } from "../../../services/recents";
 import { createMealLogs } from "../dashboard.utils";
+import { formatNumber } from "../../../utils/format";
 
 export function QuickItems({ title, items, onPick }) {
   if (!items.length) return null;
@@ -86,5 +88,4 @@ export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAd
     </div>
   );
 }
-
 

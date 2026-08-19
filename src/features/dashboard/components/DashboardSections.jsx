@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { DatePickerDialog } from "../../../components/DatePickerDialog";
+import { Input } from "../../../components/FormControls";
 import { Icon } from "../../../components/Icon";
 import { CatalogRowWithImage, CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, groupFoodVariants, preparationLabel } from "../../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
@@ -179,4 +181,3 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAd
     </details>
   );
 }
-

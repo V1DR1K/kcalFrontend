@@ -5,6 +5,7 @@ import { CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLa
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { formatNumber, readableDate } from "../../../utils/format";
 import { foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
+import { NutritionPills } from "./DashboardSections";
 
 export { MealCard, MealLogDetails, RecipeIngredientDetail, SwipeableMealItem };
 
@@ -560,4 +561,3 @@ async function compressMealPhoto(file) {
     URL.revokeObjectURL(source);
   }
 }
-

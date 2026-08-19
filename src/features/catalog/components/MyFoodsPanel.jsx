@@ -4,6 +4,7 @@ import { Icon } from "../../../components/Icon";
 import { Input, Select } from "../../../components/FormControls";
 import { Panel } from "../../../components/Layout";
 import { CatalogStatus, categoryLabel } from "../CatalogComponents";
+import { DerivedCaloriesHint } from "./OcrNutritionPreview";
 import { ModalRoot } from "../../../components/dialog/ModalRoot";
 import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycle";
 
@@ -110,5 +111,4 @@ export function MyFoods({ api, onDirtyChange }) {
     </Panel>
   );
 }
-
 
