@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "../../../components/Icon";
 import { CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { formatNumber, readableDate } from "../../../utils/format";
-import { formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals } from "../dashboard.utils";
+import { foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
 
 export { MealCard, MealLogDetails, RecipeIngredientDetail, SwipeableMealItem };
 
@@ -560,5 +560,4 @@ async function compressMealPhoto(file) {
     URL.revokeObjectURL(source);
   }
 }
-
 

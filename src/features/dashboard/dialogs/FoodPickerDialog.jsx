@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { CATEGORY_OPTIONS, PREPARATION_OPTIONS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
 import { InfiniteSentinel } from "../../../components/InfiniteSentinel";
@@ -653,4 +653,3 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     </ModalRoot>
   );
 }
-

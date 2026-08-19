@@ -12,7 +12,8 @@
     "preview:lan": "vite preview --host 0.0.0.0",
     "build": "vite build",
     "test": "node --test",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check:frontend": "node scripts/check-frontend-references.mjs"
   },
   "dependencies": {
     "@zxing/browser": "^0.2.0",
