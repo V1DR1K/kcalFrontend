@@ -13,6 +13,7 @@ import { readRecents, rememberItem, rememberMeal } from "../../services/recents"
 import { formatNumber, readableDate, shiftDate, today } from "../../utils/format";
 import { buildMealLogPayload } from "./mealLogPayload";
 import "../../styles/12-dashboard-summary.css";
+import "../../styles/15-day-presets.css";
 
 const SWIPE_ACTION_WIDTH = 84;
 const LONG_PRESS_DURATION = 500;
@@ -187,6 +188,8 @@ export function Dashboard({ api, user, setPage }) {
   const [waterActionState, setWaterActionState] = useState("idle");
   const [mealClipboard, setMealClipboard] = useState(null);
   const [mealBulkActionLoading, setMealBulkActionLoading] = useState(false);
+  const [dayPresets, setDayPresets] = useState([]);
+  const [dayPresetModal, setDayPresetModal] = useState(false);
   const [swipeResetSignal, setSwipeResetSignal] = useState(0);
   const dashboardTopRef = useRef(null);
   const balanceRef = useRef(null);
@@ -221,6 +224,8 @@ export function Dashboard({ api, user, setPage }) {
       .then(setMealTypes)
       .catch(() => setMealTypes(DEFAULT_MEALS));
   }, [selectedDate]);
+  const loadDayPresets = useCallback(() => api.request("/api/nutrition/day-presets").then(setDayPresets).catch(() => setDayPresets([])), [api]);
+  useEffect(() => { loadDayPresets(); }, [loadDayPresets]);
   useEffect(() => {
     let active = true;
     setYesterdayData(null);
@@ -633,7 +638,20 @@ export function Dashboard({ api, user, setPage }) {
           <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
         </Panel>}
       </div>
-      <PastMealsPreview api={api} targetDate={selectedDate} mealTypes={mealTypes} onCopied={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
+       <PastMealsPreview api={api} targetDate={selectedDate} mealTypes={mealTypes} onCopied={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
+       <DayPresets
+         api={api}
+         user={user}
+         date={selectedDate}
+         data={data}
+         mealTypes={mealTypes}
+         presets={dayPresets}
+         onReload={loadDayPresets}
+         onApplied={load}
+         open={dayPresetModal}
+         onOpen={() => setDayPresetModal(true)}
+         onClose={() => setDayPresetModal(false)}
+       />
       {pickerMeal && (
         <FoodPicker
           api={api}
@@ -661,6 +679,116 @@ export function Dashboard({ api, user, setPage }) {
       {editingAiEstimate && <EditAiEstimateLog api={api} log={editingAiEstimate} mealTypes={mealTypes} onClose={closeEditingAiEstimate} onDone={finishEditingAiEstimate} />}
     </section>
   );
+}
+
+function presetItemFromLog(log, mealType) {
+  const itemType = log.itemType || log.type;
+  if (itemType === "AI_ESTIMATE") {
+    return {
+      itemType, itemId: null, mealType, quantity: Number(log.quantity || 1), unit: log.unit || "PORTION",
+      displayName: mealLogName(log) || "Comida estimada", calories: Number(log.calories || 0),
+      proteinGrams: Number(log.proteinGrams || 0), carbsGrams: Number(log.carbsGrams || 0), fatGrams: Number(log.fatGrams || 0),
+      aiEstimateConfidence: log.aiEstimateConfidence || 0, aiEstimateDetails: log.aiEstimateDetails || "{}",
+    };
+  }
+  const item = itemType === "RECIPE" ? log.recipe : log.food;
+  return {
+    itemType, itemId: item?.id, mealType, quantity: Number(log.quantity || 0), unit: log.unit || (itemType === "RECIPE" ? "PORTION" : "GRAM"),
+    displayName: item?.name || mealLogName(log), calories: Number(log.calories || 0),
+    proteinGrams: Number(log.proteinGrams || 0), carbsGrams: Number(log.carbsGrams || 0), fatGrams: Number(log.fatGrams || 0),
+  };
+}
+
+function DayPresets({ api, user, date, data, mealTypes, presets, onReload, onApplied, open, onOpen, onClose }) {
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [editor, setEditor] = useState(null);
+  const [pickerMeal, setPickerMeal] = useState(null);
+  const [applyTarget, setApplyTarget] = useState(null);
+  const [error, setError] = useState("");
+  const hasItems = (data?.meals || []).some((meal) => (meal.items || []).length);
+  const currentItems = (data?.meals || []).flatMap((meal) => (meal.items || []).map((log) => presetItemFromLog(log, meal.mealType)));
+  function closeModal() { if (saving) return; onClose(); setEditor(null); setPickerMeal(null); setApplyTarget(null); setError(""); }
+  useEffect(() => {
+    if (!open) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => { if (event.key === "Escape") closeModal(); };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", closeOnEscape); };
+  }, [open, saving]);
+  async function saveDay() {
+    if (saving) return;
+    const trimmed = name.trim();
+    if (!trimmed) return setError("Escribí un nombre para el preset.");
+    if (!currentItems.length) return setError("El día no tiene alimentos para guardar.");
+    setSaving(true); setError("");
+    try {
+      await api.request("/api/nutrition/day-presets", { method: "POST", body: JSON.stringify({ name: trimmed, items: currentItems }) });
+      setName(""); await onReload(); api.notify("Día guardado como preset.");
+    } catch (e) { setError(e.message || "No se pudo guardar el día."); }
+    finally { setSaving(false); }
+  }
+  async function applyPreset(preset, replace) {
+    setSaving(true); setError("");
+    try {
+      await api.request(`/api/nutrition/day-presets/${preset.id}/apply`, { method: "POST", body: JSON.stringify({ logDate: date, replace }) });
+      await onApplied(); api.notify(`${preset.name} aplicado al día.`); closeModal();
+    } catch (e) { setError(e.message || "No se pudo aplicar el preset."); }
+    finally { setSaving(false); }
+  }
+  function requestApply(preset) {
+    if (hasItems) setApplyTarget(preset); else applyPreset(preset, false);
+  }
+  async function deletePreset(preset) {
+    if (!(await api.confirm({ title: "¿Borrar preset?", description: `${preset.name} se quitará de tu lista.`, confirmLabel: "Borrar" }))) return;
+    try { await api.request(`/api/nutrition/day-presets/${preset.id}`, { method: "DELETE" }); await onReload(); api.notify("Preset borrado."); }
+    catch (e) { setError(e.message || "No se pudo borrar el preset."); }
+  }
+  async function saveEditor() {
+    if (!editor || saving) return;
+    if (!editor.name.trim()) return setError("Escribí un nombre para el preset.");
+    if (!editor.items.length) return setError("El preset debe tener al menos un elemento.");
+    setSaving(true); setError("");
+    try {
+      const updated = await api.request(`/api/nutrition/day-presets/${editor.id}`, { method: "PUT", body: JSON.stringify({ name: editor.name.trim(), items: editor.items }) });
+      await onReload(); setEditor(updated); api.notify("Preset actualizado.");
+    } catch (e) { setError(e.message || "No se pudo actualizar el preset."); }
+    finally { setSaving(false); }
+  }
+  function addPresetItem(item) { setEditor((current) => ({ ...current, items: [...current.items, item] })); }
+  return <>
+    <section className="day-presets-actions" aria-label="Presets de alimentación">
+      <div><h2>Reutilizá tu día</h2><p>Guardá esta combinación de comidas para volver a aplicarla cuando quieras.</p></div>
+      <div className="day-presets-buttons">
+        <label className="day-preset-name"><span>Nombre del preset</span><input value={name} maxLength={120} placeholder="Ej.: Día de entrenamiento" onChange={(event) => { setName(event.target.value); setError(""); }} /></label>
+        <button type="button" className="primary" disabled={saving || !currentItems.length} onClick={saveDay}><Icon name="bookmark_add" />{saving ? "Guardando…" : "Guardar día"}</button>
+        <button type="button" className="secondary" onClick={onOpen}><Icon name="calendar_view_day" />Aplicar día</button>
+      </div>
+      {error && !open && <p className="day-preset-error" role="alert">{error}</p>}
+    </section>
+    {open && createPortal(<div className="day-presets-backdrop" onPointerDown={(event) => event.target === event.currentTarget && closeModal()}>
+      <section className="day-presets-modal" role="dialog" aria-modal="true" aria-labelledby="day-presets-title" onPointerDown={(event) => event.stopPropagation()}>
+        <header><div><span>Presets de alimentación</span><h2 id="day-presets-title">Aplicar día</h2><small>Elegí una rutina completa para {readableDate(date)}.</small></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={closeModal}><Icon name="close" /></button></header>
+        {editor ? <>
+          <div className="day-presets-editor-head"><button type="button" className="text-button" onClick={() => { setEditor(null); setError(""); }}><Icon name="arrow_back" />Volver a presets</button><button type="button" className="primary" disabled={saving} onClick={saveEditor}>{saving ? "Guardando…" : "Guardar cambios"}</button></div>
+          <label className="day-preset-edit-name"><span>Nombre</span><input value={editor.name} maxLength={120} onChange={(event) => setEditor((current) => ({ ...current, name: event.target.value }))} /></label>
+          <div className="day-preset-items">{editor.items.map((item, index) => <article className="day-preset-item" key={`${item.itemType}:${item.itemId || item.displayName}:${index}`}>
+            <div className="day-preset-item-title"><strong>{item.displayName || (item.itemType === "RECIPE" ? "Receta" : item.itemType === "AI_ESTIMATE" ? "Estimación" : "Alimento")}</strong><button type="button" className="icon-button danger-text" aria-label="Quitar elemento" onClick={() => setEditor((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== index) }))}><Icon name="delete" /></button></div>
+            <div className="day-preset-item-fields"><label><span>Comida</span><select value={item.mealType} onChange={(event) => setEditor((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, mealType: event.target.value } : entry) }))}>{mealTypes.map((meal) => <option key={meal.code} value={meal.code}>{meal.label}</option>)}</select></label><label><span>Cantidad</span><input inputMode="decimal" value={item.quantity} onChange={(event) => setEditor((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, quantity: event.target.value } : entry) }))} /></label><label><span>Unidad</span><select value={item.unit} onChange={(event) => setEditor((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, unit: event.target.value } : entry) }))}><option value="GRAM">Gramos</option><option value="PORTION">Porciones</option><option value="UNIT">Unidades</option><option value="MILLILITER">Mililitros</option></select></label></div>
+          </article>)}</div>
+          <button type="button" className="secondary day-preset-add" onClick={() => setPickerMeal(mealTypes[0])}><Icon name="add" />Agregar alimento o receta</button>
+        </> : <>
+          {applyTarget && <div className="day-preset-choice"><strong>Este día ya tiene alimentos</strong><span>¿Querés sumar {applyTarget.name} o reemplazar lo que ya cargaste?</span><div><button type="button" className="secondary" disabled={saving} onClick={() => applyPreset(applyTarget, false)}>Sumar al día</button><button type="button" className="primary" disabled={saving} onClick={() => applyPreset(applyTarget, true)}>Reemplazar día</button><button type="button" className="text-button" onClick={() => setApplyTarget(null)}>Cancelar</button></div></div>}
+          {!presets.length && <div className="day-presets-empty"><Icon name="bookmark_border" /><strong>Todavía no hay presets</strong><span>Guardá tu día para tenerlo a mano en el futuro.</span></div>}
+          <div className="day-presets-list">{presets.map((preset) => <article className="day-preset-card" key={preset.id}><div><h3>{preset.name}</h3><p>{preset.itemCount} {preset.itemCount === 1 ? "elemento" : "elementos"} · {(preset.mealCounts?.BREAKFAST || 0) + (preset.mealCounts?.LUNCH || 0) + (preset.mealCounts?.AFTERNOON_SNACK || 0) + (preset.mealCounts?.DINNER || 0)} comidas</p></div><div className="day-preset-card-actions"><button type="button" className="primary" disabled={saving} onClick={() => requestApply(preset)}>Aplicar</button><button type="button" className="icon-button" aria-label={`Editar ${preset.name}`} onClick={() => { setEditor({ ...preset, items: preset.items.map((item) => ({ ...item })) }); setApplyTarget(null); setError(""); }}><Icon name="edit" /></button><button type="button" className="icon-button danger-text" aria-label={`Borrar ${preset.name}`} onClick={() => deletePreset(preset)}><Icon name="delete" /></button></div></article>)}</div>
+        </>}
+        {error && <p className="day-preset-error" role="alert">{error}</p>}
+        <footer><button type="button" className="secondary" onClick={closeModal}>Cerrar</button></footer>
+        {pickerMeal && <FoodPicker api={api} user={user} mealType={pickerMeal} selectedDate={date} draftOnly onDraftAdd={addPresetItem} onClose={() => setPickerMeal(null)} onDone={() => {}} onOptimisticAdd={() => []} onOptimisticRollback={() => {}} />}
+      </section>
+    </div>, document.body)}
+  </>;
 }
 
 function CompactBalanceBar({ visible, consumed, goal, macros, onGoTop }) {
@@ -1354,7 +1482,7 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
   );
 }
 
-function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd, onOptimisticRollback }) {
+function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd, onOptimisticRollback, draftOnly = false, onDraftAdd }) {
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
@@ -1545,6 +1673,26 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   }
   async function confirmAiEstimate(estimate) {
     if (adding) return;
+    if (draftOnly) {
+      const nutrition = (estimate.items || []).reduce((sum, item) => {
+        const scaled = scaleFoodNutrition(aiProposalFood(item), Number(item.estimatedGrams));
+        return {
+          proteinGrams: sum.proteinGrams + scaled.proteinGrams,
+          carbsGrams: sum.carbsGrams + scaled.carbsGrams,
+          fatGrams: sum.fatGrams + scaled.fatGrams,
+        };
+      }, { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
+      onDraftAdd?.({
+        itemType: "AI_ESTIMATE", itemId: null, mealType: mealType.code, quantity: 1, unit: "PORTION",
+        displayName: estimate.name || "Comida estimada", calories: macroCalories(nutrition.proteinGrams, nutrition.carbsGrams, nutrition.fatGrams),
+        proteinGrams: nutrition.proteinGrams, carbsGrams: nutrition.carbsGrams, fatGrams: nutrition.fatGrams,
+        aiEstimateConfidence: estimate.confidence || 0,
+        aiEstimateDetails: JSON.stringify({ description: estimate.description || "", assumptions: estimate.assumptions || [], items: estimate.items || [] }),
+      });
+      discardAiEstimate();
+      onClose();
+      return;
+    }
     setAdding(true);
     try {
       await api.runAction(
@@ -1679,6 +1827,22 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || adding) return;
     const logQuantity = selected.type === "FOOD" && unit === "SERVING" ? numericQuantity * Number(selected.servingWeightGrams || 0) : numericQuantity;
     if (logQuantity <= 0) return;
+    if (draftOnly) {
+      onDraftAdd?.({
+        itemType: selected.type,
+        itemId: selected.id,
+        mealType: mealType.code,
+        quantity: logQuantity,
+        unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
+        displayName: selected.name,
+        calories: preview?.calories || 0,
+        proteinGrams: preview?.proteinGrams || 0,
+        carbsGrams: preview?.carbsGrams || 0,
+        fatGrams: preview?.fatGrams || 0,
+      });
+      onClose();
+      return;
+    }
     setAdding(true);
     const optimisticLogs = onOptimisticAdd([{
       itemType: selected.type,
