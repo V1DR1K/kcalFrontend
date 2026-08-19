@@ -4,7 +4,7 @@ import { Icon } from "../../../components/Icon";
 import { CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { formatNumber, readableDate } from "../../../utils/format";
-import { foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
+import { createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
 import { NutritionPills } from "./DashboardSections";
 import { useMealGesture } from "../hooks/useMealGesture";
 
