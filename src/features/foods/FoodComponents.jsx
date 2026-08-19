@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { CatalogStatus, FoodThumb, NutrientDetails, preparationLabel } from "../catalog/CatalogComponents";
@@ -8,6 +9,7 @@ import { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
 export { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
 
 const SWIPE_ACTION_WIDTH = 84;
+const RECIPE_MENU_WIDTH = 178;
 
 export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onDelete }) {
   const gesture = useRef(null);
@@ -16,6 +18,8 @@ export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onD
   const [revealed, setRevealed] = useState("");
   const [horizontalDragging, setHorizontalDragging] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuTriggerRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState(null);
   const setSwipeOffset = useCallback((nextOffset) => {
     offsetRef.current = nextOffset;
     setOffset(nextOffset);
@@ -26,7 +30,10 @@ export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onD
     setRevealed("");
     setSwipeOffset(0);
   }, [setSwipeOffset]);
-  useEffect(() => close(), [close, resetSignal]);
+  useEffect(() => {
+    close();
+    setMenuOpen(false);
+  }, [close, resetSignal]);
   function finish() {
     const finalOffset = offsetRef.current;
     if (gesture.current?.axis === "x" && finalOffset > SWIPE_ACTION_WIDTH * 0.65) {
@@ -60,15 +67,29 @@ export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onD
   }
   useEffect(() => {
     if (!menuOpen) return undefined;
+    function updateMenuPosition() {
+      const trigger = menuTriggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 6,
+        left: Math.max(8, Math.min(window.innerWidth - RECIPE_MENU_WIDTH - 8, rect.right - RECIPE_MENU_WIDTH)),
+      });
+    }
     function closeOnOutside(event) {
       if (!event.target.closest(`[data-recipe-menu="${recipe.id}"]`)) setMenuOpen(false);
     }
     function closeOnEscape(event) {
       if (event.key === "Escape") setMenuOpen(false);
     }
+    updateMenuPosition();
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("scroll", updateMenuPosition, true);
     document.addEventListener("pointerdown", closeOnOutside);
     window.addEventListener("keydown", closeOnEscape);
     return () => {
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("scroll", updateMenuPosition, true);
       document.removeEventListener("pointerdown", closeOnOutside);
       window.removeEventListener("keydown", closeOnEscape);
     };
@@ -92,17 +113,18 @@ export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onD
         </div>
         <strong>{recipe.calories} kcal</strong>
         <div className="recipe-card-menu" data-recipe-menu={recipe.id}>
-          <button type="button" className="icon-button recipe-card-menu-trigger" aria-label={`Acciones para ${recipe.name}`} aria-expanded={menuOpen} disabled={disabled} onClick={() => { close(); setMenuOpen((value) => !value); }}>
+          <button type="button" ref={menuTriggerRef} className="icon-button recipe-card-menu-trigger" aria-label={`Acciones para ${recipe.name}`} aria-expanded={menuOpen} disabled={disabled} onClick={() => { close(); setMenuOpen((value) => !value); }}>
             <Icon name="more_vert" />
           </button>
-          {menuOpen && (
-            <div className="recipe-card-menu-popover" role="menu">
-              <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Icon name="edit" />Editar receta</button>
-              <button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Icon name="delete" />Borrar receta</button>
-            </div>
-          )}
         </div>
       </article>
+      {menuOpen && menuPosition && createPortal(
+        <div className="recipe-card-menu-popover recipe-card-menu-popover-floating" data-recipe-menu={recipe.id} role="menu" style={{ top: menuPosition.top, left: menuPosition.left }}>
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Icon name="edit" />Editar receta</button>
+          <button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Icon name="delete" />Borrar receta</button>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
