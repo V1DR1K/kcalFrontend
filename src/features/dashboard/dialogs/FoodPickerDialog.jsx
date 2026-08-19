@@ -45,11 +45,15 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const audioRecorderRef = useRef(null);
   const audioStreamRef = useRef(null);
   const aiQuotaBlocked = Boolean(aiUsage?.blockedUntil && new Date(aiUsage.blockedUntil) > new Date());
+  const recentFoods = readRecents(user).items.slice(0, 20).map((item) => ({ ...item, type: "FOOD" }));
+  const normalizedQuery = query.trim();
+  const foodSearchReady = tab !== "FOOD" || normalizedQuery.length >= 2;
   const { dialogRef, onBackdropPointerDown } = useDialogLifecycle({ onClose });
   const catalog = usePagedCatalog({
     api,
     endpoint: tab === "FOOD" ? "/api/foods" : tab === "RECIPE" ? "/api/recipes" : tab === "MINE" ? "/api/foods/mine" : "/api/nutrition/recent-meals",
     query,
+    enabled: foodSearchReady,
   });
   useEffect(() => {
     api.request("/api/nutrition/ai-estimates/usage").then(setAiUsage).catch(() => setAiUsage(null));
@@ -457,7 +461,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     setRecipeDetail(null);
     setRecipeIngredients(null);
   }
-  const localQuery = query.trim().toLocaleLowerCase();
+  const localQuery = normalizedQuery.toLocaleLowerCase();
   const addedFoods = catalog.items.filter((item) => !localQuery || `${item.name || ""} ${item.brand || ""}`.toLocaleLowerCase().includes(localQuery));
   const recentBrackets = catalog.items.filter((meal) => {
     const items = Array.isArray(meal?.items) ? meal.items : [];
@@ -529,7 +533,12 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           </div>
         </div>
         <div className="picker-scroll" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
-          {(tab === "FOOD" || tab === "RECIPE") && <div className="picker-results">
+          {tab === "FOOD" && !normalizedQuery && <div className="picker-results">
+            {groupFoodVariants(recentFoods).map((item) => (
+              <CatalogRowWithImage key={`RECENT_FOOD:${item.preparationGroup || item.id}`} item={item} onPick={setSelected} />
+            ))}
+          </div>}
+          {(tab === "FOOD" && normalizedQuery.length >= 2 || tab === "RECIPE") && <div className="picker-results">
             {groupFoodVariants(catalog.items).map((item) => (
               <CatalogRowWithImage key={`${tab}:${item.preparationGroup || item.id}`} item={{ ...item, type: tab }} onPick={setSelected} />
             ))}
@@ -544,6 +553,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               <Icon name="chevron_right" className="row-action recent-bracket-action" />
             </button>)}
           </div>}
+          {tab === "FOOD" && normalizedQuery.length === 1 && <CatalogStatus>Escribí al menos 2 caracteres para buscar.</CatalogStatus>}
+          {tab === "FOOD" && !normalizedQuery && !recentFoods.length && <CatalogStatus>Buscá un alimento para empezar.</CatalogStatus>}
           {catalog.initialLoading && <CatalogStatus>Buscando alimentos…</CatalogStatus>}
           {!catalog.initialLoading && catalog.error && (
             <CatalogStatus error>
@@ -553,10 +564,14 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               </button>
             </CatalogStatus>
           )}
-          {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>{tab === "MINE" ? "Todavía no agregaste alimentos propios." : tab === "RECENT" ? "Tus comidas anteriores aparecerán acá." : "No encontramos resultados."}</CatalogStatus>}
+          {!catalog.initialLoading && !catalog.error && !catalog.items.length && ((tab === "FOOD" && normalizedQuery.length >= 2) || tab === "MINE" || tab === "RECENT") && <CatalogStatus>{tab === "MINE" ? "Todavía no agregaste alimentos propios." : tab === "RECENT" ? "Tus comidas anteriores aparecerán acá." : "No encontramos resultados."}</CatalogStatus>}
           {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && ((tab === "MINE" && !addedFoods.length) || (tab === "RECENT" && !recentBrackets.length)) && <CatalogStatus>No encontramos resultados para esa búsqueda.</CatalogStatus>}
-          {!catalog.initialLoading && !catalog.error && catalog.items.length > 0 && !catalog.hasNext && <CatalogStatus>Fin de los resultados.</CatalogStatus>}
-          <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
+          {tab === "FOOD" && normalizedQuery.length >= 2 && catalog.hasNext && !catalog.initialLoading && !catalog.error && (
+            <button type="button" className="secondary catalog-load-more" disabled={catalog.loadingMore} onClick={catalog.loadNext}>
+              {catalog.loadingMore ? "Cargando…" : "Cargar más"}
+            </button>
+          )}
+          {tab !== "FOOD" && <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />}
         </div>
         {selected && (
           <FoodLogDialog

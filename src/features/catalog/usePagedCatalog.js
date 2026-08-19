@@ -3,7 +3,7 @@ import { buildCatalogQuery, mergeCatalogItems } from "./pagination";
 
 const initialState = { items: [], page: -1, hasNext: true, initialLoading: true, loadingMore: false, error: "", failedPage: null };
 
-export function usePagedCatalog({ api, endpoint, query = "", category = "", pageSize = 20 }) {
+export function usePagedCatalog({ api, endpoint, query = "", category = "", pageSize = 20, enabled = true, debounceMs = 250 }) {
   const [state, setState] = useState(initialState);
   const requestRef = useRef(null);
   const requestIdRef = useRef(0);
@@ -40,30 +40,24 @@ export function usePagedCatalog({ api, endpoint, query = "", category = "", page
     }
   }, [api, category, endpoint, pageSize, query]);
 
-  const firstFetchRef = useRef(true);
-
   useEffect(() => {
     requestRef.current?.abort();
     requestRef.current = null;
     requestIdRef.current += 1;
     setState(initialState);
-    if (firstFetchRef.current) {
-      firstFetchRef.current = false;
-      fetchPage(0, true);
-      return undefined;
-    }
-    const timer = window.setTimeout(() => fetchPage(0, true), 250);
+    if (!enabled) return undefined;
+    const timer = window.setTimeout(() => fetchPage(0, true), debounceMs);
     return () => {
       window.clearTimeout(timer);
       requestRef.current?.abort();
       requestRef.current = null;
       requestIdRef.current += 1;
     };
-  }, [fetchPage]);
+  }, [debounceMs, enabled, fetchPage]);
 
   const loadNext = useCallback(() => {
-    if (!state.initialLoading && !state.loadingMore && state.hasNext && !requestRef.current) fetchPage(state.page + 1, false);
-  }, [fetchPage, state.hasNext, state.initialLoading, state.loadingMore, state.page]);
+    if (enabled && !state.initialLoading && !state.loadingMore && state.hasNext && !requestRef.current) fetchPage(state.page + 1, false);
+  }, [enabled, fetchPage, state.hasNext, state.initialLoading, state.loadingMore, state.page]);
 
   const removeItem = useCallback((id) => {
     setState((current) => ({ ...current, items: current.items.filter((item) => item.id !== id) }));
@@ -71,5 +65,13 @@ export function usePagedCatalog({ api, endpoint, query = "", category = "", page
 
   const refresh = useCallback(() => fetchPage(0, true, { force: true }), [fetchPage]);
 
-  return { ...state, loadNext, removeItem, refresh, retry: () => fetchPage(state.failedPage ?? 0, !state.items.length, { force: true }) };
+  return {
+    ...state,
+    initialLoading: enabled && state.initialLoading,
+    hasNext: enabled && state.hasNext,
+    loadNext,
+    removeItem,
+    refresh,
+    retry: () => enabled && fetchPage(state.failedPage ?? 0, !state.items.length, { force: true }),
+  };
 }
