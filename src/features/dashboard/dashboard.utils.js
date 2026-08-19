@@ -1,6 +1,6 @@
 import { formatNumber } from "../../utils/format";
 import { preparationLabel } from "../catalog/CatalogComponents";
-import { buildMealLogPayload } from "./mealLogPayload";
+import { normalizeMealLogReference } from "./mealLogPayload";
 
 export function isCopyableMealLog(log) { return ["FOOD", "RECIPE"].includes(log?.itemType || log?.type); }
 
@@ -30,8 +30,13 @@ export function mealTotals(items) { return items.reduce((totals, item) => ({ cal
 
 export async function createMealLogs(api, logs, mealType, logDate) {
   if (logs.some((log) => !isCopyableMealLog(log))) throw new Error("Las estimaciones por foto no se pueden copiar como una comida guardada.");
-  const payloads = logs.map((log) => buildMealLogPayload(log, mealType, logDate));
+  const payloads = logs.map((log) => normalizeMealLogReference(log, mealType, logDate));
   return api.request("/api/nutrition/meal-logs/batch", { method: "POST", body: JSON.stringify({ logs: payloads }) });
+}
+
+export function mealCopyErrorMessage(error, fallback) {
+  if (error?.status === 401) return "Tu sesión expiró. Volvé a ingresar.";
+  return error?.message || fallback;
 }
 
 export function formatMealLogAmount(log) {

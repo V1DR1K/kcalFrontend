@@ -1,11 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "../../../components/Icon";
 import { CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { formatNumber, readableDate } from "../../../utils/format";
-import { foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
+import { foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
 import { NutritionPills } from "./DashboardSections";
+import { useMealGesture } from "../hooks/useMealGesture";
 
 export { MealCard, MealLogDetails, RecipeIngredientDetail, SwipeableMealItem };
 
@@ -49,10 +50,10 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
         },
         { quiet: true },
       );
-    } catch {
+    } catch (error) {
       onOptimisticRollback(optimisticLogs);
       setSuggestionState("idle");
-      api.notify("No se pudo copiar la comida de ayer.", "error");
+      api.notify(mealCopyErrorMessage(error, "No se pudo copiar la comida de ayer."), "error");
     }
   }
   async function addLogs(logs) {
@@ -74,10 +75,10 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
         },
         { quiet: true },
       );
-    } catch {
+    } catch (error) {
       onOptimisticRollback(optimisticLogs);
       setBulkActionState("error");
-      api.notify("No se pudo pegar la comida. Se revirtieron los cambios.", "error");
+      api.notify(mealCopyErrorMessage(error, "No se pudo pegar la comida. Se revirtieron los cambios."), "error");
       window.setTimeout(() => setBulkActionState("idle"), 700);
     }
     finally { setBulkActionLoading(false); }
@@ -284,230 +285,20 @@ function RecipeIngredientDetail({ ingredient }) {
 }
 
 function SwipeableMealItem({ children, className = "", resetSignal, expanded = false, onToggle, details, onEdit, onDelete, disabled = false, dragData, onMove }) {
-  const gesture = useRef(null);
-  const holdTimer = useRef(null);
-  const shellRef = useRef(null);
-  const offsetRef = useRef(0);
-  const suppressClick = useRef(false);
-  const [offset, setOffset] = useState(0);
-  const [revealed, setRevealed] = useState("");
-  const [horizontalDragging, setHorizontalDragging] = useState(false);
-  const [interactionMode, setInteractionMode] = useState("idle");
-  const [dragPosition, setDragPosition] = useState(null);
-  const setSwipeOffset = useCallback((nextOffset) => {
-    offsetRef.current = nextOffset;
-    setOffset(nextOffset);
-  }, []);
-  const close = useCallback(() => {
-    const activeGesture = gesture.current;
-    if (activeGesture?.kind === "pointer"
-      && shellRef.current?.hasPointerCapture?.(activeGesture.pointerId)) {
-      shellRef.current.releasePointerCapture(activeGesture.pointerId);
-    }
-    if (holdTimer.current) window.clearTimeout(holdTimer.current);
-    holdTimer.current = null;
-    gesture.current = null;
-    setHorizontalDragging(false);
-    setInteractionMode("idle");
-    setDragPosition(null);
-    setRevealed("");
-    setSwipeOffset(0);
-    document.querySelectorAll(".meal-card.drag-over").forEach((card) => card.classList.remove("drag-over"));
-  }, [setSwipeOffset]);
-  useEffect(() => close(), [close, resetSignal]);
-  useEffect(() => {
-    if (expanded && revealed) close();
-  }, [expanded, close, revealed]);
-  function finishSwipe() {
-    const finalOffset = offsetRef.current;
-    if (gesture.current?.axis === "x" && finalOffset > SWIPE_ACTION_WIDTH * 0.65) {
-      suppressClick.current = true;
-      setRevealed("edit");
-      setSwipeOffset(SWIPE_ACTION_WIDTH);
-    } else if (gesture.current?.axis === "x" && finalOffset < -SWIPE_ACTION_WIDTH * 0.65) {
-      suppressClick.current = true;
-      setRevealed("delete");
-      setSwipeOffset(-SWIPE_ACTION_WIDTH);
-    } else {
-      if (gesture.current?.axis === "x") suppressClick.current = true;
-      close();
-    }
-    gesture.current = null;
-    setHorizontalDragging(false);
-    if (suppressClick.current) window.setTimeout(() => { suppressClick.current = false; }, 220);
-    setInteractionMode("idle");
-  }
-  function clearDropTarget() {
-    document.querySelectorAll(".meal-card.drag-over").forEach((card) => card.classList.remove("drag-over"));
-  }
-  function updateDropTarget(clientX, clientY) {
-    clearDropTarget();
-    const target = document.elementFromPoint(clientX, clientY)?.closest(".meal-card[data-meal-type]");
-    target?.classList.add("drag-over");
-    return target?.dataset.mealType || null;
-  }
-  function startLongPress() {
-    if (!gesture.current || gesture.current.mode !== "holding") return;
-    gesture.current.mode = "dragging";
-    suppressClick.current = true;
-    setInteractionMode("dragging");
-    setDragPosition({ x: gesture.current.x, y: gesture.current.y });
-  }
-  function handlePointerDown(event) {
-    if (event.pointerType === "touch") return;
-    if (disabled || !dragData || event.target.closest(".meal-item-detail-actions, .swipe-action") || event.pointerType === "mouse" && event.button !== 0) return;
-    shellRef.current?.setPointerCapture?.(event.pointerId);
-    gesture.current = { kind: "pointer", pointerId: event.pointerId, x: event.clientX, y: event.clientY, axis: null, mode: "holding" };
-    setInteractionMode("holding");
-    holdTimer.current = window.setTimeout(startLongPress, LONG_PRESS_DURATION);
-  }
-  function handleTouchStart(event) {
-    if (disabled || !dragData || event.target.closest(".meal-item-detail-actions, .swipe-action") || event.touches.length !== 1) return;
-    const touch = event.changedTouches[0];
-    gesture.current = { kind: "touch", touchId: touch.identifier, x: touch.clientX, y: touch.clientY, axis: null, mode: "holding" };
-    setInteractionMode("holding");
-    holdTimer.current = window.setTimeout(startLongPress, LONG_PRESS_DURATION);
-  }
-  function handlePointerMove(event) {
-    const current = gesture.current;
-    if (!current || current.kind !== "pointer" || current.pointerId !== event.pointerId) return;
-    if (current.mode === "dragging") {
-      if (event.cancelable) event.preventDefault();
-      setDragPosition({ x: event.clientX, y: event.clientY });
-      updateDropTarget(event.clientX, event.clientY);
-      return;
-    }
-    const dx = event.clientX - current.x;
-    const dy = event.clientY - current.y;
-    if (!current.axis && Math.max(Math.abs(dx), Math.abs(dy)) > LONG_PRESS_MOVE_TOLERANCE) {
-      if (holdTimer.current) window.clearTimeout(holdTimer.current);
-      holdTimer.current = null;
-      current.axis = Math.abs(dx) > Math.abs(dy) * 1.8 ? "x" : "y";
-      setInteractionMode(current.axis === "x" ? "swiping" : "scrolling");
-      if (current.axis === "y") {
-        setHorizontalDragging(false);
-        setSwipeOffset(0);
-      }
-    }
-    if (current.axis === "x") {
-      if (event.cancelable) event.preventDefault();
-      setHorizontalDragging(true);
-      setSwipeOffset(Math.max(-SWIPE_ACTION_WIDTH, Math.min(SWIPE_ACTION_WIDTH, dx)));
-    }
-  }
-  function handlePointerUp(event) {
-    const current = gesture.current;
-    if (!current || current.kind !== "pointer" || current.pointerId !== event.pointerId) return;
-    if (current.mode === "dragging") {
-      if (event.cancelable) event.preventDefault();
-      const targetMealType = updateDropTarget(event.clientX, event.clientY);
-      clearDropTarget();
-      onMove?.(dragData, targetMealType);
-      close();
-      window.setTimeout(() => { suppressClick.current = false; }, 220);
-      return;
-    }
-    if (current.axis === "x") {
-      finishSwipe();
-      return;
-    }
-    close();
-  }
-  function handlePointerCancel(event) {
-    if (!gesture.current || gesture.current.kind !== "pointer" || gesture.current.pointerId !== event.pointerId) return;
-    close();
-    if (suppressClick.current) window.setTimeout(() => { suppressClick.current = false; }, 220);
-  }
-  function touchForGesture(event) {
-    const current = gesture.current;
-    return current?.kind === "touch"
-      ? [...event.touches, ...event.changedTouches].find((touch) => touch.identifier === current.touchId)
-      : null;
-  }
-  function handleTouchMove(event) {
-    const current = gesture.current;
-    const touch = touchForGesture(event);
-    if (!current || !touch) return;
-    if (current.mode === "dragging") {
-      event.preventDefault();
-      setDragPosition({ x: touch.clientX, y: touch.clientY });
-      updateDropTarget(touch.clientX, touch.clientY);
-      return;
-    }
-    const dx = touch.clientX - current.x;
-    const dy = touch.clientY - current.y;
-    if (!current.axis && Math.max(Math.abs(dx), Math.abs(dy)) > LONG_PRESS_MOVE_TOLERANCE) {
-      if (holdTimer.current) window.clearTimeout(holdTimer.current);
-      holdTimer.current = null;
-      current.axis = Math.abs(dx) > Math.abs(dy) * 1.8 ? "x" : "y";
-      current.mode = current.axis === "x" ? "swiping" : "scrolling";
-      setInteractionMode(current.mode);
-      if (current.axis === "y") {
-        suppressClick.current = true;
-        setHorizontalDragging(false);
-        setSwipeOffset(0);
-      }
-    }
-    if (current.axis === "x") {
-      event.preventDefault();
-      setHorizontalDragging(true);
-      setSwipeOffset(Math.max(-SWIPE_ACTION_WIDTH, Math.min(SWIPE_ACTION_WIDTH, dx)));
-    }
-  }
-  function handleTouchEnd(event) {
-    const current = gesture.current;
-    const touch = [...event.changedTouches].find((entry) => entry.identifier === current?.touchId);
-    if (!current || current.kind !== "touch" || !touch) return;
-    if (current.mode === "dragging") {
-      event.preventDefault();
-      const targetMealType = updateDropTarget(touch.clientX, touch.clientY);
-      clearDropTarget();
-      onMove?.(dragData, targetMealType);
-      close();
-      window.setTimeout(() => { suppressClick.current = false; }, 220);
-      return;
-    }
-    if (current.axis === "x") {
-      finishSwipe();
-      return;
-    }
-    close();
-    if (suppressClick.current) window.setTimeout(() => { suppressClick.current = false; }, 220);
-  }
-  function handleTouchCancel() {
-    if (gesture.current?.kind !== "touch") return;
-    close();
-    if (suppressClick.current) window.setTimeout(() => { suppressClick.current = false; }, 220);
-  }
-  useEffect(() => {
-    if (interactionMode === "idle") return undefined;
-    const pointerOptions = { passive: false };
-    const touchOptions = { passive: false };
-    document.addEventListener("pointermove", handlePointerMove, pointerOptions);
-    document.addEventListener("pointerup", handlePointerUp, pointerOptions);
-    document.addEventListener("pointercancel", handlePointerCancel, pointerOptions);
-    document.addEventListener("touchmove", handleTouchMove, touchOptions);
-    document.addEventListener("touchend", handleTouchEnd, touchOptions);
-    document.addEventListener("touchcancel", handleTouchCancel, touchOptions);
-    return () => {
-      document.removeEventListener("pointermove", handlePointerMove, pointerOptions);
-      document.removeEventListener("pointerup", handlePointerUp, pointerOptions);
-      document.removeEventListener("pointercancel", handlePointerCancel, pointerOptions);
-      document.removeEventListener("touchmove", handleTouchMove, touchOptions);
-      document.removeEventListener("touchend", handleTouchEnd, touchOptions);
-      document.removeEventListener("touchcancel", handleTouchCancel, touchOptions);
-    };
-  }, [interactionMode]);
+  const gesture = useMealGesture({ disabled, dragData, resetSignal, expanded, onMove });
   return (
-    <div className={`swipe-row ${revealed} ${horizontalDragging ? "swiping" : ""} ${expanded ? "expanded" : ""}`}>
-      <button className="swipe-action swipe-edit" aria-label="Editar registro" disabled={disabled} tabIndex={revealed === "edit" ? 0 : -1} aria-hidden={revealed !== "edit"} onClick={() => { close(); onEdit(); }}><Icon name="edit" /></button>
-      <button className="swipe-action swipe-delete" aria-label="Eliminar registro" disabled={disabled} tabIndex={revealed === "delete" ? 0 : -1} aria-hidden={revealed !== "delete"} onClick={() => { close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
+    <div className={`swipe-row ${gesture.revealed} ${gesture.horizontalDragging ? "swiping" : ""} ${expanded ? "expanded" : ""}`}>
+      <button className="swipe-action swipe-edit" aria-label="Editar registro" disabled={disabled} tabIndex={gesture.revealed === "edit" ? 0 : -1} aria-hidden={gesture.revealed !== "edit"} onClick={() => { gesture.close(); onEdit(); }}><Icon name="edit" /></button>
+      <button className="swipe-action swipe-delete" aria-label="Eliminar registro" disabled={disabled} tabIndex={gesture.revealed === "delete" ? 0 : -1} aria-hidden={gesture.revealed !== "delete"} onClick={() => { gesture.close(); window.setTimeout(onDelete, 120); }}><Icon name="delete" /></button>
       <div
-        ref={shellRef}
-        className={`meal-item-shell ${horizontalDragging ? "swiping" : ""} ${interactionMode === "holding" ? "holding" : ""} ${interactionMode === "dragging" ? "dragging" : ""} ${className}`}
-        style={{ transform: `translate3d(${offset}px, 0, 0)` }}
-        onPointerDown={handlePointerDown}
-        onTouchStart={handleTouchStart}
+        ref={gesture.shellRef}
+        className={`meal-item-shell ${gesture.horizontalDragging ? "swiping" : ""} ${gesture.interactionMode === "holding" ? "holding" : ""} ${gesture.interactionMode === "dragging" ? "dragging" : ""} ${className}`}
+        style={{ transform: `translate3d(${gesture.offset}px, 0, 0)` }}
+        onPointerDown={gesture.handlePointerDown}
+        onPointerMove={gesture.handlePointerMove}
+        onPointerUp={gesture.handlePointerUp}
+        onPointerCancel={gesture.handlePointerCancel}
+        onLostPointerCapture={gesture.handleLostPointerCapture}
         onContextMenu={(event) => {
           if (dragData) event.preventDefault();
         }}
@@ -517,9 +308,9 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
           className="meal-item"
           draggable={false}
           aria-expanded={expanded}
-          aria-grabbed={interactionMode === "dragging"}
+          aria-grabbed={gesture.interactionMode === "dragging"}
           title="Mantené apretado medio segundo para mover este registro a otra comida"
-          onClick={() => !horizontalDragging && !suppressClick.current && onToggle?.()}
+          onClick={(event) => gesture.handleClick(event) && onToggle?.()}
         >
           {children}
           <Icon name="expand_more" className="meal-item-chevron" />
@@ -528,14 +319,14 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
           <>
             {details}
             <div className="meal-item-detail-actions">
-              <button type="button" className="secondary" onClick={() => { close(); onEdit(); }}><Icon name="edit" />Editar</button>
-              <button type="button" className="secondary danger-text" onClick={() => { close(); onDelete(); }}><Icon name="delete" />Eliminar</button>
+              <button type="button" className="secondary" onClick={() => { gesture.close(); onEdit(); }}><Icon name="edit" />Editar</button>
+              <button type="button" className="secondary danger-text" onClick={() => { gesture.close(); onDelete(); }}><Icon name="delete" />Eliminar</button>
             </div>
           </>
         )}
       </div>
-      {interactionMode === "dragging" && dragPosition && createPortal(
-        <div className="meal-drag-preview" style={{ left: dragPosition.x, top: dragPosition.y }} aria-hidden="true">
+      {gesture.interactionMode === "dragging" && gesture.dragPosition && createPortal(
+        <div className="meal-drag-preview" style={{ left: gesture.dragPosition.x, top: gesture.dragPosition.y }} aria-hidden="true">
           {children}
         </div>,
         document.body,
@@ -543,6 +334,7 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
     </div>
   );
 }
+
 
 async function compressMealPhoto(file) {
   const source = URL.createObjectURL(file);

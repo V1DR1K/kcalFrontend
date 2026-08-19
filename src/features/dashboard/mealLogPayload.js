@@ -2,7 +2,7 @@ const ITEM_TYPES = new Set(["FOOD", "RECIPE"]);
 const MEAL_TYPES = new Set(["BREAKFAST", "LUNCH", "AFTERNOON_SNACK", "DINNER"]);
 const UNITS = new Set(["GRAM", "MILLILITER", "UNIT", "PORTION"]);
 
-export function buildMealLogPayload(log, mealType, logDate) {
+export function normalizeMealLogReference(log, mealType, logDate) {
   const itemType = log?.itemType || log?.type;
   const rawItemId = log?.itemId ?? (itemType === "RECIPE" ? log?.recipe?.id : log?.food?.id);
   const itemId = Number(rawItemId);
@@ -16,4 +16,8 @@ export function buildMealLogPayload(log, mealType, logDate) {
   if (!UNITS.has(unit)) throw new Error("La unidad guardada no es válida.");
 
   return { itemType, itemId, mealType, quantity, unit, logDate };
+}
+
+export function buildMealLogPayload(log, mealType, logDate) {
+  return normalizeMealLogReference(log, mealType, logDate);
 }

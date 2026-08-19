@@ -7,7 +7,7 @@ import { CatalogRowWithImage, CatalogStatus, FoodThumb, NutrientDetails, Prepara
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { readRecents, rememberItem, rememberMeal } from "../../../services/recents";
 import { formatNumber, readableDate, shiftDate, today } from "../../../utils/format";
-import { createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, scaleFoodNutrition } from "../dashboard.utils";
+import { createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, scaleFoodNutrition } from "../dashboard.utils";
 import { Header, Macro, Panel } from "../../../components/Layout";
 
 export { NutritionPills, CompactBalanceBar, DateNavigator, PastMealsPreview,  };
@@ -102,10 +102,10 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAd
         },
         { quiet: true },
       );
-    } catch {
+    } catch (error) {
       onOptimisticRollback(optimisticLogs);
       setStatus((current) => ({ ...current, [mealType]: "error" }));
-      api.notify("No se pudo copiar la comida completa.", "error");
+      api.notify(mealCopyErrorMessage(error, "No se pudo copiar la comida completa."), "error");
     }
   }
   return (
