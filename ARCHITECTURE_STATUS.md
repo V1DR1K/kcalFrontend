@@ -15,3 +15,22 @@ Completed on 2026-07-05:
 The entrypoint is now limited to mounting React. Application composition lives under `src/app`, while configuration, formatting, browser persistence, HTTP, catalog pagination and reusable UI infrastructure are separate modules. New functionality must be created under `src/features/<domain>`.
 
 Verification: `npm test && npm run build`.
+
+## Feature modularization
+
+Feature UI and domain-specific dialogs live below `src/features/<domain>`. Shared modal lifecycle belongs to `src/components/dialog` and provides portal mounting, scroll locking, focus restoration, keyboard trapping, backdrop handling and unique ARIA identifiers.
+
+Current feature boundaries:
+
+- `dashboard`: page coordinator, `useDashboardData`, meal sections, quick/recent meals and picker/AI dialogs.
+- `catalog`: catalog shell, independent forms, OCR preview, personal-food panel and catalog utilities.
+- `foods`: recipe swipe card, meal-log forms and food/recipe dialogs.
+- `profile`: page coordinator plus weight, password, nutrition-plan and tutorial components.
+- `history` and `recipes`: page coordinators with feature-local dialogs.
+
+Rules for new code:
+
+- Screens coordinate data and feature state; visual sections and dialogs remain in feature modules.
+- Pure transformations belong in `utils`; API and effects belong in hooks or feature services.
+- Shared UI primitives belong in `src/components`; features must not import another feature's private implementation when a public entrypoint exists.
+- Dialogs use the common lifecycle and must expose unique accessible labels.

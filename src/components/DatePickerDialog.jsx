@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { useId, useRef, useState } from "react";
 import { Icon } from "./Icon";
+import { ModalShell } from "./dialog/ModalShell";
 
 const WEEKDAYS = ["L", "M", "X", "J", "V", "S", "D"];
 
@@ -16,35 +16,18 @@ export function DatePickerDialog({ value, onSelect, onClose }) {
   const selected = asLocalDate(value);
   const [month, setMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
   const closeRef = useRef(null);
-  const previousFocusRef = useRef(null);
+  const titleId = `${useId().replace(/:/g, "")}-title`;
   const today = dateValue(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
   const leadingDays = (month.getDay() + 6) % 7;
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(month);
 
-  useEffect(() => {
-    previousFocusRef.current = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    closeRef.current?.focus();
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
-      previousFocusRef.current?.focus?.();
-    };
-  }, [onClose]);
-
-  return createPortal(
-    <div className="date-picker-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="date-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="date-picker-title">
+  return (
+    <ModalShell onClose={onClose} initialFocusRef={closeRef} hideHeader labelledBy={titleId} className="date-picker-dialog" backdropClassName="date-picker-backdrop">
         <header>
           <div>
             <span>Elegir fecha</span>
-            <h2 id="date-picker-title">{monthLabel}</h2>
+            <h2 id={titleId}>{monthLabel}</h2>
           </div>
           <button ref={closeRef} type="button" className="icon-button" aria-label="Cerrar calendario" onClick={onClose}><Icon name="close" /></button>
         </header>
@@ -64,8 +47,6 @@ export function DatePickerDialog({ value, onSelect, onClose }) {
           })}
         </div>
         <footer><button type="button" className="primary" onClick={() => { onSelect(today); onClose(); }}><Icon name="today" />Ir a hoy</button></footer>
-      </section>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 }

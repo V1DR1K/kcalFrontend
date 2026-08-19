@@ -1,0 +1,114 @@
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { CATEGORY_OPTIONS } from "../../../config/app";
+import { Icon } from "../../../components/Icon";
+import { Input, Select } from "../../../components/FormControls";
+import { Panel } from "../../../components/Layout";
+import { CatalogStatus, categoryLabel } from "../CatalogComponents";
+import { ModalRoot } from "../../../components/dialog/ModalRoot";
+import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycle";
+
+export function MyFoods({ api, onDirtyChange }) {
+  const [items, setItems] = useState([]);
+  const [editing, setEditing] = useState(null);
+  const editCloseRef = useRef(null);
+  const { dialogRef: editDialogRef, onBackdropPointerDown: onEditBackdropPointerDown } = useDialogLifecycle({ open: Boolean(editing), onClose: () => setEditing(null), initialFocusRef: editCloseRef });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const load = useCallback(() => {
+    setLoading(true);
+    return api
+      .runAction(
+        { title: "Cargando tus alimentos", description: "Estamos preparando tu catálogo personal..." },
+        () => api.request("/api/foods/mine"),
+      )
+      .then(setItems)
+      .catch((error) => api.notify(error.message || "No se pudieron cargar tus alimentos.", "error"))
+      .finally(() => setLoading(false));
+  }, [api]);
+  useEffect(() => {
+    load();
+  }, [load]);
+  async function save(event) {
+    event.preventDefault();
+    if (saving) return;
+    setSaving(true);
+    const data = Object.fromEntries(new FormData(event.currentTarget));
+    try {
+      await api.runAction(
+        { title: "Guardando alimento", description: "Estamos actualizando los datos del catálogo..." },
+         () => api.request(`/api/foods/${editing.id}`, { method: "PUT", body: JSON.stringify({ name: data.name, brand: data.brand, barcode: data.barcode, category: data.category, baseUnit: editing.baseUnit || "GRAM", baseQuantity: Number(data.baseQuantity), proteinGrams: Number(data.proteinGrams), carbsGrams: Number(data.carbsGrams), fatGrams: Number(data.fatGrams), preparation: editing.preparation || "UNSPECIFIED", servingName: editing.servingName || null, servingWeightGrams: editing.servingWeightGrams || null, tags: editing.tags || [] }) }, { quiet: true }),
+      );
+      api.notify("Alimento actualizado.");
+      setEditing(null);
+      onDirtyChange?.(false);
+      await load();
+    } catch (error) {
+      api.notify(error.message || "No se pudo actualizar.", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+  if (loading)
+    return (
+      <Panel title="Mis alimentos">
+        <div className="my-foods-loading" aria-busy="true" />
+      </Panel>
+    );
+  return (
+    <Panel title="Mis alimentos" className="my-foods-panel">
+      {!items.length ? (
+        <p className="empty-state">Todavía no creaste alimentos.</p>
+      ) : (
+        <div className="my-foods-list">
+          {items.map((item) => (
+            <button type="button" key={item.id} onClick={() => setEditing(item)}>
+              <span>
+                <strong>{item.name}</strong>
+                <small>{item.brand || categoryLabel(item.category)}</small>
+              </span>
+              <span>{item.calories} kcal</span>
+              <Icon name="edit" />
+            </button>
+          ))}
+        </div>
+      )}
+       {editing && (
+        <ModalRoot className="edit-food-backdrop" onBackdropPointerDown={onEditBackdropPointerDown}>
+          <form ref={editDialogRef} className="edit-food-sheet" role="dialog" aria-modal="true" aria-labelledby="edit-food-title" onPointerDown={(event) => event.stopPropagation()} onInput={() => onDirtyChange?.(true)} onSubmit={save}>
+            <header>
+              <div>
+                <span>Editar alimento</span>
+                <h2 id="edit-food-title">{editing.name}</h2>
+              </div>
+              <button ref={editCloseRef} type="button" className="icon-button" aria-label="Cerrar" onClick={() => setEditing(null)}>
+                <Icon name="close" />
+              </button>
+            </header>
+            <div className="edit-food-fields">
+              <Input name="name" label="Nombre" defaultValue={editing.name} required />
+              <Input name="brand" label="Marca" defaultValue={editing.brand || ""} />
+              <Input name="barcode" label="Código de barras" defaultValue={editing.barcode || ""} />
+              <Select name="category" label="Categoría" defaultValue={editing.category} options={CATEGORY_OPTIONS} />
+              <Input name="baseQuantity" label="Estos valores corresponden a (gramos)" type="number" min="0.1" step="0.1" defaultValue={editing.baseQuantity || 100} required />
+              <div className="split">
+                <Input name="proteinGrams" label="Proteínas g" type="number" min="0" step="0.1" defaultValue={editing.proteinGrams} required />
+                <Input name="carbsGrams" label="Carbohidratos g" type="number" min="0" step="0.1" defaultValue={editing.carbsGrams} required />
+              </div>
+              <div className="split">
+                <Input name="fatGrams" label="Grasas g" type="number" min="0" step="0.1" defaultValue={editing.fatGrams} required />
+                <DerivedCaloriesHint values={editing} />
+              </div>
+            </div>
+            <footer className="edit-food-actions">
+              <button className="primary" disabled={saving}>
+                {saving ? "Guardando…" : "Guardar cambios"}
+              </button>
+            </footer>
+          </form>
+        </ModalRoot>
+      )}
+    </Panel>
+  );
+}
+
+
