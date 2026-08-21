@@ -12,6 +12,7 @@ import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, 
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./MealPhotoDialog";
 import { ModalRoot } from "../../../components/dialog/ModalRoot";
 import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycle";
+import { compressMealPhoto } from "../../../services/image";
 
 import { AiEstimateEditor } from "./AiEstimateEditor";
 export { FoodPicker, AiEstimateEditor };
