@@ -6,9 +6,9 @@ const LEGACY_TOKEN_KEY = "kazaFitness.token";
 const LEGACY_USER_KEY = "kazaFitness.user";
 
 export function migrateStoredSession() {
-  if (!localStorage.getItem(TOKEN_KEY) && localStorage.getItem(LEGACY_TOKEN_KEY)) {
-    localStorage.setItem(TOKEN_KEY, localStorage.getItem(LEGACY_TOKEN_KEY));
-  }
+  // Legacy local-auth JWTs are not valid central-auth access tokens. Do not
+  // silently restore them after the Auth migration; the user must log in again.
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
   if (!localStorage.getItem(USER_KEY) && localStorage.getItem(LEGACY_USER_KEY)) {
     localStorage.setItem(USER_KEY, localStorage.getItem(LEGACY_USER_KEY));
   }

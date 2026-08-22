@@ -1,6 +1,6 @@
-import { REFRESH_KEY, TOKEN_KEY } from "../config/app";
+import { REFRESH_KEY, TOKEN_KEY, USER_KEY } from "../config/app.js";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || "";
 let refreshPromise = null;
 
 async function refreshTokens() {
@@ -13,10 +13,12 @@ async function refreshTokens() {
   });
   if (!response.ok) return null;
   const payload = await response.json();
-  if (!payload.token || !payload.refreshToken) return null;
-  localStorage.setItem(TOKEN_KEY, payload.token);
+  const accessToken = payload.accessToken || payload.token;
+  if (!accessToken || !payload.refreshToken) return null;
+  localStorage.setItem(TOKEN_KEY, accessToken);
   localStorage.setItem(REFRESH_KEY, payload.refreshToken);
-  return payload.token;
+  if (payload.user) localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+  return accessToken;
 }
 
 function refreshTokensOnce() {

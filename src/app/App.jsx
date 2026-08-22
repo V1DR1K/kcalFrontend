@@ -96,10 +96,13 @@ export function App() {
   }, [page]);
 
   function saveSession(payload) {
-    localStorage.setItem(TOKEN_KEY, payload.token);
+    const accessToken = payload.accessToken || payload.token;
+    if (!accessToken) throw new Error("La respuesta de autenticación no contiene un accessToken.");
+    localStorage.setItem(TOKEN_KEY, accessToken);
     if (payload.refreshToken) localStorage.setItem(REFRESH_KEY, payload.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
     setUser(payload.user);
+    window.dispatchEvent(new Event("scalegrams:session-updated"));
     setPage("dashboard");
   }
 
@@ -132,6 +135,12 @@ export function App() {
     window.addEventListener("scalegrams:session-expired", expireSession);
     return () => window.removeEventListener("scalegrams:session-expired", expireSession);
   }, [api]);
+
+  useEffect(() => {
+    const syncUser = () => setUser(getSavedUser(USER_KEY));
+    window.addEventListener("scalegrams:session-updated", syncUser);
+    return () => window.removeEventListener("scalegrams:session-updated", syncUser);
+  }, []);
 
   useEffect(() => {
     let lastExitAttempt = 0;
