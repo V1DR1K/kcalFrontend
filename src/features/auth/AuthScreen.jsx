@@ -36,7 +36,7 @@ export function AuthScreen({ api, page, setPage, saveSession }) {
         },
         () => api.request(isRegister ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify(isRegister ? {
           fullName: data.fullName, email: data.email, password: data.password, weightKg: Number(data.weightKg), heightCm: Number(data.heightCm), birthDate: data.birthDate, gender: data.gender, goal: data.goal, activityLevel: data.activityLevel,
-        } : { email: data.email, password: data.password }) }),
+        } : { username: data.username, password: data.password }) }),
       );
       saveSession(payload);
     } catch (error) {
@@ -48,7 +48,7 @@ export function AuthScreen({ api, page, setPage, saveSession }) {
   }
   return <main className="auth-page"><section className="auth-card"><a className="auth-back" href="/"><Icon name="arrow_back" />Volver a ScaleGrams</a><div className="brand auth-brand"><Icon name="scale" className="fill" /><div><strong>{APP_NAME}</strong><span>{isRegister ? "Crear cuenta" : "Ingreso"}</span></div></div><p className="auth-intro">Registrá tus comidas y mantené tu plan bajo control.</p><p className="auth-access-note">El acceso está disponible para cuentas existentes.</p><form onSubmit={submit} className="form-grid">
     {isRegister && <Input name="fullName" label="Nombre completo" required />}
-    <Input name="email" label="Email" type="email" defaultValue={!isRegister && import.meta.env.DEV ? "alex@scalegrams.local" : ""} autoComplete="email" required error={fieldErrors.email} />
+    <Input name="username" label="Usuario" defaultValue={!isRegister && import.meta.env.DEV ? "alex" : ""} autoComplete="username" required error={fieldErrors.username} />
     <Input name="password" label="Contraseña" type="password" defaultValue={!isRegister && import.meta.env.DEV ? "password123" : ""} autoComplete={isRegister ? "new-password" : "current-password"} minLength="8" required error={fieldErrors.password} />
     {isRegister && <><div className="split"><Input name="weightKg" label="Peso kg" type="number" defaultValue="75" required /><Input name="heightCm" label="Altura cm" type="number" defaultValue="175" required /></div><Input name="birthDate" label="Fecha de nacimiento" type="date" defaultValue="1995-01-01" /><div className="split"><Select name="gender" label="Género" options={["MALE", "FEMALE", "OTHER"]} /><Select name="activityLevel" label="Actividad" options={["SEDENTARY", "LIGHTLY_ACTIVE", "MODERATELY_ACTIVE", "VERY_ACTIVE"]} /></div><Select name="goal" label="Objetivo" options={["LOSE", "MAINTAIN", "GAIN"]} /></>}
     {formError && <p className="form-error" role="alert">{formError}</p>}

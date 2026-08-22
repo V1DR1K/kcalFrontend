@@ -21,7 +21,7 @@ test("renders account access with a route-specific title and return path", async
   await page.goto("/ingresar");
   await expect(page).toHaveTitle("Ingresar | ScaleGrams");
   await expect(page.getByText("ScaleGrams", { exact: true })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Email" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Usuario" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Ingresar" })).toBeVisible();
   await expect(page.getByRole("link", { name: /volver a scalegrams/i })).toHaveAttribute("href", "/");
 });
@@ -33,7 +33,7 @@ test("announces a recoverable authentication error", async ({ page }) => {
     body: JSON.stringify({ message: "Email o contraseña incorrectos." }),
   }));
   await page.goto("/ingresar");
-  await page.getByRole("textbox", { name: "Email" }).fill("persona@ejemplo.com");
+  await page.getByRole("textbox", { name: "Usuario" }).fill("persona");
   await page.getByLabel("Contraseña").fill("incorrecta");
   await page.getByRole("button", { name: "Ingresar" }).click();
   await expect(page.getByRole("alert")).toContainText("Email o contraseña incorrectos.");
