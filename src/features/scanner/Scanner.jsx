@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
+import { ModalShell } from "../../components/dialog/ModalShell";
 import "../../styles/05-scanner.css";
 
-export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode, CatalogComponent }) {
+export function Scanner({ api, initialDialog = null, user, setPage, setSelectedFoodId, setPrefillBarcode, CatalogComponent, RecipesComponent, MyFoodsComponent }) {
   const [barcode, setBarcode] = useState("");
   const [food, setFood] = useState(null);
   const [cameraOn, setCameraOn] = useState(false);
@@ -10,6 +11,7 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode, Ca
   const [barcodeError, setBarcodeError] = useState("");
   const [status, setStatus] = useState("Alineá el código dentro del marco");
   const [mode, setMode] = useState("choices");
+  const [activeDialog, setActiveDialog] = useState(initialDialog);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const videoRef = useRef(null);
   const scannerControlsRef = useRef(null);
@@ -106,6 +108,7 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode, Ca
     }
   }
   function openScanner() {
+    setActiveDialog("scanner");
     setMode("scanner");
     setStatus("Alineá el código dentro del marco");
     setCameraOn(true);
@@ -114,13 +117,61 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode, Ca
   function openCatalog() {
     setCameraOn(false);
     setPrefillBarcode?.(barcode);
+    setActiveDialog("catalog");
     setCatalogOpen(true);
   }
   function closeCatalog({ fromHistory = false } = {}) {
     const modalHistoryActive = window.history.state?.scalegramsModal === "catalog";
     setCatalogOpen(false);
+    setActiveDialog(mode === "scanner" ? "scanner" : null);
     setPrefillBarcode?.("");
     if (!fromHistory && modalHistoryActive) window.history.back();
+  }
+  function closeScanner() {
+    setCameraOn(false);
+    setMode("choices");
+    setActiveDialog(null);
+  }
+  function closeCollection() {
+    setActiveDialog(null);
+    if (initialDialog) setPage("scanner");
+  }
+  function renderCollectionDialog() {
+    if (activeDialog === "recipes" && RecipesComponent) {
+      return (
+        <ModalShell
+          title="Recetas"
+          eyebrow="Registrar"
+          onClose={closeCollection}
+          closeLabel="Cerrar recetas"
+          className="register-collection-dialog"
+          backdropClassName="register-collection-backdrop"
+          wrapContent={false}
+        >
+          <div className="register-collection-content">
+            <RecipesComponent api={api} user={user} setPage={setPage} embedded />
+          </div>
+        </ModalShell>
+      );
+    }
+    if (activeDialog === "my-foods" && MyFoodsComponent) {
+      return (
+        <ModalShell
+          title="Mis alimentos"
+          eyebrow="Registrar"
+          onClose={closeCollection}
+          closeLabel="Cerrar mis alimentos"
+          className="register-collection-dialog"
+          backdropClassName="register-collection-backdrop"
+          wrapContent={false}
+        >
+          <div className="register-collection-content">
+            <MyFoodsComponent api={api} setPage={setPage} embedded />
+          </div>
+        </ModalShell>
+      );
+    }
+    return null;
   }
   if (mode === "choices") {
     return (
@@ -144,12 +195,12 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode, Ca
             <span><strong>Crear alimento</strong><small>Agregá un alimento nuevo al catálogo personal.</small></span>
             <Icon name="arrow_forward" />
           </button>
-          <button className="register-option" type="button" onClick={() => setPage("recipes")}>
+          <button className="register-option" type="button" onClick={() => setActiveDialog("recipes")}>
             <span className="register-option-icon"><Icon name="restaurant" /></span>
             <span><strong>Recetas</strong><small>Consultá tus recetas o explorá las que compartió la comunidad.</small></span>
             <Icon name="arrow_forward" />
           </button>
-          <button className="register-option register-option-compact" type="button" onClick={() => setPage("my-foods")}>
+          <button className="register-option register-option-compact" type="button" onClick={() => setActiveDialog("my-foods")}>
             <span className="register-option-icon"><Icon name="nutrition" /></span>
             <span><strong>Mis alimentos</strong><small>Consultá y editá los alimentos que creaste.</small></span>
             <Icon name="arrow_forward" />
@@ -163,82 +214,86 @@ export function Scanner({ api, setPage, setSelectedFoodId, setPrefillBarcode, Ca
             onClose={closeCatalog}
           />
         )}
+        {renderCollectionDialog()}
       </section>
     );
   }
   return (
-    <section className="scanner-page">
-      <button className="back-button" onClick={() => { setCameraOn(false); setMode("choices"); }}>
-        <Icon name="arrow_back" />Registrar
-      </button>
-      <div className="scanner-stage">
-        <video ref={videoRef} muted playsInline />
-        {!cameraOn && <div className="scanner-fallback" />}
-        <div className={`scan-frame ${status.startsWith("Código reconocido") ? "recognized" : ""}`}>
-          <i />
-          <i />
-          <i />
-          <i />
-          <div className="scan-line" />
-          <Icon name={status.startsWith("Código reconocido") ? "check_circle" : "barcode_scanner"} />
+    <ModalShell
+      title="Escanear código"
+      description="Alineá el código dentro del marco o ingresalo manualmente."
+      eyebrow="Registrar"
+      onClose={closeScanner}
+      closeLabel="Cerrar escáner"
+      className="scanner-dialog"
+      backdropClassName="scanner-dialog-backdrop"
+      wrapContent={false}
+    >
+      <section className="scanner-page">
+        <div className="scanner-stage">
+          <video ref={videoRef} muted playsInline />
+          {!cameraOn && <div className="scanner-fallback" />}
+          <div className={`scan-frame ${status.startsWith("Código reconocido") ? "recognized" : ""}`}>
+            <i />
+            <i />
+            <i />
+            <i />
+            <div className="scan-line" />
+            <Icon name={status.startsWith("Código reconocido") ? "check_circle" : "barcode_scanner"} />
+          </div>
+          <p aria-live="polite">{status}</p>
         </div>
-        <p aria-live="polite">{status}</p>
-      </div>
-      <section className={`scanner-result ${food ? "show" : ""}`}>
-        {food ? (
-          <>
-            <div>
-              <strong>{food.name}</strong>
-              <span>{food.calories} kcal / 100g</span>
-            </div>
-            <button
-              className="primary"
-              onClick={() => {
-                setSelectedFoodId(food.id);
-                setPage("configure");
-              }}
-            >
-              Configurar porción
-            </button>
-          </>
-        ) : (
-          <>
-      <button className="manual-toggle" aria-expanded={manualOpen} aria-controls="manual-barcode-panel" onClick={() => setManualOpen((value) => !value)}>
-              <span>Código manual</span>
-              <Icon name={manualOpen ? "expand_more" : "chevron_right"} />
-            </button>
-            {manualOpen && (
-              <div className="manual-panel" id="manual-barcode-panel">
-                <label className="sr-only" htmlFor="manual-barcode">Código de barras</label>
-                <input id="manual-barcode" inputMode="numeric" value={barcode} onChange={(event) => { setBarcode(event.target.value.replace(/\D/g, "")); setBarcodeError(""); }} placeholder="Ingresar código" aria-invalid={Boolean(barcodeError)} />
-                {barcodeError && <span className="form-error" role="alert">{barcodeError}</span>}
-                <button className="secondary" onClick={() => search()}>
-                  Buscar
-                </button>
+        <section className={`scanner-result ${food ? "show" : ""}`}>
+          {food ? (
+            <>
+              <div>
+                <strong>{food.name}</strong>
+                <span>{food.calories} kcal / 100g</span>
               </div>
-            )}
-            <button
-              className="secondary"
-              onClick={() => {
-                openCatalog();
-              }}
-            >
-              Crear alimento
-            </button>
-            <button className="primary" onClick={() => setCameraOn((value) => !value)}>
-              {cameraOn ? "Pausar cámara" : "Usar cámara"}
-            </button>
-          </>
+              <button
+                className="primary"
+                onClick={() => {
+                  setSelectedFoodId(food.id);
+                  setPage("configure");
+                }}
+              >
+                Configurar porción
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="manual-toggle" aria-expanded={manualOpen} aria-controls="manual-barcode-panel" onClick={() => setManualOpen((value) => !value)}>
+                <span>Código manual</span>
+                <Icon name={manualOpen ? "expand_more" : "chevron_right"} />
+              </button>
+              {manualOpen && (
+                <div className="manual-panel" id="manual-barcode-panel">
+                  <label className="sr-only" htmlFor="manual-barcode">Código de barras</label>
+                  <input id="manual-barcode" inputMode="numeric" value={barcode} onChange={(event) => { setBarcode(event.target.value.replace(/\D/g, "")); setBarcodeError(""); }} placeholder="Ingresar código" aria-invalid={Boolean(barcodeError)} />
+                  {barcodeError && <span className="form-error" role="alert">{barcodeError}</span>}
+                  <button className="secondary" onClick={() => search()}>
+                    Buscar
+                  </button>
+                </div>
+              )}
+              <button className="secondary" onClick={openCatalog}>
+                Crear alimento
+              </button>
+              <button className="primary" onClick={() => setCameraOn((value) => !value)}>
+                {cameraOn ? "Pausar cámara" : "Usar cámara"}
+              </button>
+            </>
+          )}
+        </section>
+        {catalogOpen && CatalogComponent && (
+          <CatalogComponent
+            api={api}
+            prefillBarcode={barcode}
+            clearPrefillBarcode={() => setBarcode("")}
+            onClose={closeCatalog}
+          />
         )}
       </section>
-      {catalogOpen && CatalogComponent && (
-        <CatalogComponent
-          api={api}
-          prefillBarcode={barcode}
-          clearPrefillBarcode={() => setBarcode("")}
-          onClose={closeCatalog}
-        />
-      )}
-    </section>
+    </ModalShell>
   );
 }

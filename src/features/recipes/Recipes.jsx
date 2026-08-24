@@ -9,23 +9,26 @@ import { EditRecipeModal, SwipeableRecipeCard } from "../foods/FoodComponents";
 import { RecipeDetailDialog } from "./dialogs/RecipeDetailDialog";
 import { RecipeCreateDialog } from "./dialogs/RecipeCreateDialog";
 
-export function Recipes({ api, setPage }) {
+export function Recipes({ api, setPage, embedded = false }) {
   const [tab, setTab] = useState("mine");
   const [creating, setCreating] = useState(false);
   const [refreshSignal, setRefreshSignal] = useState(0);
+  const createAction = (
+    <button className="primary pill recipe-create-trigger" onClick={() => setCreating(true)}>
+      <Icon name="add" />
+      Crear receta
+    </button>
+  );
   return (
-    <section className="page recipes-page">
-      <Header
-        title="Recetas"
-        action={
-          <div className="header-actions">
-            <button className="primary pill recipe-create-trigger" onClick={() => setCreating(true)}>
-              <Icon name="add" />
-              Crear receta
-            </button>
-          </div>
-        }
-      />
+    <section className={`page recipes-page ${embedded ? "register-embedded-page" : ""}`}>
+      {embedded ? (
+        <div className="recipes-embedded-toolbar">{createAction}</div>
+      ) : (
+        <Header
+          title="Recetas"
+          action={<div className="header-actions">{createAction}</div>}
+        />
+      )}
       <div className="tabs" role="tablist" aria-label="Secciones de recetas">
         <button type="button" role="tab" aria-selected={tab === "mine"} className={tab === "mine" ? "selected" : ""} onClick={() => setTab("mine")}>
           Mis recetas

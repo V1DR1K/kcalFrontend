@@ -262,3 +262,56 @@
   .scanner-result.show { animation: none; }
   .calendar-grid > button { transition-duration: 1ms; }
 }
+
+.scanner-dialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: min(760px, calc(100dvh - 64px));
+  overflow: hidden;
+}
+
+.scanner-dialog > .scanner-page {
+  min-height: 0;
+  height: 100%;
+  margin: 0;
+  animation: none;
+}
+
+.scanner-dialog .scanner-stage {
+  padding-top: clamp(52px, 9vh, 96px);
+}
+
+.scanner-dialog .scanner-stage p {
+  top: calc(clamp(52px, 9vh, 96px) + min(48vw, 320px) + 16px);
+}
+
+.scanner-dialog .scan-frame {
+  width: min(58vw, 320px);
+}
+
+.scanner-dialog .scanner-result {
+  position: absolute;
+  bottom: 24px;
+}
+
+@media (max-width: 720px) {
+  .scanner-dialog {
+    height: var(--app-viewport-height, 100dvh);
+  }
+
+  .scanner-dialog .scanner-stage {
+    padding-top: clamp(44px, 10vh, 88px);
+  }
+
+  .scanner-dialog .scanner-stage p {
+    top: calc(clamp(44px, 10vh, 88px) + min(70vw, 300px) + 14px);
+  }
+
+  .scanner-dialog .scan-frame {
+    width: min(70vw, 300px);
+  }
+
+  .scanner-dialog .scanner-result {
+    bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}

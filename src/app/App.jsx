@@ -178,10 +178,20 @@ export function App() {
         <Shell user={user} page={page} setPage={setPage} logout={logout}>
           <Suspense fallback={<PageLoader page={page} />}>
             {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
-            {page === "my-foods" && <MyFoodsPage api={api} setPage={setPage} />}
-            {page === "recipes" && <Recipes api={api} user={user} setPage={setPage} />}
             {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
-            {page === "scanner" && <Scanner api={api} setPage={setPage} setSelectedFoodId={setSelectedFoodId} setPrefillBarcode={setPrefillBarcode} CatalogComponent={CreateCatalog} />}
+            {["scanner", "recipes", "my-foods"].includes(page) && (
+              <Scanner
+                api={api}
+                initialDialog={page === "scanner" ? null : page}
+                user={user}
+                setPage={setPage}
+                setSelectedFoodId={setSelectedFoodId}
+                setPrefillBarcode={setPrefillBarcode}
+                CatalogComponent={CreateCatalog}
+                RecipesComponent={Recipes}
+                MyFoodsComponent={MyFoodsPage}
+              />
+            )}
             {page === "history" && <History api={api} />}
             {page === "profile" && <Profile api={api} logout={logout} />}
           </Suspense>
