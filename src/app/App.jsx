@@ -139,7 +139,8 @@ export function App() {
   useEffect(() => {
     const syncUser = () => setUser(getSavedUser(USER_KEY));
     window.addEventListener("scalegrams:session-updated", syncUser);
-    return () => window.removeEventListener("scalegrams:session-updated", syncUser);
+    window.addEventListener("storage", syncUser);
+    return () => { window.removeEventListener("scalegrams:session-updated", syncUser); window.removeEventListener("storage", syncUser); };
   }, []);
 
   useEffect(() => {
