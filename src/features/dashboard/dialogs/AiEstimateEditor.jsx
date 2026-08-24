@@ -25,10 +25,6 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
     const normalized = value.replace(",", ".").replace(/[^\d.]/g, "");
     setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: normalized } : item) }));
   }
-  function addItem() {
-    if (estimate.items.length >= 12) return;
-    setEstimate((current) => ({ ...current, items: [...current.items, { name: "", estimatedGrams: "100", proteinGrams: "0", carbsGrams: "0", fatGrams: "0", category: "OTHER", preparation: "UNSPECIFIED" }] }));
-  }
   function removeItem(index) {
     setEstimate((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== index) }));
   }
@@ -82,13 +78,13 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
               </>}
             </article>
           ))}
-          <button type="button" className="secondary ai-estimate-add-item" disabled={refining || estimate.items.length >= 12} onClick={addItem}><Icon name="add" />Agregar alimento</button>
         </div>
         {mode === "saved" && catalogItemIndex != null && <section className="ai-estimate-catalog-form"><strong>Guardar {estimate.items[catalogItemIndex]?.name || "alimento"}</strong><p>Se publicará como alimento global pendiente, normalizado a 100 g. No modifica esta comida.</p><div><Select label="Categoría" value={catalogCategory} options={CATEGORY_OPTIONS} onChange={(event) => setCatalogCategory(event.target.value)} /><Select label="Preparación" value={catalogPreparation} options={PREPARATION_OPTIONS} onChange={(event) => setCatalogPreparation(event.target.value)} /></div><footer><button type="button" className="secondary" disabled={catalogSaving} onClick={() => setCatalogItemIndex(null)}>Cancelar</button><button type="button" className="primary" disabled={catalogSaving} onClick={saveCatalogItem}>{catalogSaving ? "Guardando..." : "Guardar pendiente"}</button></footer></section>}
         {catalogMessage && <p className="ai-estimate-catalog-message" role="status">{catalogMessage}</p>}
         {saveError && <p className="ai-estimate-error" role="alert">{saveError}</p>}
         {mode === "create" && <section className="ai-estimate-refinement">
-          <label className="ai-context-field"><span>Corregir estimación con IA</span><textarea maxLength="240" disabled={refining} placeholder="Ej.: no había queso, el pollo eran 250 g y faltó una cucharada de aceite" value={correction} onChange={(event) => setCorrection(event.target.value)} /><small>Usa la foto, tu observación original y la revisión actual como referencia.</small></label>
+          <div className="ai-estimate-refinement-help" role="note"><strong>¿Falta algún alimento?</strong><span>Escribilo en la corrección de abajo para que la IA lo agregue a la estimación. Si podés, indicá también la porción.</span></div>
+          <label className="ai-context-field"><span>Corregir o agregar alimentos con IA</span><textarea maxLength="240" disabled={refining} placeholder="Ej.: agregá una banana de 120 g y quitá el queso" value={correction} onChange={(event) => setCorrection(event.target.value)} /><small>Usa la foto, tu observación original y la revisión actual como referencia.</small></label>
           {refinementError && <p className="ai-estimate-error" role="alert">{refinementError}</p>}
           <button type="button" className="secondary" disabled={refining || !correction.trim()} onClick={onRefine}>{refining ? "Corrigiendo..." : "Aplicar corrección IA"}</button>
         </section>}
@@ -97,6 +93,5 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
   );
   return standalone ? editor : <div className="selected-subpanel ai-estimate-subpanel">{editor}</div>;
 }
-
 
 
