@@ -29,7 +29,7 @@ export function Recipes({ api, setPage, embedded = false }) {
           action={<div className="header-actions">{createAction}</div>}
         />
       )}
-      <div className="tabs" role="tablist" aria-label="Secciones de recetas">
+      <div className="tabs recipes-tabs" role="tablist" aria-label="Secciones de recetas">
         <button type="button" role="tab" aria-selected={tab === "mine"} className={tab === "mine" ? "selected" : ""} onClick={() => setTab("mine")}>
           Mis recetas
         </button>

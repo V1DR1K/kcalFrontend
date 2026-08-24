@@ -392,10 +392,6 @@
   padding: var(--space-5) var(--space-6);
 }
 
-.catalog-dialog-tabs {
-  padding: 0 var(--space-6);
-}
-
 .catalog-dialog-header {
   display: flex;
   align-items: start;
@@ -407,8 +403,6 @@
 .catalog-dialog-header span { color: var(--primary); font-size: var(--type-meta); font-weight: 800; }
 .catalog-dialog-header h2 { margin: 2px 0 0; font-size: var(--type-heading-lg); letter-spacing: -.025em; }
 .catalog-dialog-header .icon-button { flex: 0 0 auto; }
-.catalog-dialog-tabs { width: 100%; }
-.catalog-dialog-tabs button { flex: 1; min-height: 46px; }
 .catalog-dialog-content { min-height: 0; overflow: hidden; }
 .catalog-dialog-content > [role="tabpanel"] { height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 2px 3px 4px 0; }
 .catalog-dialog-content .panel { min-height: 100%; padding: 0; border: 0; background: transparent; box-shadow: none; }
@@ -440,8 +434,6 @@
     border-radius: 0;
   }
   .catalog-dialog-header h2 { font-size: 21px; }
-  .catalog-dialog-tabs { gap: 2px; padding: 0 var(--space-4); }
-  .catalog-dialog-tabs button { min-height: 46px; padding: 0 7px; font-size: 12px; }
   .catalog-dialog-content > [role="tabpanel"] { padding-right: 0; }
 }
 
