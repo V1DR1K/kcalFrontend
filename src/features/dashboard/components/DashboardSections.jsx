@@ -146,8 +146,9 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAd
                     <strong>{meal.calories} kcal</strong>
                   </div>
                   <div className="ghost-actions">
-                    <button className="copy-accept" disabled={!copyableItems.length || state === "copying" || state === "copied"} aria-label={`Copiar ${type.label}`} onClick={() => copyMeal(type.code, copyableItems)}>
+                    <button className="copy-accept" disabled={!copyableItems.length || state === "copying" || state === "copied"} aria-label={`Aplicar ${type.label}`} onClick={() => copyMeal(type.code, copyableItems)}>
                       <Icon name={state === "copied" ? "check_circle" : "check"} />
+                      <span>{state === "copying" ? "Aplicando…" : state === "copied" ? "Aplicado" : "Aplicar"}</span>
                     </button>
                     <button
                       className="copy-reject"
