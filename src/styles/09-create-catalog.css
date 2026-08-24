@@ -4,6 +4,14 @@
 .my-foods-list strong, .my-foods-list small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .my-food-row > span:nth-child(2) { color: var(--muted); font-size: 13px; white-space: nowrap; }
 .my-foods-list .material-symbols-outlined { color: var(--primary); }
+.deleted-foods-section { display: grid; gap: var(--space-3); margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--outline); }
+.deleted-foods-heading { display: grid; gap: 4px; }
+.deleted-foods-heading h3 { margin: 0; font-size: var(--type-heading-sm); }
+.deleted-foods-heading p { max-width: 58ch; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.my-food-row-deleted { border-style: dashed; background: color-mix(in srgb, var(--surface-high) 72%, var(--background)); }
+.my-food-row-deleted > span:first-child { opacity: .82; }
+.restore-food-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 11px; white-space: nowrap; }
+.restore-food-button .material-symbols-outlined { color: inherit; font-size: 18px; }
 .food-card-menu,
 .recipe-card-menu { position: relative; z-index: 4; }
 .food-card-menu-trigger,
@@ -344,6 +352,7 @@
   .recipe-create-dialog { width: 100%; height: var(--app-viewport-height, 100dvh); max-height: none; padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); border: 0; border-radius: 0; }
   .recipe-create-dialog .modal-shell-header h2 { font-size: 21px; }
   .my-food-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .restore-food-button { padding-inline: 9px; }
   .food-card-menu-popover,
   .recipe-card-menu-popover { right: 0; min-width: 170px; }
   .explore-recipe-card { grid-template-columns: 48px minmax(0, 1fr) auto; }

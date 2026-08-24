@@ -10,12 +10,14 @@ import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycl
 
 export function MyFoods({ api, onDirtyChange }) {
   const [items, setItems] = useState([]);
+  const [deletedItems, setDeletedItems] = useState([]);
   const [editing, setEditing] = useState(null);
   const editCloseRef = useRef(null);
   const { dialogRef: editDialogRef, onBackdropPointerDown: onEditBackdropPointerDown } = useDialogLifecycle({ open: Boolean(editing), onClose: () => setEditing(null), initialFocusRef: editCloseRef });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [restoringId, setRestoringId] = useState(null);
   const [menuId, setMenuId] = useState(null);
   useEffect(() => {
     if (menuId == null) return undefined;
@@ -37,9 +39,18 @@ export function MyFoods({ api, onDirtyChange }) {
     return api
       .runAction(
         { title: "Cargando tus alimentos", description: "Estamos preparando tu catálogo personal..." },
-        () => api.request("/api/foods/mine"),
+        async () => {
+          const [active, deleted] = await Promise.all([
+            api.request("/api/foods/mine"),
+            api.request("/api/foods/mine/deleted"),
+          ]);
+          return { active, deleted };
+        },
       )
-      .then(setItems)
+      .then(({ active, deleted }) => {
+        setItems(active);
+        setDeletedItems(deleted);
+      })
       .catch((error) => api.notify(error.message || "No se pudieron cargar tus alimentos.", "error"))
       .finally(() => setLoading(false));
   }, [api]);
@@ -82,12 +93,29 @@ export function MyFoods({ api, onDirtyChange }) {
         () => api.request(`/api/foods/${item.id}`, { method: "DELETE" }),
         { quiet: true },
       );
-      setItems((current) => current.filter((currentItem) => currentItem.id !== item.id));
+      await load();
       api.notify("Alimento borrado.");
     } catch (error) {
       api.notify(error.message || "No se pudo borrar el alimento.", "error");
     } finally {
       setDeletingId(null);
+    }
+  }
+  async function restore(item) {
+    if (restoringId) return;
+    setRestoringId(item.id);
+    try {
+      await api.runAction(
+        { title: "Reactivando alimento", description: "Estamos devolviendo el alimento a tu catálogo..." },
+        () => api.request(`/api/foods/${item.id}/restore`, { method: "POST" }),
+        { quiet: true },
+      );
+      await load();
+      api.notify("Alimento reactivado.");
+    } catch (error) {
+      api.notify(error.message || "No se pudo reactivar el alimento.", "error");
+    } finally {
+      setRestoringId(null);
     }
   }
   if (loading)
@@ -99,7 +127,7 @@ export function MyFoods({ api, onDirtyChange }) {
   return (
     <Panel title="Mis alimentos" className="my-foods-panel">
       {!items.length ? (
-        <p className="empty-state">Todavía no creaste alimentos.</p>
+        <p className="empty-state">{deletedItems.length ? "No tenés alimentos activos." : "Todavía no creaste alimentos."}</p>
       ) : (
         <div className="my-foods-list">
           {items.map((item) => (
@@ -123,6 +151,29 @@ export function MyFoods({ api, onDirtyChange }) {
             </article>
           ))}
         </div>
+      )}
+      {deletedItems.length > 0 && (
+        <section className="deleted-foods-section" aria-labelledby="deleted-foods-title">
+          <div className="deleted-foods-heading">
+            <h3 id="deleted-foods-title">Alimentos eliminados</h3>
+            <p>Estos alimentos no aparecen en búsquedas ni selecciones nuevas. Podés reactivarlos cuando quieras.</p>
+          </div>
+          <div className="my-foods-list">
+            {deletedItems.map((item) => (
+              <article className="my-food-row my-food-row-deleted" key={item.id}>
+                <span>
+                  <strong>{item.name}</strong>
+                  <small>{item.brand || categoryLabel(item.category)}</small>
+                </span>
+                <span>{item.calories} kcal</span>
+                <button type="button" className="secondary restore-food-button" disabled={restoringId === item.id} onClick={() => restore(item)}>
+                  <Icon name="restore" />
+                  {restoringId === item.id ? "Reactivando…" : "Reactivar"}
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
       )}
        {editing && (
         <ModalRoot className="app-modal-backdrop edit-food-backdrop" onBackdropPointerDown={onEditBackdropPointerDown}>
