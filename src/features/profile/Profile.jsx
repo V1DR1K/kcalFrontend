@@ -15,19 +15,19 @@ function quotaReset(value) {
 export function Profile({ api, logout }) {
   const [profile, setProfile] = useState(null);
   const [plans, setPlans] = useState([]);
-  const [presets, setPresets] = useState([]);
   const [aiUsage, setAiUsage] = useState(null);
   const [weightEntries, setWeightEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [weight, setWeight] = useState("");
   const [savingWeight, setSavingWeight] = useState(false);
-  const loadPlans = useCallback(
-    () =>
-      api
-        .request("/api/profile/nutrition-plans")
-        .then(setPlans)
-        .catch(() => api.notify("No se pudieron actualizar los planes.", "error")),
+  const refreshPlanState = useCallback(
+    () => Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans")])
+      .then(([nextProfile, nextPlans]) => {
+        setProfile(nextProfile);
+        setPlans(nextPlans);
+      })
+      .catch(() => api.notify("No se pudieron actualizar los datos del plan.", "error")),
     [api],
   );
   const load = useCallback(() => {
@@ -35,13 +35,12 @@ export function Profile({ api, logout }) {
     setError("");
     api.runAction(
       { title: "Cargando perfil", description: "Estamos preparando tus datos y planes..." },
-      () => Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans"), api.request("/api/profile/nutrition-plan-presets"), api.request("/api/nutrition/ai-estimates/usage").catch(() => null), api.request("/api/profile/weight-entries").catch(() => [])]),
+      () => Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans"), api.request("/api/nutrition/ai-estimates/usage").catch(() => null), api.request("/api/profile/weight-entries").catch(() => [])]),
     )
-      .then(([nextProfile, nextPlans, nextPresets, nextAiUsage, nextWeightEntries]) => {
+      .then(([nextProfile, nextPlans, nextAiUsage, nextWeightEntries]) => {
         setProfile(nextProfile);
         setWeight(nextProfile.weightKg || "");
         setPlans(nextPlans);
-        setPresets(nextPresets);
         setAiUsage(nextAiUsage);
         setWeightEntries(nextWeightEntries);
       })
@@ -82,7 +81,7 @@ export function Profile({ api, logout }) {
         </Panel>
         <ProfileWeightPanel api={api} profile={profile} setProfile={setProfile} entries={weightEntries} setEntries={setWeightEntries} setWeight={setWeight} weight={weight} savingWeight={savingWeight} setSavingWeight={setSavingWeight} />
       </div>
-      <NutritionPlanManager api={api} presets={presets} plans={plans} onChanged={loadPlans} />
+      <NutritionPlanManager api={api} plans={plans} onChanged={refreshPlanState} />
       <div className="profile-support-grid">
         <Panel title="Fotos con IA" className="ai-usage-panel">
           {aiUsage?.available ? <><div><Icon name="photo_camera" /><span><strong>{aiUsage.blockedUntil ? "Gemini sin cuota" : "Sin límite interno"}</strong><small>{aiUsage.blockedUntil ? `Probá nuevamente desde ${quotaReset(aiUsage.blockedUntil)}` : `${aiUsage.used} consultas realizadas hoy`}</small></span></div><p>{aiUsage.blockedUntil ? "Gemini informó que no quedan solicitudes disponibles por ahora. La hora mostrada proviene de Gemini; si no la informa, se usa su próximo reinicio diario estimado." : "ScaleGrams no limita tus fotos: solo registra el uso y mostrará cuándo Gemini vuelva a aceptar consultas."}</p></> : <p>La estimación por foto no está disponible por el momento.</p>}

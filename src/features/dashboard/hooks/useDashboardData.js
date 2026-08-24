@@ -40,6 +40,12 @@ export function useDashboardData(api) {
       .catch(() => setMealTypes(DEFAULT_MEALS));
   }, [api, selectedDate]);
 
+  useEffect(() => {
+    const refreshPlan = () => load(selectedDate);
+    window.addEventListener("scalegrams:plan-updated", refreshPlan);
+    return () => window.removeEventListener("scalegrams:plan-updated", refreshPlan);
+  }, [load, selectedDate]);
+
   const loadDayPresets = useCallback(() => api.request("/api/nutrition/day-presets")
     .then(setDayPresets)
     .catch(() => setDayPresets([])), [api]);
