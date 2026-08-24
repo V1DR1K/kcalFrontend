@@ -492,8 +492,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     }
   }
   return (
-    <ModalRoot className="modal-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
-      <section ref={dialogRef} className="picker-modal" role="dialog" aria-modal="true" aria-labelledby={pickerTitleId} onPointerDown={(event) => event.stopPropagation()}>
+    <ModalRoot className="app-modal-backdrop modal-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
+      <section ref={dialogRef} className="app-modal-surface picker-modal" role="dialog" aria-modal="true" aria-labelledby={pickerTitleId} onPointerDown={(event) => event.stopPropagation()}>
         <header>
           <div>
             <span>{mealType.label}</span>

@@ -14,7 +14,7 @@ export function RecipeDetailDialog({ api, recipe, onClose }) {
     catch (error) { api.notify(error.message || "No se pudo guardar la receta.", "error"); } finally { setSaving(false); }
   }
   return (
-    <ModalShell onClose={onClose} hideHeader labelledBy={titleId} className="recipe-detail-dialog" backdropClassName="recipe-detail-backdrop" wrapContent={false}>
+    <ModalShell onClose={onClose} hideHeader labelledBy={titleId} className="app-modal-compact recipe-detail-dialog" backdropClassName="recipe-detail-backdrop" wrapContent={false}>
         <header><FoodThumb item={{ ...recipe, type: "RECIPE" }} compact /><div><span>Receta compartida</span><h2 id={titleId}>{recipe.name}</h2></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={onClose}><Icon name="close" /></button></header>
         {recipe.description && <p className="recipe-detail-description">{recipe.description}</p>}
         <div className="recipe-detail-summary"><span><small>Peso total</small><strong>{formatNumber(recipe.totalWeightGrams, 1)} g</strong></span><span><small>Kcal</small><strong>{formatNumber(recipe.calories)}</strong></span><span><small>Macros</small><strong>P {formatNumber(recipe.proteinGrams, 1)}g</strong></span></div>

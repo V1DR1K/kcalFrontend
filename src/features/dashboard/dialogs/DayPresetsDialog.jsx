@@ -63,8 +63,8 @@ export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, on
       </div>
       {error && !open && <p className="day-preset-error" role="alert">{error}</p>}
     </section>
-    {open && <ModalRoot className="day-presets-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
-      <section ref={dialogRef} className="day-presets-modal" role="dialog" aria-modal="true" aria-labelledby="day-presets-title" onPointerDown={(event) => event.stopPropagation()}>
+    {open && <ModalRoot className="app-modal-backdrop day-presets-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
+      <section ref={dialogRef} className="app-modal-surface day-presets-modal" role="dialog" aria-modal="true" aria-labelledby="day-presets-title" onPointerDown={(event) => event.stopPropagation()}>
         <header><div><span>Presets de alimentación</span><h2 id="day-presets-title">Aplicar día</h2><small>Elegí una rutina completa para {readableDate(date)}.</small></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={closeModal}><Icon name="close" /></button></header>
         {editor ? <>
           <div className="day-presets-editor-head"><button type="button" className="text-button" onClick={() => { setEditor(null); setError(""); }}><Icon name="arrow_back" />Volver a presets</button><button type="button" className="primary" disabled={saving} onClick={saveEditor}>{saving ? "Guardando…" : "Guardar cambios"}</button></div>

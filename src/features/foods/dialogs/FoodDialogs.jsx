@@ -50,7 +50,7 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
     }
   }
   return (
-    <ModalShell as="form" onClose={onClose} hideHeader labelledBy={titleId} className="edit-food-sheet edit-recipe-sheet" backdropClassName="edit-food-backdrop" wrapContent={false} dialogProps={{ onSubmit: submit }}>
+    <ModalShell as="form" onClose={onClose} hideHeader labelledBy={titleId} className="app-modal-compact edit-food-sheet edit-recipe-sheet" backdropClassName="edit-food-backdrop" wrapContent={false} dialogProps={{ onSubmit: submit }}>
         <header>
           <div>
             <span>Editar receta</span>
@@ -92,7 +92,7 @@ export function FoodLogDialog({ item, eyebrow, title = item?.name, isRecipe = fa
   const generatedTitleId = `${useId().replace(/:/g, "")}-title`;
   const resolvedTitleId = titleId === "food-log-title" ? generatedTitleId : titleId;
   return (
-    <ModalShell as="form" onClose={onClose} hideHeader labelledBy={resolvedTitleId} className={`edit-log-modal ${isRecipe ? "recipe-log-modal" : ""} ${closing ? "closing" : ""}`} backdropClassName="modal-backdrop compact-modal" wrapContent={false} dialogProps={{ onSubmit }}>
+    <ModalShell as="form" onClose={onClose} hideHeader labelledBy={resolvedTitleId} className={`app-modal-compact edit-log-modal ${isRecipe ? "recipe-log-modal" : ""} ${closing ? "closing" : ""}`} backdropClassName="modal-backdrop compact-modal" wrapContent={false} dialogProps={{ onSubmit }}>
         <header className="edit-log-header">
           <FoodThumb item={isRecipe ? { ...item, type: "RECIPE" } : item} compact />
           <div className="edit-log-identity">

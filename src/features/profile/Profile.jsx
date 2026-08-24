@@ -22,12 +22,21 @@ export function Profile({ api, logout }) {
   const [weight, setWeight] = useState("");
   const [savingWeight, setSavingWeight] = useState(false);
   const refreshPlanState = useCallback(
-    () => Promise.all([api.request("/api/profile"), api.request("/api/profile/nutrition-plans")])
-      .then(([nextProfile, nextPlans]) => {
+    async (savedPlan) => {
+      if (savedPlan?.id) {
+        setPlans((current) => [savedPlan, ...current.filter((plan) => plan.id !== savedPlan.id)]);
+      }
+      try {
+        const [nextProfile, nextPlans] = await Promise.all([
+          api.request("/api/profile", { cache: "no-store" }),
+          api.request("/api/profile/nutrition-plans", { cache: "no-store" }),
+        ]);
         setProfile(nextProfile);
         setPlans(nextPlans);
-      })
-      .catch(() => api.notify("No se pudieron actualizar los datos del plan.", "error")),
+      } catch {
+        api.notify("El plan se guardó, pero no pudimos refrescar la lista. Volvé a cargar el perfil.", "error");
+      }
+    },
     [api],
   );
   const load = useCallback(() => {

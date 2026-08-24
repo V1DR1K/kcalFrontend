@@ -125,8 +125,8 @@ export function MyFoods({ api, onDirtyChange }) {
         </div>
       )}
        {editing && (
-        <ModalRoot className="edit-food-backdrop" onBackdropPointerDown={onEditBackdropPointerDown}>
-          <form ref={editDialogRef} className="edit-food-sheet" role="dialog" aria-modal="true" aria-labelledby="edit-food-title" onPointerDown={(event) => event.stopPropagation()} onInput={() => onDirtyChange?.(true)} onSubmit={save}>
+        <ModalRoot className="app-modal-backdrop edit-food-backdrop" onBackdropPointerDown={onEditBackdropPointerDown}>
+          <form ref={editDialogRef} className="app-modal-surface app-modal-compact edit-food-sheet" role="dialog" aria-modal="true" aria-labelledby="edit-food-title" onPointerDown={(event) => event.stopPropagation()} onInput={() => onDirtyChange?.(true)} onSubmit={save}>
             <header>
               <div>
                 <span>Editar alimento</span>

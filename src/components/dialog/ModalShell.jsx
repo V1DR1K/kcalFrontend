@@ -37,9 +37,12 @@ export function ModalShell({
     if (closeOnBackdrop && !closeDisabled) onBackdropPointerDown(event);
   }
 
+  const resolvedBackdropClass = `app-modal-backdrop ${backdropClassName || `modal-backdrop ${variant}-backdrop`}`.trim();
+  const resolvedSurfaceClass = `app-modal-surface modal-shell modal-shell-${variant} ${className}`.trim();
+
   return (
-    <ModalRoot className={backdropClassName || `modal-backdrop ${variant}-backdrop`.trim()} onBackdropPointerDown={handleBackdropPointerDown}>
-      <Element ref={dialogRef} className={`modal-shell modal-shell-${variant} ${className}`.trim()} role={role} aria-modal="true" aria-labelledby={labelledBy || titleId} aria-describedby={describedBy || descriptionId} onPointerDown={(event) => event.stopPropagation()} {...dialogProps}>
+    <ModalRoot className={resolvedBackdropClass} onBackdropPointerDown={handleBackdropPointerDown}>
+      <Element ref={dialogRef} className={resolvedSurfaceClass} role={role} aria-modal="true" aria-labelledby={labelledBy || titleId} aria-describedby={describedBy || descriptionId} onPointerDown={(event) => event.stopPropagation()} {...dialogProps}>
         {!hideHeader && (title || onClose) && (
           <header className="modal-shell-header">
             <div>

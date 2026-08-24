@@ -66,8 +66,8 @@ export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClos
   }
 
   return (
-    <ModalRoot className="catalog-dialog-backdrop" onBackdropPointerDown={(event) => { if (!busy) onBackdropPointerDown(event); }}>
-      <section ref={(node) => { dialogRef.current = node; lifecycleDialogRef.current = node; }} className="catalog-dialog" role="dialog" aria-modal="true" aria-labelledby="catalog-dialog-title" onPointerDown={(event) => event.stopPropagation()}>
+    <ModalRoot className="app-modal-backdrop catalog-dialog-backdrop" onBackdropPointerDown={(event) => { if (!busy) onBackdropPointerDown(event); }}>
+      <section ref={(node) => { dialogRef.current = node; lifecycleDialogRef.current = node; }} className="app-modal-surface catalog-dialog" role="dialog" aria-modal="true" aria-labelledby="catalog-dialog-title" onPointerDown={(event) => event.stopPropagation()}>
         <header className="catalog-dialog-header">
           <div>
             <span>Catálogo</span>

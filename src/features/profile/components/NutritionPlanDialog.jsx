@@ -121,6 +121,17 @@ export function NutritionPlanDialog({ api, plan, onClose, onChanged }) {
       )}
     >
       <div className="nutrition-plan-dialog-body">
+        <details className="plan-details" open>
+          <summary>Detalles del plan</summary>
+          <div className="form-grid">
+            <Input label="Nombre del plan" value={form.name} onChange={(event) => setField("name", event.target.value)} minLength="2" required />
+            <div className="split">
+              <Input label="Comienza" type="date" value={form.startDate} onChange={(event) => setField("startDate", event.target.value)} required />
+              <Input label="Finaliza (opcional)" type="date" value={form.endDate} onChange={(event) => setField("endDate", event.target.value)} />
+            </div>
+          </div>
+        </details>
+
         <section className="plan-dialog-section plan-calorie-step">
           <span className="step-number" aria-hidden="true">1</span>
           <div>
@@ -151,16 +162,6 @@ export function NutritionPlanDialog({ api, plan, onClose, onChanged }) {
           </div>
         </section>
 
-        <details className="plan-details">
-          <summary>Detalles del plan</summary>
-          <div className="form-grid">
-            <Input label="Nombre del plan" value={form.name} onChange={(event) => setField("name", event.target.value)} minLength="2" required />
-            <div className="split">
-              <Input label="Comienza" type="date" value={form.startDate} onChange={(event) => setField("startDate", event.target.value)} required />
-              <Input label="Finaliza (opcional)" type="date" value={form.endDate} onChange={(event) => setField("endDate", event.target.value)} />
-            </div>
-          </div>
-        </details>
         {formError && <p className="form-error nutrition-plan-dialog-error" role="alert">{formError}</p>}
       </div>
     </ModalShell>

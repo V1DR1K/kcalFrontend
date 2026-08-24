@@ -26,7 +26,7 @@ export function EditAiEstimateDialog({ api, log, mealTypes, onClose, onDone, Edi
   }
 
   return (
-    <ModalRoot className="modal-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
+    <ModalRoot className="app-modal-backdrop modal-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
       <EditorComponent
         dialogRef={dialogRef}
         estimate={estimate}

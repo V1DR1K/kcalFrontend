@@ -9,8 +9,8 @@ export function ConfirmationDialog({ title, description, confirmLabel = "Confirm
   const { dialogRef, onBackdropPointerDown } = useDialogLifecycle({ onClose: onCancel, initialFocusRef: cancelRef });
 
   return (
-    <ModalRoot className="confirmation-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
-      <section ref={dialogRef} className={`confirmation-dialog ${tone}`} role="alertdialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} onPointerDown={(event) => event.stopPropagation()}>
+    <ModalRoot className="app-modal-backdrop confirmation-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
+      <section ref={dialogRef} className={`app-modal-surface app-modal-compact confirmation-dialog ${tone}`} role="alertdialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} onPointerDown={(event) => event.stopPropagation()}>
         <div className="confirmation-icon" aria-hidden="true"><Icon name="error" /></div>
         <div>
           <h2 id={`${id}-title`}>{title}</h2>

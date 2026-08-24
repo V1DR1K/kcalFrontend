@@ -31,3 +31,88 @@
 @media (prefers-reduced-motion: reduce) {
   .modal-shell, .modal-shell * { animation: none !important; transition: none !important; }
 }
+
+/* Shared modal contract: every task surface uses the same viewport, depth and motion. */
+.app-modal-backdrop[class] {
+  position: fixed !important;
+  top: var(--app-viewport-top, 0px) !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: 0 !important;
+  z-index: var(--z-modal) !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100% !important;
+  height: var(--app-viewport-height, 100dvh) !important;
+  padding: 32px !important;
+  overflow: hidden !important;
+  background: var(--scrim-modal) !important;
+  backdrop-filter: blur(8px) !important;
+  animation: app-modal-backdrop-in 180ms var(--ease-out) both !important;
+}
+
+.app-modal-surface[class] {
+  width: min(720px, 100%) !important;
+  max-width: 100% !important;
+  max-height: min(860px, calc(100dvh - 64px)) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  border: 1px solid var(--outline) !important;
+  border-radius: var(--radius-modal) !important;
+  background: var(--surface) !important;
+  box-shadow: var(--shadow-dialog) !important;
+  animation: app-modal-surface-in 220ms var(--ease-emphasized) both !important;
+}
+
+.app-modal-surface.app-modal-compact[class] { width: min(480px, 100%) !important; }
+.app-modal-surface[class] > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--outline);
+}
+.app-modal-surface[class] > header .icon-button { flex: 0 0 auto; width: 46px; min-height: 46px; }
+.app-modal-surface[class] > footer,
+.app-modal-surface[class] > .modal-shell-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  border-top: 1px solid var(--outline);
+  background: var(--surface-low);
+}
+.app-modal-surface[class] > footer button,
+.app-modal-surface[class] > .modal-shell-footer button { min-height: 48px; }
+
+@keyframes app-modal-backdrop-in { from { opacity: 0; } }
+@keyframes app-modal-surface-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+
+@media (max-width: 720px) {
+  .app-modal-backdrop[class] { place-items: stretch !important; padding: 0 !important; }
+  .app-modal-surface[class] {
+    width: 100% !important;
+    height: var(--app-viewport-height, 100dvh) !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+  }
+  .app-modal-surface[class] > header { padding: max(var(--space-4), env(safe-area-inset-top)) var(--space-4) var(--space-4); }
+  .app-modal-surface.app-modal-compact[class] {
+    place-self: end center;
+    height: auto !important;
+    max-height: min(92dvh, 900px) !important;
+    border-radius: var(--radius-modal) var(--radius-modal) 0 0 !important;
+  }
+  .app-modal-surface[class] > footer,
+  .app-modal-surface[class] > .modal-shell-footer {
+    display: grid;
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    padding: var(--space-3) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
+  }
+  .app-modal-surface[class] > footer button,
+  .app-modal-surface[class] > .modal-shell-footer button { min-width: 0; min-height: 50px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-modal-backdrop[class], .app-modal-surface[class] { animation: none !important; }
+}
