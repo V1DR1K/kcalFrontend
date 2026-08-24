@@ -15,6 +15,7 @@ function presetItemFromLog(log, mealType) {
 export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, onReload, onApplied, open, onOpen, onClose, FoodPickerComponent }) {
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showSaveForm, setShowSaveForm] = useState(false);
   const [editor, setEditor] = useState(null);
   const [pickerMeal, setPickerMeal] = useState(null);
   const [applyTarget, setApplyTarget] = useState(null);
@@ -23,14 +24,14 @@ export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, on
   const currentItems = (data?.meals || []).flatMap((meal) => (meal.items || []).map((log) => presetItemFromLog(log, meal.mealType)));
   const { dialogRef, onBackdropPointerDown } = useDialogLifecycle({ open, onClose: () => closeModal(), trapFocus: !pickerMeal });
 
-  function closeModal() { if (saving) return; onClose(); setName(""); setEditor(null); setPickerMeal(null); setApplyTarget(null); setError(""); }
+  function closeModal() { if (saving) return; onClose(); setName(""); setShowSaveForm(false); setEditor(null); setPickerMeal(null); setApplyTarget(null); setError(""); }
   async function saveDay() {
     if (saving) return;
     const trimmed = name.trim();
     if (!trimmed) return setError("Escribí un nombre para el preset.");
     if (!currentItems.length) return setError("El día no tiene alimentos para guardar.");
     setSaving(true); setError("");
-    try { await api.request("/api/nutrition/day-presets", { method: "POST", body: JSON.stringify({ name: trimmed, items: currentItems }) }); setName(""); await onReload(); api.notify("Día guardado como preset."); }
+    try { await api.request("/api/nutrition/day-presets", { method: "POST", body: JSON.stringify({ name: trimmed, items: currentItems }) }); setName(""); setShowSaveForm(false); await onReload(); api.notify("Día guardado como preset."); }
     catch (e) { setError(e.message || "No se pudo guardar el día."); } finally { setSaving(false); }
   }
   async function applyPreset(preset, replace) {
@@ -55,12 +56,10 @@ export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, on
 
   return <>
     <section className="day-presets-actions" aria-label="Presets de alimentación">
-      <div><h2>Reutilizá tu día</h2><p>Guardá esta combinación de comidas para volver a aplicarla cuando quieras.</p></div>
-      <div className="day-presets-buttons">
-        <button type="button" className="primary" disabled={saving || !currentItems.length} onClick={onOpen}><Icon name="bookmark_add" />Guardar día</button>
-        <button type="button" className="secondary" onClick={onOpen}><Icon name="calendar_view_day" />Aplicar día</button>
-      </div>
-      {error && !open && <p className="day-preset-error" role="alert">{error}</p>}
+      <button type="button" className="day-presets-trigger" onClick={onOpen} aria-label="Abrir Reutilizá tu día">
+        <span><strong>Reutilizá tu día</strong><small>Guardá esta combinación de comidas o aplicá una rutina anterior.</small></span>
+        <Icon name="chevron_right" />
+      </button>
     </section>
     {open && <ModalRoot className="app-modal-backdrop day-presets-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
       <section ref={dialogRef} className="app-modal-surface day-presets-modal" role="dialog" aria-modal="true" aria-labelledby="day-presets-title" onPointerDown={(event) => event.stopPropagation()}>
@@ -75,8 +74,11 @@ export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, on
           <button type="button" className="secondary day-preset-add" onClick={() => setPickerMeal(mealTypes[0])}><Icon name="add" />Agregar alimento o receta</button>
         </div> : <div className="day-presets-content">
           <div className="day-preset-save">
-            <div><h3>Guardar este día</h3><p>Podés reutilizar esta combinación de comidas cuando quieras.</p></div>
-            <div className="day-presets-save-fields"><label className="day-preset-name"><span>Nombre del preset</span><input value={name} maxLength={120} placeholder="Ej.: Día de entrenamiento" disabled={saving} onChange={(event) => { setName(event.target.value); setError(""); }} /></label><button type="button" className="primary" disabled={saving || !currentItems.length} onClick={saveDay}><Icon name="bookmark_add" />{saving ? "Guardando…" : "Guardar día"}</button></div>
+            <button type="button" className="day-preset-save-toggle" aria-expanded={showSaveForm} onClick={() => { setShowSaveForm((current) => !current); setError(""); }}>
+              <span><strong>Guardar este día</strong><small>Creá un preset con las comidas de {readableDate(date)}.</small></span>
+              <Icon name={showSaveForm ? "expand_less" : "expand_more"} />
+            </button>
+            {showSaveForm && <div className="day-presets-save-fields"><label className="day-preset-name"><span>Nombre del preset</span><input value={name} maxLength={120} placeholder="Ej.: Día de entrenamiento" disabled={saving} onChange={(event) => { setName(event.target.value); setError(""); }} /></label><button type="button" className="primary" disabled={saving || !currentItems.length} onClick={saveDay}><Icon name="bookmark_add" />{saving ? "Guardando…" : "Guardar día"}</button></div>}
           </div>
           <div className="day-presets-list-area">
             {applyTarget && <div className="day-preset-choice"><strong>Este día ya tiene alimentos</strong><span>¿Querés sumar {applyTarget.name} o reemplazar lo que ya cargaste?</span><div><button type="button" className="secondary" disabled={saving} onClick={() => applyPreset(applyTarget, false)}>Sumar al día</button><button type="button" className="primary" disabled={saving} onClick={() => applyPreset(applyTarget, true)}>Reemplazar día</button><button type="button" className="text-button" onClick={() => setApplyTarget(null)}>Cancelar</button></div></div>}

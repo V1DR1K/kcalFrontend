@@ -1,21 +1,24 @@
 .day-presets-actions {
-  display: grid;
-  gap: 16px;
+  display: block;
   margin-top: 18px;
-  padding: 20px;
+  padding: 0;
   border: 1px solid var(--outline);
   border-radius: var(--radius-panel);
   background: var(--surface-low);
+  overflow: hidden;
 }
-.day-presets-actions h2 { margin: 0 0 4px; font-size: var(--type-heading-sm); }
-.day-presets-actions p { margin: 0; color: var(--muted); font-size: var(--type-small); }
-.day-presets-buttons { display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px; }
+.day-presets-trigger { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 82px; padding: 18px 20px; border: 0; background: transparent; color: var(--text); text-align: left; }
+.day-presets-trigger > span { display: grid; gap: 4px; min-width: 0; }
+.day-presets-trigger strong { font-size: var(--type-heading-sm); }
+.day-presets-trigger small { color: var(--muted); font-size: var(--type-small); }
+.day-presets-trigger > .material-symbols-outlined { flex: 0 0 auto; color: var(--primary); }
+.day-presets-trigger:hover { background: color-mix(in srgb, var(--primary) 7%, transparent); }
 .day-preset-name, .day-preset-edit-name { display: grid; gap: 5px; min-width: 0; }
 .day-preset-name span, .day-preset-edit-name span, .day-preset-item-fields span { color: var(--muted); font-size: var(--type-meta); font-weight: 800; }
 .day-preset-name input, .day-preset-edit-name input, .day-preset-item-fields input, .day-preset-item-fields select { width: 100%; min-height: 46px; border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-high); color: var(--text); padding: 0 12px; }
-.day-presets-buttons button, .day-presets-editor-head button, .day-preset-card-actions button { min-height: 46px; }
+.day-presets-editor-head button, .day-preset-card-actions button { min-height: 46px; }
 .day-presets-backdrop { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: 20px; background: var(--scrim-modal); }
-.day-presets-modal { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 16px; width: min(720px, 100%); max-height: min(840px, calc(100dvh - 40px)); overflow: hidden; padding: 24px; border: 1px solid var(--outline); border-radius: var(--radius-modal); background: linear-gradient(180deg, var(--surface-low), var(--surface)); box-shadow: var(--shadow-dialog); }
+.day-presets-modal { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 16px; width: min(720px, 100%); max-height: min(840px, calc(100dvh - 40px)); overflow: hidden; padding: 12px; border: 1px solid var(--outline); border-radius: var(--radius-modal); background: linear-gradient(180deg, var(--surface-low), var(--surface)); box-shadow: var(--shadow-dialog); }
 .day-presets-modal > header { display: flex; justify-content: space-between; gap: 16px; }
 .day-presets-modal > header > div { min-width: 0; }
 .day-presets-modal > header span { color: var(--primary); font-size: var(--type-meta); font-weight: 800; }
@@ -24,9 +27,12 @@
 .day-presets-content, .day-preset-editor-body { display: grid; min-height: 0; gap: 16px; overflow: hidden; }
 .day-presets-content { grid-template-rows: auto minmax(0, 1fr); }
 .day-preset-editor-body { grid-template-rows: auto auto minmax(0, 1fr) auto; }
-.day-preset-save { display: grid; gap: 10px; padding: 14px; border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--outline)); border-radius: var(--radius-panel); background: var(--primary-soft); }
-.day-preset-save h3 { margin: 0 0 3px; font-size: var(--type-body-emphasis); }
-.day-preset-save p { margin: 0; color: var(--muted); font-size: var(--type-small); }
+.day-preset-save { display: grid; gap: 10px; padding: 10px; border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--outline)); border-radius: var(--radius-panel); background: var(--primary-soft); }
+.day-preset-save-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 4px; border: 0; background: transparent; color: var(--text); text-align: left; }
+.day-preset-save-toggle span { display: grid; gap: 2px; min-width: 0; }
+.day-preset-save-toggle strong { font-size: var(--type-body-emphasis); }
+.day-preset-save-toggle small { color: var(--muted); font-size: var(--type-small); }
+.day-preset-save-toggle > .material-symbols-outlined { flex: 0 0 auto; color: var(--primary); }
 .day-presets-save-fields { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
 .day-presets-save-fields button { min-height: 46px; }
 .day-presets-list-area { display: flex; flex-direction: column; min-height: 0; gap: 10px; overflow: hidden; }
@@ -60,8 +66,7 @@
 .danger-text { color: var(--error) !important; }
 .day-presets-modal > footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
 @media (max-width: 720px) {
-  .day-presets-actions { padding: 16px; }
-  .day-presets-buttons { grid-template-columns: 1fr 1fr; }
+  .day-presets-trigger { min-height: 74px; padding: 14px 16px; }
   .day-preset-card { align-items: flex-start; flex-direction: column; }
   .day-preset-card-main { width: 100%; }
   .day-preset-nutrition { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -73,8 +78,6 @@
   .day-preset-choice .text-button { grid-column: 1 / -1; justify-content: center; }
 }
 @media (max-width: 390px) {
-  .day-presets-buttons { grid-template-columns: 1fr; }
-  .day-presets-buttons button { width: 100%; }
   .day-presets-save-fields { grid-template-columns: 1fr; }
   .day-preset-item-fields { grid-template-columns: 1fr; }
   .day-preset-item-fields label:first-child { grid-column: auto; }

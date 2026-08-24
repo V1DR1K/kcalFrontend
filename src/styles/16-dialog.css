@@ -77,8 +77,10 @@
 .app-modal-surface[class] > footer,
 .app-modal-surface[class] > .modal-shell-footer {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
   border-top: 1px solid var(--outline);
   background: var(--surface-low);
 }
@@ -105,12 +107,15 @@
   }
   .app-modal-surface[class] > footer,
   .app-modal-surface[class] > .modal-shell-footer {
-    display: grid;
-    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: stretch;
     padding: var(--space-3) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
   }
   .app-modal-surface[class] > footer button,
-  .app-modal-surface[class] > .modal-shell-footer button { min-width: 0; min-height: 50px; }
+  .app-modal-surface[class] > .modal-shell-footer button { flex: 1 1 0; min-width: 0; min-height: 50px; }
+  .app-modal-surface[class] > footer button:only-child,
+  .app-modal-surface[class] > .modal-shell-footer button:only-child { flex-basis: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
