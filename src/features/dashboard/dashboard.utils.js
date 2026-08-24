@@ -1,6 +1,7 @@
 import { formatNumber } from "../../utils/format";
 import { preparationLabel } from "../catalog/CatalogComponents";
 import { normalizeMealLogReference } from "./mealLogPayload";
+export { mealTotals } from "./nutritionTotals.js";
 
 export function isCopyableMealLog(log) { return ["FOOD", "RECIPE"].includes(log?.itemType || log?.type); }
 
@@ -25,8 +26,6 @@ export function macroValue(log, key) {
   if (key === "FAT") return Number(log.fatGrams || 0);
   return 0;
 }
-
-export function mealTotals(items) { return items.reduce((totals, item) => ({ calories: totals.calories + Number(item.calories || 0), proteinGrams: totals.proteinGrams + Number(item.proteinGrams || 0), carbsGrams: totals.carbsGrams + Number(item.carbsGrams || 0), fatGrams: totals.fatGrams + Number(item.fatGrams || 0) }), { calories: 0, proteinGrams: 0, carbsGrams: 0, fatGrams: 0 }); }
 
 export async function createMealLogs(api, logs, mealType, logDate) {
   if (logs.some((log) => !isCopyableMealLog(log))) throw new Error("Las estimaciones por foto no se pueden copiar como una comida guardada.");

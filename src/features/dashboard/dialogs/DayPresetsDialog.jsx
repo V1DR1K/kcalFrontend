@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Icon } from "../../../components/Icon";
 import { ModalRoot } from "../../../components/dialog/ModalRoot";
 import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycle";
-import { mealLogName } from "../dashboard.utils";
-import { readableDate } from "../../../utils/format";
+import { mealLogName, mealTotals } from "../dashboard.utils";
+import { formatNumber, readableDate } from "../../../utils/format";
 
 function presetItemFromLog(log, mealType) {
   const itemType = log.itemType || log.type;
@@ -23,7 +23,7 @@ export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, on
   const currentItems = (data?.meals || []).flatMap((meal) => (meal.items || []).map((log) => presetItemFromLog(log, meal.mealType)));
   const { dialogRef, onBackdropPointerDown } = useDialogLifecycle({ open, onClose: () => closeModal(), trapFocus: !pickerMeal });
 
-  function closeModal() { if (saving) return; onClose(); setEditor(null); setPickerMeal(null); setApplyTarget(null); setError(""); }
+  function closeModal() { if (saving) return; onClose(); setName(""); setEditor(null); setPickerMeal(null); setApplyTarget(null); setError(""); }
   async function saveDay() {
     if (saving) return;
     const trimmed = name.trim();
@@ -57,16 +57,15 @@ export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, on
     <section className="day-presets-actions" aria-label="Presets de alimentación">
       <div><h2>Reutilizá tu día</h2><p>Guardá esta combinación de comidas para volver a aplicarla cuando quieras.</p></div>
       <div className="day-presets-buttons">
-        <label className="day-preset-name"><span>Nombre del preset</span><input value={name} maxLength={120} placeholder="Ej.: Día de entrenamiento" onChange={(event) => { setName(event.target.value); setError(""); }} /></label>
-        <button type="button" className="primary" disabled={saving || !currentItems.length} onClick={saveDay}><Icon name="bookmark_add" />{saving ? "Guardando…" : "Guardar día"}</button>
+        <button type="button" className="primary" disabled={saving || !currentItems.length} onClick={onOpen}><Icon name="bookmark_add" />Guardar día</button>
         <button type="button" className="secondary" onClick={onOpen}><Icon name="calendar_view_day" />Aplicar día</button>
       </div>
       {error && !open && <p className="day-preset-error" role="alert">{error}</p>}
     </section>
     {open && <ModalRoot className="app-modal-backdrop day-presets-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
       <section ref={dialogRef} className="app-modal-surface day-presets-modal" role="dialog" aria-modal="true" aria-labelledby="day-presets-title" onPointerDown={(event) => event.stopPropagation()}>
-        <header><div><span>Presets de alimentación</span><h2 id="day-presets-title">Aplicar día</h2><small>Elegí una rutina completa para {readableDate(date)}.</small></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={closeModal}><Icon name="close" /></button></header>
-        {editor ? <>
+        <header><div><span>Presets de alimentación</span><h2 id="day-presets-title">Reutilizá tu día</h2><small>Guardá o elegí una rutina completa para {readableDate(date)}.</small></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={closeModal}><Icon name="close" /></button></header>
+        {editor ? <div className="day-preset-editor-body">
           <div className="day-presets-editor-head"><button type="button" className="text-button" onClick={() => { setEditor(null); setError(""); }}><Icon name="arrow_back" />Volver a presets</button><button type="button" className="primary" disabled={saving} onClick={saveEditor}>{saving ? "Guardando…" : "Guardar cambios"}</button></div>
           <label className="day-preset-edit-name"><span>Nombre</span><input value={editor.name} maxLength={120} onChange={(event) => setEditor((current) => ({ ...current, name: event.target.value }))} /></label>
           <div className="day-preset-items">{editor.items.map((item, index) => <article className="day-preset-item" key={`${item.itemType}:${item.itemId || item.displayName}:${index}`}>
@@ -74,11 +73,17 @@ export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, on
             <div className="day-preset-item-fields"><label><span>Comida</span><select value={item.mealType} onChange={(event) => setEditor((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, mealType: event.target.value } : entry) }))}>{mealTypes.map((meal) => <option key={meal.code} value={meal.code}>{meal.label}</option>)}</select></label><label><span>Cantidad</span><input inputMode="decimal" value={item.quantity} onChange={(event) => setEditor((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, quantity: event.target.value } : entry) }))} /></label><label><span>Unidad</span><select value={item.unit} onChange={(event) => setEditor((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, unit: event.target.value } : entry) }))}><option value="GRAM">Gramos</option><option value="PORTION">Porciones</option><option value="UNIT">Unidades</option><option value="MILLILITER">Mililitros</option></select></label></div>
           </article>)}</div>
           <button type="button" className="secondary day-preset-add" onClick={() => setPickerMeal(mealTypes[0])}><Icon name="add" />Agregar alimento o receta</button>
-        </> : <>
-          {applyTarget && <div className="day-preset-choice"><strong>Este día ya tiene alimentos</strong><span>¿Querés sumar {applyTarget.name} o reemplazar lo que ya cargaste?</span><div><button type="button" className="secondary" disabled={saving} onClick={() => applyPreset(applyTarget, false)}>Sumar al día</button><button type="button" className="primary" disabled={saving} onClick={() => applyPreset(applyTarget, true)}>Reemplazar día</button><button type="button" className="text-button" onClick={() => setApplyTarget(null)}>Cancelar</button></div></div>}
-          {!presets.length && <div className="day-presets-empty"><Icon name="bookmark_border" /><strong>Todavía no hay presets</strong><span>Guardá tu día para tenerlo a mano en el futuro.</span></div>}
-          <div className="day-presets-list">{presets.map((preset) => <article className="day-preset-card" key={preset.id}><div><h3>{preset.name}</h3><p>{preset.itemCount} {preset.itemCount === 1 ? "elemento" : "elementos"} · {(preset.mealCounts?.BREAKFAST || 0) + (preset.mealCounts?.LUNCH || 0) + (preset.mealCounts?.AFTERNOON_SNACK || 0) + (preset.mealCounts?.DINNER || 0)} comidas</p></div><div className="day-preset-card-actions"><button type="button" className="primary" disabled={saving} onClick={() => hasItems ? setApplyTarget(preset) : applyPreset(preset, false)}>Aplicar</button><button type="button" className="icon-button" aria-label={`Editar ${preset.name}`} onClick={() => { setEditor({ ...preset, items: preset.items.map((item) => ({ ...item })) }); setApplyTarget(null); setError(""); }}><Icon name="edit" /></button><button type="button" className="icon-button danger-text" aria-label={`Borrar ${preset.name}`} onClick={() => deletePreset(preset)}><Icon name="delete" /></button></div></article>)}</div>
-        </>}
+        </div> : <div className="day-presets-content">
+          <div className="day-preset-save">
+            <div><h3>Guardar este día</h3><p>Podés reutilizar esta combinación de comidas cuando quieras.</p></div>
+            <div className="day-presets-save-fields"><label className="day-preset-name"><span>Nombre del preset</span><input value={name} maxLength={120} placeholder="Ej.: Día de entrenamiento" disabled={saving} onChange={(event) => { setName(event.target.value); setError(""); }} /></label><button type="button" className="primary" disabled={saving || !currentItems.length} onClick={saveDay}><Icon name="bookmark_add" />{saving ? "Guardando…" : "Guardar día"}</button></div>
+          </div>
+          <div className="day-presets-list-area">
+            {applyTarget && <div className="day-preset-choice"><strong>Este día ya tiene alimentos</strong><span>¿Querés sumar {applyTarget.name} o reemplazar lo que ya cargaste?</span><div><button type="button" className="secondary" disabled={saving} onClick={() => applyPreset(applyTarget, false)}>Sumar al día</button><button type="button" className="primary" disabled={saving} onClick={() => applyPreset(applyTarget, true)}>Reemplazar día</button><button type="button" className="text-button" onClick={() => setApplyTarget(null)}>Cancelar</button></div></div>}
+            {!presets.length && <div className="day-presets-empty"><Icon name="bookmark_border" /><strong>Todavía no hay presets</strong><span>Guardá tu día para tenerlo a mano en el futuro.</span></div>}
+            <div className="day-presets-list">{presets.map((preset) => { const totals = mealTotals(preset.items || []); return <article className="day-preset-card" key={preset.id}><div className="day-preset-card-main"><div><h3>{preset.name}</h3><p>{preset.itemCount} {preset.itemCount === 1 ? "elemento" : "elementos"} · {(preset.mealCounts?.BREAKFAST || 0) + (preset.mealCounts?.LUNCH || 0) + (preset.mealCounts?.AFTERNOON_SNACK || 0) + (preset.mealCounts?.DINNER || 0)} comidas</p></div><div className="day-preset-nutrition" aria-label={`Totales de ${preset.name}`}><span><small>Kcal</small><strong>{formatNumber(totals.calories)}</strong></span><span><small>Proteínas</small><strong>{formatNumber(totals.proteinGrams, 1)} g</strong></span><span><small>Carbohidratos</small><strong>{formatNumber(totals.carbsGrams, 1)} g</strong></span><span><small>Grasas</small><strong>{formatNumber(totals.fatGrams, 1)} g</strong></span></div></div><div className="day-preset-card-actions"><button type="button" className="primary" disabled={saving} onClick={() => hasItems ? setApplyTarget(preset) : applyPreset(preset, false)}>Aplicar</button><button type="button" className="icon-button" aria-label={`Editar ${preset.name}`} onClick={() => { setEditor({ ...preset, items: preset.items.map((item) => ({ ...item })) }); setApplyTarget(null); setError(""); }}><Icon name="edit" /></button><button type="button" className="icon-button danger-text" aria-label={`Borrar ${preset.name}`} onClick={() => deletePreset(preset)}><Icon name="delete" /></button></div></article>; })}</div>
+          </div>
+        </div>}
         {error && <p className="day-preset-error" role="alert">{error}</p>}
         <footer><button type="button" className="secondary" onClick={closeModal}>Cerrar</button></footer>
         {pickerMeal && <FoodPickerComponent api={api} user={user} mealType={pickerMeal} selectedDate={date} draftOnly onDraftAdd={addPresetItem} onClose={() => setPickerMeal(null)} onDone={() => {}} onOptimisticAdd={() => []} onOptimisticRollback={() => {}} />}
