@@ -142,8 +142,13 @@
   }
 
   .app-modal-surface:not(.app-modal-compact)[class] {
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-left: max(var(--space-4), calc(var(--space-4) + env(safe-area-inset-left)));
+    padding-right: max(var(--space-4), calc(var(--space-4) + env(safe-area-inset-right)));
+  }
+
+  .app-modal-surface.picker-modal[class] {
+    padding-left: max(var(--space-3), calc(var(--space-3) + env(safe-area-inset-left)));
+    padding-right: max(var(--space-3), calc(var(--space-3) + env(safe-area-inset-right)));
   }
 
   .app-modal-surface[class] > header,

@@ -46,9 +46,10 @@ test("keeps photo actions in one compact mobile row", async ({ page }) => {
       const rect = trigger.getBoundingClientRect();
       return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
     });
-    return { display: getComputedStyle(element).display, buttons };
+    return { display: getComputedStyle(element).display, paddingLeft: parseFloat(getComputedStyle(element.closest(".picker-modal")).paddingLeft), buttons };
   });
   expect(layout.display).toBe("grid");
+  expect(layout.paddingLeft).toBeGreaterThanOrEqual(12);
   expect(layout.buttons).toHaveLength(2);
   expect(layout.buttons[1].top).toBe(layout.buttons[0].top);
   expect(layout.buttons[0].height).toBeGreaterThanOrEqual(48);
