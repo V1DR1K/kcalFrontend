@@ -8,6 +8,7 @@ import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { EditRecipeModal, SwipeableRecipeCard } from "../foods/FoodComponents";
 import { RecipeDetailDialog } from "./dialogs/RecipeDetailDialog";
 import { RecipeCreateDialog } from "./dialogs/RecipeCreateDialog";
+import { NutritionSummary } from "../../components/NutritionSummary";
 
 export function Recipes({ api, setPage, embedded = false }) {
   const [tab, setTab] = useState("mine");
@@ -226,7 +227,7 @@ function ExploreOwnerRecipes({ api, owner, onBack }) {
             <button type="button" className={`explore-recipe-card ${loadingRecipeId === recipe.id ? "loading" : ""}`} key={recipe.id} onClick={() => openRecipe(recipe)} disabled={Boolean(loadingRecipeId)}>
               <FoodThumb item={{ ...recipe, type: "RECIPE" }} compact />
               <span><strong>{recipe.name}</strong><small>{recipe.description || "Receta completa"}</small></span>
-              <b>{recipe.calories} kcal</b>
+              <NutritionSummary nutrition={recipe} />
               <Icon name="chevron_right" />
             </button>
           ))}

@@ -31,9 +31,18 @@ export function RecipeCreateDialog({ api, onClose, onDone }) {
       className="recipe-create-dialog"
       backdropClassName="recipe-create-backdrop"
       wrapContent={false}
+      footer={(
+        <div className="recipe-dialog-actions">
+          <button type="button" className="secondary" onClick={requestClose} disabled={busy}>Cancelar</button>
+          <button type="submit" form="create-recipe-form" className="primary" disabled={busy}>{busy ? "Creando…" : "Crear receta"}</button>
+        </div>
+      )}
     >
       <div className="recipe-create-content" data-dialog-scroll-owner="true">
         <CreateRecipeForm
+          id="create-recipe-form"
+          hideSubmit
+          title={null}
           api={api}
           onDirtyChange={setDirty}
           onBusyChange={setBusy}

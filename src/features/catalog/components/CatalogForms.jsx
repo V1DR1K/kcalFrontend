@@ -11,7 +11,7 @@ import { DerivedCaloriesHint, OcrNutritionPreview } from "./OcrNutritionPreview"
 import { OCR_MACRO_FIELDS } from "../utils/catalog.utils";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 
-export function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode, onDirtyChange, onBusyChange }) {
+export function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode, onDirtyChange, onBusyChange, id, hideSubmit = false, title = "Nuevo alimento" }) {
   const [saving, setSaving] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [ocrStatus, setOcrStatus] = useState("");
@@ -106,8 +106,8 @@ export function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode, onDir
   }
   const ocrStatusClass = scanning ? "loading" : ocrData || ocrStatus.startsWith("Valores aplicados") ? "ok" : "bad";
   return (
-    <Panel title="Nuevo alimento">
-      <form className="form-grid" ref={formRef} onInput={() => onDirtyChange?.(true)} onSubmit={submit}>
+    <Panel title={title}>
+        <form id={id} className="form-grid" ref={formRef} onInput={() => onDirtyChange?.(true)} onSubmit={submit}>
         {ocrStatus && (
           <div className={`ocr-status ${ocrStatusClass}`} role="status" aria-live="polite" aria-busy={scanning}>
             {scanning ? <span className="ocr-loading" /> : null}
@@ -159,9 +159,9 @@ export function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode, onDir
           <DerivedCaloriesHint />
         </div>
         <Input name="tags" label="Tags separados por coma" />
-        <button className="primary" disabled={saving || scanning}>
+        {!hideSubmit && <button className="primary" disabled={saving || scanning}>
           {saving ? "Creando…" : "Crear alimento"}
-        </button>
+        </button>}
       </form>
     </Panel>
   );
@@ -176,7 +176,7 @@ function recipeFieldLabel(field) {
   return field || "Datos";
 }
 
-export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone }) {
+export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id, hideSubmit = false, title = "Nueva receta" }) {
   const [query, setQuery] = useState("");
   const [ingredients, setIngredients] = useState([]);
   const [preview, setPreview] = useState(null);
@@ -267,8 +267,8 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone }) {
     }
   }
   return (
-    <Panel title="Nueva receta" className="recipe-panel">
-      <form className="form-grid recipe-form" onInput={() => onDirtyChange?.(true)} onSubmit={submit}>
+    <Panel title={title} className="recipe-panel">
+      <form id={id} className="form-grid recipe-form" onInput={() => onDirtyChange?.(true)} onSubmit={submit}>
         {formError && (
           <div className="form-error recipe-error" role="alert">
             <Icon name="error" />
@@ -308,10 +308,11 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone }) {
                 ]);
                 onDirtyChange?.(true);
               }}
-            >
-              <span>
+              >
+              <span className="ingredient-pick-copy">
                 <strong>{food.name}</strong>
-                <small>{food.calories} kcal / 100g</small>
+                <small>Por 100 g</small>
+                <NutritionSummary nutrition={food} />
               </span>
               <em><Icon name="add" />Agregar</em>
             </button>
@@ -342,9 +343,9 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone }) {
           ))}
         </div>
         <NutritionSummary nutrition={preview || {}} size="detail" />
-        <button className="primary recipe-submit" disabled={!ingredients.length || saving}>
+        {!hideSubmit && <button className="primary recipe-submit" disabled={!ingredients.length || saving}>
           {saving ? "Creando…" : "Crear receta"}
-        </button>
+        </button>}
       </form>
     </Panel>
   );

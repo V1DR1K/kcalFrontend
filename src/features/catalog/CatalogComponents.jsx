@@ -25,8 +25,10 @@ export function CatalogRow({ item, onPick }) {
   return (
     <button className="catalog-row" onClick={() => onPick(item)}>
       <span>{item.name}</span>
-      {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
-      <PreparationBadge food={item} />
+      {(foodMeta(item) || item.preparation) && <span className="catalog-meta">
+        {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
+        <PreparationBadge food={item} />
+      </span>}
       <NutritionSummary nutrition={item} />
     </button>
   );
@@ -48,8 +50,10 @@ export function CatalogRowWithImage({ item, onPick }) {
       <FoodThumb item={item} compact />
       <span className="catalog-copy">
         <strong>{item.name}</strong>
-        {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
-        <PreparationBadge food={item} />
+        {(foodMeta(item) || item.preparation) && <span className="catalog-meta">
+          {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
+          <PreparationBadge food={item} />
+        </span>}
         <NutritionSummary nutrition={item} />
       </span>
        <Icon name="chevron_right" className="row-action" />

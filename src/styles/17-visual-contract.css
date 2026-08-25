@@ -68,14 +68,25 @@
 .macro-card.macro-carbs .bar span { background: var(--tertiary); }
 .macro-card.macro-fat .bar span { background: var(--warning); }
 
-.my-food-row { grid-template-columns: 42px minmax(0, 1fr) minmax(230px, .8fr) auto; }
+.my-foods-toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+.my-foods-toolbar > span { color: var(--muted); font-size: 12px; }
+.my-foods-toolbar .primary { min-height: 42px; padding-inline: 12px; }
+.my-food-row { grid-template-columns: 42px minmax(0, 1fr) auto; }
 .my-food-row .food-thumb.compact { width: 42px; height: 42px; border-radius: var(--radius-control); }
-.my-food-row .nutrition-summary { width: 100%; }
+.my-food-row .catalog-copy { padding-block: 1px; }
+.my-food-row > .catalog-copy { color: inherit; font-size: inherit; white-space: normal; }
+.my-food-row .nutrition-summary { width: 100%; margin-top: 1px; }
+.my-food-row .food-card-menu { justify-self: end; }
+.my-food-row-deleted .restore-food-button { min-height: 42px; }
 
 .recipe-swipe-card { grid-template-columns: 64px minmax(0, 1fr) minmax(230px, .8fr) auto; }
 .recipe-swipe-card .nutrition-summary { width: 100%; }
 .recipe-swipe-card > .nutrition-summary > span { background: var(--surface-low); }
 .recipe-swipe-card > .nutrition-summary > .nutrition-kcal { background: color-mix(in srgb, var(--primary) 9%, var(--surface-low)); }
+.recipes-page { align-content: start; }
+.recipes-page .tabs { align-self: start; }
+.explore-recipe-card { grid-template-columns: 48px minmax(0, 1fr) minmax(230px, .8fr) auto; }
+.explore-recipe-card .nutrition-summary { width: 100%; }
 
 .configure-preview { display: grid; gap: 0; }
 .configure-preview .nutrition-summary { width: 100%; }
@@ -92,16 +103,95 @@
 .my-foods-loading::before,
 .my-foods-loading::after { display: block; height: 62px; border-radius: var(--radius-compact); background: var(--surface-high); content: ""; }
 
+/* Dialog collections should hug their content instead of stretching one result to fill the viewport. */
+.picker-results,
+.recent-meals,
+.recipe-list,
+.my-foods-list,
+.catalog-dialog-content,
+.catalog-dialog-content > [role="tabpanel"],
+.register-collection-content,
+.recipe-create-content,
+.recipe-form {
+  align-content: start;
+}
+
+.picker-results > *,
+.catalog-row,
+.ingredient-pick,
+.my-food-row,
+.recipe-swipe-row,
+.explore-recipe-card {
+  align-self: start;
+}
+
+.catalog-dialog,
+.recipe-create-dialog {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0;
+  padding: 0;
+}
+
+.catalog-dialog-content,
+.recipe-create-content {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  scroll-padding-block: var(--space-5) 112px;
+}
+
+.catalog-dialog-content > [data-dialog-scroll-owner="true"] { min-height: 0; }
+.catalog-dialog-content .panel,
+.recipe-create-content .panel { min-height: 0; }
+.catalog-dialog-content .panel > h2,
+.recipe-create-content .panel > h2 { display: none; }
+
+.catalog-dialog-actions,
+.recipe-dialog-actions {
+  display: grid;
+  grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr);
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.catalog-dialog-actions button,
+.recipe-dialog-actions button { min-width: 0; }
+
+.ingredient-pick-copy { display: grid; gap: 3px; min-width: 0; }
+.ingredient-pick-copy > small { color: var(--muted); }
+.ingredient-pick-copy .nutrition-summary { margin-top: 3px; }
+.catalog-row { align-content: start; }
+.ingredient-pick { align-items: center; }
+.ingredient-pick > em { align-self: center; }
+.recipe-form .picker-results { max-height: none; overflow: visible; }
+.recipe-form .picker-results > .catalog-row { min-height: 0; }
+
+.my-foods-embedded { padding: 0; border: 0; background: transparent; box-shadow: none; }
+.register-collection-content .my-foods-panel > h2 { display: none; }
+.register-collection-dialog { padding: 0; }
+.register-collection-content { padding: var(--space-4) var(--space-5) var(--space-5); }
+.register-collection-content .page { gap: var(--space-4); }
+.register-collection-content .panel { padding: 0; border: 0; background: transparent; box-shadow: none; }
+
+@media (max-width: 720px) {
+  .catalog-dialog-content,
+  .recipe-create-content { padding: var(--space-4) var(--space-3) var(--space-4); }
+  .catalog-dialog-actions,
+  .recipe-dialog-actions { gap: var(--space-2); }
+  .register-collection-content { padding: var(--space-3); }
+}
+
 @media (max-width: 900px) {
   .nutrition-summary-detail { grid-template-columns: minmax(62px, 1.15fr) repeat(3, minmax(44px, 1fr)); }
   .nutrition-summary-detail > span { min-height: 48px; padding: 8px 7px; }
   .nutrition-summary-detail .nutrition-kcal strong { font-size: 20px; }
   .my-food-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
-  .my-food-row .nutrition-summary { grid-column: 2 / -1; }
-  .my-food-row .food-card-menu { grid-column: 3; grid-row: 1; }
-  .my-food-row .food-thumb.compact { width: 40px; height: 40px; grid-row: 1 / span 2; }
+  .my-food-row .food-thumb.compact { width: 40px; height: 40px; }
   .recipe-swipe-card { grid-template-columns: 52px minmax(0, 1fr) auto; }
   .recipe-swipe-card .nutrition-summary { grid-column: 2 / -1; }
+  .explore-recipe-card { grid-template-columns: 48px minmax(0, 1fr) auto; }
+  .explore-recipe-card .nutrition-summary { grid-column: 2 / -1; }
+  .explore-recipe-card > .material-symbols-outlined { grid-column: 3; grid-row: 1 / span 2; }
 }
 
 @media (max-width: 520px) {
@@ -112,11 +202,12 @@
   .nutrition-summary .nutrition-kcal strong { font-size: 15px; }
   .nutrition-summary-detail > span { min-height: 46px; padding: 7px 5px; }
   .nutrition-summary-detail .nutrition-kcal strong { font-size: 18px; }
+  .my-foods-toolbar { align-items: stretch; flex-direction: column; }
+  .my-foods-toolbar .primary { width: 100%; }
   .my-food-row { grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 8px; }
-  .my-food-row .nutrition-summary { grid-column: 2 / -1; }
-  .my-food-row .food-card-menu { grid-column: 3; }
-  .my-food-row-deleted .nutrition-summary { grid-column: 2 / -1; }
-  .my-food-row-deleted .restore-food-button { grid-column: 2 / -1; width: 100%; }
+  .my-food-row .food-card-menu { grid-column: 3; grid-row: 1; }
+  .my-food-row-deleted { grid-template-columns: 40px minmax(0, 1fr); }
+  .my-food-row-deleted .restore-food-button { grid-column: 2; width: 100%; }
   .scanner-result.show { grid-template-columns: minmax(0, 1fr); }
   .scanner-result.show > .primary { grid-column: 1; justify-self: stretch; }
 }

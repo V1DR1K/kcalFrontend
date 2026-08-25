@@ -687,6 +687,7 @@ select:focus,
 }
 
 .meal-card.action-surface::before {
+  display: none;
   border-radius: inherit;
   clip-path: inset(0 round var(--radius-surface));
 }

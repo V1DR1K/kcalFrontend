@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ModalShell } from "../../components/dialog/ModalShell";
-import { MyFoods as MyFoodsPanel } from "./components/MyFoodsPanel";
 import { CreateFoodForm } from "./components/CatalogForms";
 export { MyFoods } from "./components/MyFoodsPanel";
 
 export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClose }) {
-  const [tab, setTab] = useState("FOOD");
   const [dirtyState, setDirtyState] = useState({ food: false });
   const [busyState, setBusyState] = useState({ food: false });
   const dirty = Object.values(dirtyState).some(Boolean);
@@ -50,7 +48,7 @@ export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClos
 
   return (
     <ModalShell
-      title="Crear alimentos"
+      title="Crear alimento"
       eyebrow="Catálogo"
       onClose={requestClose}
       closeLabel="Cerrar registro"
@@ -58,17 +56,16 @@ export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClos
       className="catalog-dialog"
       backdropClassName="catalog-dialog-backdrop"
       wrapContent={false}
-    >
-        <div className="catalog-dialog-tabs tabs" role="tablist" aria-label="Opciones del catálogo">
-          <button type="button" role="tab" aria-selected={tab === "FOOD"} aria-controls="catalog-panel-food" id="catalog-tab-food" className={tab === "FOOD" ? "selected" : ""} onClick={() => setTab("FOOD")}>Alimento</button>
-          <button type="button" role="tab" aria-selected={tab === "MINE"} aria-controls="catalog-panel-mine" id="catalog-tab-mine" className={tab === "MINE" ? "selected" : ""} onClick={() => setTab("MINE")}>Mis alimentos</button>
+      footer={(
+        <div className="catalog-dialog-actions">
+          <button type="button" className="secondary" onClick={requestClose} disabled={busy}>Cancelar</button>
+          <button type="submit" form="create-food-form" className="primary" disabled={busy}>{busy ? "Creando…" : "Crear alimento"}</button>
         </div>
+      )}
+    >
         <div className="catalog-dialog-content">
-          <div id="catalog-panel-food" data-dialog-scroll-owner="true" role="tabpanel" aria-labelledby="catalog-tab-food" hidden={tab !== "FOOD"}>
-            <CreateFoodForm api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, food: value }))} />
-          </div>
-          <div id="catalog-panel-mine" data-dialog-scroll-owner="true" role="tabpanel" aria-labelledby="catalog-tab-mine" hidden={tab !== "MINE"}>
-            <MyFoodsPanel api={api} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} />
+          <div id="catalog-panel-food" data-dialog-scroll-owner="true">
+            <CreateFoodForm id="create-food-form" hideSubmit title={null} api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, food: value }))} />
           </div>
         </div>
     </ModalShell>

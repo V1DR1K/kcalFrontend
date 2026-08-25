@@ -167,7 +167,7 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
           wrapContent={false}
         >
           <div className="register-collection-content" data-dialog-scroll-owner="true">
-            <MyFoodsComponent api={api} setPage={setPage} embedded />
+              <MyFoodsComponent api={api} setPage={setPage} embedded onCreateFood={openCatalog} />
           </div>
         </ModalShell>
       );
