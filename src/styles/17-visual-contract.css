@@ -1,0 +1,122 @@
+/* Shared content contract: the value leads, context follows, and nutrition reads the same everywhere. */
+.nutrition-summary {
+  display: grid;
+  grid-template-columns: minmax(58px, 1.15fr) repeat(3, minmax(42px, .8fr));
+  gap: 1px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 1px;
+  border: 1px solid color-mix(in srgb, var(--outline) 78%, transparent);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--outline) 78%, transparent);
+}
+
+.nutrition-summary > span {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 7px 8px;
+  background: var(--surface-low);
+}
+
+.nutrition-summary small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nutrition-summary strong {
+  color: var(--text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.nutrition-summary .nutrition-kcal {
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface-low));
+}
+
+.nutrition-summary .nutrition-kcal strong {
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: -.02em;
+}
+
+.nutrition-summary .nutrition-protein strong { color: var(--primary); }
+.nutrition-summary .nutrition-carbs strong { color: var(--tertiary); }
+.nutrition-summary .nutrition-fat strong { color: var(--warning); }
+
+.nutrition-summary-detail {
+  grid-template-columns: minmax(70px, 1.2fr) repeat(3, minmax(50px, 1fr));
+}
+
+.nutrition-summary-detail > span { min-height: 52px; padding: 9px 10px; }
+.nutrition-summary-detail .nutrition-kcal strong { font-size: 22px; }
+.nutrition-summary-detail strong { font-size: 15px; }
+
+.macro-card .bar span { background: var(--primary); }
+.macro-card.macro-protein .bar span { background: var(--primary); }
+.macro-card.macro-carbs .bar span { background: var(--tertiary); }
+.macro-card.macro-fat .bar span { background: var(--warning); }
+
+.my-food-row { grid-template-columns: 42px minmax(0, 1fr) minmax(230px, .8fr) auto; }
+.my-food-row .food-thumb.compact { width: 42px; height: 42px; border-radius: var(--radius-control); }
+.my-food-row .nutrition-summary { width: 100%; }
+
+.recipe-swipe-card { grid-template-columns: 64px minmax(0, 1fr) minmax(230px, .8fr) auto; }
+.recipe-swipe-card .nutrition-summary { width: 100%; }
+.recipe-swipe-card > .nutrition-summary > span { background: var(--surface-low); }
+.recipe-swipe-card > .nutrition-summary > .nutrition-kcal { background: color-mix(in srgb, var(--primary) 9%, var(--surface-low)); }
+
+.configure-preview { display: grid; gap: 0; }
+.configure-preview .nutrition-summary { width: 100%; }
+
+.scanner-result.show > .nutrition-summary { grid-column: 1 / -1; }
+.scanner-result.show > .primary { justify-self: end; }
+.scanner-result-context { color: var(--muted); font-size: 12px; }
+
+.page-loading-stack { display: grid; gap: var(--space-4); }
+.page-loading-stack .skeleton { min-height: 96px; border-radius: var(--radius-panel); }
+.page-loading-stack .skeleton:first-child { min-height: 132px; }
+
+.my-foods-loading { display: grid; gap: var(--space-2); }
+.my-foods-loading::before,
+.my-foods-loading::after { display: block; height: 62px; border-radius: var(--radius-compact); background: var(--surface-high); content: ""; }
+
+@media (max-width: 900px) {
+  .nutrition-summary-detail { grid-template-columns: minmax(62px, 1.15fr) repeat(3, minmax(44px, 1fr)); }
+  .nutrition-summary-detail > span { min-height: 48px; padding: 8px 7px; }
+  .nutrition-summary-detail .nutrition-kcal strong { font-size: 20px; }
+  .my-food-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .my-food-row .nutrition-summary { grid-column: 2 / -1; }
+  .my-food-row .food-card-menu { grid-column: 3; grid-row: 1; }
+  .my-food-row .food-thumb.compact { width: 40px; height: 40px; grid-row: 1 / span 2; }
+  .recipe-swipe-card { grid-template-columns: 52px minmax(0, 1fr) auto; }
+  .recipe-swipe-card .nutrition-summary { grid-column: 2 / -1; }
+}
+
+@media (max-width: 520px) {
+  .nutrition-summary { grid-template-columns: minmax(52px, 1.1fr) repeat(3, minmax(38px, 1fr)); }
+  .nutrition-summary > span { min-height: 38px; padding: 6px 5px; }
+  .nutrition-summary small { font-size: 9px; }
+  .nutrition-summary strong { font-size: 12px; }
+  .nutrition-summary .nutrition-kcal strong { font-size: 15px; }
+  .nutrition-summary-detail > span { min-height: 46px; padding: 7px 5px; }
+  .nutrition-summary-detail .nutrition-kcal strong { font-size: 18px; }
+  .my-food-row { grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 8px; }
+  .my-food-row .nutrition-summary { grid-column: 2 / -1; }
+  .my-food-row .food-card-menu { grid-column: 3; }
+  .my-food-row-deleted .nutrition-summary { grid-column: 2 / -1; }
+  .my-food-row-deleted .restore-food-button { grid-column: 2 / -1; width: 100%; }
+  .scanner-result.show { grid-template-columns: minmax(0, 1fr); }
+  .scanner-result.show > .primary { grid-column: 1; justify-self: stretch; }
+}
