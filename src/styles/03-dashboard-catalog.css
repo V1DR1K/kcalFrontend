@@ -1218,8 +1218,8 @@ button:disabled {
 .picker-results {
   display: grid;
   gap: 8px;
-  max-height: 260px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .catalog-row {

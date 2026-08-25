@@ -7,7 +7,7 @@
 .history-preview-header small { color: var(--muted); }
 .history-preview-close { display: grid; flex: 0 0 auto; place-items: center; width: 42px; min-height: 42px; padding: 0; border: 1px solid var(--outline); border-radius: 50%; background: var(--surface-low); color: var(--text); cursor: pointer; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
 .history-preview-close:hover { transform: rotate(8deg) scale(1.06); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
-.history-preview-scroll { display: grid; gap: 18px; padding: 22px 24px 26px; overflow-y: auto; }
+.history-preview-scroll { display: grid; gap: 18px; padding: 22px 24px 26px; overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: 16px; -webkit-overflow-scrolling: touch; }
 .history-calorie-summary { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 22px; padding: 18px; border: 1px solid var(--outline); border-radius: 18px; background: var(--surface-low); }
 .history-calorie-ring { display: grid; place-content: center; width: 128px; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle closest-side, var(--surface-low) 79%, transparent 80% 100%), conic-gradient(var(--primary) var(--day-progress), var(--outline) 0); text-align: center; }
 .history-calorie-ring strong { font-size: 25px; line-height: 1; }

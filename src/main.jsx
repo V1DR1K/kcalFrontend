@@ -6,8 +6,12 @@ import { migrateStoredSession } from "./config/app";
 
 function syncVisualViewport() {
   const viewport = window.visualViewport;
-  document.documentElement.style.setProperty("--app-viewport-height", `${viewport?.height || window.innerHeight}px`);
-  document.documentElement.style.setProperty("--app-viewport-top", `${viewport?.offsetTop || 0}px`);
+  const height = `${viewport?.height || window.innerHeight}px`;
+  const top = `${viewport?.offsetTop || 0}px`;
+  document.documentElement.style.setProperty("--app-viewport-height", height);
+  document.documentElement.style.setProperty("--app-viewport-top", top);
+  document.documentElement.style.setProperty("--dialog-viewport-height", height);
+  document.documentElement.style.setProperty("--dialog-viewport-top", top);
 }
 
 syncVisualViewport();

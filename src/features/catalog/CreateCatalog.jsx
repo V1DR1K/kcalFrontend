@@ -16,9 +16,6 @@ export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClos
   dirtyRef.current = dirty;
   busyRef.current = busy;
   useEffect(() => {
-    const content = document.querySelector(".content");
-    const previousContentOverflow = content?.style.overflow;
-    if (content) content.style.overflow = "hidden";
     modalHistoryStateRef.current = { ...(window.history.state || {}), scalegramsModal: "catalog" };
     window.history.pushState(modalHistoryStateRef.current, "");
     function onPopState(event) {
@@ -33,7 +30,6 @@ export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClos
     }
     window.addEventListener("popstate", onPopState, true);
     return () => {
-      if (content) content.style.overflow = previousContentOverflow || "";
       window.removeEventListener("popstate", onPopState, true);
     };
   }, []);

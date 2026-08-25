@@ -36,7 +36,7 @@
 .day-presets-save-fields { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
 .day-presets-save-fields button { min-height: 46px; }
 .day-presets-list-area { display: flex; flex-direction: column; min-height: 0; gap: 10px; overflow: hidden; }
-.day-presets-list, .day-preset-items { min-height: 0; overflow: auto; display: grid; align-content: start; gap: 10px; padding: 2px 4px 4px 0; overscroll-behavior: contain; }
+.day-presets-list, .day-preset-items { min-height: 0; overflow: auto; display: grid; align-content: start; gap: 10px; padding: 2px 4px 4px 0; overscroll-behavior: contain; scroll-padding-block: 12px; -webkit-overflow-scrolling: touch; }
 .day-presets-list { flex: 1 1 auto; }
 .day-preset-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px; border: 1px solid var(--outline); border-radius: var(--radius-surface); background: var(--surface-inset); }
 .day-preset-card-main { display: grid; gap: 10px; min-width: 0; }
@@ -67,7 +67,7 @@
 .day-presets-modal > footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
 @media (max-width: 720px) {
   .day-presets-trigger { min-height: 74px; padding: 14px 16px; }
-  .day-preset-card { align-items: flex-start; flex-direction: column; }
+  .day-preset-card { align-items: flex-start; flex-direction: column; padding: 11px; }
   .day-preset-card-main { width: 100%; }
   .day-preset-nutrition { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .day-preset-card-actions { width: 100%; }

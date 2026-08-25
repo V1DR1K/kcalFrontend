@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 
 const activeDialogStack = [];
+let scrollLockDepth = 0;
+let previousBodyOverflow = "";
+let previousScrollRootOverflow = "";
+let lockedScrollRoot = null;
 
 const FOCUSABLE_SELECTOR = [
   "button:not([disabled])",
@@ -22,11 +26,31 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
     const dialogToken = {};
     activeDialogStack.push(dialogToken);
     previousFocusRef.current = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    if (lockScroll) document.body.style.overflow = "hidden";
+    if (lockScroll) {
+      if (scrollLockDepth === 0) previousBodyOverflow = document.body.style.overflow;
+      if (scrollLockDepth === 0) {
+        lockedScrollRoot = document.querySelector('[data-app-scroll-root="true"]');
+        previousScrollRootOverflow = lockedScrollRoot?.style.overflow || "";
+        if (lockedScrollRoot) lockedScrollRoot.style.overflow = "hidden";
+      }
+      scrollLockDepth += 1;
+      document.body.style.overflow = "hidden";
+    }
+
+    function revealFocusedControl() {
+      const target = document.activeElement;
+      if (!dialogRef.current?.contains(target)) return;
+      window.requestAnimationFrame(() => target.scrollIntoView?.({ block: "nearest", inline: "nearest" }));
+    }
 
     const focusTarget = initialFocusRef?.current || dialogRef.current?.querySelector(FOCUSABLE_SELECTOR);
-    focusTarget?.focus?.();
+    try {
+      focusTarget?.focus?.({ preventScroll: true });
+    } catch {
+      focusTarget?.focus?.();
+    }
+    dialogRef.current?.addEventListener("focusin", revealFocusedControl);
+    window.visualViewport?.addEventListener("resize", revealFocusedControl);
 
     function onKeyDown(event) {
       if (activeDialogStack[activeDialogStack.length - 1] !== dialogToken) return;
@@ -51,11 +75,22 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
 
     window.addEventListener("keydown", onKeyDown);
     return () => {
+      const wasTopDialog = activeDialogStack[activeDialogStack.length - 1] === dialogToken;
       const tokenIndex = activeDialogStack.indexOf(dialogToken);
       if (tokenIndex >= 0) activeDialogStack.splice(tokenIndex, 1);
-      if (lockScroll) document.body.style.overflow = previousOverflow;
+      if (lockScroll) {
+        scrollLockDepth = Math.max(0, scrollLockDepth - 1);
+        if (scrollLockDepth === 0) {
+          document.body.style.overflow = previousBodyOverflow;
+          if (lockedScrollRoot?.isConnected) lockedScrollRoot.style.overflow = previousScrollRootOverflow;
+          lockedScrollRoot = null;
+          previousScrollRootOverflow = "";
+        }
+      }
       window.removeEventListener("keydown", onKeyDown);
-      if (restoreFocus) previousFocusRef.current?.focus?.();
+      dialogRef.current?.removeEventListener("focusin", revealFocusedControl);
+      window.visualViewport?.removeEventListener("resize", revealFocusedControl);
+      if (restoreFocus && wasTopDialog && previousFocusRef.current?.isConnected) previousFocusRef.current.focus?.();
     };
   }, [closeOnEscape, initialFocusRef, lockScroll, open, restoreFocus, trapFocus]);
 

@@ -1,6 +1,9 @@
+/* Shared dialog contract. Feature styles provide content layout; this file owns the viewport. */
 .modal-shell {
-  width: min(560px, 100%);
-  max-height: min(820px, calc(100dvh - 40px));
+  width: min(720px, 100%);
+  max-height: min(860px, calc(100dvh - 64px));
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid var(--outline);
   border-radius: var(--radius-modal);
@@ -8,116 +11,165 @@
   box-shadow: var(--shadow-dialog);
 }
 
-.modal-shell-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-6);
-  border-bottom: 1px solid var(--outline);
-}
-
-.modal-shell-header h2 { margin: 2px 0 0; }
-.modal-shell-header p { margin: 6px 0 0; color: var(--muted); line-height: 1.45; }
-.modal-shell-eyebrow { color: var(--primary); font-size: var(--type-meta); font-weight: 800; }
-.modal-shell-content { overflow: auto; }
-.modal-shell-footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-4) var(--space-6) var(--space-6); }
-
-@media (max-width: 720px) {
-  .modal-shell { width: 100%; max-height: min(92dvh, 900px); border-radius: var(--radius-modal) var(--radius-modal) 0 0; }
-  .dialog-backdrop { place-items: end stretch; padding: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .modal-shell, .modal-shell * { animation: none !important; transition: none !important; }
-}
-
-/* Shared modal contract: every task surface uses the same viewport, depth and motion. */
-.app-modal-backdrop[class] {
-  position: fixed !important;
-  top: var(--app-viewport-top, 0px) !important;
-  right: 0 !important;
-  bottom: auto !important;
-  left: 0 !important;
-  z-index: var(--z-modal) !important;
-  display: grid !important;
-  place-items: center !important;
-  width: 100% !important;
-  height: var(--app-viewport-height, 100dvh) !important;
-  padding: 32px !important;
-  overflow: hidden !important;
-  background: var(--scrim-modal) !important;
-  backdrop-filter: blur(8px) !important;
-  animation: app-modal-backdrop-in 180ms var(--ease-out) both !important;
-}
-
-.app-modal-surface[class] {
-  width: min(720px, 100%) !important;
-  max-width: 100% !important;
-  max-height: min(860px, calc(100dvh - 64px)) !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  border: 1px solid var(--outline) !important;
-  border-radius: var(--radius-modal) !important;
-  background: var(--surface) !important;
-  box-shadow: var(--shadow-dialog) !important;
-  animation: app-modal-surface-in 220ms var(--ease-emphasized) both !important;
-}
-
-.app-modal-surface.app-modal-compact[class] { width: min(480px, 100%) !important; }
+.modal-shell-header,
 .app-modal-surface[class] > header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
+  min-width: 0;
   padding: var(--space-5) var(--space-6);
   border-bottom: 1px solid var(--outline);
 }
-.app-modal-surface[class] > header .icon-button { flex: 0 0 auto; width: 46px; min-height: 46px; }
+
+.modal-shell-header > div,
+.app-modal-surface[class] > header > div { min-width: 0; }
+.modal-shell-header h2 { margin: 2px 0 0; }
+.modal-shell-header p { margin: 6px 0 0; color: var(--muted); line-height: 1.45; }
+.modal-shell-eyebrow { color: var(--primary); font-size: var(--type-meta); font-weight: 800; }
+.modal-shell-content { min-height: 0; overflow: auto; overscroll-behavior: contain; scroll-padding-block: 16px; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; }
+.modal-shell-footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-5) var(--space-5); }
+
+.app-modal-backdrop[class] {
+  position: fixed;
+  top: var(--dialog-viewport-top, var(--app-viewport-top, 0px));
+  right: 0;
+  bottom: auto;
+  left: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: min(var(--dialog-viewport-height, var(--app-viewport-height, 100dvh)), 100dvh);
+  padding: 32px;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: var(--scrim-modal);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: app-modal-backdrop-in var(--duration-standard) var(--ease-out) both;
+}
+
+.app-modal-surface[class] {
+  width: min(720px, 100%);
+  max-width: 100%;
+  max-height: min(860px, calc(var(--dialog-viewport-height, 100dvh) - 64px), calc(100dvh - 64px));
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-modal);
+  background: var(--surface);
+  box-shadow: var(--shadow-dialog);
+  animation: app-modal-surface-in var(--duration-enter) var(--ease-emphasized) both;
+}
+
+.app-modal-surface:not(.selected-editor)[class] { overflow: hidden; }
+
+.app-modal-surface.app-modal-compact[class] {
+  width: min(480px, 100%);
+}
+
+/* Critical dialogs keep their semantic warning color while sharing the same frame. */
+.app-modal-backdrop.confirmation-backdrop[class] {
+  z-index: var(--z-critical);
+  background: var(--scrim-confirmation);
+}
+
+.app-modal-surface.confirmation-dialog[class] {
+  border-color: color-mix(in srgb, var(--error) 32%, transparent);
+  background: linear-gradient(180deg, var(--surface-dialog-danger-start), var(--surface-dialog-danger-end));
+}
+
+.app-modal-surface.confirmation-dialog.neutral[class] {
+  border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+  background: linear-gradient(180deg, var(--surface-dialog-neutral-start), color-mix(in srgb, var(--background) 98%, transparent));
+}
+
+.app-modal-surface[class] > header .icon-button,
+.modal-shell-header .icon-button {
+  flex: 0 0 auto;
+  width: 46px;
+  min-height: 46px;
+}
+
 .app-modal-surface[class] > footer,
 .app-modal-surface[class] > .modal-shell-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
+  min-width: 0;
+  padding: var(--space-3) var(--space-5) var(--space-5);
   border-top: 1px solid var(--outline);
   background: var(--surface-low);
 }
+
 .app-modal-surface[class] > footer button,
 .app-modal-surface[class] > .modal-shell-footer button { min-height: 48px; }
 
-@keyframes app-modal-backdrop-in { from { opacity: 0; } }
-@keyframes app-modal-surface-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
-
+/* Long task surfaces remain fullscreen on a phone; compact tasks remain sheets. */
 @media (max-width: 720px) {
-  .app-modal-backdrop[class] { place-items: stretch !important; padding: 0 !important; }
-  .app-modal-surface[class] {
-    width: 100% !important;
-    height: var(--app-viewport-height, 100dvh) !important;
-    max-height: none !important;
-    border-radius: 0 !important;
+  .app-modal-backdrop[class] {
+    place-items: stretch;
+    padding: 0;
   }
-  .app-modal-surface[class] > header { padding: max(var(--space-4), env(safe-area-inset-top)) var(--space-4) var(--space-4); }
+
+  .app-modal-surface[class] {
+    width: 100%;
+    height: min(var(--dialog-viewport-height, var(--app-viewport-height, 100dvh)), 100dvh);
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .app-modal-surface:not(.app-modal-compact)[class] {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .app-modal-surface[class] > header,
+  .modal-shell-header {
+    padding: max(var(--space-4), env(safe-area-inset-top)) var(--space-4) var(--space-4);
+  }
+
+  .modal-shell-header h2 { font-size: var(--type-heading-sm); line-height: 1.1; }
+  .modal-shell-header p { margin-top: 4px; font-size: var(--type-small); }
+
+  .app-modal-surface[class] .field input,
+  .app-modal-surface[class] .field select,
+  .app-modal-surface[class] .field textarea { min-height: 48px; }
+
   .app-modal-surface.app-modal-compact[class] {
     place-self: end center;
-    height: auto !important;
-    max-height: min(92dvh, 900px) !important;
-    border-radius: var(--radius-modal) var(--radius-modal) 0 0 !important;
+    height: auto;
+    max-height: min(92dvh, 900px);
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    box-shadow: var(--shadow-sheet);
   }
+
   .app-modal-surface[class] > footer,
   .app-modal-surface[class] > .modal-shell-footer {
-    display: flex;
     flex-wrap: wrap;
     justify-content: stretch;
     padding: var(--space-3) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
   }
+
   .app-modal-surface[class] > footer button,
-  .app-modal-surface[class] > .modal-shell-footer button { flex: 1 1 0; min-width: 0; min-height: 50px; }
+  .app-modal-surface[class] > .modal-shell-footer button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 50px;
+  }
+
   .app-modal-surface[class] > footer button:only-child,
   .app-modal-surface[class] > .modal-shell-footer button:only-child { flex-basis: 100%; }
 }
 
+@keyframes app-modal-backdrop-in { from { opacity: 0; } }
+@keyframes app-modal-surface-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .app-modal-backdrop[class], .app-modal-surface[class] { animation: none !important; }
+  .app-modal-backdrop[class],
+  .app-modal-surface[class],
+  .modal-shell,
+  .modal-shell * { animation: none !important; transition: none !important; }
 }

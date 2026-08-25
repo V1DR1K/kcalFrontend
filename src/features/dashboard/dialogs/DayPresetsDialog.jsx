@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Icon } from "../../../components/Icon";
-import { ModalRoot } from "../../../components/dialog/ModalRoot";
-import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycle";
+import { ModalShell } from "../../../components/dialog/ModalShell";
 import { mealLogName, mealTotals } from "../dashboard.utils";
 import { formatNumber, readableDate } from "../../../utils/format";
 
@@ -22,8 +21,6 @@ export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, on
   const [error, setError] = useState("");
   const hasItems = (data?.meals || []).some((meal) => (meal.items || []).length);
   const currentItems = (data?.meals || []).flatMap((meal) => (meal.items || []).map((log) => presetItemFromLog(log, meal.mealType)));
-  const { dialogRef, onBackdropPointerDown } = useDialogLifecycle({ open, onClose: () => closeModal(), trapFocus: !pickerMeal });
-
   function closeModal() { if (saving) return; onClose(); setName(""); setShowSaveForm(false); setEditor(null); setPickerMeal(null); setApplyTarget(null); setError(""); }
   async function saveDay() {
     if (saving) return;
@@ -61,8 +58,14 @@ export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, on
         <Icon name="chevron_right" />
       </button>
     </section>
-    {open && <ModalRoot className="app-modal-backdrop day-presets-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
-      <section ref={dialogRef} className="app-modal-surface day-presets-modal" role="dialog" aria-modal="true" aria-labelledby="day-presets-title" onPointerDown={(event) => event.stopPropagation()}>
+    {open && <ModalShell
+      onClose={closeModal}
+      className="day-presets-modal"
+      backdropClassName="day-presets-backdrop"
+      hideHeader
+      wrapContent={false}
+      labelledBy="day-presets-title"
+    >
         <header><div><span>Presets de alimentación</span><h2 id="day-presets-title">Reutilizá tu día</h2><small>Guardá o elegí una rutina completa para {readableDate(date)}.</small></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={closeModal}><Icon name="close" /></button></header>
         {editor ? <div className="day-preset-editor-body">
           <div className="day-presets-editor-head"><button type="button" className="text-button" onClick={() => { setEditor(null); setError(""); }}><Icon name="arrow_back" />Volver a presets</button><button type="button" className="primary" disabled={saving} onClick={saveEditor}>{saving ? "Guardando…" : "Guardar cambios"}</button></div>
@@ -89,7 +92,6 @@ export function DayPresetsDialog({ api, user, date, data, mealTypes, presets, on
         {error && <p className="day-preset-error" role="alert">{error}</p>}
         <footer><button type="button" className="secondary" onClick={closeModal}>Cerrar</button></footer>
         {pickerMeal && <FoodPickerComponent api={api} user={user} mealType={pickerMeal} selectedDate={date} draftOnly onDraftAdd={addPresetItem} onClose={() => setPickerMeal(null)} onDone={() => {}} onOptimisticAdd={() => []} onOptimisticRollback={() => {}} />}
-      </section>
-    </ModalRoot>}
+    </ModalShell>}
   </>;
 }

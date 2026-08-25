@@ -10,8 +10,7 @@ import { readRecents, rememberItem, rememberMeal } from "../../../services/recen
 import { formatNumber, readableDate } from "../../../utils/format";
 import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./MealPhotoDialog";
-import { ModalRoot } from "../../../components/dialog/ModalRoot";
-import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycle";
+import { ModalShell } from "../../../components/dialog/ModalShell";
 import { compressMealPhoto } from "../../../services/image";
 
 import { AiEstimateEditor } from "./AiEstimateEditor";
@@ -49,7 +48,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const recentFoods = readRecents(user).items.slice(0, 20).map((item) => ({ ...item, type: "FOOD" }));
   const normalizedQuery = query.trim();
   const foodSearchReady = tab !== "FOOD" || normalizedQuery.length >= 2;
-  const { dialogRef, onBackdropPointerDown } = useDialogLifecycle({ onClose });
   const catalog = usePagedCatalog({
     api,
     endpoint: tab === "FOOD" ? "/api/foods" : tab === "RECIPE" ? "/api/recipes" : tab === "MINE" ? "/api/foods/mine" : "/api/nutrition/recent-meals",
@@ -492,8 +490,15 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     }
   }
   return (
-    <ModalRoot className="app-modal-backdrop modal-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
-      <section ref={dialogRef} className="app-modal-surface picker-modal" role="dialog" aria-modal="true" aria-labelledby={pickerTitleId} onPointerDown={(event) => event.stopPropagation()}>
+    <ModalShell
+      title="Agregar comida"
+      onClose={onClose}
+      className="picker-modal"
+      backdropClassName="modal-backdrop"
+      hideHeader
+      wrapContent={false}
+      labelledBy={pickerTitleId}
+    >
         <header>
           <div>
             <span>{mealType.label}</span>
@@ -665,7 +670,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             />
           </label>
         </footer>
-      </section>
-    </ModalRoot>
+    </ModalShell>
   );
 }

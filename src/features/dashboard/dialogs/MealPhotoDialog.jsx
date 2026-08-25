@@ -1,10 +1,13 @@
 import React from "react";
 import { Icon } from "../../../components/Icon";
+import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycle";
 
 export function MealPhotoContextEditor({ photoUrl, context, setContext, error, recording, transcribing, analyzing, onToggleRecording, onDiscard, onChangePhoto, onAnalyze }) {
+  const { dialogRef } = useDialogLifecycle({ onClose: onDiscard });
+
   return (
     <div className="selected-subpanel ai-photo-context-subpanel">
-      <section className="selected-editor ai-photo-context-editor" role="dialog" aria-modal="true" aria-label="Preparar análisis de foto">
+      <section ref={dialogRef} className="selected-editor ai-photo-context-editor" role="dialog" aria-modal="true" aria-label="Preparar análisis de foto">
         <span className="sheet-handle" aria-hidden="true" />
         <header><div><span>Estimación IA</span><h3>Contanos sobre la foto</h3><small>Agregá detalles que no se vean con claridad, si hace falta.</small></div><button className="icon-button" aria-label="Descartar foto" onClick={onDiscard}><Icon name="close" /></button></header>
         {photoUrl && <img className="ai-photo-context-preview" src={photoUrl} alt="Foto elegida para estimar la comida" />}

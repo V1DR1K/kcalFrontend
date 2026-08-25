@@ -1,16 +1,23 @@
 import React, { useId, useRef } from "react";
 import { Icon } from "./Icon";
-import { ModalRoot } from "./dialog/ModalRoot";
-import { useDialogLifecycle } from "./dialog/useDialogLifecycle";
+import { ModalShell } from "./dialog/ModalShell";
 
 export function ConfirmationDialog({ title, description, confirmLabel = "Confirmar", tone = "danger", onCancel, onConfirm }) {
   const cancelRef = useRef(null);
   const id = useId().replace(/:/g, "");
-  const { dialogRef, onBackdropPointerDown } = useDialogLifecycle({ onClose: onCancel, initialFocusRef: cancelRef });
 
   return (
-    <ModalRoot className="app-modal-backdrop confirmation-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
-      <section ref={dialogRef} className={`app-modal-surface app-modal-compact confirmation-dialog ${tone}`} role="alertdialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} onPointerDown={(event) => event.stopPropagation()}>
+    <ModalShell
+      role="alertdialog"
+      onClose={onCancel}
+      initialFocusRef={cancelRef}
+      className={`app-modal-compact confirmation-dialog ${tone}`}
+      backdropClassName="confirmation-backdrop"
+      hideHeader
+      wrapContent={false}
+      labelledBy={`${id}-title`}
+      describedBy={`${id}-description`}
+    >
         <div className="confirmation-icon" aria-hidden="true"><Icon name="error" /></div>
         <div>
           <h2 id={`${id}-title`}>{title}</h2>
@@ -20,7 +27,6 @@ export function ConfirmationDialog({ title, description, confirmLabel = "Confirm
           <button ref={cancelRef} type="button" className="secondary" onClick={onCancel}>Cancelar</button>
           <button type="button" className="confirmation-confirm" onClick={onConfirm}>{confirmLabel}</button>
         </footer>
-      </section>
-    </ModalRoot>
+    </ModalShell>
   );
 }

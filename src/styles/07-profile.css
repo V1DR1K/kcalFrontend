@@ -55,7 +55,7 @@
 
 .dialog-backdrop { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: 32px; background: var(--scrim-modal); backdrop-filter: blur(8px); }
 .nutrition-plan-dialog { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(720px, 100%); max-height: min(860px, calc(100dvh - 64px)); }
-.nutrition-plan-dialog-body { min-height: 0; overflow-y: auto; display: grid; gap: 18px; padding: var(--space-5) var(--space-6); overscroll-behavior: contain; }
+.nutrition-plan-dialog-body { min-height: 0; overflow-y: auto; display: grid; gap: 18px; padding: var(--space-5) var(--space-6); overscroll-behavior: contain; scroll-padding-block: 16px; -webkit-overflow-scrolling: touch; }
 .plan-dialog-section { display: grid; gap: 12px; }
 .plan-dialog-section-heading { display: flex; align-items: center; gap: 10px; }
 .plan-dialog-section-heading > div { display: grid; gap: 3px; }

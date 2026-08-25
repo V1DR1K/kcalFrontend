@@ -209,7 +209,7 @@ body {
   overflow-x: hidden;
   max-width: 100%;
   min-height: 100dvh;
-  scroll-padding-bottom: 45dvh;
+  scroll-padding-bottom: 0;
   touch-action: inherit;
 }
 

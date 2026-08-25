@@ -259,20 +259,6 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     window.setTimeout(onClose, 180);
   }, [closing, onClose, saving]);
   useEffect(() => {
-    const closeOnEscape = (event) => {
-      if (event.key === "Escape") closeWithAnimation();
-    };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [closeWithAnimation]);
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
-  useEffect(() => {
     if (!item || isRecipe) return;
     api.runAction(
       { title: "Cargando opciones", description: "Estamos buscando las presentaciones disponibles..." },

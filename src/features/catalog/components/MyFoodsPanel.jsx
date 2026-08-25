@@ -5,15 +5,13 @@ import { Input, Select } from "../../../components/FormControls";
 import { Panel } from "../../../components/Layout";
 import { CatalogStatus, categoryLabel } from "../CatalogComponents";
 import { DerivedCaloriesHint } from "./OcrNutritionPreview";
-import { ModalRoot } from "../../../components/dialog/ModalRoot";
-import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycle";
+import { ModalShell } from "../../../components/dialog/ModalShell";
 
 export function MyFoods({ api, onDirtyChange }) {
   const [items, setItems] = useState([]);
   const [deletedItems, setDeletedItems] = useState([]);
   const [editing, setEditing] = useState(null);
   const editCloseRef = useRef(null);
-  const { dialogRef: editDialogRef, onBackdropPointerDown: onEditBackdropPointerDown } = useDialogLifecycle({ open: Boolean(editing), onClose: () => setEditing(null), initialFocusRef: editCloseRef });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
@@ -176,8 +174,17 @@ export function MyFoods({ api, onDirtyChange }) {
         </section>
       )}
        {editing && (
-        <ModalRoot className="app-modal-backdrop edit-food-backdrop" onBackdropPointerDown={onEditBackdropPointerDown}>
-          <form ref={editDialogRef} className="app-modal-surface app-modal-compact edit-food-sheet" role="dialog" aria-modal="true" aria-labelledby="edit-food-title" onPointerDown={(event) => event.stopPropagation()} onInput={() => onDirtyChange?.(true)} onSubmit={save}>
+         <ModalShell
+           as="form"
+           onClose={() => setEditing(null)}
+           initialFocusRef={editCloseRef}
+           className="app-modal-compact edit-food-sheet"
+           backdropClassName="edit-food-backdrop"
+           hideHeader
+           wrapContent={false}
+           labelledBy="edit-food-title"
+           dialogProps={{ onInput: () => onDirtyChange?.(true), onSubmit: save }}
+         >
             <header>
               <div>
                 <span>Editar alimento</span>
@@ -207,9 +214,8 @@ export function MyFoods({ api, onDirtyChange }) {
                 {saving ? "Guardando…" : "Guardar cambios"}
               </button>
             </footer>
-          </form>
-        </ModalRoot>
-      )}
+         </ModalShell>
+       )}
     </Panel>
   );
 }

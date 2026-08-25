@@ -75,12 +75,13 @@
 .recipe-empty-panel h2, .recipe-empty-panel p { margin: 0; }
 .skeleton-recipe-card { min-height: 88px; border-radius: var(--radius-panel); }
 .recipe-detail-backdrop { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; padding: 18px; background: var(--scrim); backdrop-filter: blur(7px); }
-.recipe-detail-dialog { display: grid; gap: var(--space-4); width: min(580px, 100%); max-height: min(820px, 100%); overflow: auto; padding: 20px; border: 1px solid var(--outline); border-radius: var(--radius-dialog); background: linear-gradient(180deg, var(--surface-low), var(--surface)); box-shadow: var(--shadow-dialog); }
+.recipe-detail-dialog { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--space-4); width: min(580px, 100%); max-height: min(820px, 100%); overflow: hidden; padding: 20px; border: 1px solid var(--outline); border-radius: var(--radius-dialog); background: linear-gradient(180deg, var(--surface-low), var(--surface)); box-shadow: var(--shadow-dialog); }
 .recipe-detail-dialog > header { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); }
 .recipe-detail-dialog > header > div { min-width: 0; }
 .recipe-detail-dialog > header span { color: var(--primary); font-size: var(--type-meta); font-weight: 800; }
 .recipe-detail-dialog h2 { margin: 2px 0 0; font-size: var(--type-heading-lg); }
 .recipe-detail-description { margin: 0; color: var(--muted); }
+.recipe-detail-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: 16px; -webkit-overflow-scrolling: touch; }
 .recipe-detail-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 .recipe-detail-summary span { display: grid; gap: 4px; padding: 10px; border: 1px solid var(--outline); border-radius: var(--radius-compact); background: var(--surface); }
 .recipe-detail-summary small { color: var(--muted); font-size: 11px; }
@@ -94,7 +95,7 @@
 .edit-food-sheet { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--space-3); width: min(600px, 100%); height: min(calc(var(--app-viewport-height, 100dvh) - 36px), 820px); max-height: 100%; overflow: hidden; padding: 18px; border: 1px solid var(--outline); border-radius: var(--radius-dialog); background: var(--surface-low); box-shadow: var(--shadow); }
 .edit-food-sheet > header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .edit-food-sheet h2 { margin: 2px 0 0; }
-.edit-food-fields { display: grid; align-content: start; gap: 12px; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding-right: 3px; }
+.edit-food-fields { display: grid; align-content: start; gap: 12px; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: 16px; padding-right: 3px; }
 .edit-food-actions { padding-top: 2px; border-top: 1px solid var(--outline); }
 .edit-food-actions .primary { width: 100%; min-height: 52px; }
 .selected-close { margin-left: auto; }
@@ -149,7 +150,7 @@
 }
 .recipe-create-backdrop { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: end center; padding: 18px; background: var(--scrim-modal); backdrop-filter: blur(8px); animation: fade-in var(--duration-standard) var(--ease-out); }
 .recipe-create-dialog { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--space-3); width: min(760px, 100%); height: min(calc(var(--app-viewport-height, 100dvh) - 36px), 860px); max-height: 100%; overflow: hidden; padding: 20px; border: 1px solid var(--outline); border-radius: var(--radius-modal); background: linear-gradient(180deg, var(--surface-low), var(--surface)); box-shadow: var(--shadow-dialog); }
-.recipe-create-content { min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 3px; }
+.recipe-create-content { min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scroll-padding-block: 16px; padding-right: 3px; }
 .recipe-create-content .panel { min-height: 100%; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .recipe-create-content .panel > h2 { margin-top: 0; }
 .recipe-create-content .form-grid { padding-bottom: 2px; }
@@ -360,7 +361,7 @@
   .explore-recipe-card > .material-symbols-outlined { grid-column: 3; grid-row: 1 / span 2; }
   .recipe-detail-backdrop { place-items: end center; padding: 0; }
   .recipe-detail-dialog { width: 100%; max-height: 92dvh; padding: 18px var(--space-4) max(18px, env(safe-area-inset-bottom)); border-radius: var(--radius-dialog) var(--radius-dialog) 0 0; }
-  .recipe-detail-dialog > footer { position: sticky; bottom: 0; margin-inline: -4px; padding-top: 10px; background: linear-gradient(180deg, transparent, var(--surface)); }
+  .recipe-detail-dialog > footer { position: static; margin-inline: -4px; padding-top: 10px; background: var(--surface); }
   .selected-editor:focus-within { scroll-margin-top: 8px; }
 }
 
@@ -413,7 +414,7 @@
 .catalog-dialog-header h2 { margin: 2px 0 0; font-size: var(--type-heading-lg); letter-spacing: -.025em; }
 .catalog-dialog-header .icon-button { flex: 0 0 auto; }
 .catalog-dialog-content { min-height: 0; overflow: hidden; }
-.catalog-dialog-content > [role="tabpanel"] { height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 2px 3px 4px 0; }
+.catalog-dialog-content > [role="tabpanel"] { height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: 16px; padding: 2px 3px 4px 0; }
 .catalog-dialog-content .panel { min-height: 100%; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .catalog-dialog-content .panel > h2 { margin-top: 0; }
 .catalog-dialog-content .form-grid { padding-bottom: 2px; }

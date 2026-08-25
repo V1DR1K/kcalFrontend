@@ -1,5 +1,5 @@
 @media (max-width: 900px) {
-  html { scroll-padding-bottom: 46dvh; }
+  html { scroll-padding-bottom: 0; }
   body { min-height: 100dvh; }
 
   input,
@@ -9,7 +9,7 @@
 
   input:focus,
   select:focus,
-  textarea:focus { scroll-margin-bottom: 46dvh; }
+  textarea:focus { scroll-margin-bottom: 16px; }
 
   .panel,
   .food-card,
@@ -48,6 +48,7 @@
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
+    scroll-padding-block: 16px;
   }
 
   .notification-region { bottom: calc(72px + env(safe-area-inset-bottom)); }
@@ -194,7 +195,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    scroll-padding: 16px 16px 88px;
+    scroll-padding: 16px 16px 76px;
     padding: 16px;
   }
   .edit-log-fields { gap: 10px; }
@@ -266,7 +267,8 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom));
+    scroll-padding-block: 16px;
+    scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom));
   }
   .ai-estimate-subpanel { padding: 0; }
   .ai-estimate-editor { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
@@ -536,7 +538,14 @@
   .picker-modal footer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .picker-modal footer button { min-width: 0; }
   .picker-modal footer .ai-photo-trigger { width: 100%; min-height: 52px; }
-  .selected-editor { gap: 8px; padding: 10px; }
+  .picker-scroll { scroll-padding-block: 12px; }
+  .catalog-row { min-height: 52px; padding: 8px 10px; }
+  .catalog-row-image .food-thumb.compact { width: 40px; height: 40px; }
+  .catalog-copy { gap: 2px; }
+  .recent-meal-card { min-height: 58px; gap: 8px; padding: 7px 8px; }
+  .recent-meal-card .food-thumb.compact { width: 40px; height: 40px; border-radius: var(--radius-control); }
+  .recent-meal-card > button { width: 44px; min-width: 44px; height: 44px; min-height: 44px; border-radius: var(--radius-control); }
+  .selected-editor { gap: 8px; padding: max(12px, env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom)); }
   .ai-estimate-editor .edit-log-fields .field,
   .ai-estimate-editor .edit-log-fields input[type="date"] { min-width: 0; max-width: 100%; }
   .ai-estimate-editor .edit-log-fields input[type="date"] { inline-size: 100%; padding-inline: 10px; }
