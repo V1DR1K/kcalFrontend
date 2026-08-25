@@ -20,8 +20,9 @@ export function Panel({ title, children, className = "" }) {
 }
 export function Macro({ macro }) {
   const percent = macro.goal ? Math.min(100, Math.round((macro.consumed / macro.goal) * 100)) : 0;
+  const tone = String(macro.key || macro.label || "").toLowerCase();
   return (
-    <section className="macro-card">
+    <section className={`macro-card macro-${tone}`}>
       <h3>{macro.label}</h3>
       <p className="big"><strong>{formatNumber(macro.consumed)}</strong><span> / {formatNumber(macro.goal)}g</span></p>
       <div className="bar">

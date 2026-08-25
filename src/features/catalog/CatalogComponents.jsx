@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { CATEGORY_OPTIONS, PREPARATION_OPTIONS, CATEGORY_ART, RECIPE_ART } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { formatNumber } from "../../utils/format";
+import { NutritionSummary } from "../../components/NutritionSummary";
 
 export function CatalogStatus({ children, error = false }) {
   return (
@@ -26,9 +27,7 @@ export function CatalogRow({ item, onPick }) {
       <span>{item.name}</span>
       {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
       <PreparationBadge food={item} />
-      <small>
-        {item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g
-      </small>
+      <NutritionSummary nutrition={item} />
     </button>
   );
 }
@@ -51,9 +50,7 @@ export function CatalogRowWithImage({ item, onPick }) {
         <strong>{item.name}</strong>
         {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
         <PreparationBadge food={item} />
-        <small>
-          {item.calories} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g
-        </small>
+        <NutritionSummary nutrition={item} />
       </span>
        <Icon name="chevron_right" className="row-action" />
     </button>

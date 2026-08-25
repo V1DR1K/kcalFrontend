@@ -3,7 +3,8 @@ import { CATEGORY_OPTIONS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
 import { Input, Select } from "../../../components/FormControls";
 import { Panel } from "../../../components/Layout";
-import { CatalogStatus, categoryLabel } from "../CatalogComponents";
+import { CatalogStatus, categoryLabel, FoodThumb } from "../CatalogComponents";
+import { NutritionSummary } from "../../../components/NutritionSummary";
 import { DerivedCaloriesHint } from "./OcrNutritionPreview";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 
@@ -130,11 +131,12 @@ export function MyFoods({ api, onDirtyChange }) {
         <div className="my-foods-list">
           {items.map((item) => (
             <article className="my-food-row" key={item.id}>
+              <FoodThumb item={{ ...item, type: "FOOD" }} compact />
               <span>
                 <strong>{item.name}</strong>
                 <small>{item.brand || categoryLabel(item.category)}</small>
               </span>
-              <span>{item.calories} kcal</span>
+              <NutritionSummary nutrition={item} />
               <div className="food-card-menu" data-food-menu={item.id}>
                 <button type="button" className="icon-button food-card-menu-trigger" aria-label={`Acciones para ${item.name}`} aria-expanded={menuId === item.id} disabled={deletingId === item.id} onClick={() => setMenuId((current) => current === item.id ? null : item.id)}>
                   <Icon name="more_vert" />
@@ -159,11 +161,12 @@ export function MyFoods({ api, onDirtyChange }) {
           <div className="my-foods-list">
             {deletedItems.map((item) => (
               <article className="my-food-row my-food-row-deleted" key={item.id}>
+                <FoodThumb item={{ ...item, type: "FOOD" }} compact />
                 <span>
                   <strong>{item.name}</strong>
                   <small>{item.brand || categoryLabel(item.category)}</small>
                 </span>
-                <span>{item.calories} kcal</span>
+                <NutritionSummary nutrition={item} />
                 <button type="button" className="secondary restore-food-button" disabled={restoringId === item.id} onClick={() => restore(item)}>
                   <Icon name="restore" />
                   {restoringId === item.id ? "Reactivando…" : "Reactivar"}

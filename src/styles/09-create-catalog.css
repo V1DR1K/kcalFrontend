@@ -190,8 +190,7 @@
   color: var(--primary);
 }
 .recipe-weight-summary div { display: grid; gap: 2px; min-width: 0; }
-.recipe-weight-summary small,
-.recipe-nutrition-summary small { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.recipe-weight-summary small { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
 .recipe-weight-summary strong { font-size: 22px; line-height: 1; color: var(--text); }
 .ingredient-pick {
   grid-template-columns: minmax(0, 1fr) auto;
@@ -273,23 +272,6 @@
 }
 .ingredient-remove:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--error) 15%, var(--surface)); }
 .ingredient-remove .material-symbols-outlined { font-size: 18px; }
-.recipe-nutrition-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-2);
-  font-size: 0;
-}
-.recipe-nutrition-summary > span {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-  padding: 10px;
-  border: 1px solid var(--outline);
-  border-radius: var(--radius-compact);
-  background: var(--surface);
-  font-size: 12px;
-}
-.recipe-nutrition-summary strong { color: var(--text); font-size: 16px; line-height: 1; }
 .recipe-fixed-unit {
   display: grid;
   gap: var(--space-2);
@@ -326,8 +308,6 @@
   .ingredient-row { grid-template-columns: minmax(0, 1fr) 92px 44px; gap: 7px; padding: var(--space-2); }
   .ingredient-remove { justify-content: center; padding: 0; font-size: 0; }
   .ingredient-remove .material-symbols-outlined { font-size: 20px; }
-  .recipe-nutrition-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .recipe-nutrition-summary > span { padding: 9px; }
   .recipe-swipe-card {
     display: flex;
     flex-wrap: wrap;

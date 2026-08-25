@@ -9,18 +9,14 @@ import { readRecents, rememberItem, rememberMeal } from "../../../services/recen
 import { formatNumber, readableDate, shiftDate, today } from "../../../utils/format";
 import { createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, scaleFoodNutrition } from "../dashboard.utils";
 import { Header, Macro, Panel } from "../../../components/Layout";
+import { NutritionSummary } from "../../../components/NutritionSummary";
 
 export { NutritionPills, CompactBalanceBar, DateNavigator, PastMealsPreview,  };
 
 function NutritionPills({ nutrition }) {
   return (
     <>
-      <div className="meal-detail-pills">
-        <span><small>Kcal</small><strong>{formatNumber(nutrition?.calories)}</strong></span>
-        <span><small>P</small><strong>{formatNumber(nutrition?.proteinGrams, 1)}g</strong></span>
-        <span><small>C</small><strong>{formatNumber(nutrition?.carbsGrams, 1)}g</strong></span>
-        <span><small>G</small><strong>{formatNumber(nutrition?.fatGrams, 1)}g</strong></span>
-      </div>
+      <NutritionSummary nutrition={nutrition} size="detail" />
       {nutrition?.nutrients?.length > 0 && <NutrientDetails nutrients={nutrition.nutrients} label="Más nutrientes" defaultOpen />}
     </>
   );

@@ -6,6 +6,7 @@ import { Header, Panel } from "../../components/Layout";
 import { CatalogStatus, FoodThumb, NutrientDetails, NutrientEditor, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
 import { rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, today } from "../../utils/format";
+import { NutritionSummary } from "../../components/NutritionSummary";
 
 export function ConfigureFood({ api, setPage, foodId, user }) {
   const [activeFoodId, setActiveFoodId] = useState(foodId);
@@ -195,17 +196,12 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
             ))}
           </select>
         </label>
-        <div className="preview configure-preview">
-          <strong>{formatNumber(preview?.calories)} kcal</strong>
-          <small>
-            P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g
-          </small>
-        </div>
+        <div className="configure-preview"><NutritionSummary nutrition={preview || {}} size="detail" /></div>
         {food && <NutrientDetails nutrients={food.nutrients} />}
         {food && <button type="button" className="secondary nutrient-enrich-button" disabled={enriching} onClick={enrich}>{enriching ? "Buscando nutrientes…" : "Completar perfil nutricional"}</button>}
         {food && (food.createdById === user?.id || user?.role === "ADMIN") && <NutrientEditor api={api} food={food} onSaved={setFood} />}
         <button className="primary configure-submit" disabled={adding || !food || !activeFoodId || Number(quantity) <= 0} onClick={add}>
-          {adding ? "Agregando…" : "Agregar producto"}
+          {adding ? "Agregando…" : "Agregar alimento"}
         </button>
       </Panel>
     </section>

@@ -9,6 +9,7 @@ import { usePagedCatalog } from "../usePagedCatalog";
 import { formatNumber } from "../../../utils/format";
 import { DerivedCaloriesHint, OcrNutritionPreview } from "./OcrNutritionPreview";
 import { OCR_MACRO_FIELDS } from "../utils/catalog.utils";
+import { NutritionSummary } from "../../../components/NutritionSummary";
 
 export function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode, onDirtyChange, onBusyChange }) {
   const [saving, setSaving] = useState(false);
@@ -340,13 +341,7 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone }) {
             </label>
           ))}
         </div>
-        <div className="recipe-nutrition-summary" aria-label="Resumen nutricional de la receta">
-          <span><strong>{formatNumber(preview?.calories)}</strong><small>Kcal</small></span>
-          <span><strong>{formatNumber(preview?.proteinGrams, 1)}g</strong><small>Proteínas</small></span>
-          <span><strong>{formatNumber(preview?.carbsGrams, 1)}g</strong><small>Carbos</small></span>
-          <span><strong>{formatNumber(preview?.fatGrams, 1)}g</strong><small>Grasas</small></span>
-          {formatNumber(preview?.calories)} kcal · P {formatNumber(preview?.proteinGrams, 1)}g · C {formatNumber(preview?.carbsGrams, 1)}g · G {formatNumber(preview?.fatGrams, 1)}g
-        </div>
+        <NutritionSummary nutrition={preview || {}} size="detail" />
         <button className="primary recipe-submit" disabled={!ingredients.length || saving}>
           {saving ? "Creando…" : "Crear receta"}
         </button>

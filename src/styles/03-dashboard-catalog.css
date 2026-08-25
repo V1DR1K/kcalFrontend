@@ -1019,8 +1019,7 @@ summary:focus-visible {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
-.meal-detail-summary > span,
-.meal-detail-pills > span {
+.meal-detail-summary > span {
   display: grid;
   gap: 2px;
   min-width: 0;
@@ -1031,27 +1030,20 @@ summary:focus-visible {
   border-radius: var(--radius-control);
   background: var(--surface-inset);
 }
-.meal-detail-summary small,
-.meal-detail-pills small {
+.meal-detail-summary small {
   color: var(--muted);
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
   text-transform: uppercase;
 }
-.meal-detail-summary strong,
-.meal-detail-pills strong {
+.meal-detail-summary strong {
   overflow: hidden;
   color: var(--text);
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-}
-.meal-detail-pills {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
 }
 .recipe-detail-list {
   display: grid;

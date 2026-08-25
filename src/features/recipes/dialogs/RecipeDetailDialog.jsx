@@ -3,6 +3,7 @@ import { Icon } from "../../../components/Icon";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { FoodThumb, NutrientDetails } from "../../catalog/CatalogComponents";
 import { formatNumber } from "../../../utils/format";
+import { NutritionSummary } from "../../../components/NutritionSummary";
 
 export function RecipeDetailDialog({ api, recipe, onClose }) {
   const [saving, setSaving] = useState(false);
@@ -18,7 +19,8 @@ export function RecipeDetailDialog({ api, recipe, onClose }) {
         <header><FoodThumb item={{ ...recipe, type: "RECIPE" }} compact /><div><span>Receta compartida</span><h2 id={titleId}>{recipe.name}</h2></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={onClose}><Icon name="close" /></button></header>
         <div className="recipe-detail-body" data-dialog-scroll-owner="true">
           {recipe.description && <p className="recipe-detail-description">{recipe.description}</p>}
-          <div className="recipe-detail-summary"><span><small>Peso total</small><strong>{formatNumber(recipe.totalWeightGrams, 1)} g</strong></span><span><small>Kcal</small><strong>{formatNumber(recipe.calories)}</strong></span><span><small>Macros</small><strong>P {formatNumber(recipe.proteinGrams, 1)}g</strong></span></div>
+          <div className="recipe-detail-summary"><span><small>Peso total</small><strong>{formatNumber(recipe.totalWeightGrams, 1)} g</strong></span></div>
+          <NutritionSummary nutrition={recipe} size="detail" />
           <NutrientDetails nutrients={recipe.nutrients} label="Ver nutrientes de la receta" />
           <div className="recipe-detail-ingredients"><h3>Ingredientes</h3>{recipe.ingredients.map((ingredient, index) => <div key={`${ingredient.food?.id || "food"}:${index}`}><span>{ingredient.food?.name || "Alimento"}</span><small>{formatNumber(ingredient.quantity, 1)} {ingredient.unit === "GRAM" ? "g" : ingredient.unit}</small></div>)}</div>
         </div>

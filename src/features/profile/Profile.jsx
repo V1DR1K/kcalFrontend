@@ -63,6 +63,7 @@ export function Profile({ api, logout }) {
     return (
       <section className="page">
         <Header title="Mi perfil" />
+        <div className="page-loading-stack" aria-busy="true" aria-label="Cargando perfil"><div className="skeleton" /><div className="skeleton" /><div className="skeleton" /></div>
       </section>
     );
   if (error)

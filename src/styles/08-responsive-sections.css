@@ -431,14 +431,9 @@
 
   .recipe-meal-item-detail { gap: 12px; }
 
-  .meal-detail-summary,
-  .meal-detail-pills {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-  }
+  .meal-detail-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 
-  .meal-detail-summary > span,
-  .meal-detail-pills > span {
+  .meal-detail-summary > span {
     min-height: 46px;
     padding: 7px 8px;
   }

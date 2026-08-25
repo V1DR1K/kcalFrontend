@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
 import { ModalShell } from "../../components/dialog/ModalShell";
+import { NutritionSummary } from "../../components/NutritionSummary";
 import "../../styles/05-scanner.css";
 
 export function Scanner({ api, initialDialog = null, user, setPage, setSelectedFoodId, setPrefillBarcode, CatalogComponent, RecipesComponent, MyFoodsComponent }) {
@@ -248,8 +249,9 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
             <>
               <div>
                 <strong>{food.name}</strong>
-                <span>{food.calories} kcal / 100g</span>
+                <span className="scanner-result-context">Por 100 g</span>
               </div>
+              <NutritionSummary nutrition={food} />
               <button
                 className="primary"
                 onClick={() => {

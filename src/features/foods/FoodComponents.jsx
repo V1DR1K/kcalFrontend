@@ -4,6 +4,7 @@ import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { CatalogStatus, FoodThumb, NutrientDetails, preparationLabel } from "../catalog/CatalogComponents";
 import { formatNumber } from "../../utils/format";
+import { NutritionSummary } from "../../components/NutritionSummary";
 import { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
 
 export { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
@@ -111,7 +112,7 @@ export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onD
           <h3>{recipe.name}</h3>
           <p>Receta completa · {formatNumber(recipe.totalWeightGrams, 1)}g internos</p>
         </div>
-        <strong>{recipe.calories} kcal</strong>
+        <NutritionSummary nutrition={recipe} />
         <div className="recipe-card-menu" data-recipe-menu={recipe.id}>
           <button type="button" ref={menuTriggerRef} className="icon-button recipe-card-menu-trigger" aria-label={`Acciones para ${recipe.name}`} aria-expanded={menuOpen} disabled={disabled} onClick={() => { close(); setMenuOpen((value) => !value); }}>
             <Icon name="more_vert" />

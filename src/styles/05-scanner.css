@@ -188,6 +188,8 @@
   animation: result-in var(--duration-slow) var(--ease-out);
 }
 
+.scanner-result.show > div { min-width: 0; }
+
 .scanner-result strong,
 .scanner-result span {
   display: block;
