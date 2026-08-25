@@ -60,7 +60,7 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
             <Icon name="close" />
           </button>
         </header>
-        <div className="edit-food-fields">
+         <div className="edit-food-fields" data-dialog-scroll-owner="true">
           {error && <div className="form-error recipe-error" role="alert"><Icon name="error" /><span>{error}</span></div>}
           <Input label="Nombre" value={name} onChange={(event) => setName(event.target.value)} required />
           <Input label="Descripción opcional" value={description} onChange={(event) => setDescription(event.target.value)} />
@@ -103,7 +103,7 @@ export function FoodLogDialog({ item, eyebrow, title = item?.name, isRecipe = fa
             <Icon name="close" />
           </button>
         </header>
-        <div className="edit-log-body">{children}</div>
+         <div className="edit-log-body" data-dialog-scroll-owner="true">{children}</div>
         {footer}
   </ModalShell>
   );

@@ -64,10 +64,10 @@ export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClos
           <button type="button" role="tab" aria-selected={tab === "MINE"} aria-controls="catalog-panel-mine" id="catalog-tab-mine" className={tab === "MINE" ? "selected" : ""} onClick={() => setTab("MINE")}>Mis alimentos</button>
         </div>
         <div className="catalog-dialog-content">
-          <div id="catalog-panel-food" role="tabpanel" aria-labelledby="catalog-tab-food" hidden={tab !== "FOOD"}>
+          <div id="catalog-panel-food" data-dialog-scroll-owner="true" role="tabpanel" aria-labelledby="catalog-tab-food" hidden={tab !== "FOOD"}>
             <CreateFoodForm api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, food: value }))} />
           </div>
-          <div id="catalog-panel-mine" role="tabpanel" aria-labelledby="catalog-tab-mine" hidden={tab !== "MINE"}>
+          <div id="catalog-panel-mine" data-dialog-scroll-owner="true" role="tabpanel" aria-labelledby="catalog-tab-mine" hidden={tab !== "MINE"}>
             <MyFoodsPanel api={api} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} />
           </div>
         </div>

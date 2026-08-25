@@ -194,7 +194,7 @@ export function MyFoods({ api, onDirtyChange }) {
                 <Icon name="close" />
               </button>
             </header>
-            <div className="edit-food-fields">
+            <div className="edit-food-fields" data-dialog-scroll-owner="true">
               <Input name="name" label="Nombre" defaultValue={editing.name} required />
               <Input name="brand" label="Marca" defaultValue={editing.brand || ""} />
               <Input name="barcode" label="Código de barras" defaultValue={editing.barcode || ""} />

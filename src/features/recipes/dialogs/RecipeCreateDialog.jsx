@@ -32,7 +32,7 @@ export function RecipeCreateDialog({ api, onClose, onDone }) {
       backdropClassName="recipe-create-backdrop"
       wrapContent={false}
     >
-      <div className="recipe-create-content">
+      <div className="recipe-create-content" data-dialog-scroll-owner="true">
         <CreateRecipeForm
           api={api}
           onDirtyChange={setDirty}

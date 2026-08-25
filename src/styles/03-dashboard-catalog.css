@@ -964,7 +964,7 @@ summary:focus-visible {
   min-width: 0;
   max-width: 100%;
   max-height: min(86vh, 860px);
-  overflow: auto;
+  overflow: hidden;
   padding: 20px;
   border: 1px solid color-mix(in srgb, var(--outline) 70%, transparent);
   border-radius: 18px;

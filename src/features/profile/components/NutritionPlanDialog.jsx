@@ -120,7 +120,7 @@ export function NutritionPlanDialog({ api, plan, onClose, onChanged }) {
         </>
       )}
     >
-      <div className="nutrition-plan-dialog-body">
+      <div className="nutrition-plan-dialog-body" data-dialog-scroll-owner="true">
         <details className="plan-details" open>
           <summary>Detalles del plan</summary>
           <div className="form-grid">

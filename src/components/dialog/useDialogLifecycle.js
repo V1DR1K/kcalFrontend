@@ -5,6 +5,48 @@ let scrollLockDepth = 0;
 let previousBodyOverflow = "";
 let previousScrollRootOverflow = "";
 let lockedScrollRoot = null;
+let touchStartY = 0;
+const SCROLL_OWNER_SELECTOR = '[data-dialog-scroll-owner="true"], .history-preview-scroll, .nutrient-editor-fields, .app-modal-surface.date-picker-dialog, .app-modal-surface.history-export-dialog';
+
+function topDialog() {
+  return activeDialogStack[activeDialogStack.length - 1];
+}
+
+function onTouchStart(event) {
+  touchStartY = event.touches?.[0]?.clientY || 0;
+}
+
+function onTouchMove(event) {
+  const dialog = topDialog();
+  const touch = event.touches?.[0];
+  if (!dialog || !touch) return;
+  const target = event.target;
+  if (!dialog.dialogRef.current?.contains(target)) {
+    event.preventDefault();
+    return;
+  }
+
+  const owner = target.closest?.(SCROLL_OWNER_SELECTOR);
+  if (!owner) {
+    event.preventDefault();
+    return;
+  }
+
+  const delta = touchStartY - touch.clientY;
+  const atTop = owner.scrollTop <= 0;
+  const atBottom = owner.scrollTop + owner.clientHeight >= owner.scrollHeight - 1;
+  if (!owner.scrollHeight || (atTop && delta < 0) || (atBottom && delta > 0)) event.preventDefault();
+}
+
+function setTouchLock(locked) {
+  if (locked) {
+    document.addEventListener("touchstart", onTouchStart, { passive: true, capture: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
+  } else {
+    document.removeEventListener("touchstart", onTouchStart, true);
+    document.removeEventListener("touchmove", onTouchMove, true);
+  }
+}
 
 const FOCUSABLE_SELECTOR = [
   "button:not([disabled])",
@@ -23,7 +65,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
 
   useEffect(() => {
     if (!open) return undefined;
-    const dialogToken = {};
+    const dialogToken = { dialogRef };
     activeDialogStack.push(dialogToken);
     previousFocusRef.current = document.activeElement;
     if (lockScroll) {
@@ -32,6 +74,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
         lockedScrollRoot = document.querySelector('[data-app-scroll-root="true"]');
         previousScrollRootOverflow = lockedScrollRoot?.style.overflow || "";
         if (lockedScrollRoot) lockedScrollRoot.style.overflow = "hidden";
+        setTouchLock(true);
       }
       scrollLockDepth += 1;
       document.body.style.overflow = "hidden";
@@ -40,7 +83,14 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
     function revealFocusedControl() {
       const target = document.activeElement;
       if (!dialogRef.current?.contains(target)) return;
-      window.requestAnimationFrame(() => target.scrollIntoView?.({ block: "nearest", inline: "nearest" }));
+      window.requestAnimationFrame(() => {
+        const owner = target.closest?.(SCROLL_OWNER_SELECTOR) || dialogRef.current;
+        const targetRect = target.getBoundingClientRect();
+        const ownerRect = owner.getBoundingClientRect();
+        const padding = 16;
+        if (targetRect.top < ownerRect.top + padding) owner.scrollTop -= ownerRect.top + padding - targetRect.top;
+        if (targetRect.bottom > ownerRect.bottom - padding) owner.scrollTop += targetRect.bottom - ownerRect.bottom + padding;
+      });
     }
 
     const focusTarget = initialFocusRef?.current || dialogRef.current?.querySelector(FOCUSABLE_SELECTOR);
@@ -85,6 +135,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
           if (lockedScrollRoot?.isConnected) lockedScrollRoot.style.overflow = previousScrollRootOverflow;
           lockedScrollRoot = null;
           previousScrollRootOverflow = "";
+          setTouchLock(false);
         }
       }
       window.removeEventListener("keydown", onKeyDown);

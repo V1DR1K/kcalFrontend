@@ -30,6 +30,20 @@
 .modal-shell-content { min-height: 0; overflow: auto; overscroll-behavior: contain; scroll-padding-block: 16px; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; }
 .modal-shell-footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-5) var(--space-5); }
 
+[data-dialog-scroll-owner="true"],
+.history-preview-scroll,
+.nutrient-editor-fields,
+.app-modal-surface.date-picker-dialog,
+.app-modal-surface.history-export-dialog {
+  min-height: 0;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scroll-padding-block-start: 16px;
+  scroll-padding-block-end: calc(76px + max(env(safe-area-inset-bottom), var(--dialog-keyboard-inset, 0px)));
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
 .app-modal-backdrop[class] {
   position: fixed;
   top: var(--dialog-viewport-top, var(--app-viewport-top, 0px));
@@ -43,7 +57,8 @@
   height: min(var(--dialog-viewport-height, var(--app-viewport-height, 100dvh)), 100dvh);
   padding: 32px;
   overflow: hidden;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
+  touch-action: pan-y;
   background: var(--scrim-modal);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
@@ -60,10 +75,15 @@
   border-radius: var(--radius-modal);
   background: var(--surface);
   box-shadow: var(--shadow-dialog);
+  overscroll-behavior: none;
+  touch-action: pan-y;
   animation: app-modal-surface-in var(--duration-enter) var(--ease-emphasized) both;
 }
 
 .app-modal-surface:not(.selected-editor)[class] { overflow: hidden; }
+
+.app-modal-surface.date-picker-dialog[class],
+.app-modal-surface.history-export-dialog[class] { overflow-y: auto; }
 
 .app-modal-surface.app-modal-compact[class] {
   width: min(480px, 100%);
@@ -162,6 +182,22 @@
 
   .app-modal-surface[class] > footer button:only-child,
   .app-modal-surface[class] > .modal-shell-footer button:only-child { flex-basis: 100%; }
+
+  .app-modal-surface[class] > footer.picker-photo-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .app-modal-surface[class] > footer.picker-photo-actions .ai-photo-trigger {
+    width: 100%;
+    min-width: 0;
+    min-height: 50px;
+    padding-inline: var(--space-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 @keyframes app-modal-backdrop-in { from { opacity: 0; } }

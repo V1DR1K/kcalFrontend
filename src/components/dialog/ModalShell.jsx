@@ -42,7 +42,7 @@ export function ModalShell({
 
   return (
     <ModalRoot className={resolvedBackdropClass} onBackdropPointerDown={handleBackdropPointerDown}>
-      <Element ref={dialogRef} className={resolvedSurfaceClass} role={role} aria-modal="true" aria-labelledby={labelledBy || titleId} aria-describedby={describedBy || descriptionId} onPointerDown={(event) => event.stopPropagation()} {...dialogProps}>
+      <Element ref={dialogRef} className={resolvedSurfaceClass} data-dialog-surface="true" role={role} aria-modal="true" aria-labelledby={labelledBy || titleId} aria-describedby={describedBy || descriptionId} onPointerDown={(event) => event.stopPropagation()} {...dialogProps}>
         {!hideHeader && (title || onClose) && (
           <header className="modal-shell-header">
             <div>
@@ -53,7 +53,7 @@ export function ModalShell({
             {onClose && <button type="button" className="icon-button" aria-label={closeLabel} disabled={closeDisabled} onClick={onClose}><Icon name="close" /></button>}
           </header>
         )}
-        {wrapContent ? <div className="modal-shell-content">{children}</div> : children}
+        {wrapContent ? <div className="modal-shell-content" data-dialog-scroll-owner="true">{children}</div> : children}
         {footer && <footer className="modal-shell-footer">{footer}</footer>}
       </Element>
     </ModalRoot>

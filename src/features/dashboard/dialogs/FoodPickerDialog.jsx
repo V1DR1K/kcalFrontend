@@ -538,7 +538,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} />
           </div>
         </div>
-        <div className="picker-scroll" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
+        <div className="picker-scroll" data-dialog-scroll-owner="true" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
           {tab === "FOOD" && !normalizedQuery && <div className="picker-results">
             {groupFoodVariants(recentFoods).map((item) => (
               <CatalogRowWithImage key={`RECENT_FOOD:${item.preparationGroup || item.id}`} item={item} onPick={setSelected} />

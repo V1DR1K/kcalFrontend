@@ -48,7 +48,7 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
   const canConfirm = estimate.name.trim() && estimate.items.length && estimate.items.every((item) => item.name?.trim()
     && Number(item.estimatedGrams) > 0 && Number(item.estimatedGrams) <= 3000);
   const editor = (
-      <section ref={resolvedDialogRef} className={`selected-editor ai-estimate-editor ${standalone ? "app-modal-surface" : ""}`.trim()} role="dialog" aria-modal="true" aria-label={mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto"}>
+      <section ref={resolvedDialogRef} className={`selected-editor ai-estimate-editor ${standalone ? "app-modal-surface" : ""}`.trim()} data-dialog-scroll-owner="true" role="dialog" aria-modal="true" aria-label={mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto"}>
         <span className="sheet-handle" aria-hidden="true" />
         <header><div><span>{mode === "saved" ? "Estimación guardada" : "Estimación IA"}</span><h3>{estimate.name}</h3><small>Confianza estimada: {estimate.confidence}%</small></div><button className="icon-button" aria-label="Cerrar estimación" onClick={onDiscard}><Icon name="close" /></button></header>
         {mode === "saved" && <>

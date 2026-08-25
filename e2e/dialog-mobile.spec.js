@@ -8,9 +8,10 @@ async function seedAuthenticatedApp(page) {
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
     let body = {};
-    if (url.includes("/nutrition/dashboard")) body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals: [], waterConsumed: 0, waterGoal: 2, plan: null };
-    if (url.includes("/nutrition/meal-types")) body = [];
+    if (url.includes("/nutrition/dashboard")) body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals: [{ mealType: "BREAKFAST", items: [] }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }], waterConsumed: 0, waterGoal: 2, plan: null };
+    if (url.includes("/nutrition/meal-types")) body = [{ code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" }, { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" }];
     if (url.includes("/nutrition/day-presets")) body = [];
+    if (url.includes("/nutrition/ai-estimates/usage")) body = { available: false };
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
 }
@@ -31,4 +32,24 @@ test("keeps the scanner form inside a reduced mobile visual viewport", async ({ 
   expect(bounds.bottom).toBeLessThanOrEqual(viewportHeight + 1);
   expect(inputBounds.bottom).toBeLessThanOrEqual(viewportHeight + 1);
   await expect(page.locator(".scanner-result")).toHaveCSS("overflow-y", "auto");
+});
+
+test("keeps photo actions in one compact mobile row", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page);
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.getByText("Elegir foto", { exact: true }).waitFor();
+
+  const layout = await page.locator(".picker-photo-actions").evaluate((element) => {
+    const buttons = [...element.querySelectorAll(".ai-photo-trigger")].map((trigger) => {
+      const rect = trigger.getBoundingClientRect();
+      return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+    });
+    return { display: getComputedStyle(element).display, buttons };
+  });
+  expect(layout.display).toBe("grid");
+  expect(layout.buttons).toHaveLength(2);
+  expect(layout.buttons[1].top).toBe(layout.buttons[0].top);
+  expect(layout.buttons[0].height).toBeGreaterThanOrEqual(48);
 });

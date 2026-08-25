@@ -148,7 +148,7 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
           backdropClassName="register-collection-backdrop"
           wrapContent={false}
         >
-          <div className="register-collection-content">
+          <div className="register-collection-content" data-dialog-scroll-owner="true">
             <RecipesComponent api={api} user={user} setPage={setPage} embedded />
           </div>
         </ModalShell>
@@ -165,7 +165,7 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
           backdropClassName="register-collection-backdrop"
           wrapContent={false}
         >
-          <div className="register-collection-content">
+          <div className="register-collection-content" data-dialog-scroll-owner="true">
             <MyFoodsComponent api={api} setPage={setPage} embedded />
           </div>
         </ModalShell>
@@ -243,7 +243,7 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
           </div>
           <p aria-live="polite">{status}</p>
         </div>
-        <section className={`scanner-result ${food ? "show" : ""}`}>
+        <section className={`scanner-result ${food ? "show" : ""}`} data-dialog-scroll-owner="true">
           {food ? (
             <>
               <div>
