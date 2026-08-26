@@ -4,6 +4,7 @@ import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { CatalogStatus, FoodThumb, NutrientDetails, preparationLabel } from "../catalog/CatalogComponents";
 import { formatNumber } from "../../utils/format";
+import { cookedRecipeWeight, rawRecipeWeight, recipeServingFactor } from "../../utils/recipe";
 import { NutritionSummary } from "../../components/NutritionSummary";
 import { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
 
@@ -110,7 +111,7 @@ export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onD
         <FoodThumb item={recipe} />
         <div>
           <h3>{recipe.name}</h3>
-          <p>Receta completa · {formatNumber(recipe.totalWeightGrams, 1)}g internos</p>
+          <p>Ingredientes crudos: {formatNumber(rawRecipeWeight(recipe), 1)} g{cookedRecipeWeight(recipe) > 0 ? ` · Cocidos: ${formatNumber(cookedRecipeWeight(recipe), 1)} g` : ""}</p>
         </div>
         <NutritionSummary nutrition={recipe} />
         <div className="recipe-card-menu" data-recipe-menu={recipe.id}>
@@ -146,6 +147,7 @@ export function FoodLogForm({
   onPreparationChange,
   recipeIngredients,
   onRecipeIngredientChange,
+  recipeIngredientsLocked = false,
   showIngredients,
   onToggleIngredients,
   onResetRecipe,
@@ -167,19 +169,12 @@ export function FoodLogForm({
         />
       )}
       <div className="edit-log-fields">
-        <div className={`edit-log-quantity ${isRecipe ? "portions" : ""}`}>
+        <div className={`edit-log-quantity ${isRecipe && unit === "PORTION" ? "portions" : ""}`}>
           <Input selectOnFocus numericOnly label="Cantidad" type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => onQuantityChange(event.target.value)} />
-          <small>{isRecipe ? "porciones" : unit === "GRAM" ? "g" : "porciones"}</small>
+          <small>{isRecipe && unit === "GRAM" ? "g cocidos" : isRecipe ? "porciones" : unit === "GRAM" ? "g" : "porciones"}</small>
         </div>
         {mode === "add" ? (
-          isRecipe ? (
-            <div className="recipe-fixed-unit" aria-label="Unidad fija">
-              <span>Unidad</span>
-              <strong>Porciones</strong>
-            </div>
-          ) : (
-            <Select label="Unidad" value={unit} onChange={(event) => onUnitChange(event.target.value)} options={unitOptions} />
-          )
+          <Select label="Unidad" value={unit} onChange={(event) => onUnitChange(event.target.value)} options={unitOptions} />
         ) : (
           <Select label="Comida" value={mealType} onChange={(event) => onMealTypeChange(event.target.value)} options={mealTypeOptions} />
         )}
@@ -195,17 +190,19 @@ export function FoodLogForm({
           >
             <span>
               <strong>Ingredientes</strong>
-              <small>{mode === "add" ? "Ajusta las cantidades antes de agregar." : "Los cambios no modifican la receta base."}</small>
+              <small>{recipeIngredientsLocked ? "La cantidad se calcula con el peso cocido medido." : mode === "add" ? "Ajusta las cantidades antes de agregar." : "Los cambios no modifican la receta base."}</small>
             </span>
             <Icon name={mode === "add" || showIngredients ? "expand_less" : "expand_more"} />
           </button>
           <div className="daily-recipe-fields" id={mode === "edit" ? `daily-recipe-${logId}` : undefined} hidden={mode === "edit" && !showIngredients}>
-            {recipeIngredients.map((ingredient, index) => (
-              <Input key={ingredient.foodId} numericOnly label={`${ingredient.name} (g)`} type="number" inputMode="decimal" min="0.1" step="0.1" value={ingredient.quantity} onChange={(event) => onRecipeIngredientChange(index, event.target.value)} />
-            ))}
-            {mode === "edit" && showIngredients && onResetRecipe && (
-              <button type="button" className="secondary daily-recipe-reset" disabled={saving} onClick={onResetRecipe}>Restablecer receta base</button>
-            )}
+            {recipeIngredientsLocked ? <p className="daily-recipe-locked">Los gramos cocidos usan el peso final medido; no se pueden ajustar ingredientes en este registro.</p> : <>
+              {recipeIngredients.map((ingredient, index) => (
+                <Input key={ingredient.foodId} numericOnly label={`${ingredient.name} (g)`} type="number" inputMode="decimal" min="0.1" step="0.1" value={ingredient.quantity} onChange={(event) => onRecipeIngredientChange(index, event.target.value)} />
+              ))}
+              {mode === "edit" && showIngredients && onResetRecipe && (
+                <button type="button" className="secondary daily-recipe-reset" disabled={saving} onClick={onResetRecipe}>Restablecer receta base</button>
+              )}
+            </>}
           </div>
         </section>
       )}
@@ -247,13 +244,19 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     carbsGrams: log.carbsGrams,
     fatGrams: log.fatGrams,
   });
-  const [showIngredients, setShowIngredients] = useState(Boolean(log.recipeAdjusted));
+  const [showIngredients, setShowIngredients] = useState(Boolean(log.recipeAdjusted) || (log.itemType === "RECIPE" && log.unit === "GRAM"));
   const [saving, setSaving] = useState(false);
   const [closing, setClosing] = useState(false);
   const [preparations, setPreparations] = useState([]);
   const [selectedFoodId, setSelectedFoodId] = useState(() => log.itemType === "FOOD" ? (log.food?.id || null) : null);
-  const item = log.itemType === "RECIPE" ? log.recipe : log.food;
+  const item = log.itemType === "RECIPE" ? {
+    ...log.recipe,
+    rawTotalWeightGrams: log.recipeRawTotalWeightGrams ?? log.recipe?.rawTotalWeightGrams ?? log.recipe?.totalWeightGrams,
+    cookedTotalWeightGrams: log.recipeCookedTotalWeightGrams ?? log.recipe?.cookedTotalWeightGrams,
+  } : log.food;
   const isRecipe = log.itemType === "RECIPE";
+  const unit = log.unit || (isRecipe ? "PORTION" : "GRAM");
+  const recipeUsesCookedGrams = isRecipe && unit === "GRAM";
   const closeWithAnimation = useCallback(() => {
     if (closing || saving) return;
     setClosing(true);
@@ -284,11 +287,12 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
           fatGrams: total.fatGrams + Number(food?.fatGrams || 0) * factor,
         };
       }, { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
+      const factor = recipeServingFactor(item, numericQuantity, unit);
       setPreview({
-        calories: Math.round((nutrition.proteinGrams * 4 + nutrition.carbsGrams * 4 + nutrition.fatGrams * 9) * numericQuantity),
-        proteinGrams: nutrition.proteinGrams * numericQuantity,
-        carbsGrams: nutrition.carbsGrams * numericQuantity,
-        fatGrams: nutrition.fatGrams * numericQuantity,
+        calories: Math.round((nutrition.proteinGrams * 4 + nutrition.carbsGrams * 4 + nutrition.fatGrams * 9) * factor),
+        proteinGrams: nutrition.proteinGrams * factor,
+        carbsGrams: nutrition.carbsGrams * factor,
+        fatGrams: nutrition.fatGrams * factor,
       });
       return undefined;
     }
@@ -308,12 +312,12 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     return () => {
       active = false;
     };
-  }, [api, ingredients, isRecipe, item, log.itemType, quantity, selectedFoodId]);
+  }, [api, ingredients, isRecipe, item, log.itemType, quantity, selectedFoodId, unit]);
   function updateIngredient(index, value) {
     setIngredients((current) => current.map((ingredient, currentIndex) => currentIndex === index ? { ...ingredient, quantity: value } : ingredient));
   }
   async function resetRecipe() {
-    if (saving || !isRecipe) return;
+    if (saving || !isRecipe || recipeUsesCookedGrams) return;
     setSaving(true);
     try {
       await api.runAction(
@@ -332,7 +336,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     event.preventDefault();
     const numericQuantity = Number(quantity);
     const validIngredients = ingredients.every((ingredient) => Number.isFinite(Number(ingredient.quantity)) && Number(ingredient.quantity) > 0);
-    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || (isRecipe && !validIngredients) || saving) return;
+    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || (isRecipe && !recipeUsesCookedGrams && !validIngredients) || saving) return;
     setSaving(true);
     try {
       await api.runAction(
@@ -341,16 +345,25 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
           const body = {
             mealType,
             quantity: numericQuantity,
-            unit: log.unit || "GRAM",
+            unit,
             logDate: log.logDate,
           };
           if (!isRecipe && selectedFoodId && selectedFoodId !== log.food?.id) {
             body.itemId = selectedFoodId;
           }
-          await api.request(isRecipe ? `/api/nutrition/food-logs/${log.id}/recipe` : `/api/nutrition/food-logs/${log.id}`, {
+          const endpoint = isRecipe && !recipeUsesCookedGrams
+            ? `/api/nutrition/food-logs/${log.id}/recipe`
+            : `/api/nutrition/food-logs/${log.id}`;
+          await api.request(endpoint, {
             method: "PUT",
             body: JSON.stringify(isRecipe
-              ? { mealType, quantity: numericQuantity, logDate: log.logDate, recipeIngredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit }) => ({ foodId, quantity: Number(ingredientQuantity), unit })) }
+            ? {
+                mealType,
+                quantity: numericQuantity,
+                unit,
+                logDate: log.logDate,
+                ...(!recipeUsesCookedGrams ? { recipeIngredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit: ingredientUnit }) => ({ foodId, quantity: Number(ingredientQuantity), unit: ingredientUnit })) } : {}),
+              }
               : body),
           });
         },
@@ -388,7 +401,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
             isRecipe={isRecipe}
             quantity={quantity}
             onQuantityChange={(value) => setQuantity(value)}
-            unit={log.unit || "GRAM"}
+            unit={unit}
             mealType={mealType}
             mealTypeOptions={mealTypes.map((meal) => ({ value: meal.code, label: meal.label }))}
             onMealTypeChange={(value) => setMealType(value)}
@@ -397,9 +410,10 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
             onPreparationChange={(id) => setSelectedFoodId(id)}
             recipeIngredients={isRecipe ? ingredients : null}
             onRecipeIngredientChange={updateIngredient}
+            recipeIngredientsLocked={recipeUsesCookedGrams}
             showIngredients={showIngredients}
             onToggleIngredients={() => setShowIngredients((current) => !current)}
-            onResetRecipe={log.recipeAdjusted ? resetRecipe : null}
+            onResetRecipe={log.recipeAdjusted && !recipeUsesCookedGrams ? resetRecipe : null}
             saving={saving}
             logId={log.id}
             preview={preview}

@@ -28,6 +28,7 @@ export function CatalogRow({ item, onPick }) {
       {(foodMeta(item) || item.preparation) && <span className="catalog-meta">
         {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
         <PreparationBadge food={item} />
+        <CookedYieldHint food={item} />
       </span>}
       <NutritionSummary nutrition={item} />
     </button>
@@ -35,13 +36,12 @@ export function CatalogRow({ item, onPick }) {
 }
 
 export function groupFoodVariants(items) {
-  const grouped = new Map();
+  const groups = new Map();
   for (const item of items || []) {
     const key = item.preparationGroup ? `preparation:${item.preparationGroup}` : `item:${item.type || "FOOD"}:${item.id}`;
-    const current = grouped.get(key);
-    if (!current || (item.preparation === "COOKED" && current.preparation !== "COOKED")) grouped.set(key, item);
+    groups.set(key, [...(groups.get(key) || []), item]);
   }
-  return [...grouped.values()];
+  return [...groups.values()].flatMap((variants) => variants.sort((left, right) => (left.preparation === "RAW" ? 0 : 1) - (right.preparation === "RAW" ? 0 : 1)));
 }
 
 export function CatalogRowWithImage({ item, onPick }) {
@@ -53,6 +53,7 @@ export function CatalogRowWithImage({ item, onPick }) {
         {(foodMeta(item) || item.preparation) && <span className="catalog-meta">
           {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
           <PreparationBadge food={item} />
+          <CookedYieldHint food={item} />
         </span>}
         <NutritionSummary nutrition={item} />
       </span>
@@ -88,6 +89,15 @@ export function PreparationBadge({ food, showUnknown = false }) {
       {option.label}
     </small>
   );
+}
+
+export function CookedYieldHint({ food }) {
+  const factor = Number(food?.cookedYieldFactor);
+  if (!Number.isFinite(factor) || factor <= 0) return null;
+  const source = String(food?.cookedYieldSource || "").toUpperCase();
+  const approximate = source.includes("AI") || source === "GEMINI";
+  const assumption = food?.cookedYieldAssumption;
+  return <small className="cooked-yield-hint" title={assumption || undefined}>{approximate ? "Rendimiento aprox." : "Rendimiento"}: 100 g crudos rinden {formatNumber(factor * 100, 0)} g cocidos</small>;
 }
 
 export function preparationLabel(preparation) {

@@ -8,6 +8,7 @@ import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodCompone
 import { usePagedCatalog } from "../../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../../services/recents";
 import { formatNumber, readableDate } from "../../../utils/format";
+import { hasCookedRecipeWeight, recipeServingFactor } from "../../../utils/recipe";
 import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./MealPhotoDialog";
 import { ModalShell } from "../../../components/dialog/ModalShell";
@@ -304,9 +305,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       });
   }, [api, selected?.id, selected?.type]);
   useEffect(() => {
-    if (selected?.type === "RECIPE" && unit !== "PORTION") setUnit("PORTION");
+    if (selected?.type === "RECIPE" && unit === "GRAM" && !hasCookedRecipeWeight(recipeDetail || selected)) setUnit("PORTION");
     if (selected?.type !== "RECIPE" && !selected?.servingWeightGrams && unit === "SERVING") setUnit("GRAM");
-  }, [selected, unit]);
+  }, [recipeDetail, selected, unit]);
   useEffect(() => {
     const numericQuantity = Number(quantity);
     if (!selected || !Number.isFinite(numericQuantity) || numericQuantity <= 0) return setPreview(null);
@@ -334,11 +335,20 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           fatGrams: total.fatGrams + Number(food?.fatGrams || 0) * factor,
         };
       }, { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
+      const factor = recipeServingFactor(recipeDetail || selected, numericQuantity, unit);
       setPreview({
-        calories: Math.round((nutrition.proteinGrams * 4 + nutrition.carbsGrams * 4 + nutrition.fatGrams * 9) * numericQuantity),
-        proteinGrams: nutrition.proteinGrams * numericQuantity,
-        carbsGrams: nutrition.carbsGrams * numericQuantity,
-        fatGrams: nutrition.fatGrams * numericQuantity,
+        calories: Math.round((nutrition.proteinGrams * 4 + nutrition.carbsGrams * 4 + nutrition.fatGrams * 9) * factor),
+        proteinGrams: nutrition.proteinGrams * factor,
+        carbsGrams: nutrition.carbsGrams * factor,
+        fatGrams: nutrition.fatGrams * factor,
+      });
+    } else if (selected.type === "RECIPE") {
+      const factor = recipeServingFactor(recipeDetail || selected, numericQuantity, unit);
+      setPreview({
+        calories: Math.round(Number(selected.calories || 0) * factor),
+        proteinGrams: Number(selected.proteinGrams || 0) * factor,
+        carbsGrams: Number(selected.carbsGrams || 0) * factor,
+        fatGrams: Number(selected.fatGrams || 0) * factor,
       });
     } else {
       setPreview({
@@ -360,7 +370,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         itemId: selected.id,
         mealType: mealType.code,
         quantity: logQuantity,
-        unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
+        unit: selected.type === "RECIPE" ? unit : "GRAM",
         displayName: selected.name,
         calories: preview?.calories || 0,
         proteinGrams: preview?.proteinGrams || 0,
@@ -376,14 +386,14 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       food: selected.type === "FOOD" ? selected : null,
       recipe: selected.type === "RECIPE" ? { ...selected, ...recipeDetail } : null,
       quantity: logQuantity,
-      unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
+      unit: selected.type === "RECIPE" ? unit : "GRAM",
       ...preview,
     }], mealType.code);
     try {
       const log = await api.runAction(
         { title: "Agregando alimento", description: `Estamos sumando ${selected.name} a ${mealType.label.toLowerCase()}...` },
         async () => {
-           if (selected.type === "RECIPE" && recipeIngredients && recipeDetail) {
+            if (selected.type === "RECIPE" && unit === "PORTION" && recipeIngredients && recipeDetail) {
              const baseIngredients = (recipeDetail.ingredients || []).map((ing) => ({
               foodId: ing.food?.id,
               quantity: Number(ing.quantity ?? 0),
@@ -397,10 +407,11 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
                return api.request("/api/nutrition/meal-logs/recipe", {
                  method: "POST",
                  body: JSON.stringify({
-                   recipeId: selected.id,
-                   mealType: mealType.code,
-                   quantity: logQuantity,
-                   logDate: selectedDate,
+                    recipeId: selected.id,
+                    mealType: mealType.code,
+                    quantity: logQuantity,
+                    unit,
+                    logDate: selectedDate,
                    ingredients: recipeIngredients.map(({ foodId, quantity: ingQty, unit }) => ({ foodId, quantity: Number(ingQty), unit })),
                  }),
                });
@@ -413,7 +424,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
                itemId: selected.id,
                mealType: mealType.code,
                quantity: logQuantity,
-               unit: selected.type === "RECIPE" ? "PORTION" : "GRAM",
+                unit: selected.type === "RECIPE" ? unit : "GRAM",
                logDate: selectedDate,
              }),
            });
@@ -432,7 +443,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   }
   const selectedUnitOptions =
     selected?.type === "RECIPE"
-      ? [{ value: "PORTION", label: "Porciones" }]
+      ? [
+          { value: "PORTION", label: "Porciones" },
+          ...(hasCookedRecipeWeight(recipeDetail || selected) ? [{ value: "GRAM", label: "Gramos cocidos" }] : []),
+        ]
       : selected?.type === "FOOD" && selected?.servingWeightGrams
       ? [
           { value: "GRAM", label: "Gramos" },
@@ -444,6 +458,16 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       : [{ value: "GRAM", label: "Gramos" }];
   function changeSelectedUnit(nextUnit) {
     if (nextUnit === unit) return;
+    if (selected?.type === "RECIPE") {
+      const cookedWeight = Number((recipeDetail || selected)?.cookedTotalWeightGrams);
+      const numericQuantity = Number(quantity);
+      if (Number.isFinite(cookedWeight) && cookedWeight > 0 && Number.isFinite(numericQuantity) && numericQuantity > 0) {
+        const converted = nextUnit === "GRAM" ? numericQuantity * cookedWeight : numericQuantity / cookedWeight;
+        setQuantity(String(Number(converted.toFixed(2))));
+      }
+      setUnit(nextUnit);
+      return;
+    }
     const numericQuantity = Number(quantity);
     const servingGrams = Number(selected?.servingWeightGrams);
     if (Number.isFinite(numericQuantity) && numericQuantity > 0 && Number.isFinite(servingGrams) && servingGrams > 0) {
@@ -541,16 +565,16 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         <div className="picker-scroll" data-dialog-scroll-owner="true" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
           {tab === "FOOD" && !normalizedQuery && <div className="picker-results">
             {groupFoodVariants(recentFoods).map((item) => (
-              <CatalogRowWithImage key={`RECENT_FOOD:${item.preparationGroup || item.id}`} item={item} onPick={setSelected} />
+              <CatalogRowWithImage key={`RECENT_FOOD:${item.id}`} item={item} onPick={setSelected} />
             ))}
           </div>}
           {(tab === "FOOD" && normalizedQuery.length >= 2 || tab === "RECIPE") && <div className="picker-results">
             {groupFoodVariants(catalog.items).map((item) => (
-              <CatalogRowWithImage key={`${tab}:${item.preparationGroup || item.id}`} item={{ ...item, type: tab }} onPick={setSelected} />
+              <CatalogRowWithImage key={`${tab}:${item.id}`} item={{ ...item, type: tab }} onPick={setSelected} />
             ))}
           </div>}
           {tab === "MINE" && <div className="picker-results">
-            {groupFoodVariants(addedFoods).map((item) => <CatalogRowWithImage key={`MINE:${item.preparationGroup || item.id}`} item={{ ...item, type: "FOOD" }} onPick={setSelected} />)}
+            {groupFoodVariants(addedFoods).map((item) => <CatalogRowWithImage key={`MINE:${item.id}`} item={{ ...item, type: "FOOD" }} onPick={setSelected} />)}
           </div>}
           {tab === "RECENT" && <div className="recent-meals picker-recent-meals">
             {recentBrackets.map((bracket) => <button type="button" className="catalog-row recent-meal-card recent-bracket-card" key={`${bracket.sourceDate}:${bracket.mealType}`} disabled={adding} aria-label={`Agregar ${bracket.label} completo`} onClick={() => addRecentMeal(bracket)}>
@@ -630,6 +654,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
                 }}
                 recipeIngredients={selected.type === "RECIPE" ? recipeIngredients : null}
                 onRecipeIngredientChange={(index, value) => setRecipeIngredients(recipeIngredients.map((ing, i) => i === index ? { ...ing, quantity: value } : ing))}
+                recipeIngredientsLocked={selected.type === "RECIPE" && unit === "GRAM"}
                 preview={preview}
               />
           </FoodLogDialog>

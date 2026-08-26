@@ -4,6 +4,7 @@ import { Icon } from "../../../components/Icon";
 import { CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { formatNumber, readableDate } from "../../../utils/format";
+import { cookedRecipeWeight, rawRecipeWeight } from "../../../utils/recipe";
 import { createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
 import { NutritionPills } from "./DashboardSections";
 import { useMealGesture } from "../hooks/useMealGesture";
@@ -201,11 +202,13 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
 function MealLogDetails({ log, item }) {
   if (log.itemType === "RECIPE") {
     const ingredients = aggregateRecipeIngredients(item?.ingredients || []);
+    const usesCookedGrams = log.unit === "GRAM";
     return (
       <div className="meal-item-detail recipe-meal-item-detail">
         <div className="meal-detail-summary">
-          <span><small>Porciones</small><strong>{formatNumber(log.quantity, 1)}</strong></span>
-          <span><small>Peso interno</small><strong>{formatNumber(item?.totalWeightGrams, 1)}g</strong></span>
+          <span><small>{usesCookedGrams ? "Gramos cocidos" : "Porciones"}</small><strong>{usesCookedGrams ? `${formatNumber(log.quantity, 1)} g` : formatNumber(log.quantity, 1)}</strong></span>
+          <span><small>Peso de ingredientes</small><strong>{formatNumber(rawRecipeWeight(item), 1)} g</strong></span>
+          {cookedRecipeWeight(item) > 0 && <span><small>Peso cocido final</small><strong>{formatNumber(cookedRecipeWeight(item), 1)} g</strong></span>}
         </div>
         <NutritionPills nutrition={log} />
         {log.recipeAdjusted && <small className="daily-recipe-note">Versión ajustada para este día</small>}

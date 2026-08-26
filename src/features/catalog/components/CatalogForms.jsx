@@ -4,12 +4,13 @@ import { Icon } from "../../../components/Icon";
 import { InfiniteSentinel } from "../../../components/InfiniteSentinel";
 import { Input, Select } from "../../../components/FormControls";
 import { Panel } from "../../../components/Layout";
-import { CatalogStatus, groupFoodVariants, categoryLabel } from "../CatalogComponents";
+import { CatalogStatus, CookedYieldHint, groupFoodVariants, PreparationBadge, categoryLabel } from "../CatalogComponents";
 import { usePagedCatalog } from "../usePagedCatalog";
 import { formatNumber } from "../../../utils/format";
 import { DerivedCaloriesHint, OcrNutritionPreview } from "./OcrNutritionPreview";
 import { OCR_MACRO_FIELDS } from "../utils/catalog.utils";
 import { NutritionSummary } from "../../../components/NutritionSummary";
+import { buildRecipePayload, recipeYieldPercent } from "../../../utils/recipe";
 
 export function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode, onDirtyChange, onBusyChange, id, hideSubmit = false, title = "Nuevo alimento" }) {
   const [saving, setSaving] = useState(false);
@@ -171,7 +172,7 @@ export function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode, onDir
 function recipeFieldLabel(field) {
   if (field === "name") return "Nombre";
   if (field === "description") return "Descripción";
-  if (field === "totalWeightGrams") return "Peso total";
+  if (field === "cookedTotalWeightGrams") return "Peso cocido final";
   if (field?.startsWith("ingredients")) return "Ingredientes";
   return field || "Datos";
 }
@@ -182,6 +183,9 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id,
   const [preview, setPreview] = useState(null);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [trackCookedWeight, setTrackCookedWeight] = useState(false);
+  const [cookedWeight, setCookedWeight] = useState("");
+  const [cookedWeightCleared, setCookedWeightCleared] = useState(false);
   const totalWeight = useMemo(
     () => ingredients.reduce((total, item) => total + (Number(item.quantity) || 0), 0),
     [ingredients],
@@ -211,6 +215,16 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id,
       .then(setPreview)
       .catch(() => setPreview(null));
   }, [api, ingredients, totalWeight]);
+  const yieldPercent = recipeYieldPercent({ rawTotalWeightGrams: totalWeight, cookedTotalWeightGrams: cookedWeight });
+  function updateIngredients(nextIngredients) {
+    if (cookedWeight) {
+      setCookedWeight("");
+      setTrackCookedWeight(false);
+      setCookedWeightCleared(true);
+    }
+    setIngredients(nextIngredients);
+    onDirtyChange?.(true);
+  }
   async function submit(event) {
     event.preventDefault();
     if (saving) return;
@@ -229,29 +243,33 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id,
       setFormError("Cada ingrediente debe tener una cantidad mayor a cero.");
       return;
     }
+    if (trackCookedWeight && (!Number.isFinite(Number(cookedWeight)) || Number(cookedWeight) <= 0)) {
+      setFormError("Ingresá un peso cocido final mayor a cero o desactivá esta medición.");
+      return;
+    }
     setSaving(true);
     onBusyChange?.(true);
     try {
-      const normalizedIngredients = ingredients.map((item) => ({
-        foodId: item.foodId,
-        quantity: Number(item.quantity),
-        unit: item.unit,
-      }));
       await api.runAction(
         { title: "Creando receta", description: "Estamos guardando los ingredientes..." },
         () => api.request("/api/recipes", {
           method: "POST",
-           body: JSON.stringify({
-             name: data.name,
-             description: data.description,
-             ingredients: normalizedIngredients,
-           }),
+            body: JSON.stringify(buildRecipePayload({
+              name: data.name,
+              description: data.description || "",
+              ingredients,
+              cookedTotalWeightGrams: trackCookedWeight ? cookedWeight : null,
+              clearCookedTotalWeight: cookedWeightCleared,
+            })),
         }, { quiet: true }),
       );
       api.notify("Receta creada.");
       form.reset();
       setIngredients([]);
       setPreview(null);
+      setTrackCookedWeight(false);
+      setCookedWeight("");
+      setCookedWeightCleared(false);
       onDirtyChange?.(false);
       onDone?.();
     } catch (error) {
@@ -280,10 +298,24 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id,
         <div className="recipe-weight-summary" aria-live="polite">
           <Icon name="scale" />
           <div>
-            <small>Peso total calculado</small>
+            <small>Peso de ingredientes antes de cocinar</small>
             <strong>{formatNumber(totalWeight, 1)} g</strong>
           </div>
         </div>
+        <section className="recipe-cooked-weight" aria-describedby="recipe-cooked-weight-help">
+          <label className="recipe-cooked-toggle">
+            <input type="checkbox" checked={trackCookedWeight} onChange={(event) => {
+              setTrackCookedWeight(event.target.checked);
+              if (!event.target.checked && cookedWeight) setCookedWeightCleared(true);
+              onDirtyChange?.(true);
+            }} />
+            <span>Registrar peso cocido final</span>
+          </label>
+          <p id="recipe-cooked-weight-help">Es una medición después de cocinar; usala para registrar la receta en gramos cocidos.</p>
+          {trackCookedWeight && <Input selectOnFocus numericOnly name="cookedTotalWeightGrams" label="Peso cocido final (g)" type="number" inputMode="decimal" min="0.1" step="0.1" value={cookedWeight} onChange={(event) => { setCookedWeight(event.target.value); setCookedWeightCleared(false); onDirtyChange?.(true); }} required />}
+          {yieldPercent != null && <small className="recipe-yield">Rendimiento cocido: {formatNumber(yieldPercent, 1)}%</small>}
+          {cookedWeightCleared && <p className="recipe-cooked-reset" role="status">Cambiaste los ingredientes: medí el peso cocido final nuevamente.</p>}
+        </section>
         <div className="search-wrap">
           <Icon name="search" />
           <input className="search" placeholder="Buscar ingredientes..." value={query} onChange={(event) => setQuery(event.target.value)} />
@@ -297,7 +329,7 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id,
               className="catalog-row ingredient-pick"
               key={food.id}
               onClick={() => {
-                setIngredients([
+                updateIngredients([
                   ...ingredients,
                   {
                     foodId: food.id,
@@ -306,12 +338,11 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id,
                     name: food.name,
                   },
                 ]);
-                onDirtyChange?.(true);
               }}
               >
               <span className="ingredient-pick-copy">
                 <strong>{food.name}</strong>
-                <small>Por 100 g</small>
+                <span className="ingredient-pick-meta"><PreparationBadge food={food} showUnknown /><CookedYieldHint food={food} /></span>
                 <NutritionSummary nutrition={food} />
               </span>
               <em><Icon name="add" />Agregar</em>
@@ -333,10 +364,10 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id,
             <label className="ingredient-row" key={`${item.foodId}:${index}`}>
               <span className="ingredient-name">{item.name}</span>
               <span className="ingredient-quantity">
-                <input aria-label={`Cantidad de ${item.name} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.1" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(",", ".").replace(/[^\d.]/g, ""); }} onChange={(event) => setIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: event.target.value } : ingredient)))} />
+                <input aria-label={`Cantidad de ${item.name} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.1" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(",", ".").replace(/[^\d.]/g, ""); }} onChange={(event) => updateIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: event.target.value } : ingredient)))} />
                 <small>g</small>
               </span>
-              <button type="button" className="ingredient-remove" onClick={() => { setIngredients(ingredients.filter((_, i) => i !== index)); onDirtyChange?.(true); }}>
+              <button type="button" className="ingredient-remove" onClick={() => updateIngredients(ingredients.filter((_, i) => i !== index))}>
                 <Icon name="remove" />Quitar
               </button>
             </label>

@@ -1,4 +1,5 @@
 import { formatNumber } from "../../utils/format";
+import { formatRecipeLogAmount } from "../../utils/recipe";
 import { preparationLabel } from "../catalog/CatalogComponents";
 import { normalizeMealLogReference } from "./mealLogPayload";
 export { mealTotals } from "./nutritionTotals.js";
@@ -39,13 +40,22 @@ export function mealCopyErrorMessage(error, fallback) {
 }
 
 export function formatMealLogAmount(log) {
-  if (log.itemType === "RECIPE") return `${formatNumber(log.quantity, 1)} porción${Number(log.quantity) === 1 ? "" : "es"}`;
+  if (log.itemType === "RECIPE") return formatRecipeLogAmount(log);
   if (log.itemType === "AI_ESTIMATE") return "Estimación por foto";
   return `${formatNumber(log.quantity, 1)} g`;
 }
 
 export function mealLogName(log) { return log.itemType === "RECIPE" ? log.recipe?.name : log.itemType === "AI_ESTIMATE" ? log.displayName || "Comida estimada" : log.food?.name; }
-export function mealLogItem(log) { if (log.itemType === "RECIPE") return { ...log.recipe, type: "RECIPE" }; if (log.itemType === "AI_ESTIMATE") return { name: mealLogName(log), category: "OTHER", type: "AI_ESTIMATE" }; return { ...log.food, type: "FOOD" }; }
+export function mealLogItem(log) {
+  if (log.itemType === "RECIPE") return {
+    ...log.recipe,
+    rawTotalWeightGrams: log.recipeRawTotalWeightGrams ?? log.recipe?.rawTotalWeightGrams ?? log.recipe?.totalWeightGrams,
+    cookedTotalWeightGrams: log.recipeCookedTotalWeightGrams ?? log.recipe?.cookedTotalWeightGrams,
+    type: "RECIPE",
+  };
+  if (log.itemType === "AI_ESTIMATE") return { name: mealLogName(log), category: "OTHER", type: "AI_ESTIMATE" };
+  return { ...log.food, type: "FOOD" };
+}
 
 export function savedAiEstimate(log) {
   try {

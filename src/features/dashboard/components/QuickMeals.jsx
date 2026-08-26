@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Icon } from "../../../components/Icon";
 import { FoodThumb } from "../../catalog/CatalogComponents";
 import { readRecents } from "../../../services/recents";
-import { createMealLogs } from "../dashboard.utils";
+import { createMealLogs, formatMealLogAmount } from "../dashboard.utils";
 import { formatNumber } from "../../../utils/format";
 
 export function QuickItems({ title, items, onPick }) {
@@ -76,7 +76,7 @@ export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAd
             <FoodThumb item={item} compact />
             <span className="recent-meal-copy">
               <strong>{meal.label}</strong>
-              <small>{mealLabel} · {meal.itemType === "RECIPE" ? `${formatNumber(meal.quantity, 1)} porción${Number(meal.quantity) === 1 ? "" : "es"}` : `${formatNumber(meal.quantity, 1)} g`}</small>
+              <small>{mealLabel} · {formatMealLogAmount(meal)}</small>
             </span>
             <strong className="recent-meal-calories">{formatNumber(meal.calories || 0)}<small> kcal</small></strong>
             <button type="button" disabled={state === "adding" || state === "added"} aria-label={`Agregar ${meal.label} a ${mealLabel}`} onClick={() => addRecent(meal)}>
@@ -88,4 +88,3 @@ export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAd
     </div>
   );
 }
-

@@ -23,6 +23,17 @@ test("falls back to the catalog item id for copied backend logs", () => {
   assert.equal(buildMealLogPayload({ itemType: "RECIPE", recipe: { id: 9 }, quantity: 2, unit: "PORTION" }, "LUNCH", "2026-08-12").itemId, 9);
 });
 
+test("preserves cooked recipe grams when copying a meal", () => {
+  assert.deepEqual(buildMealLogPayload({ itemType: "RECIPE", recipe: { id: 9 }, quantity: 180, unit: "GRAM" }, "LUNCH", "2026-08-12"), {
+    itemType: "RECIPE",
+    itemId: 9,
+    mealType: "LUNCH",
+    quantity: 180,
+    unit: "GRAM",
+    logDate: "2026-08-12",
+  });
+});
+
 test("normalizes dashboard food references and applies the destination meal and date", () => {
   assert.deepEqual(normalizeMealLogReference({
     itemType: "FOOD",

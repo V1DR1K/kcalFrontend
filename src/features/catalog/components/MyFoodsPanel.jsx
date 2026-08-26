@@ -3,7 +3,7 @@ import { CATEGORY_OPTIONS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
 import { Input, Select } from "../../../components/FormControls";
 import { Panel } from "../../../components/Layout";
-import { CatalogStatus, categoryLabel, FoodThumb, PreparationBadge } from "../CatalogComponents";
+import { CatalogStatus, categoryLabel, CookedYieldHint, FoodThumb, PreparationBadge } from "../CatalogComponents";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 import { DerivedCaloriesHint } from "./OcrNutritionPreview";
 import { ModalShell } from "../../../components/dialog/ModalShell";
@@ -139,8 +139,9 @@ export function MyFoods({ api, onDirtyChange, onCreateFood, embedded = false }) 
               <span className="catalog-copy">
                 <strong>{item.name}</strong>
                 <span className="catalog-meta">
-                  <em className="food-brand-line">{item.brand || categoryLabel(item.category)}</em>
-                  <PreparationBadge food={item} />
+                   <em className="food-brand-line">{item.brand || categoryLabel(item.category)}</em>
+                   <PreparationBadge food={item} />
+                   <CookedYieldHint food={item} />
                 </span>
                 <NutritionSummary nutrition={item} />
               </span>
@@ -172,8 +173,9 @@ export function MyFoods({ api, onDirtyChange, onCreateFood, embedded = false }) 
                 <span className="catalog-copy">
                   <strong>{item.name}</strong>
                   <span className="catalog-meta">
-                    <em className="food-brand-line">{item.brand || categoryLabel(item.category)}</em>
-                    <PreparationBadge food={item} />
+                     <em className="food-brand-line">{item.brand || categoryLabel(item.category)}</em>
+                     <PreparationBadge food={item} />
+                     <CookedYieldHint food={item} />
                   </span>
                   <NutritionSummary nutrition={item} />
                 </span>

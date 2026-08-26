@@ -3,7 +3,7 @@ import { DEFAULT_MEALS } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Panel } from "../../components/Layout";
-import { CatalogStatus, FoodThumb, NutrientDetails, NutrientEditor, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
+import { CatalogStatus, CookedYieldHint, FoodThumb, NutrientDetails, NutrientEditor, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
 import { rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, today } from "../../utils/format";
 import { NutritionSummary } from "../../components/NutritionSummary";
@@ -169,6 +169,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
             <h2>{food?.name || "Alimento"}</h2>
             <small>{food?.brand || categoryLabel(food?.category)}</small>
             <PreparationBadge food={food} showUnknown />
+            <CookedYieldHint food={food} />
           </div>
         </div>
         {preparationSelectOptions.length > 1 && (
