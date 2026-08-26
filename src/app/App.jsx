@@ -21,6 +21,16 @@ const Recipes = lazyPage(() => import("../features/recipes/Recipes"), "Recipes")
 const CreateCatalog = lazyPage(() => import("../features/catalog/CreateCatalog"), "CreateCatalog");
 const ConfigureFood = lazyPage(() => import("../features/foods/ConfigureFood"), "ConfigureFood");
 const Scanner = lazyPage(() => import("../features/scanner/Scanner"), "Scanner");
+const TrainingDashboard = lazyPage(() => import("../features/training/TrainingDashboard"), "TrainingDashboard");
+const TrainingCalendar = lazyPage(() => import("../features/training/TrainingCalendar"), "TrainingCalendar");
+const TrainingProfile = lazyPage(() => import("../features/training/TrainingProfile"), "TrainingProfile");
+
+function navigationState() {
+  const state = window.history.state || {};
+  const mode = state.scalegramsMode === "training" ? "training" : "nutrition";
+  return { mode, page: typeof state.scalegramsPage === "string" ? state.scalegramsPage : null };
+}
+
 function PageLoader({ page }) {
   const labels = {
     dashboard: ["Cargando tu día", "Estamos preparando tu resumen diario..."],
@@ -28,19 +38,44 @@ function PageLoader({ page }) {
     recipes: ["Cargando recetas", "Estamos preparando la biblioteca de recetas..."],
     configure: ["Cargando alimento", "Estamos preparando sus datos nutricionales..."],
     scanner: ["Cargando Registrar", "Estamos preparando las opciones de registro..."],
+    "training-dashboard": ["Cargando entrenamiento", "Estamos preparando tu resumen de actividad..."],
+    "training-calendar": ["Cargando calendario", "Estamos preparando tus sesiones..."],
+    "training-profile": ["Cargando perfil de entrenamiento", "Estamos preparando tus rutinas y ejercicios..."],
   };
   const [title, description] = labels[page] || ["Cargando vista", "Estamos preparando la información..."];
   return <ActionLoader title={title} description={description} />;
 }
 
 export function App() {
-  const [page, setPageRaw] = useState(() => (localStorage.getItem(TOKEN_KEY) ? "dashboard" : "login"));
+  const initialNavigation = navigationState();
+  const [page, setPageRaw] = useState(() => (localStorage.getItem(TOKEN_KEY) ? initialNavigation.page || (initialNavigation.mode === "training" ? "training-dashboard" : "dashboard") : "login"));
+  const [mode, setModeRaw] = useState(() => (localStorage.getItem(TOKEN_KEY) ? initialNavigation.mode : "nutrition"));
   const pageRef = useRef(page);
+  const modeRef = useRef(mode);
+  const nutritionPageRef = useRef(mode === "nutrition" ? page : "dashboard");
+  const trainingPageRef = useRef(mode === "training" ? page : "training-dashboard");
   pageRef.current = page;
+  modeRef.current = mode;
+
+  function pushNavigation(nextMode, nextPage, replace = false) {
+    window.history[replace ? "replaceState" : "pushState"]({ ...(window.history.state || {}), scalegramsMode: nextMode, scalegramsPage: nextPage }, "");
+  }
 
   function setPage(next) {
     setPageRaw(next);
-    window.history.pushState({ scalegramsPage: next }, "");
+    if (modeRef.current === "training") trainingPageRef.current = next;
+    else nutritionPageRef.current = next;
+    pushNavigation(modeRef.current, next);
+  }
+
+  function setMode(nextMode) {
+    if (nextMode === modeRef.current) return;
+    const nextPage = nextMode === "training" ? trainingPageRef.current || "training-dashboard" : nutritionPageRef.current || "dashboard";
+    setModeRaw(nextMode);
+    setPageRaw(nextPage);
+    if (nextMode === "training") trainingPageRef.current = nextPage;
+    else nutritionPageRef.current = nextPage;
+    pushNavigation(nextMode, nextPage);
   }
   const [user, setUser] = useState(() => getSavedUser(USER_KEY));
   const [selectedFoodId, setSelectedFoodId] = useState(null);
@@ -93,7 +128,7 @@ export function App() {
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-  }, [page]);
+  }, [mode, page]);
 
   function saveSession(payload) {
     const accessToken = payload.accessToken || payload.token;
@@ -103,7 +138,10 @@ export function App() {
     localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
     setUser(payload.user);
     window.dispatchEvent(new Event("scalegrams:session-updated"));
-    setPage("dashboard");
+    setModeRaw("nutrition");
+    nutritionPageRef.current = "dashboard";
+    setPageRaw("dashboard");
+    pushNavigation("nutrition", "dashboard");
   }
 
   function logout() {
@@ -137,6 +175,10 @@ export function App() {
   }, [api]);
 
   useEffect(() => {
+    if (localStorage.getItem(TOKEN_KEY) && !window.history.state?.scalegramsPage) pushNavigation(modeRef.current, pageRef.current, true);
+  }, []);
+
+  useEffect(() => {
     const syncUser = () => setUser(getSavedUser(USER_KEY));
     window.addEventListener("scalegrams:session-updated", syncUser);
     window.addEventListener("storage", syncUser);
@@ -148,14 +190,18 @@ export function App() {
     const onPopState = (event) => {
       const state = event.state;
       if (state && typeof state.scalegramsPage === "string") {
+        const nextMode = state.scalegramsMode === "training" ? "training" : "nutrition";
+        setModeRaw(nextMode);
         setPageRaw(state.scalegramsPage);
+        if (nextMode === "training") trainingPageRef.current = state.scalegramsPage;
+        else nutritionPageRef.current = state.scalegramsPage;
         return;
       }
       if (!localStorage.getItem(TOKEN_KEY)) return;
       const now = Date.now();
       if (now - lastExitAttempt < 2000) return;
       lastExitAttempt = now;
-      window.history.pushState({ scalegramsPage: pageRef.current }, "");
+      pushNavigation(modeRef.current, pageRef.current);
       api.notify("Tocá atrás de nuevo para salir");
     };
     window.addEventListener("popstate", onPopState);
@@ -168,14 +214,14 @@ export function App() {
       document.title = "Ingresar | ScaleGrams";
       return;
     }
-    const titles = { dashboard: "Mi día", "my-foods": "Mis alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", profile: "Perfil" };
+    const titles = { dashboard: "Mi día", "my-foods": "Mis alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", profile: "Perfil", "training-dashboard": "Entrenamiento", "training-calendar": "Calendario de entrenamiento", "training-profile": "Perfil de entrenamiento" };
     document.title = `${titles[page] || "ScaleGrams"} | ScaleGrams`;
-  }, [authenticated, page]);
+  }, [authenticated, mode, page]);
 
   return (
     <>
       {authenticated ? (
-        <Shell user={user} page={page} setPage={setPage} logout={logout}>
+        <Shell user={user} page={page} mode={mode} setPage={setPage} setMode={setMode} logout={logout}>
           <Suspense fallback={<PageLoader page={page} />}>
             {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
             {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
@@ -194,6 +240,9 @@ export function App() {
             )}
             {page === "history" && <History api={api} />}
             {page === "profile" && <Profile api={api} logout={logout} />}
+            {page === "training-dashboard" && <TrainingDashboard api={api} setPage={setPage} />}
+            {page === "training-calendar" && <TrainingCalendar api={api} />}
+            {page === "training-profile" && <TrainingProfile api={api} />}
           </Suspense>
         </Shell>
       ) : (

@@ -166,6 +166,18 @@
   --swipe-edit-end: #34a985;
   --swipe-delete-start: #8f3030;
   --swipe-delete-end: #c44646;
+  --training-primary: #78b9ff;
+  --training-primary-hover: #a3d2ff;
+  --training-secondary: #244d76;
+  --training-background: #0b1420;
+  --training-surface: #132131;
+  --training-surface-raised: #1a2d40;
+  --training-border: #2b4862;
+  --training-text: #e7f2ff;
+  --training-muted: #aec3d8;
+  --training-focus: #b7e1ff;
+  --training-on-primary: #071a2d;
+  --training-danger: var(--error);
   --primary-container: var(--color-mint-deep);
   --on-primary: var(--color-mint-ink);
   --tertiary: var(--color-sky);

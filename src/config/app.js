@@ -29,6 +29,13 @@ export const navItems = [
   { id: "dashboard", label: "Mi día", mobileLabel: "Mi día", icon: "monitoring" },
   { id: "history", label: "Historial", icon: "calendar_month" }, { id: "profile", label: "Mi perfil", icon: "account_circle" },
   { id: "scanner", label: "Registrar", mobileLabel: "Registrar", icon: "qr_code_scanner", activePages: ["my-foods", "recipes", "configure"] },
+  { id: "training", label: "Entrenamiento", mobileLabel: "Entreno", icon: "fitness_center", mode: "training" },
+];
+export const trainingNavItems = [
+  { id: "training-dashboard", label: "Dashboard", icon: "monitoring" },
+  { id: "training-calendar", label: "Calendario", icon: "calendar_month" },
+  { id: "profile", label: "Perfil", icon: "account_circle" },
+  { id: "training-profile", label: "Perfil de entrenamiento", mobileLabel: "Perfil", icon: "fitness_center" },
 ];
 export function isNavItemActive(item, page) {
   return item.id === page || item.activePages?.includes(page);
