@@ -158,7 +158,7 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
     if (activeDialog === "my-foods" && MyFoodsComponent) {
       return (
         <ModalShell
-          title="Mis alimentos"
+          title="Alimentos"
           eyebrow="Registrar"
           onClose={closeCollection}
           closeLabel="Cerrar mis alimentos"
@@ -203,7 +203,7 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
           </button>
           <button className="register-option register-option-compact" type="button" onClick={() => setActiveDialog("my-foods")}>
             <span className="register-option-icon"><Icon name="nutrition" /></span>
-            <span><strong>Mis alimentos</strong><small>Consultá y editá los alimentos que creaste.</small></span>
+            <span><strong>Alimentos</strong><small>Consultá y editá los alimentos que creaste.</small></span>
             <Icon name="arrow_forward" />
           </button>
         </div>

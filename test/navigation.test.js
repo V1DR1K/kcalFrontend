@@ -12,8 +12,14 @@ test("Registrar is the only navigation entry for recipes and catalog flows", () 
   assert.equal(isNavItemActive(register, "configure"), true);
 });
 
-test("separa Mi perfil de Mis ejercicios en entrenamiento", () => {
+test("separa Perfil de Ejercicios en entrenamiento", () => {
   const profileItems = trainingNavItems.filter((item) => item.id === "profile" || item.id === "training-profile");
-  assert.deepEqual(profileItems.map((item) => item.label), ["Perfil", "Mis ejercicios"]);
-  assert.equal(profileItems[1].mobileLabel, "Mis ejercicios");
+  assert.deepEqual(profileItems.map((item) => item.label), ["Perfil", "Ejercicios"]);
+  assert.equal(profileItems[1].mobileLabel, "Ejercicios");
+});
+
+test("usa nombres directos para las secciones propias", () => {
+  assert.equal(navItems.find((item) => item.id === "dashboard")?.label, "Día");
+  assert.equal(navItems.find((item) => item.id === "profile")?.label, "Perfil");
+  assert.equal(trainingNavItems.find((item) => item.id === "training-dashboard")?.label, "Día");
 });

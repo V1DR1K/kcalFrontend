@@ -119,12 +119,12 @@ export function MyFoods({ api, onDirtyChange, onCreateFood, embedded = false }) 
   }
   if (loading)
     return (
-      <Panel title={embedded ? null : "Mis alimentos"} className={`my-foods-panel ${embedded ? "my-foods-embedded" : ""}`}>
+      <Panel title={embedded ? null : "Alimentos"} className={`my-foods-panel ${embedded ? "my-foods-embedded" : ""}`}>
         <div className="my-foods-loading" aria-busy="true" />
       </Panel>
     );
   return (
-    <Panel title={embedded ? null : "Mis alimentos"} className={`my-foods-panel ${embedded ? "my-foods-embedded" : ""}`}>
+      <Panel title={embedded ? null : "Alimentos"} className={`my-foods-panel ${embedded ? "my-foods-embedded" : ""}`}>
       {onCreateFood && <div className="my-foods-toolbar">
         <span>Alimentos de tu catálogo personal</span>
         <button type="button" className="primary" onClick={onCreateFood}><Icon name="add" />Crear alimento</button>

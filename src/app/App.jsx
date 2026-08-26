@@ -33,14 +33,14 @@ function navigationState() {
 
 function PageLoader({ page, mode }) {
   const labels = {
-    dashboard: ["Cargando tu día", "Estamos preparando tu resumen diario..."],
-    "my-foods": ["Cargando tus alimentos", "Estamos preparando tu catálogo personal..."],
+    dashboard: ["Cargando día", "Estamos preparando tu resumen diario..."],
+    "my-foods": ["Cargando alimentos", "Estamos preparando el catálogo personal..."],
     recipes: ["Cargando recetas", "Estamos preparando la biblioteca de recetas..."],
     configure: ["Cargando alimento", "Estamos preparando sus datos nutricionales..."],
     scanner: ["Cargando Registrar", "Estamos preparando las opciones de registro..."],
-    "training-dashboard": ["Cargando entrenamiento", "Estamos preparando tu resumen de actividad..."],
+    "training-dashboard": ["Cargando día", "Estamos preparando tu resumen de actividad..."],
     "training-calendar": ["Cargando calendario", "Estamos preparando tus sesiones..."],
-    "training-profile": ["Cargando perfil de entrenamiento", "Estamos preparando tus rutinas y ejercicios..."],
+    "training-profile": ["Cargando ejercicios", "Estamos preparando rutinas y ejercicios..."],
   };
   const [title, description] = labels[page] || ["Cargando vista", "Estamos preparando la información..."];
   return <ActionLoader title={title} description={description} mode={mode} />;
@@ -214,7 +214,7 @@ export function App() {
       document.title = "Ingresar | ScaleGrams";
       return;
     }
-    const titles = { dashboard: "Mi día", "my-foods": "Mis alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", profile: "Perfil", "training-dashboard": "Entrenamiento", "training-calendar": "Calendario de entrenamiento", "training-profile": "Mis ejercicios" };
+    const titles = { dashboard: "Día", "my-foods": "Alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", profile: "Perfil", "training-dashboard": "Día", "training-calendar": "Calendario de entrenamiento", "training-profile": "Ejercicios" };
     document.title = `${titles[page] || "ScaleGrams"} | ScaleGrams`;
   }, [authenticated, mode, page]);
 

@@ -183,7 +183,7 @@ export function Dashboard({ api, user, setPage }) {
   if (loading && !data) {
     return (
       <section className="page" role="status" aria-live="polite" aria-label="Preparando tu día">
-        <h1 className="sr-only">Mi día</h1>
+        <h1 className="sr-only">Día</h1>
         <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
         <div className="dashboard-skeleton" aria-hidden="true">
           <div className="dashboard-skeleton-hero">
@@ -219,7 +219,7 @@ export function Dashboard({ api, user, setPage }) {
   }
   return (
     <section className="page dashboard-page" ref={dashboardTopRef}>
-      <Header title="Mi día" compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
+      <Header title="Día" compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
       <CompactBalanceBar
         visible={compactBalance}
         consumed={data?.caloriesConsumed}

@@ -62,14 +62,14 @@ export function Profile({ api, logout }) {
   if (loading)
     return (
       <section className="page">
-        <Header title="Mi perfil" />
+        <Header title="Perfil" />
         <div className="page-loading-stack" aria-busy="true" aria-label="Cargando perfil"><div className="skeleton" /><div className="skeleton" /><div className="skeleton" /></div>
       </section>
     );
   if (error)
     return (
       <section className="page">
-        <Header title="Mi perfil" />
+        <Header title="Perfil" />
         <CatalogStatus error>
           {error}
           <button className="secondary" onClick={load}>
@@ -80,7 +80,7 @@ export function Profile({ api, logout }) {
     );
   return (
     <section className="page profile-page">
-      <Header title="Mi perfil" />
+      <Header title="Perfil" />
       <div className="profile-overview-grid">
         <Panel title={profile?.fullName || "Perfil"}>
           <div className="grid three">

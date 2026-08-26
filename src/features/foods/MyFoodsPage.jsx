@@ -9,7 +9,7 @@ export function MyFoodsPage({ api, setPage, embedded = false, onCreateFood }) {
       {!embedded && <button className="back-button" onClick={() => setPage("scanner")}>
         <Icon name="arrow_back" />Registrar
       </button>}
-      {!embedded && <Header title="Mis alimentos" />}
+      {!embedded && <Header title="Alimentos" />}
       <MyFoods api={api} embedded={embedded} onCreateFood={onCreateFood} />
     </section>
   );

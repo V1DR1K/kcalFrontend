@@ -23,13 +23,14 @@ test("swaps the nutrition shell for training and restores nutrition with browser
   await seedTrainingApp(page);
   await page.goto("/ingresar");
   await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
-  await expect(page.getByRole("heading", { name: "Entrenamiento", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Día", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Nutrición", exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Mis ejercicios", exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ejercicios", exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ver calendario", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Nutrición", exact: true }).first().click();
-  await expect(page.getByRole("heading", { name: "Mi día", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Día", exact: true })).toBeVisible();
   await page.goBack();
-  await expect(page.getByRole("heading", { name: "Entrenamiento", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Día", exact: true })).toBeVisible();
 });
 
 test("opens a gym session editor from the training dashboard", async ({ page }) => {
