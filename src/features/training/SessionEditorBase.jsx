@@ -8,13 +8,13 @@ import { createSessionDraft, dateKey, moduleLabel, sessionPayload } from "./trai
 
 const key = () => crypto.randomUUID?.() || Math.random().toString(36).slice(2);
 
-export function SessionEditorBase({ api, type, session, routines = [], exercises = [], onClose, onSaved, className }) {
+export function SessionEditorBase({ api, type, session, plans = [], exercises = [], onClose, onSaved, className }) {
   const [draft, setDraft] = useState(() => createSessionDraft(type, session));
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const isGym = type === "GYM";
-  const choices = exercises.filter((item) => !item.module || item.module === type).map((item) => ({ value: item.id || item.name, label: item.name }));
+  const choices = exercises.filter((item) => item.active !== false && item.module === type).map((item) => ({ value: String(item.id), label: item.name }));
 
   function updateExercise(index, patch) { setDraft((current) => ({ ...current, exercises: current.exercises.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item) })); }
   function updateSet(exerciseIndex, setIndex, patch) { setDraft((current) => ({ ...current, exercises: current.exercises.map((exercise, itemIndex) => itemIndex !== exerciseIndex ? exercise : { ...exercise, sets: exercise.sets.map((set, index) => index === setIndex ? { ...set, ...patch } : set) }) })); }
@@ -24,13 +24,15 @@ export function SessionEditorBase({ api, type, session, routines = [], exercises
   async function save(event) {
     event.preventDefault();
     if (saving) return;
-    const validExercises = draft.exercises.filter((exercise) => exercise.name.trim() && exercise.sets.length);
+    const validExercises = draft.exercises.filter((exercise) => exercise.exerciseId && exercise.sets.length);
     if (!validExercises.length) return setError("Agregá al menos un ejercicio con una serie.");
     setSaving(true);
     setError("");
     const next = { ...draft, exercises: validExercises };
     try {
-      const saved = await api.runAction({ title: "Guardando sesión", description: "Estamos registrando tu entrenamiento..." }, () => trainingApi.saveSession(api, session || {}, sessionPayload(next, type)), { quiet: true });
+      const payload = sessionPayload(next, type);
+      let saved = await api.runAction({ title: "Guardando sesión", description: "Estamos registrando tu entrenamiento..." }, () => trainingApi.saveSession(api, session || {}, next.planId && !session?.id ? { ...payload, exercises: [] } : payload), { quiet: true });
+      if (!session?.id && next.planId && saved?.id) saved = await trainingApi.saveSession(api, saved, payload);
       api.notify(session?.id ? "Sesión actualizada." : "Sesión guardada.");
       onSaved?.(saved || next);
       onClose();
@@ -47,14 +49,15 @@ export function SessionEditorBase({ api, type, session, routines = [], exercises
         <button type="button" className="training-date-button" onClick={() => setPickerOpen(true)}><Icon name="today" /><span>Fecha<strong>{new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(new Date(`${draft.date}T00:00:00`))}</strong></span><Icon name="chevron_right" /></button>
         <Input label="Duración (min)" type="number" min="1" max="600" numericOnly value={draft.durationMinutes || ""} onChange={(event) => setDraft((current) => ({ ...current, durationMinutes: event.target.value }))} />
       </div>
-      {routines.length > 0 && <Select label="Rutina" value={draft.routineId} options={[{ value: "", label: "Sesión libre" }, ...routines.filter((routine) => !routine.module || routine.module === type).map((routine) => ({ value: routine.id, label: routine.name }))]} onChange={(event) => setDraft((current) => ({ ...current, routineId: event.target.value }))} />}
+      {draft.planId && <div className="training-session-source"><span>Plan asociado</span><strong>{draft.planDayName || draft.planName || plans.find((plan) => String(plan.id) === String(draft.planId))?.name || "Plan de entrenamiento"}</strong><small>Los objetivos del día se guardan junto con esta sesión.</small></div>}
+      <Input label="Título (opcional)" value={draft.title} maxLength="160" onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} placeholder={draft.planDayName || "Ej.: Sesión de fuerza"} />
       <div className="training-exercise-log">
         <div className="training-section-heading"><h3>Ejercicios</h3><button type="button" className="training-secondary training-add-control" onClick={addExercise}><Icon name="add" />Agregar</button></div>
-        {draft.exercises.map((exercise, exerciseIndex) => <article className="training-log-exercise" key={exercise.id}>
+          {draft.exercises.map((exercise, exerciseIndex) => <article className="training-log-exercise" key={exercise.id}>
           <div className="training-log-exercise-heading"><strong>Ejercicio {exerciseIndex + 1}</strong><button type="button" className="training-icon-action training-delete-control" aria-label={`Quitar ejercicio ${exerciseIndex + 1}`} onClick={() => setDraft((current) => ({ ...current, exercises: current.exercises.filter((_, index) => index !== exerciseIndex) }))}><Icon name="delete" /></button></div>
-          {choices.length ? <Select label="Ejercicio" value={exercise.exerciseId || exercise.name} options={[{ value: "", label: "Elegir ejercicio" }, ...choices]} onChange={(event) => selectExercise(exerciseIndex, event.target.value)} /> : <Input label="Ejercicio" value={exercise.name} maxLength="120" onChange={(event) => updateExercise(exerciseIndex, { name: event.target.value })} />}
+          <Select label="Ejercicio" value={String(exercise.exerciseId || "")} options={[{ value: "", label: choices.length ? "Elegir ejercicio" : "No hay ejercicios disponibles" }, ...choices]} onChange={(event) => selectExercise(exerciseIndex, event.target.value)} />
           <div className="training-set-list">
-            {exercise.sets.map((set, setIndex) => <div className={`training-set-row ${isGym ? "training-gym-set" : "training-calisthenics-set"}`} key={set.id}><span>Serie {setIndex + 1}</span><Input label="Repeticiones" type="number" min="0" numericOnly value={set.reps} onChange={(event) => updateSet(exerciseIndex, setIndex, { reps: event.target.value })} />{isGym && <Input label="Peso (kg)" type="number" min="0" step="0.5" numericOnly value={set.weightKg} onChange={(event) => updateSet(exerciseIndex, setIndex, { weightKg: event.target.value })} />}<button type="button" className="training-icon-action training-delete-control" aria-label={`Quitar serie ${setIndex + 1} de ${exercise.name || `ejercicio ${exerciseIndex + 1}`}`} onClick={() => updateExercise(exerciseIndex, { sets: exercise.sets.filter((_, index) => index !== setIndex) })}><Icon name="remove" /></button></div>)}
+            {exercise.sets.map((set, setIndex) => <div className={`training-set-row ${isGym ? "training-gym-set" : "training-calisthenics-set"}`} key={set.id}><span>Serie {setIndex + 1}</span><Input label="Repeticiones" type="number" min="0" numericOnly value={set.reps} onChange={(event) => updateSet(exerciseIndex, setIndex, { reps: event.target.value })} />{isGym && <Input label="Peso (kg)" type="number" min="0" step="0.5" numericOnly value={set.weightKg} onChange={(event) => updateSet(exerciseIndex, setIndex, { weightKg: event.target.value })} />}<label className="training-completed-set"><input type="checkbox" checked={Boolean(set.completed)} onChange={(event) => updateSet(exerciseIndex, setIndex, { completed: event.target.checked })} />Hecha</label><button type="button" className="training-icon-action training-delete-control" aria-label={`Quitar serie ${setIndex + 1} de ${exercise.name || `ejercicio ${exerciseIndex + 1}`}`} onClick={() => updateExercise(exerciseIndex, { sets: exercise.sets.filter((_, index) => index !== setIndex) })}><Icon name="remove" /></button></div>)}
             <button type="button" className="training-text-button" onClick={() => updateExercise(exerciseIndex, { sets: [...exercise.sets, { id: key(), reps: "", weightKg: "" }] })}><Icon name="add" />Agregar serie</button>
           </div>
           <label className="field training-notes-field"><span>Notas del ejercicio</span><textarea value={exercise.notes} maxLength="500" onChange={(event) => updateExercise(exerciseIndex, { notes: event.target.value })} placeholder="Técnica, dificultad o ajuste para la próxima vez" /></label>

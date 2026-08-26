@@ -27,70 +27,102 @@ export function formatDuration(minutes) {
 }
 
 export function normalizeSession(source = {}) {
-  const type = source.type || source.module || source.trainingType || "GYM";
+  const type = source.module || "GYM";
   return {
     id: source.id,
     type: type === "CALISTHENICS" ? "CALISTHENICS" : "GYM",
-    date: source.sessionDate || source.date || dateKey(),
-    routineId: source.routineId || source.routine?.id || "",
-    routineName: source.routineName || source.routine?.name || "Sesión libre",
+    date: source.date || dateKey(),
+    planId: source.planId || "",
+    planDayId: source.planDayId || "",
+    planName: source.planName || "",
+    planDayName: source.planDayName || "",
+    title: source.title || source.planDayName || source.planName || "Sesión libre",
+    status: source.status || "STARTED",
+    startedAt: source.startedAt || null,
+    finishedAt: source.finishedAt || null,
     durationMinutes: Number(source.durationMinutes || source.duration || 0),
     notes: source.notes || "",
     exercises: (source.exercises || []).map((exercise, index) => ({
       id: exercise.id || `exercise-${index}`,
       exerciseId: exercise.exerciseId || exercise.exercise?.id || "",
       name: exercise.name || exercise.exerciseName || exercise.exercise?.name || "Ejercicio",
+      targetSets: exercise.targetSets ?? "",
+      targetRepetitions: exercise.targetRepetitions ?? "",
+      targetWeightKg: exercise.targetWeightKg ?? "",
       notes: exercise.notes || "",
-      sets: (exercise.sets || []).map((set, setIndex) => ({
+      sets: (exercise.sets?.length ? exercise.sets : Array.from({ length: Number(exercise.targetSets || 0) }, (_, setIndex) => ({
+        id: `set-${setIndex}`,
+        reps: exercise.targetRepetitions ?? "",
+        weightKg: exercise.targetWeightKg ?? "",
+        completed: false,
+      }))).map((set, setIndex) => ({
         id: set.id || `set-${setIndex}`,
-        reps: set.reps ?? "",
+        reps: set.reps ?? set.repetitions ?? "",
         weightKg: set.weightKg ?? set.weight ?? "",
+        completed: Boolean(set.completed),
+        notes: set.notes || "",
       })),
     })),
   };
 }
 
 export function createSessionDraft(type = "GYM", source = {}) {
-  const session = normalizeSession({ ...source, type });
-  const exercises = session.exercises.length ? session.exercises : [{ id: crypto.randomUUID?.() || Math.random().toString(36), exerciseId: "", name: "", notes: "", sets: [] }];
+  const session = normalizeSession({ ...source, module: type });
+  const exercises = session.exercises.length ? session.exercises : [{ id: crypto.randomUUID?.() || Math.random().toString(36), exerciseId: "", name: "", notes: "", targetSets: "", targetRepetitions: "", targetWeightKg: "", sets: [] }];
   return { ...session, exercises: exercises.map((exercise) => ({ ...exercise, sets: exercise.sets.length ? exercise.sets : [{ id: crypto.randomUUID?.() || Math.random().toString(36), reps: "", weightKg: "" }] })) };
 }
 
 export function sessionPayload(draft, type) {
   const isGym = type === "GYM";
   return {
-    type,
-    sessionDate: draft.date,
-    routineId: draft.routineId || null,
+    date: draft.date,
+    module: type,
+    planId: draft.planId ? Number(draft.planId) : null,
+    planDayId: draft.planDayId ? Number(draft.planDayId) : null,
+    title: draft.title?.trim() || draft.planDayName?.trim() || null,
+    status: draft.status || "STARTED",
+    startedAt: draft.startedAt || null,
+    finishedAt: draft.finishedAt || null,
     durationMinutes: Number(draft.durationMinutes || 0) || null,
     notes: draft.notes.trim() || null,
     exercises: draft.exercises.map((exercise, position) => ({
-      exerciseId: exercise.exerciseId || null,
-      name: exercise.name.trim(),
+      exerciseId: exercise.exerciseId ? Number(exercise.exerciseId) : null,
+      targetSets: Number(exercise.targetSets || 0) || null,
+      targetRepetitions: Number(exercise.targetRepetitions || 0) || null,
+      ...(isGym && exercise.targetWeightKg !== "" && exercise.targetWeightKg != null ? { targetWeightKg: Number(exercise.targetWeightKg) } : {}),
       notes: exercise.notes.trim() || null,
-      position,
       sets: exercise.sets.map((set, setPosition) => ({
-        reps: Number(set.reps || 0),
-        position: setPosition,
-        ...(isGym ? { weightKg: Number(set.weightKg || 0) } : {}),
+        setNumber: setPosition + 1,
+        repetitions: Number(set.reps || 0),
+        ...(isGym && set.weightKg !== "" && set.weightKg != null ? { weightKg: Number(set.weightKg) } : {}),
+        completed: Boolean(set.completed),
+        notes: set.notes?.trim() || null,
       })),
     })),
   };
 }
 
-export function routinePayload(routine) {
+export function planPayload(plan) {
   return {
-    name: routine.name.trim(),
-    module: routine.module,
-    active: Boolean(routine.active),
-    days: (routine.days || []).map((day, position) => ({
+    name: plan.name.trim(),
+    description: plan.description?.trim() || null,
+    module: plan.module,
+    frequencyMode: plan.frequencyMode,
+    targetSessionsPerWeek: Number(plan.targetSessionsPerWeek),
+    startDate: plan.startDate || null,
+    endDate: plan.endDate || null,
+    active: Boolean(plan.active),
+    days: (plan.days || []).map((day, position) => ({
       name: day.name.trim() || `Día ${position + 1}`,
+      description: day.description?.trim() || null,
+      ...(plan.frequencyMode === "FIXED" ? { dayOfWeek: day.dayOfWeek } : {}),
       position,
       exercises: (day.exercises || []).map((exercise, exercisePosition) => ({
-        exerciseId: exercise.exerciseId || null,
-        name: exercise.name.trim(),
-        sets: Number(exercise.sets || 0),
-        reps: Number(exercise.reps || 0),
+        exerciseId: Number(exercise.exerciseId),
+        targetSets: Number(exercise.targetSets),
+        targetRepetitions: Number(exercise.targetRepetitions),
+        ...(plan.module === "GYM" && exercise.targetWeightKg !== "" && exercise.targetWeightKg != null ? { targetWeightKg: Number(exercise.targetWeightKg) } : {}),
+        notes: exercise.notes?.trim() || null,
         position: exercisePosition,
       })),
     })),
@@ -98,7 +130,7 @@ export function routinePayload(routine) {
 }
 
 export function exercisePayload(exercise) {
-  return { name: exercise.name.trim(), module: exercise.module, notes: exercise.notes.trim() || null };
+  return { name: exercise.name.trim(), description: exercise.description?.trim() || null, category: exercise.category?.trim() || null, module: exercise.module, active: exercise.active !== false };
 }
 
 export function moveItem(items, from, to) {
@@ -110,6 +142,6 @@ export function moveItem(items, from, to) {
 }
 
 export function sessionsForCalendar(data) {
-  const source = data?.sessions || data?.days || [];
-  return source.flatMap((entry) => (entry.sessions || [entry]).map((session) => ({ ...session, date: session.date || session.sessionDate || entry.date }))).map(normalizeSession);
+  const source = Array.isArray(data) ? data : data?.days || data?.sessions || [];
+  return source.flatMap((entry) => (entry.sessions || []).map((session) => ({ ...session, date: session.date || entry.date }))).map(normalizeSession);
 }

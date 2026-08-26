@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { monthDays, moveItem, sessionPayload } from "../src/features/training/training-utils.js";
+import { monthDays, moveItem, planPayload, sessionPayload } from "../src/features/training/training-utils.js";
 
 test("crea una grilla mensual que inicia el lunes", () => {
   const days = monthDays(new Date(2026, 2, 1));
@@ -16,12 +16,19 @@ test("reordena elementos sin mutar la lista original", () => {
 });
 
 test("no envía pesos en sesiones de calistenia", () => {
-  const payload = sessionPayload({ date: "2026-08-26", routineId: "", durationMinutes: 30, notes: "", exercises: [{ exerciseId: "pull-up", name: "Dominadas", notes: "", sets: [{ reps: "8", weightKg: "24" }] }] }, "CALISTHENICS");
-  assert.deepEqual(payload.exercises[0].sets[0], { reps: 8, position: 0 });
+  const payload = sessionPayload({ date: "2026-08-26", planId: "", planDayId: "", title: "", durationMinutes: 30, notes: "", exercises: [{ exerciseId: "12", targetSets: 3, targetRepetitions: 8, targetWeightKg: "24", name: "Dominadas", notes: "", sets: [{ reps: "8", weightKg: "24" }] }] }, "CALISTHENICS");
+  assert.deepEqual(payload.exercises[0].sets[0], { setNumber: 1, repetitions: 8, completed: false, notes: null });
+  assert.equal(payload.module, "CALISTHENICS");
   assert.equal(JSON.stringify(payload).includes("weight"), false);
 });
 
 test("incluye peso en sesiones de gimnasio", () => {
-  const payload = sessionPayload({ date: "2026-08-26", routineId: "", durationMinutes: 30, notes: "", exercises: [{ exerciseId: "squat", name: "Sentadilla", notes: "", sets: [{ reps: "5", weightKg: "80" }] }] }, "GYM");
+  const payload = sessionPayload({ date: "2026-08-26", planId: "", planDayId: "", title: "", durationMinutes: 30, notes: "", exercises: [{ exerciseId: "12", targetSets: 3, targetRepetitions: 5, targetWeightKg: "80", name: "Sentadilla", notes: "", sets: [{ reps: "5", weightKg: "80" }] }] }, "GYM");
   assert.equal(payload.exercises[0].sets[0].weightKg, 80);
+});
+
+test("serializa un plan canónico y limpia el día en modo dinámico", () => {
+  const payload = planPayload({ name: "Fuerza", description: "", module: "CALISTHENICS", frequencyMode: "DYNAMIC", targetSessionsPerWeek: "3", startDate: "2026-08-26", endDate: "", active: true, days: [{ name: "Tirón", dayOfWeek: "MONDAY", exercises: [{ exerciseId: "12", targetSets: "4", targetRepetitions: "8", targetWeightKg: "20", notes: "", }] }] });
+  assert.equal(payload.days[0].dayOfWeek, undefined);
+  assert.deepEqual(payload.days[0].exercises[0], { exerciseId: 12, targetSets: 4, targetRepetitions: 8, notes: null, position: 0 });
 });

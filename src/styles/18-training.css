@@ -101,6 +101,21 @@
 .training-shell[data-nav-mode="training"] .training-training-nav-group .training-nav-items { animation: training-nav-enter 190ms var(--ease-out) both; }
 
 .training-page { color: var(--training-text); }
+.training-profile-root {
+  --background: var(--training-background);
+  --surface: var(--training-surface);
+  --surface-low: var(--training-surface);
+  --surface-high: var(--training-surface-raised);
+  --text: var(--training-text);
+  --muted: var(--training-muted);
+  --outline: var(--training-border);
+  --primary: var(--training-primary);
+  --primary-strong: var(--training-primary);
+  --primary-soft: color-mix(in srgb, var(--training-primary) 14%, transparent);
+  --primary-container: var(--training-secondary);
+  --on-primary: var(--training-on-primary);
+  --focus: var(--training-focus);
+}
 .training-page h1,
 .training-page h2,
 .training-page h3 { color: var(--training-text); }
@@ -266,6 +281,17 @@
 .training-empty-inline { display: flex; align-items: center; gap: var(--space-2); min-height: 76px; margin-top: var(--space-4); color: var(--training-muted); font-size: var(--type-small); }
 .training-empty-inline .material-symbols-outlined { color: var(--training-primary); }
 
+.training-planned-surface { display: grid; gap: var(--space-3); padding: var(--space-5); border-color: color-mix(in srgb, var(--training-primary) 52%, var(--training-border)); background: linear-gradient(140deg, color-mix(in srgb, var(--training-primary) 12%, var(--training-surface)), var(--training-surface)); }
+.training-planned-surface > .training-section-heading > .material-symbols-outlined { color: var(--training-primary); font-size: 28px; }
+.training-planned-list { display: grid; gap: var(--space-2); }
+.training-planned-card { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-3); border: 1px solid var(--training-border); border-radius: var(--radius-control); background: color-mix(in srgb, var(--training-surface-raised) 74%, transparent); }
+.training-planned-card > div:first-child { display: grid; gap: var(--space-1); min-width: 0; }
+.training-planned-card strong { font-size: var(--type-body-emphasis); }
+.training-planned-card span, .training-planned-card small { color: var(--training-muted); font-size: var(--type-meta); }
+.training-planned-card small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.training-planned-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+.training-planned-actions .training-primary { white-space: nowrap; }
+
 .training-routines-surface { display: grid; gap: var(--space-3); }
 .training-routine-list { display: grid; gap: var(--space-2); }
 .training-routine-preview { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: 70px; padding: var(--space-3); border-top: 1px solid color-mix(in srgb, var(--training-border) 70%, transparent); }
@@ -327,6 +353,64 @@
 .training-exercise-card > div:first-child { display: grid; gap: var(--space-1); min-width: 0; }
 .training-exercise-card strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .training-exercise-card small { overflow: hidden; color: var(--training-muted); font-size: var(--type-meta); text-overflow: ellipsis; white-space: nowrap; }
+.training-exercise-card p { overflow: hidden; margin: 0; color: var(--training-muted); font-size: var(--type-meta); text-overflow: ellipsis; white-space: nowrap; }
+.training-catalog-sections { display: grid; gap: var(--space-7); }
+.training-catalog-sections > section { display: grid; gap: var(--space-3); }
+.training-catalog-heading { align-items: end; }
+.training-catalog-heading > strong { color: var(--training-primary); font-family: var(--font-display); font-size: var(--type-heading); }
+
+.training-profile-root { display: grid; gap: var(--space-5); }
+.training-profile-root .page-header { margin-bottom: 0; }
+.training-profile-root .panel { border-color: var(--training-border); background: linear-gradient(180deg, color-mix(in srgb, var(--training-surface) 96%, transparent), color-mix(in srgb, var(--training-background) 90%, transparent)); color: var(--training-text); }
+.training-profile-root .account-panel { max-width: 640px; }
+.training-profile-account-grid { margin-top: 0; }
+.training-plan-manager { display: grid; gap: var(--space-4); }
+.training-plan-current { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-3); padding: var(--space-4); border: 1px solid color-mix(in srgb, var(--training-primary) 45%, var(--training-border)); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--training-primary) 10%, var(--training-surface-raised)); }
+.training-plan-current-item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); min-width: 0; }
+.training-plan-current-item > div { display: grid; gap: var(--space-1); min-width: 0; }
+.training-plan-current small { color: var(--training-primary); font-size: var(--type-micro); font-weight: 900; letter-spacing: .08em; }
+.training-plan-current strong { font-family: var(--font-display); font-size: var(--type-heading); }
+.training-plan-current span { color: var(--training-muted); font-size: var(--type-small); }
+.training-plan-add { width: fit-content; }
+.training-plan-history { display: grid; gap: var(--space-3); }
+.training-plan-history-item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) 0; border-top: 1px solid color-mix(in srgb, var(--training-border) 76%, transparent); }
+.training-plan-history-item > div:first-child { display: grid; gap: var(--space-1); min-width: 0; }
+.training-plan-history-item strong { font-size: var(--type-body-emphasis); }
+.training-plan-history-item span, .training-plan-history-item small { color: var(--training-muted); font-size: var(--type-meta); }
+.training-plan-history-item.is-active strong { color: var(--training-primary-hover); }
+.training-plan-history-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+.training-plan-history-actions .training-secondary { min-height: 42px; }
+.training-plan-dialog { width: min(820px, 100%); }
+.training-plan-form-intro { display: grid; gap: var(--space-1); padding: var(--space-3); border-radius: var(--radius-control); background: color-mix(in srgb, var(--training-primary) 9%, transparent); }
+.training-plan-form-intro span { color: var(--training-muted); font-size: var(--type-small); }
+.training-plan-fields { display: grid; gap: var(--space-3); }
+.training-plan-field-row, .training-plan-day-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.training-plan-description textarea { min-height: 72px; resize: vertical; }
+.training-plan-day-list { display: grid; gap: var(--space-3); }
+.training-plan-day { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--training-border); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--training-secondary) 19%, var(--training-surface)); }
+.training-plan-day > header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.training-plan-day > header > div { display: flex; align-items: center; gap: var(--space-2); }
+.training-plan-exercise-list { display: grid; gap: var(--space-2); }
+.training-plan-exercise { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--training-border) 78%, transparent); border-radius: var(--radius-control); background: color-mix(in srgb, var(--training-surface-raised) 75%, transparent); }
+.training-plan-exercise-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.training-plan-exercise-heading > div { display: flex; gap: var(--space-1); }
+.training-plan-volume { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.training-plan-volume-no-weight { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.training-add-exercise { justify-self: start; }
+.training-session-source { display: grid; gap: var(--space-1); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--training-primary) 42%, var(--training-border)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--training-primary) 9%, transparent); }
+.training-session-source span, .training-session-source small { color: var(--training-muted); font-size: var(--type-meta); }
+.training-completed-set { display: flex; align-items: center; gap: var(--space-1); min-height: 48px; color: var(--training-muted); font-size: var(--type-micro); font-weight: 800; }
+.training-completed-set input { width: 18px; height: 18px; accent-color: var(--training-primary); }
+.training-day-planned { display: grid; gap: var(--space-2); }
+.training-day-planned h3 { margin: 0; font-size: var(--type-heading-sm); }
+.training-day-plan-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--training-border); border-radius: var(--radius-control); background: color-mix(in srgb, var(--training-primary) 9%, var(--training-surface)); }
+.training-day-plan-row > div { display: grid; gap: var(--space-1); min-width: 0; }
+.training-day-plan-row strong { font-size: var(--type-small); }
+.training-day-plan-row small { color: var(--training-muted); font-size: var(--type-meta); }
+.training-day-performed { display: grid; gap: var(--space-2); }
+.training-day-performed h3 { margin: 0; font-size: var(--type-heading-sm); }
+.training-day-session-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-top: 1px solid color-mix(in srgb, var(--training-border) 76%, transparent); }
+.training-day-session-row > span { color: var(--training-muted); font-size: var(--type-meta); }
 
 .training-session-editor, .training-routine-editor, .training-exercise-editor, .training-session-detail, .training-date-picker { border-color: var(--training-border) !important; background: var(--training-surface) !important; color: var(--training-text); }
 .training-session-backdrop, .training-date-picker-backdrop { background: color-mix(in srgb, var(--training-background) 84%, transparent) !important; }
@@ -347,8 +431,8 @@
 .training-log-exercise-heading, .training-routine-day > header, .training-routine-exercise-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 .training-log-exercise-heading > strong, .training-routine-exercise-heading > strong { font-size: var(--type-small); }
 .training-set-list { display: grid; gap: var(--space-2); }
-.training-set-row { display: grid; grid-template-columns: minmax(58px, .4fr) minmax(0, .8fr) minmax(0, .8fr) auto; gap: var(--space-2); align-items: end; }
-.training-calisthenics-set { grid-template-columns: minmax(58px, .45fr) minmax(0, 1fr) auto; }
+.training-set-row { display: grid; grid-template-columns: minmax(58px, .35fr) minmax(0, .8fr) minmax(0, .8fr) auto auto; gap: var(--space-2); align-items: end; }
+.training-calisthenics-set { grid-template-columns: minmax(58px, .45fr) minmax(0, 1fr) auto auto; }
 .training-set-row > span { min-height: 48px; padding-top: 25px; color: var(--training-muted); font-size: var(--type-meta); font-weight: 800; }
 .training-set-row .field { gap: var(--space-1); }
 .training-set-row .field span { font-size: var(--type-micro); }
@@ -419,15 +503,20 @@
   .training-filter-row, .training-editor-meta, .training-routine-meta { grid-template-columns: 1fr; }
   .training-catalog-heading { grid-template-columns: 1fr; gap: var(--space-2); }
   .training-exercise-card { min-height: 72px; }
-  .training-set-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .training-set-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; }
   .training-set-row > span { display: none; }
-  .training-calisthenics-set { grid-template-columns: minmax(0, 1fr) auto; }
+  .training-calisthenics-set { grid-template-columns: minmax(0, 1fr) auto auto; }
   .training-calendar-weekdays, .training-calendar-grid { gap: var(--space-0-5); }
   .training-calendar-day { min-height: 48px; padding: var(--space-1); border-radius: var(--radius-tight); }
   .training-calendar-day > span { justify-content: center; }
   .training-calendar-day i { min-width: 16px; height: 16px; }
   .training-detail-exercises article { grid-template-columns: 1fr; gap: var(--space-1); }
   .training-detail-exercises article > span { text-align: left; }
+  .training-planned-card, .training-plan-current-item, .training-plan-history-item, .training-day-plan-row { align-items: stretch; flex-direction: column; }
+  .training-planned-actions, .training-plan-history-actions { justify-content: stretch; }
+  .training-planned-actions .training-primary, .training-plan-history-actions .training-secondary, .training-plan-history-actions .training-icon-action { flex: 1 1 0; }
+  .training-plan-field-row, .training-plan-day-fields, .training-plan-volume, .training-plan-volume-no-weight { grid-template-columns: 1fr; }
+  .training-plan-add { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

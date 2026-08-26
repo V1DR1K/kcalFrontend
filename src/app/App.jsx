@@ -40,7 +40,7 @@ function PageLoader({ page, mode }) {
     scanner: ["Cargando Registrar", "Estamos preparando las opciones de registro..."],
     "training-dashboard": ["Cargando día", "Estamos preparando tu resumen de actividad..."],
     "training-calendar": ["Cargando calendario", "Estamos preparando tus sesiones..."],
-    "training-profile": ["Cargando ejercicios", "Estamos preparando rutinas y ejercicios..."],
+    "training-profile": ["Cargando ejercicios", "Estamos preparando el catálogo personal y base..."],
   };
   const [title, description] = labels[page] || ["Cargando vista", "Estamos preparando la información..."];
   return <ActionLoader title={title} description={description} mode={mode} />;
@@ -239,7 +239,7 @@ export function App() {
               />
             )}
             {page === "history" && <History api={api} />}
-            {page === "profile" && <Profile api={api} logout={logout} />}
+            {page === "profile" && <Profile api={api} logout={logout} mode={mode} />}
             {page === "training-dashboard" && <TrainingDashboard api={api} setPage={setPage} />}
             {page === "training-calendar" && <TrainingCalendar api={api} />}
             {page === "training-profile" && <TrainingProfile api={api} />}
