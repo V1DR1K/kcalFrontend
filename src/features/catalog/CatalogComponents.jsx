@@ -38,10 +38,19 @@ export function CatalogRow({ item, onPick }) {
 export function groupFoodVariants(items) {
   const groups = new Map();
   for (const item of items || []) {
+    if (!item || item.type === "RECIPE") continue;
     const key = item.preparationGroup ? `preparation:${item.preparationGroup}` : `item:${item.type || "FOOD"}:${item.id}`;
     groups.set(key, [...(groups.get(key) || []), item]);
   }
-  return [...groups.values()].flatMap((variants) => variants.sort((left, right) => (left.preparation === "RAW" ? 0 : 1) - (right.preparation === "RAW" ? 0 : 1)));
+  const result = [...groups.values()].flatMap((variants) => variants.sort((left, right) => (left.preparation === "RAW" ? 0 : 1) - (right.preparation === "RAW" ? 0 : 1)));
+  // Collapse to one representative per preparationGroup, preferring RAW
+  const seenGroups = new Set();
+  return result.filter((item) => {
+    if (!item.preparationGroup) return true;
+    if (seenGroups.has(item.preparationGroup)) return false;
+    seenGroups.add(item.preparationGroup);
+    return true;
+  });
 }
 
 export function CatalogRowWithImage({ item, onPick }) {

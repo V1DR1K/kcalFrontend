@@ -41,15 +41,13 @@
 .training-shell .brand span:last-child { color: var(--training-muted); }
 
 .training-shell .sidebar nav button,
-.training-shell .ghost,
-.training-shell .training-mode-return {
+.training-shell .ghost {
   border-color: transparent;
   color: var(--training-muted);
 }
 
 .training-shell .sidebar nav button:hover,
-.training-shell .ghost:hover,
-.training-shell .training-mode-return:hover {
+.training-shell .ghost:hover {
   border-color: var(--training-border);
   background: color-mix(in srgb, var(--training-primary) 10%, var(--training-surface));
   color: var(--training-text);
@@ -60,18 +58,39 @@
   color: var(--training-primary);
 }
 
-.training-shell .training-mode-return {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 46px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--training-border);
-  border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--training-secondary) 46%, var(--training-surface));
-  font-weight: 800;
-  text-align: left;
+/* Portals render outside .training-shell, so they need the section theme explicitly. */
+.modal-theme-training {
+  --background: var(--training-background);
+  --surface: var(--training-surface);
+  --surface-low: var(--training-surface);
+  --surface-high: var(--training-surface-raised);
+  --text: var(--training-text);
+  --muted: var(--training-muted);
+  --outline: var(--training-border);
+  --primary: var(--training-primary);
+  --primary-strong: var(--training-primary);
+  --primary-soft: color-mix(in srgb, var(--training-primary) 14%, transparent);
+  --on-primary: var(--training-on-primary);
+  --focus: var(--training-focus);
 }
+
+.app-modal-backdrop.modal-theme-training { background: color-mix(in srgb, var(--training-background) 84%, transparent); }
+.app-modal-surface.modal-theme-training { border-color: var(--training-border); background: var(--training-surface); color: var(--training-text); }
+.modal-theme-training .modal-shell-header,
+.modal-theme-training .modal-shell-footer { border-color: var(--training-border); }
+.modal-theme-training .modal-shell-header p { color: var(--training-muted); }
+.modal-theme-training .modal-shell-eyebrow { color: var(--training-primary); }
+
+.action-loader[data-app-mode="training"] { background: color-mix(in srgb, var(--training-background) 84%, transparent); }
+.action-loader[data-app-mode="training"] .action-loader-card { border-color: color-mix(in srgb, var(--training-primary) 34%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--training-surface-raised) 96%, transparent), color-mix(in srgb, var(--training-background) 96%, transparent)); color: var(--training-text); }
+.action-loader[data-app-mode="training"] .action-loader-card small { color: var(--training-muted); }
+.action-loader[data-app-mode="training"] .action-loader-spinner { border-color: color-mix(in srgb, var(--training-primary) 18%, transparent); border-top-color: var(--training-primary); box-shadow: 0 0 22px color-mix(in srgb, var(--training-primary) 18%, transparent); }
+
+.app-modal-backdrop.confirmation-backdrop.modal-theme-training { background: color-mix(in srgb, var(--training-background) 70%, transparent); }
+.app-modal-surface.confirmation-dialog.modal-theme-training { border-color: color-mix(in srgb, var(--training-primary) 34%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--training-surface-raised) 98%, transparent), color-mix(in srgb, var(--training-background) 98%, transparent)); }
+.app-modal-surface.confirmation-dialog.modal-theme-training.neutral { border-color: color-mix(in srgb, var(--training-primary) 48%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--training-primary) 10%, var(--training-surface)), color-mix(in srgb, var(--training-background) 98%, transparent)); }
+.app-modal-surface.confirmation-dialog.modal-theme-training.neutral .confirmation-icon { background: color-mix(in srgb, var(--training-primary) 13%, transparent); color: var(--training-primary); }
+.app-modal-surface.confirmation-dialog.modal-theme-training.neutral .confirmation-confirm { background: var(--training-primary); color: var(--training-on-primary); }
 
 .training-shell .training-nav-group button .material-symbols-outlined {
   transition: transform 180ms var(--ease-out), color 160ms var(--ease-out);
@@ -369,10 +388,9 @@
 @media (max-width: 900px) {
   .training-nav-group { grid-column: 1 / -1; width: 100%; }
   .training-nav-group .training-nav-items { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-0-5); }
-  .training-shell .training-nav-group .training-nav-items { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .training-shell .training-nav-group .training-nav-items { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .training-shell .training-mobile-nav { display: grid; grid-template-columns: minmax(0, 1fr); padding-top: var(--space-2); background: color-mix(in srgb, var(--training-background) 96%, transparent); border-color: color-mix(in srgb, var(--training-border) 76%, transparent); }
   .training-shell .training-mobile-nav .training-nav-group { gap: var(--space-1); }
-  .training-shell .training-mobile-nav .training-mode-return { justify-content: center; min-height: 42px; margin: 0 var(--space-1); padding: 0 var(--space-3); background: color-mix(in srgb, var(--training-primary) 11%, var(--training-surface)); color: var(--training-primary-hover); }
   .training-shell .training-mobile-nav button.active { color: var(--training-primary); }
   .training-shell .training-mobile-nav button.active::before { background: var(--training-primary); }
   .training-start-grid, .training-dashboard-grid, .training-exercise-list { grid-template-columns: 1fr; }

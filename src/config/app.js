@@ -35,7 +35,8 @@ export const trainingNavItems = [
   { id: "training-dashboard", label: "Dashboard", icon: "monitoring" },
   { id: "training-calendar", label: "Calendario", icon: "calendar_month" },
   { id: "profile", label: "Perfil", icon: "account_circle" },
-  { id: "training-profile", label: "Perfil de entrenamiento", mobileLabel: "Perfil", icon: "fitness_center" },
+  { id: "training-profile", label: "Mis ejercicios", mobileLabel: "Mis ejercicios", icon: "fitness_center" },
+  { id: "nutrition", label: "Nutrición", mobileLabel: "Nutrición", icon: "nutrition", mode: "nutrition" },
 ];
 export function isNavItemActive(item, page) {
   return item.id === page || item.activePages?.includes(page);

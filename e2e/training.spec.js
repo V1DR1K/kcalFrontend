@@ -25,7 +25,7 @@ test("swaps the nutrition shell for training and restores nutrition with browser
   await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Entrenamiento", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Nutrición", exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Perfil de entrenamiento", exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mis ejercicios", exact: true }).first()).toBeVisible();
   await page.getByRole("button", { name: "Nutrición", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Mi día", exact: true })).toBeVisible();
   await page.goBack();

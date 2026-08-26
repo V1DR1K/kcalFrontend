@@ -7,11 +7,6 @@ function NavigationGroup({ mode, items, activeMode, page, mobile, setPage, setMo
   return (
     <div className={`training-nav-group training-${mode}-nav-group`.trim()} aria-hidden={!active} inert={active ? undefined : ""}>
       <div className="training-nav-group-content">
-        {mode === "training" && (
-          <button type="button" className={`training-mode-return ${mobile ? "training-mobile-return" : ""}`.trim()} onClick={() => setMode("nutrition")}>
-            <Icon name="arrow_back" />Nutrición
-          </button>
-        )}
         <div className="training-nav-items">
           {items.map((item) => {
             const itemActive = !item.mode && isNavItemActive(item, page);

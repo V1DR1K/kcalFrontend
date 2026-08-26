@@ -31,7 +31,7 @@ function navigationState() {
   return { mode, page: typeof state.scalegramsPage === "string" ? state.scalegramsPage : null };
 }
 
-function PageLoader({ page }) {
+function PageLoader({ page, mode }) {
   const labels = {
     dashboard: ["Cargando tu día", "Estamos preparando tu resumen diario..."],
     "my-foods": ["Cargando tus alimentos", "Estamos preparando tu catálogo personal..."],
@@ -43,7 +43,7 @@ function PageLoader({ page }) {
     "training-profile": ["Cargando perfil de entrenamiento", "Estamos preparando tus rutinas y ejercicios..."],
   };
   const [title, description] = labels[page] || ["Cargando vista", "Estamos preparando la información..."];
-  return <ActionLoader title={title} description={description} />;
+  return <ActionLoader title={title} description={description} mode={mode} />;
 }
 
 export function App() {
@@ -214,7 +214,7 @@ export function App() {
       document.title = "Ingresar | ScaleGrams";
       return;
     }
-    const titles = { dashboard: "Mi día", "my-foods": "Mis alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", profile: "Perfil", "training-dashboard": "Entrenamiento", "training-calendar": "Calendario de entrenamiento", "training-profile": "Perfil de entrenamiento" };
+    const titles = { dashboard: "Mi día", "my-foods": "Mis alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", profile: "Perfil", "training-dashboard": "Entrenamiento", "training-calendar": "Calendario de entrenamiento", "training-profile": "Mis ejercicios" };
     document.title = `${titles[page] || "ScaleGrams"} | ScaleGrams`;
   }, [authenticated, mode, page]);
 
@@ -222,7 +222,7 @@ export function App() {
     <>
       {authenticated ? (
         <Shell user={user} page={page} mode={mode} setPage={setPage} setMode={setMode} logout={logout}>
-          <Suspense fallback={<PageLoader page={page} />}>
+          <Suspense fallback={<PageLoader page={page} mode={mode} />}>
             {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
             {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
             {["scanner", "recipes", "my-foods"].includes(page) && (
@@ -248,8 +248,8 @@ export function App() {
       ) : (
         <AuthScreen api={api} page={page} setPage={setPage} saveSession={saveSession} />
       )}
-      {actionLoading && <ActionLoader {...actionLoading} />}
-      {confirmation && <ConfirmationDialog {...confirmation} onCancel={() => resolveConfirmation(false)} onConfirm={() => resolveConfirmation(true)} />}
+      {actionLoading && <ActionLoader {...actionLoading} mode={mode} />}
+      {confirmation && <ConfirmationDialog {...confirmation} mode={mode} onCancel={() => resolveConfirmation(false)} onConfirm={() => resolveConfirmation(true)} />}
       {notification && <Notification message={notification.message} tone={notification.tone} onDismiss={() => setNotification(null)} />}
     </>
   );

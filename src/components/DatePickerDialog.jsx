@@ -12,7 +12,7 @@ function asLocalDate(value) {
   return new Date(`${value}T00:00:00`);
 }
 
-export function DatePickerDialog({ value, onSelect, onClose, className = "", backdropClassName = "" }) {
+export function DatePickerDialog({ value, onSelect, onClose, className = "", backdropClassName = "", theme = "nutrition" }) {
   const selected = asLocalDate(value);
   const [month, setMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
   const closeRef = useRef(null);
@@ -23,7 +23,7 @@ export function DatePickerDialog({ value, onSelect, onClose, className = "", bac
   const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(month);
 
   return (
-    <ModalShell onClose={onClose} initialFocusRef={closeRef} hideHeader labelledBy={titleId} className={`app-modal-compact date-picker-dialog ${className}`.trim()} backdropClassName={`date-picker-backdrop ${backdropClassName}`.trim()}>
+    <ModalShell onClose={onClose} initialFocusRef={closeRef} hideHeader labelledBy={titleId} theme={theme} className={`app-modal-compact date-picker-dialog ${className}`.trim()} backdropClassName={`date-picker-backdrop ${backdropClassName}`.trim()}>
         <header>
           <div>
             <span>Elegir fecha</span>

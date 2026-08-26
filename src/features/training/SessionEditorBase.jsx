@@ -41,7 +41,7 @@ export function SessionEditorBase({ api, type, session, routines = [], exercises
     }
   }
 
-  return <ModalShell title={session?.id ? `Editar ${moduleLabel(type).toLowerCase()}` : `Nueva sesión de ${moduleLabel(type).toLowerCase()}`} description={isGym ? "Registrá carga, repeticiones y notas al terminar cada ejercicio." : "Registrá repeticiones y notas sin carga externa."} onClose={onClose} closeDisabled={saving} className={`training-session-editor ${className}`} backdropClassName="training-session-backdrop" footer={<><button type="button" className="training-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" form={`training-session-${type.toLowerCase()}`} className="training-primary" disabled={saving}>{saving ? "Guardando…" : "Guardar sesión"}</button></>}>
+  return <ModalShell title={session?.id ? `Editar ${moduleLabel(type).toLowerCase()}` : `Nueva sesión de ${moduleLabel(type).toLowerCase()}`} description={isGym ? "Registrá carga, repeticiones y notas al terminar cada ejercicio." : "Registrá repeticiones y notas sin carga externa."} onClose={onClose} closeDisabled={saving} theme="training" className={`training-session-editor ${className}`} backdropClassName="training-session-backdrop" footer={<><button type="button" className="training-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" form={`training-session-${type.toLowerCase()}`} className="training-primary" disabled={saving}>{saving ? "Guardando…" : "Guardar sesión"}</button></>}>
     <form id={`training-session-${type.toLowerCase()}`} className="training-editor-form" onSubmit={save} data-dialog-scroll-owner="true">
       <div className="training-editor-meta">
         <button type="button" className="training-date-button" onClick={() => setPickerOpen(true)}><Icon name="today" /><span>Fecha<strong>{new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(new Date(`${draft.date}T00:00:00`))}</strong></span><Icon name="chevron_right" /></button>
@@ -63,6 +63,6 @@ export function SessionEditorBase({ api, type, session, routines = [], exercises
       <label className="field training-notes-field"><span>Notas de la sesión</span><textarea value={draft.notes} maxLength="1000" onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} placeholder="Cómo te sentiste, descansos o próximos pasos" /></label>
       {error && <p className="training-form-error" role="alert">{error}</p>}
     </form>
-    {pickerOpen && <DatePickerDialog value={draft.date || dateKey()} onSelect={(date) => setDraft((current) => ({ ...current, date }))} onClose={() => setPickerOpen(false)} className="training-date-picker" backdropClassName="training-date-picker-backdrop" />}
+    {pickerOpen && <DatePickerDialog value={draft.date || dateKey()} onSelect={(date) => setDraft((current) => ({ ...current, date }))} onClose={() => setPickerOpen(false)} theme="training" className="training-date-picker" backdropClassName="training-date-picker-backdrop" />}
   </ModalShell>;
 }

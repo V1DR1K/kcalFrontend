@@ -24,6 +24,7 @@ export function ModalShell({
   describedBy,
   wrapContent = true,
   dialogProps = {},
+  theme = "nutrition",
 }) {
   const id = useId().replace(/:/g, "");
   const titleId = `${id}-title`;
@@ -37,12 +38,13 @@ export function ModalShell({
     if (closeOnBackdrop && !closeDisabled) onBackdropPointerDown(event);
   }
 
-  const resolvedBackdropClass = `app-modal-backdrop ${backdropClassName || `modal-backdrop ${variant}-backdrop`}`.trim();
-  const resolvedSurfaceClass = `app-modal-surface modal-shell modal-shell-${variant} ${className}`.trim();
+  const themeClass = `modal-theme-${theme}`;
+  const resolvedBackdropClass = `app-modal-backdrop ${backdropClassName || `modal-backdrop ${variant}-backdrop`} ${themeClass}`.trim();
+  const resolvedSurfaceClass = `app-modal-surface modal-shell modal-shell-${variant} ${themeClass} ${className}`.trim();
 
   return (
     <ModalRoot className={resolvedBackdropClass} onBackdropPointerDown={handleBackdropPointerDown}>
-      <Element ref={dialogRef} className={resolvedSurfaceClass} data-dialog-surface="true" role={role} aria-modal="true" aria-labelledby={labelledBy || titleId} aria-describedby={describedBy || descriptionId} onPointerDown={(event) => event.stopPropagation()} {...dialogProps}>
+      <Element ref={dialogRef} className={resolvedSurfaceClass} data-dialog-surface="true" data-modal-theme={theme} role={role} aria-modal="true" aria-labelledby={labelledBy || titleId} aria-describedby={describedBy || descriptionId} onPointerDown={(event) => event.stopPropagation()} {...dialogProps}>
         {!hideHeader && (title || onClose) && (
           <header className="modal-shell-header">
             <div>

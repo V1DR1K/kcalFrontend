@@ -2,7 +2,7 @@ import React, { useId, useRef } from "react";
 import { Icon } from "./Icon";
 import { ModalShell } from "./dialog/ModalShell";
 
-export function ConfirmationDialog({ title, description, confirmLabel = "Confirmar", tone = "danger", onCancel, onConfirm }) {
+export function ConfirmationDialog({ title, description, confirmLabel = "Confirmar", tone = "danger", mode = "nutrition", onCancel, onConfirm }) {
   const cancelRef = useRef(null);
   const id = useId().replace(/:/g, "");
 
@@ -13,6 +13,7 @@ export function ConfirmationDialog({ title, description, confirmLabel = "Confirm
       initialFocusRef={cancelRef}
       className={`app-modal-compact confirmation-dialog ${tone}`}
       backdropClassName="confirmation-backdrop"
+      theme={mode}
       hideHeader
       wrapContent={false}
       labelledBy={`${id}-title`}
