@@ -199,21 +199,28 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id,
   });
   useEffect(() => {
     if (!ingredients.length || totalWeight <= 0) return setPreview(null);
+    const controller = new AbortController();
     const normalizedIngredients = ingredients.map((item) => ({
       foodId: item.foodId,
       quantity: Number(item.quantity),
       unit: item.unit,
     }));
-    api
-      .request("/api/recipes/preview", {
-        method: "POST",
-        body: JSON.stringify({
-          name: "preview",
-          ingredients: normalizedIngredients,
-        }),
-      })
-      .then(setPreview)
-      .catch(() => setPreview(null));
+    const timeout = window.setTimeout(() => {
+      api
+        .request("/api/recipes/preview", {
+          method: "POST",
+          body: JSON.stringify({ name: "preview", ingredients: normalizedIngredients }),
+          signal: controller.signal,
+        })
+        .then(setPreview)
+        .catch((error) => {
+          if (error?.name !== "AbortError") setPreview(null);
+        });
+    }, 180);
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
   }, [api, ingredients, totalWeight]);
   const yieldPercent = recipeYieldPercent({ rawTotalWeightGrams: totalWeight, cookedTotalWeightGrams: cookedWeight });
   function updateIngredients(nextIngredients) {

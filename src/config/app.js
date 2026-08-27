@@ -1,7 +1,4 @@
 export const APP_NAME = "ScaleGrams";
-export const TOKEN_KEY = "scalegrams.token";
-export const REFRESH_KEY = "scalegrams.refreshToken";
-export const USER_KEY = "scalegrams.user";
 const LEGACY_TOKEN_KEY = "kazaFitness.token";
 const LEGACY_USER_KEY = "kazaFitness.user";
 
@@ -9,9 +6,10 @@ export function migrateStoredSession() {
   // Legacy local-auth JWTs are not valid central-auth access tokens. Do not
   // silently restore them after the Auth migration; the user must log in again.
   localStorage.removeItem(LEGACY_TOKEN_KEY);
-  if (!localStorage.getItem(USER_KEY) && localStorage.getItem(LEGACY_USER_KEY)) {
-    localStorage.setItem(USER_KEY, localStorage.getItem(LEGACY_USER_KEY));
-  }
+  localStorage.removeItem(LEGACY_USER_KEY);
+  localStorage.removeItem("scalegrams.token");
+  localStorage.removeItem("scalegrams.refreshToken");
+  localStorage.removeItem("scalegrams.user");
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index);
     if (!key?.startsWith("kazaFitness.recents.")) continue;

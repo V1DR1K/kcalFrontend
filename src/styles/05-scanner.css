@@ -228,7 +228,6 @@
 .calendar-grid > button:focus-visible {
   transform: translateY(-2px);
   border-color: var(--primary);
-  outline: none;
   box-shadow: 0 0 0 3px var(--primary-hover);
 }
 .calendar-grid > button { position: relative; gap: 1px; border-bottom: 3px solid var(--plan-color); }

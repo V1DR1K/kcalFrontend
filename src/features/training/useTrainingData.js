@@ -1,18 +1,22 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useTrainingData(load, dependencies = []) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const requestSequence = useRef(0);
   const reload = useCallback(async () => {
+    const sequence = requestSequence.current + 1;
+    requestSequence.current = sequence;
     setLoading(true);
     setError("");
     try {
-      setData(await load());
+      const nextData = await load();
+      if (sequence === requestSequence.current) setData(nextData);
     } catch (requestError) {
-      setError(requestError?.message || "No pudimos cargar los datos de entrenamiento.");
+      if (sequence === requestSequence.current) setError(requestError?.message || "No pudimos cargar los datos de entrenamiento.");
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   }, dependencies);
   useEffect(() => { reload(); }, [reload]);

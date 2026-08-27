@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
@@ -248,13 +248,13 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [saving, setSaving] = useState(false);
   const [closing, setClosing] = useState(false);
   const [preparations, setPreparations] = useState([]);
+  const isRecipe = log.itemType === "RECIPE";
   const [selectedFoodId, setSelectedFoodId] = useState(() => log.itemType === "FOOD" ? (log.food?.id || null) : null);
-  const item = log.itemType === "RECIPE" ? {
+  const item = useMemo(() => isRecipe ? {
     ...log.recipe,
     rawTotalWeightGrams: log.recipeRawTotalWeightGrams ?? log.recipe?.rawTotalWeightGrams ?? log.recipe?.totalWeightGrams,
     cookedTotalWeightGrams: log.recipeCookedTotalWeightGrams ?? log.recipe?.cookedTotalWeightGrams,
-  } : log.food;
-  const isRecipe = log.itemType === "RECIPE";
+  } : log.food, [isRecipe, log.food, log.recipe, log.recipeCookedTotalWeightGrams, log.recipeRawTotalWeightGrams]);
   const unit = log.unit || (isRecipe ? "PORTION" : "GRAM");
   const recipeUsesCookedGrams = isRecipe && unit === "GRAM";
   const closeWithAnimation = useCallback(() => {
@@ -298,19 +298,23 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     }
     const previewFoodId = selectedFoodId || item.id;
     let active = true;
-    api
-      .request("/api/foods/preview", {
-        method: "POST",
-        body: JSON.stringify({
-          foodId: previewFoodId,
-          quantity: numericQuantity,
-          unit: "GRAM",
-        }),
-      })
-      .then((nextPreview) => active && setPreview(nextPreview))
-      .catch(() => active && setPreview(null));
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      api
+        .request("/api/foods/preview", {
+          method: "POST",
+          body: JSON.stringify({ foodId: previewFoodId, quantity: numericQuantity, unit: "GRAM" }),
+          signal: controller.signal,
+        })
+        .then((nextPreview) => active && setPreview(nextPreview))
+        .catch((error) => {
+          if (active && error?.name !== "AbortError") setPreview(null);
+        });
+    }, 180);
     return () => {
       active = false;
+      window.clearTimeout(timeout);
+      controller.abort();
     };
   }, [api, ingredients, isRecipe, item, log.itemType, quantity, selectedFoodId, unit]);
   function updateIngredient(index, value) {

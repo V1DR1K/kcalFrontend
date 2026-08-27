@@ -2,12 +2,14 @@ import { test, expect } from "@playwright/test";
 
 async function seedAuthenticatedApp(page) {
   await page.addInitScript(() => {
-    localStorage.setItem("scalegrams.token", "e2e-token");
-    localStorage.setItem("scalegrams.user", JSON.stringify({ id: 1, fullName: "Persona E2E", email: "e2e@example.com" }));
+    localStorage.removeItem("scalegrams.token");
+    localStorage.removeItem("scalegrams.refreshToken");
+    localStorage.removeItem("scalegrams.user");
   });
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
     let body = {};
+    if (url.includes("/api/auth/me")) body = { id: 1, fullName: "Persona E2E", email: "e2e@example.com" };
     if (url.includes("/nutrition/dashboard")) body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals: [{ mealType: "BREAKFAST", items: [] }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }], waterConsumed: 0, waterGoal: 2, plan: null };
     if (url.includes("/nutrition/meal-types")) body = [{ code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" }, { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" }];
     if (url.includes("/nutrition/day-presets")) body = [];

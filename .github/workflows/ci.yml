@@ -42,7 +42,7 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
-        run: ssh "$VPS_USER@$VPS_HOST" "cd /opt/apps/scalegrams/frontend && git fetch origin main && git reset --hard '${{ github.sha }}' && /opt/infra/bin/deploy-service scalegrams web"
+        run: ssh "$VPS_USER@$VPS_HOST" "cd /opt/projects/scalegrams/front/scalegrams-frontend && git fetch origin main && git diff --quiet && git diff --cached --quiet && git checkout main && git pull --ff-only origin main && test \"\$(git rev-parse HEAD)\" = '${{ github.sha }}' && /opt/infra/bin/deploy-service scalegrams web"
       - name: Verify production host identity
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}

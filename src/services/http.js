@@ -1,5 +1,3 @@
-import { REFRESH_KEY, TOKEN_KEY, USER_KEY } from "../config/app.js";
-
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || "";
 let refreshPromise = null;
 const REFRESH_LOCK_KEY = "scalegrams.auth.refresh.lock";
@@ -14,7 +12,7 @@ async function withRefreshLock(startedAt, action) {
   const deadline = Date.now() + 12000;
   let acquired = false;
   while (Date.now() < deadline) {
-    if (refreshedAfter(startedAt)) return localStorage.getItem(TOKEN_KEY);
+    if (refreshedAfter(startedAt)) return true;
     const current = localStorage.getItem(REFRESH_LOCK_KEY);
     if (!current || Number(current.split(":")[1] || 0) < Date.now() - 12000) {
       localStorage.setItem(REFRESH_LOCK_KEY, lockValue);
@@ -29,28 +27,20 @@ async function withRefreshLock(startedAt, action) {
 }
 
 async function refreshTokens() {
-  const refreshToken = localStorage.getItem(REFRESH_KEY);
-  if (!refreshToken) return null;
   const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
+    headers: { Accept: "application/json" },
+    credentials: "include",
   });
-  if (!response.ok) return null;
-  const payload = await response.json();
-  const accessToken = payload.accessToken || payload.token;
-  if (!accessToken || !payload.refreshToken) return null;
-  localStorage.setItem(TOKEN_KEY, accessToken);
-  localStorage.setItem(REFRESH_KEY, payload.refreshToken);
-  if (payload.user) localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+  if (!response.ok) return false;
   localStorage.setItem(REFRESH_MARKER_KEY, String(Date.now()));
-  return accessToken;
+  return true;
 }
 
 function refreshTokensOnce(startedAt) {
   if (!refreshPromise) {
     const action = async () => {
-      if (refreshedAfter(startedAt)) return localStorage.getItem(TOKEN_KEY);
+      if (refreshedAfter(startedAt)) return true;
       return refreshTokens();
     };
     const coordinated = typeof navigator !== "undefined" && navigator.locks
@@ -63,16 +53,15 @@ function refreshTokensOnce(startedAt) {
   return refreshPromise;
 }
 
-async function requestInner(path, options, accessToken) {
+async function requestInner(path, options) {
   const isFormData = options.body instanceof FormData;
   const headers = {
     Accept: "application/json",
     ...(isFormData ? {} : { "Content-Type": "application/json" }),
-    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     ...(options.headers || {}),
   };
   if (isFormData) delete headers["Content-Type"];
-  const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  const response = await fetch(`${API_BASE_URL}${path}`, { ...options, credentials: options.credentials || "include", headers });
   const text = await response.text();
   let body = null;
   if (text) { try { body = JSON.parse(text); } catch { body = text; } }
@@ -91,9 +80,9 @@ function toError(status, body) {
 }
 
 export async function request(path, options = {}) {
-  let accessToken = localStorage.getItem(TOKEN_KEY);
-  let result = await requestInner(path, options, accessToken);
-  if (!result.ok && result.status === 401 && !path.startsWith("/api/auth/")) {
+  const { skipAuthRefresh = false, ...fetchOptions } = options;
+  let result = await requestInner(path, fetchOptions);
+  if (!result.ok && result.status === 401 && !skipAuthRefresh && !path.startsWith("/api/auth/")) {
     let fresh = null;
     let refreshFailed = false;
     try {
@@ -103,7 +92,7 @@ export async function request(path, options = {}) {
       refreshFailed = true;
     }
     if (fresh) {
-      result = await requestInner(path, options, fresh);
+      result = await requestInner(path, fetchOptions);
     } else if (!refreshFailed) {
       window.dispatchEvent(new Event("scalegrams:session-expired"));
     }

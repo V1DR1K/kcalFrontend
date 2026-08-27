@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_MEALS } from "../../../config/app";
 import { shiftDate, today } from "../../../utils/format";
 
@@ -11,19 +11,28 @@ export function useDashboardData(api) {
   const [selectedDate, setSelectedDate] = useState(today());
   const [dateChanging, setDateChanging] = useState(false);
   const [yesterdayData, setYesterdayData] = useState(null);
+  const requestSequence = useRef(0);
 
   const load = useCallback((date = selectedDate) => {
+    const sequence = requestSequence.current + 1;
+    requestSequence.current = sequence;
     if (!data) setLoading(true);
     setError("");
     return api.request(`/api/nutrition/dashboard?date=${date}`)
-      .then(setData)
+      .then((result) => {
+        if (sequence === requestSequence.current) setData(result);
+        return result;
+      })
       .catch(() => {
+        if (sequence !== requestSequence.current) return;
         setError("No pudimos cargar tu día.");
         api.notify("No se pudo cargar el dashboard.", "error");
       })
       .finally(() => {
-        setLoading(false);
-        setDateChanging(false);
+        if (sequence === requestSequence.current) {
+          setLoading(false);
+          setDateChanging(false);
+        }
       });
   }, [api, data, selectedDate]);
 
@@ -35,10 +44,13 @@ export function useDashboardData(api) {
 
   useEffect(() => {
     load(selectedDate);
+  }, [api, selectedDate]);
+
+  useEffect(() => {
     api.request("/api/nutrition/meal-types")
       .then(setMealTypes)
       .catch(() => setMealTypes(DEFAULT_MEALS));
-  }, [api, selectedDate]);
+  }, [api]);
 
   useEffect(() => {
     const refreshPlan = () => load(selectedDate);

@@ -528,7 +528,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             <span>{mealType.label}</span>
             <h2 id={pickerTitleId}>Agregar comida</h2>
           </div>
-          <button className="icon-button" aria-label="Cerrar" onClick={onClose}>
+          <button type="button" className="icon-button" aria-label="Cerrar" onClick={onClose}>
             <Icon name="close" />
           </button>
         </header>
@@ -589,7 +589,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           {!catalog.initialLoading && catalog.error && (
             <CatalogStatus error>
               {catalog.error}
-              <button className="secondary" onClick={catalog.retry}>
+               <button type="button" className="secondary" onClick={catalog.retry}>
                 Reintentar
               </button>
             </CatalogStatus>

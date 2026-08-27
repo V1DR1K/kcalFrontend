@@ -11,7 +11,7 @@ import { useMealGesture } from "../hooks/useMealGesture";
 
 export { MealCard, MealLogDetails, RecipeIngredientDetail, SwipeableMealItem };
 
-function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove, entryDelay = 0 }) {
+function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove, entryDelay = 0 }) {
   const items = meal?.items || [];
   const cardRef = useRef(null);
   const menuRef = useRef(null);
@@ -182,6 +182,7 @@ function MealCard({ mealType, meal, yesterdayMeal, targetDate, api, onCopied, on
               onToggle={() => setExpandedLogId((current) => (current === log.id ? null : log.id))}
               onEdit={() => onEdit(log)} onDelete={() => onDelete(log)}
               onMove={onMove}
+              mealTypes={mealTypes}
               disabled={Boolean(deletingLogId) || Boolean(movingLogId) || bulkActionLoading}
               dragData={log.optimistic ? null : { ...log, mealType: mealType.code }}
               details={<MealLogDetails log={log} item={item} />}
@@ -287,7 +288,7 @@ function RecipeIngredientDetail({ ingredient }) {
   );
 }
 
-function SwipeableMealItem({ children, className = "", resetSignal, expanded = false, onToggle, details, onEdit, onDelete, disabled = false, dragData, onMove }) {
+function SwipeableMealItem({ children, className = "", resetSignal, expanded = false, onToggle, details, onEdit, onDelete, disabled = false, dragData, onMove, mealTypes = [] }) {
   const gesture = useMealGesture({ disabled, dragData, resetSignal, expanded, onMove });
   return (
     <div className={`swipe-row ${gesture.revealed} ${gesture.horizontalDragging ? "swiping" : ""} ${expanded ? "expanded" : ""}`}>
@@ -322,6 +323,24 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
           <>
             {details}
             <div className="meal-item-detail-actions">
+              {dragData && mealTypes.filter((type) => type.code !== dragData.mealType).length > 0 && (
+                <label className="meal-move-control">
+                  <span>Mover a</span>
+                  <select
+                    aria-label={`Mover este registro de ${mealTypes.find((type) => type.code === dragData.mealType)?.label || "esta comida"} a otra comida`}
+                    value=""
+                    disabled={disabled}
+                    onChange={(event) => {
+                      if (!event.target.value) return;
+                      gesture.close();
+                      onMove?.(dragData, event.target.value);
+                    }}
+                  >
+                    <option value="">Elegir comida…</option>
+                    {mealTypes.filter((type) => type.code !== dragData.mealType).map((type) => <option key={type.code} value={type.code}>{type.label}</option>)}
+                  </select>
+                </label>
+              )}
               <button type="button" className="secondary" onClick={() => { gesture.close(); onEdit(); }}><Icon name="edit" />Editar</button>
               <button type="button" className="secondary danger-text" onClick={() => { gesture.close(); onDelete(); }}><Icon name="delete" />Eliminar</button>
             </div>

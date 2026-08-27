@@ -280,6 +280,7 @@ export function Dashboard({ api, user, setPage }) {
             key={mealType.code}
             entryDelay={mealIndex * 45}
             mealType={mealType}
+            mealTypes={mealTypes}
             meal={mealByCode.get(mealType.code)}
             yesterdayMeal={yesterdayData?.meals?.find((meal) => meal.mealType === mealType.code)}
             targetDate={selectedDate}

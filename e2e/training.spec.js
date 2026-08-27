@@ -2,12 +2,14 @@ import { test, expect } from "@playwright/test";
 
 async function seedTrainingApp(page) {
   await page.addInitScript(() => {
-    localStorage.setItem("scalegrams.token", "training-e2e-token");
-    localStorage.setItem("scalegrams.user", JSON.stringify({ id: 1, fullName: "Persona E2E" }));
+    localStorage.removeItem("scalegrams.token");
+    localStorage.removeItem("scalegrams.refreshToken");
+    localStorage.removeItem("scalegrams.user");
   });
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
     let body = {};
+    if (url.includes("/api/auth/me")) body = { id: 1, fullName: "Persona E2E", email: "e2e@example.com" };
     if (url.includes("/api/training/dashboard")) body = { date: "2026-08-26", plans: [{ id: 1, name: "Fuerza base", module: "GYM", frequencyMode: "FIXED", targetSessionsPerWeek: 3, active: true }], recentSession: { id: 1, module: "GYM", date: "2026-08-26", title: "Fuerza base", durationMinutes: 45, exercises: [{ exerciseName: "Sentadilla", sets: [{ repetitions: 5, weightKg: 80 }] }] }, weeklySummary: { sessionCount: 2, totalMinutes: 90, totalSets: 18 }, exercises: [{ id: 1, name: "Sentadilla", module: "GYM", global: true, editable: false, active: true }], plannedPlans: [] };
     if (url.includes("/api/training/calendar")) body = [];
     if (url.includes("/api/training/categories")) body = { items: [{ id: 10, name: "Piernas", module: "GYM", system: true, editable: false, active: true }], page: 0, size: 100, totalElements: 1, totalPages: 1, hasNext: false };

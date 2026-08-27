@@ -1,8 +1,6 @@
 import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "../styles.css";
 import { request as apiRequest } from "../services/http";
-import { REFRESH_KEY, TOKEN_KEY, USER_KEY } from "../config/app";
-import { getSavedUser } from "../services/recents";
 import { Shell } from "./Shell";
 import { AuthScreen } from "../features/auth/AuthScreen";
 import { ActionLoader } from "../components/ActionLoader";
@@ -48,8 +46,8 @@ function PageLoader({ page, mode }) {
 
 export function App() {
   const initialNavigation = navigationState();
-  const [page, setPageRaw] = useState(() => (localStorage.getItem(TOKEN_KEY) ? initialNavigation.page || (initialNavigation.mode === "training" ? "training-dashboard" : "dashboard") : "login"));
-  const [mode, setModeRaw] = useState(() => (localStorage.getItem(TOKEN_KEY) ? initialNavigation.mode : "nutrition"));
+  const [page, setPageRaw] = useState(() => initialNavigation.page || "login");
+  const [mode, setModeRaw] = useState(() => initialNavigation.mode);
   const pageRef = useRef(page);
   const modeRef = useRef(mode);
   const nutritionPageRef = useRef(mode === "nutrition" ? page : "dashboard");
@@ -70,14 +68,17 @@ export function App() {
 
   function setMode(nextMode) {
     if (nextMode === modeRef.current) return;
-    const nextPage = nextMode === "training" ? trainingPageRef.current || "training-dashboard" : nutritionPageRef.current || "dashboard";
+    const nextPage = nextMode === "training"
+      ? trainingPageRef.current || "training-dashboard"
+      : nutritionPageRef.current === "login" ? "dashboard" : nutritionPageRef.current || "dashboard";
     setModeRaw(nextMode);
     setPageRaw(nextPage);
     if (nextMode === "training") trainingPageRef.current = nextPage;
     else nutritionPageRef.current = nextPage;
     pushNavigation(nextMode, nextPage);
   }
-  const [user, setUser] = useState(() => getSavedUser(USER_KEY));
+  const [user, setUser] = useState(null);
+  const [sessionState, setSessionState] = useState("checking");
   const [selectedFoodId, setSelectedFoodId] = useState(null);
   const [prefillBarcode, setPrefillBarcode] = useState("");
   const [actionLoading, setActionLoading] = useState(null);
@@ -131,12 +132,9 @@ export function App() {
   }, [mode, page]);
 
   function saveSession(payload) {
-    const accessToken = payload.accessToken || payload.token;
-    if (!accessToken) throw new Error("La respuesta de autenticación no contiene un accessToken.");
-    localStorage.setItem(TOKEN_KEY, accessToken);
-    if (payload.refreshToken) localStorage.setItem(REFRESH_KEY, payload.refreshToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+    if (!payload?.user) throw new Error("La respuesta de autenticación no contiene el usuario.");
     setUser(payload.user);
+    setSessionState("authenticated");
     window.dispatchEvent(new Event("scalegrams:session-updated"));
     setModeRaw("nutrition");
     nutritionPageRef.current = "dashboard";
@@ -145,16 +143,9 @@ export function App() {
   }
 
   function logout() {
-    const refreshToken = localStorage.getItem(REFRESH_KEY);
-    if (refreshToken) {
-      api
-        .request("/api/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken }) })
-        .catch(() => {});
-    }
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_KEY);
-    localStorage.removeItem(USER_KEY);
+    api.request("/api/auth/logout", { method: "POST" }).catch(() => {});
     setUser(null);
+    setSessionState("anonymous");
     setPage("login");
   }
 
@@ -166,6 +157,27 @@ export function App() {
   }
 
   useEffect(() => {
+    let active = true;
+    api.request("/api/auth/me", { skipAuthRefresh: true }).then((sessionUser) => {
+      if (!active) return;
+      setUser(sessionUser);
+      setSessionState("authenticated");
+      if (pageRef.current === "login") {
+        setModeRaw("nutrition");
+        nutritionPageRef.current = "dashboard";
+        setPageRaw("dashboard");
+        pushNavigation("nutrition", "dashboard", true);
+      }
+    }).catch(() => {
+      if (!active) return;
+      setUser(null);
+      setSessionState("anonymous");
+      setPageRaw("login");
+    });
+    return () => { active = false; };
+  }, [api]);
+
+  useEffect(() => {
     const expireSession = () => {
       logout();
       api.notify("Tu sesión venció. Volvé a ingresar.", "error");
@@ -173,17 +185,6 @@ export function App() {
     window.addEventListener("scalegrams:session-expired", expireSession);
     return () => window.removeEventListener("scalegrams:session-expired", expireSession);
   }, [api]);
-
-  useEffect(() => {
-    if (localStorage.getItem(TOKEN_KEY) && !window.history.state?.scalegramsPage) pushNavigation(modeRef.current, pageRef.current, true);
-  }, []);
-
-  useEffect(() => {
-    const syncUser = () => setUser(getSavedUser(USER_KEY));
-    window.addEventListener("scalegrams:session-updated", syncUser);
-    window.addEventListener("storage", syncUser);
-    return () => { window.removeEventListener("scalegrams:session-updated", syncUser); window.removeEventListener("storage", syncUser); };
-  }, []);
 
   useEffect(() => {
     let lastExitAttempt = 0;
@@ -197,7 +198,7 @@ export function App() {
         else nutritionPageRef.current = state.scalegramsPage;
         return;
       }
-      if (!localStorage.getItem(TOKEN_KEY)) return;
+      if (sessionState !== "authenticated") return;
       const now = Date.now();
       if (now - lastExitAttempt < 2000) return;
       lastExitAttempt = now;
@@ -206,9 +207,9 @@ export function App() {
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, [api]);
+  }, [api, sessionState]);
 
-  const authenticated = Boolean(localStorage.getItem(TOKEN_KEY));
+  const authenticated = sessionState === "authenticated";
   useEffect(() => {
     if (!authenticated) {
       document.title = "Ingresar | ScaleGrams";
