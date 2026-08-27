@@ -9,6 +9,7 @@ import { EditRecipeModal, SwipeableRecipeCard } from "../foods/FoodComponents";
 import { RecipeDetailDialog } from "./dialogs/RecipeDetailDialog";
 import { RecipeCreateDialog } from "./dialogs/RecipeCreateDialog";
 import { NutritionSummary } from "../../components/NutritionSummary";
+import { SkeletonBlock, SkeletonRows } from "../../components/Loading";
 
 export function Recipes({ api, setPage, embedded = false }) {
   const [tab, setTab] = useState("mine");
@@ -58,10 +59,7 @@ function MyRecipes({ api, refreshSignal }) {
     setResetSignal((value) => value + 1);
     setLoadingId(recipe.id);
     try {
-      const fullRecipe = await api.runAction(
-        { title: "Cargando receta", description: "Estamos preparando los datos para editarla..." },
-        () => api.request(`/api/recipes/${recipe.id}`),
-      );
+      const fullRecipe = await api.request(`/api/recipes/${recipe.id}`);
       setEditing({ ...fullRecipe, type: "RECIPE" });
     } catch (error) {
       api.notify(error.message || "No se pudo cargar la receta.", "error");
@@ -118,16 +116,14 @@ function MyRecipes({ api, refreshSignal }) {
       )}
       {catalog.items.length > 0 && (
         <div className="recipe-list">
-          {catalog.items.map((item) => (
-              <SwipeableRecipeCard
+          {catalog.items.map((item) => loadingId === item.id ? <div key={item.id} className="recipe-loading-card" aria-busy="true" aria-label="Cargando receta"><SkeletonBlock className="skeleton-recipe-card" /></div> : <SwipeableRecipeCard
               key={item.id}
               recipe={{ ...item, type: "RECIPE" }}
               resetSignal={resetSignal}
               disabled={deletingId === item.id || loadingId === item.id}
               onEdit={() => edit(item)}
               onDelete={() => remove(item)}
-            />
-          ))}
+            />)}
         </div>
       )}
       <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
@@ -164,7 +160,7 @@ function ExploreRecipes({ api }) {
   if (selectedOwner) {
     return <ExploreOwnerRecipes api={api} owner={selectedOwner} onBack={() => setSelectedOwner(null)} />;
   }
-  if (loading) return <CatalogStatus>Buscando usuarios con recetas...</CatalogStatus>;
+  if (loading) return <SkeletonRows count={3} className="recipe-owner-skeleton" label="Cargando usuarios con recetas" />;
   if (error) return <CatalogStatus error>{error}</CatalogStatus>;
   if (!owners.length) {
     return (
@@ -199,10 +195,7 @@ function ExploreOwnerRecipes({ api, owner, onBack }) {
   async function openRecipe(recipe) {
     setLoadingRecipeId(recipe.id);
     try {
-      const detail = await api.runAction(
-        { title: "Cargando receta", description: "Estamos preparando sus ingredientes..." },
-        () => api.request(`/api/recipes/${recipe.id}`),
-      );
+      const detail = await api.request(`/api/recipes/${recipe.id}`);
       setSelectedRecipe(detail);
     } catch (error) {
       api.notify(error.message || "No se pudo cargar la receta.", "error");
@@ -223,14 +216,12 @@ function ExploreOwnerRecipes({ api, owner, onBack }) {
       {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>Este usuario todavía no tiene recetas disponibles.</CatalogStatus>}
       {catalog.items.length > 0 && (
         <div className="recipe-list">
-          {catalog.items.map((recipe) => (
-            <button type="button" className={`explore-recipe-card ${loadingRecipeId === recipe.id ? "loading" : ""}`} key={recipe.id} onClick={() => openRecipe(recipe)} disabled={Boolean(loadingRecipeId)}>
+          {catalog.items.map((recipe) => loadingRecipeId === recipe.id ? <div key={recipe.id} className="recipe-loading-card" aria-busy="true" aria-label="Cargando receta"><SkeletonBlock className="skeleton-recipe-card" /></div> : <button type="button" className="explore-recipe-card" key={recipe.id} onClick={() => openRecipe(recipe)} disabled={Boolean(loadingRecipeId)}>
               <FoodThumb item={{ ...recipe, type: "RECIPE" }} compact />
               <span><strong>{recipe.name}</strong><small>{recipe.description || "Receta completa"}</small></span>
               <NutritionSummary nutrition={recipe} />
               <Icon name="chevron_right" />
-            </button>
-          ))}
+            </button>)}
         </div>
       )}
       <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />

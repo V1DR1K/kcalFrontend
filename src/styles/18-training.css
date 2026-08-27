@@ -81,10 +81,6 @@
 .modal-theme-training .modal-shell-header p { color: var(--training-muted); }
 .modal-theme-training .modal-shell-eyebrow { color: var(--training-primary); }
 
-.action-loader[data-app-mode="training"] { background: color-mix(in srgb, var(--training-background) 84%, transparent); }
-.action-loader[data-app-mode="training"] .action-loader-card { border-color: color-mix(in srgb, var(--training-primary) 34%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--training-surface-raised) 96%, transparent), color-mix(in srgb, var(--training-background) 96%, transparent)); color: var(--training-text); }
-.action-loader[data-app-mode="training"] .action-loader-card small { color: var(--training-muted); }
-.action-loader[data-app-mode="training"] .action-loader-spinner { border-color: color-mix(in srgb, var(--training-primary) 18%, transparent); border-top-color: var(--training-primary); box-shadow: 0 0 22px color-mix(in srgb, var(--training-primary) 18%, transparent); }
 
 .app-modal-backdrop.confirmation-backdrop.modal-theme-training { background: color-mix(in srgb, var(--training-background) 70%, transparent); }
 .app-modal-surface.confirmation-dialog.modal-theme-training { border-color: color-mix(in srgb, var(--training-primary) 34%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--training-surface-raised) 98%, transparent), color-mix(in srgb, var(--training-background) 98%, transparent)); }

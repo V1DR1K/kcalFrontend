@@ -4,6 +4,7 @@ import { CatalogStatus, FoodThumb } from "../../catalog/CatalogComponents";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { formatNumber, readableDate } from "../../../utils/format";
 import { formatMealLogAmount, mealLogName } from "../../dashboard/dashboard.utils";
+import { SkeletonRows } from "../../../components/Loading";
 
 export function HistoryExportDialog({ api, monthDate, exporting, setExporting, onClose }) {
   const closeRef = useRef(null);
@@ -33,14 +34,16 @@ export function HistoryExportDialog({ api, monthDate, exporting, setExporting, o
 export function HistoryDayPreview({ api, day, onClose }) {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const closeRef = useRef(null);
   const titleId = `${useId().replace(/:/g, "")}-title`;
   useEffect(() => {
     let active = true;
-    api.runAction({ title: "Cargando detalle", description: "Estamos preparando el resumen de este día..." }, () => api.request(`/api/nutrition/dashboard?date=${day.date}`))
+    api.request(`/api/nutrition/dashboard?date=${day.date}`)
       .then((result) => active && setDetail(result))
-      .catch(() => active && setError("No pudimos cargar el detalle de este día."));
+      .catch(() => active && setError("No pudimos cargar el detalle de este día."))
+      .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [api, day.date]);
   const consumed = detail?.caloriesConsumed ?? day.caloriesConsumed ?? 0;
@@ -60,7 +63,8 @@ export function HistoryDayPreview({ api, day, onClose }) {
     <header className="history-preview-header"><div><span className="eyebrow">Resumen del día</span><h2 id={titleId}>{readableDate(day.date)}</h2><small>{day.planName || detail?.plan?.name}</small></div><div className="history-preview-header-actions"><button type="button" className="secondary history-day-export" onClick={exportDay} disabled={!detail || exporting}><Icon name="download" />{exporting ? "Exportando…" : "Exportar día"}</button><button ref={closeRef} className="history-preview-close" onClick={onClose} aria-label="Cerrar detalle"><Icon name="close" /></button></div></header>
     <div className="history-preview-scroll">
       <div className="history-calorie-summary"><div className="history-calorie-ring" style={{ "--day-progress": `${progress * 3.6}deg` }}><strong>{formatNumber(consumed)}</strong><small>de {formatNumber(goal)} kcal</small></div><div><span>{day.goalReached ? "Objetivo cumplido" : "Balance del día"}</span><strong>{progress}%</strong><small>{formatNumber(Math.max(0, goal - consumed))} kcal restantes</small></div></div>
-      {error && <CatalogStatus error>{error}</CatalogStatus>}
+       {error && <CatalogStatus error>{error}</CatalogStatus>}
+       {loading && <SkeletonRows count={4} className="history-preview-skeleton" label="Cargando detalle del día" />}
       {detail && <><div className="history-macros">{(detail.macros || []).map((macro) => <article key={macro.key}><span>{macro.label}</span><strong>{formatNumber(macro.consumed)}g</strong><small>de {formatNumber(macro.goal)}g</small><i><b style={{ width: `${Math.min(100, Number(macro.consumed || 0) / (Number(macro.goal) || 1) * 100)}%` }} /></i></article>)}</div><div className="history-meals">{(detail.meals || []).filter((meal) => meal.items?.length).map((meal, mealIndex) => <article className="history-meal" key={meal.mealType} style={{ "--meal-delay": `${mealIndex * 45}ms` }}><header><div><Icon name="restaurant" /><strong>{meal.label}</strong></div><small>{formatNumber(meal.calories)} kcal</small></header><div>{meal.items.map((item) => <div className="history-food" key={item.id}><FoodThumb item={item.itemType === "RECIPE" ? { ...item.recipe, type: "RECIPE" } : item.itemType === "AI_ESTIMATE" ? { name: mealLogName(item), category: "OTHER" } : item.food} compact /><span><strong>{mealLogName(item)}</strong><small>{formatMealLogAmount(item)} · {formatNumber(item.calories)} kcal</small></span></div>)}</div></article>)}</div></>}
     </div>
   </ModalShell>;

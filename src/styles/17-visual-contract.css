@@ -98,6 +98,16 @@
 .page-loading-stack { display: grid; gap: var(--space-4); }
 .page-loading-stack .skeleton { min-height: 96px; border-radius: var(--radius-panel); }
 .page-loading-stack .skeleton:first-child { min-height: 132px; }
+.skeleton-loading,
+.page-skeleton { display: grid; gap: var(--space-3); }
+.skeleton-row { width: 100%; min-height: 72px; border-radius: var(--radius-panel); }
+.page-skeleton { min-height: 360px; padding: var(--space-4) 0; }
+.page-skeleton .skeleton-row:first-child { min-height: 112px; }
+.recipe-loading-card { display: block; }
+.recipe-loading-card .skeleton-recipe-card { display: block; width: 100%; min-height: 88px; }
+.catalog-result-skeleton { width: 100%; }
+.history-preview-skeleton { width: 100%; }
+.skeleton-button { display: inline-block; width: 76px; height: 14px; border-radius: 999px; vertical-align: middle; }
 
 .my-foods-loading { display: grid; gap: var(--space-2); }
 .my-foods-loading::before,

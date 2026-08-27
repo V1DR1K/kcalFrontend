@@ -738,46 +738,6 @@ select:focus-visible,
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
-.action-loader {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-blocking);
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: var(--scrim-action);
-  -webkit-backdrop-filter: blur(5px) saturate(120%);
-  backdrop-filter: blur(5px) saturate(120%);
-  animation: action-loader-in 160ms ease-out both;
-}
-
-.action-loader-card {
-  display: grid;
-  justify-items: center;
-  gap: 9px;
-  min-width: min(260px, 100%);
-  padding: 24px 26px;
-  border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
-  border-radius: var(--radius-panel);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-low) 96%, transparent), color-mix(in srgb, var(--background) 96%, transparent));
-  color: var(--text);
-  box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--text) 4%, transparent);
-  text-align: center;
-}
-
-.action-loader-card strong { font-size: 16px; }
-.action-loader-card small { color: var(--muted); font-size: 12px; }
-
-.action-loader-spinner {
-  width: 42px;
-  height: 42px;
-  border: 4px solid color-mix(in srgb, var(--primary) 18%, transparent);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  box-shadow: 0 0 22px color-mix(in srgb, var(--primary) 18%, transparent);
-  animation: spin 720ms linear infinite;
-}
-
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
@@ -1505,7 +1465,6 @@ button:disabled {
 @keyframes meal-menu-in { from { opacity: 0; filter: blur(3px); transform: translateY(-8px) scale(.94); } }
 @keyframes meal-menu-item-in { from { opacity: 0; transform: translateY(-4px); } }
 @keyframes meal-menu-dots { 28% { transform: translateY(-3px) rotate(8deg); } 58% { transform: translateY(2px) rotate(-6deg); } 82% { transform: translateY(-1px) rotate(3deg); } }
-@keyframes action-loader-in { from { opacity: 0; } }
 @keyframes edit-backdrop-in { from { opacity: 0; } }
 @keyframes edit-backdrop-out { to { opacity: 0; } }
 @keyframes edit-modal-in { from { opacity: 0; transform: translateY(18px) scale(.98); } }

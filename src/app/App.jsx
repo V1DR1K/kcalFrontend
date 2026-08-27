@@ -3,7 +3,7 @@ import "../styles.css";
 import { request as apiRequest } from "../services/http";
 import { Shell } from "./Shell";
 import { AuthScreen } from "../features/auth/AuthScreen";
-import { ActionLoader } from "../components/ActionLoader";
+import { DashboardSkeleton, SkeletonRows } from "../components/Loading";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
 import { Notification } from "../components/Notification";
 import { History } from "../features/history/History";
@@ -30,18 +30,8 @@ function navigationState() {
 }
 
 function PageLoader({ page, mode }) {
-  const labels = {
-    dashboard: ["Cargando día", "Estamos preparando tu resumen diario..."],
-    "my-foods": ["Cargando alimentos", "Estamos preparando el catálogo personal..."],
-    recipes: ["Cargando recetas", "Estamos preparando la biblioteca de recetas..."],
-    configure: ["Cargando alimento", "Estamos preparando sus datos nutricionales..."],
-    scanner: ["Cargando Registrar", "Estamos preparando las opciones de registro..."],
-    "training-dashboard": ["Cargando día", "Estamos preparando tu resumen de actividad..."],
-    "training-calendar": ["Cargando calendario", "Estamos preparando tus sesiones..."],
-    "training-profile": ["Cargando ejercicios", "Estamos preparando el catálogo personal y base..."],
-  };
-  const [title, description] = labels[page] || ["Cargando vista", "Estamos preparando la información..."];
-  return <ActionLoader title={title} description={description} mode={mode} />;
+  if (page === "dashboard") return <DashboardSkeleton />;
+  return <SkeletonRows count={4} className={`page-skeleton page-skeleton-${page} ${mode === "training" ? "training-skeleton" : ""}`.trim()} label="Cargando vista" />;
 }
 
 export function App() {
@@ -81,11 +71,8 @@ export function App() {
   const [sessionState, setSessionState] = useState("checking");
   const [selectedFoodId, setSelectedFoodId] = useState(null);
   const [prefillBarcode, setPrefillBarcode] = useState("");
-  const [actionLoading, setActionLoading] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
   const [notification, setNotification] = useState(null);
-  const actionSequence = useRef(0);
-  const pendingActions = useRef(new Map());
   const confirmationResolver = useRef(null);
   const notify = React.useCallback((message, tone = "success") => {
     if (message) setNotification({ message, tone });
@@ -94,20 +81,7 @@ export function App() {
   const api = useMemo(
     () => ({
       request: apiRequest,
-      async runAction(loading, operation, options = {}) {
-        if (options.quiet) return operation();
-        const id = actionSequence.current + 1;
-        actionSequence.current = id;
-        pendingActions.current.set(id, loading);
-        setActionLoading(loading);
-        try {
-          return await operation();
-        } finally {
-          pendingActions.current.delete(id);
-          const activeActions = [...pendingActions.current.values()];
-          setActionLoading(activeActions[activeActions.length - 1] || null);
-        }
-      },
+      async runAction(_loading, operation) { return operation(); },
       confirm(options) {
         return new Promise((resolve) => {
           confirmationResolver.current = resolve;
@@ -221,7 +195,7 @@ export function App() {
 
   return (
     <>
-      {authenticated ? (
+      {sessionState === "checking" ? <PageLoader page={page} mode={mode} /> : authenticated ? (
         <Shell user={user} page={page} mode={mode} setPage={setPage} setMode={setMode} logout={logout}>
           <Suspense fallback={<PageLoader page={page} mode={mode} />}>
             {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
@@ -249,7 +223,6 @@ export function App() {
       ) : (
         <AuthScreen api={api} page={page} setPage={setPage} saveSession={saveSession} />
       )}
-      {actionLoading && <ActionLoader {...actionLoading} mode={mode} />}
       {confirmation && <ConfirmationDialog {...confirmation} mode={mode} onCancel={() => resolveConfirmation(false)} onConfirm={() => resolveConfirmation(true)} />}
       {notification && <Notification message={notification.message} tone={notification.tone} onDismiss={() => setNotification(null)} />}
     </>

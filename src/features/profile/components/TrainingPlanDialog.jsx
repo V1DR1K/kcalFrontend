@@ -6,6 +6,7 @@ import { today } from "../../../utils/format";
 import { trainingApi } from "../../training/training-api";
 import { ExerciseCombobox } from "../../training/ExerciseCombobox";
 import { exerciseRegistration, moveItem, planPayload, registrationTypeLabel } from "../../training/training-utils";
+import { SkeletonRows } from "../../../components/Loading";
 
 const key = () => crypto.randomUUID?.() || Math.random().toString(36).slice(2);
 const weekdays = [
@@ -120,7 +121,7 @@ export function TrainingPlanDialog({ api, plan, exercises = [], onClose, onChang
   }
 
   return <ModalShell title={editing ? "Editar plan" : "Nuevo plan"} description="Definí la estructura que vas a repetir y registrar." onClose={onClose} closeDisabled={saving} theme="training" className="training-plan-dialog" backdropClassName="training-session-backdrop" footer={<><button type="button" className="training-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" form="training-plan-form" className="training-primary" disabled={saving || loading}>{saving ? "Guardando…" : editing ? "Guardar cambios" : "Crear plan"}</button></>}>
-    {loading ? <div className="training-loading" aria-busy="true" aria-label="Cargando plan"><span /><span /><span /></div> : <form id="training-plan-form" className="training-editor-form" onSubmit={submit}>
+     {loading ? <SkeletonRows count={5} className="training-loading" label="Cargando plan" /> : <form id="training-plan-form" className="training-editor-form" onSubmit={submit}>
       <div className="training-plan-form-intro"><strong>La estructura, sin pasos extra</strong><span>Usá días fijos si cada sesión ocurre en un día concreto. El modo dinámico avanza por orden.</span></div>
       <div className="training-plan-fields"><Input label="Nombre del plan" value={form.name} maxLength="120" required onChange={(event) => setField("name", event.target.value)} placeholder="Ej.: Fuerza de base" /><div className="training-plan-field-row"><Select label="Módulo" value={form.module} options={moduleOptions} onChange={(event) => changeModule(event.target.value)} /><Select label="Frecuencia" value={form.frequencyMode} options={frequencyOptions} onChange={(event) => { const frequencyMode = event.target.value === "DYNAMIC" ? "DYNAMIC" : "FIXED"; setForm((current) => ({ ...current, frequencyMode, days: current.days.map((day) => ({ ...day, dayOfWeek: frequencyMode === "DYNAMIC" ? "" : day.dayOfWeek })) })); }} /><Input label="Sesiones por semana" type="number" min="1" max="14" numericOnly value={form.targetSessionsPerWeek} onChange={(event) => setField("targetSessionsPerWeek", event.target.value)} /></div><div className="training-plan-field-row"><Input label="Comienza" type="date" value={form.startDate} onChange={(event) => setField("startDate", event.target.value)} /><Input label="Finaliza (opcional)" type="date" value={form.endDate} onChange={(event) => setField("endDate", event.target.value)} /><label className="training-toggle"><input type="checkbox" checked={form.active} onChange={(event) => setField("active", event.target.checked)} /><span><strong>Plan activo</strong><small>Disponible para sugerencias y registro</small></span></label></div></div>
       {moduleNotice && <p className="training-form-notice" role="status">{moduleNotice}</p>}
