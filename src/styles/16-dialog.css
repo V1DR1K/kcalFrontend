@@ -151,9 +151,17 @@
   }
 
   .app-modal-surface.picker-modal[class] {
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
     padding-left: max(var(--space-3), calc(var(--space-3) + env(safe-area-inset-left)));
     padding-right: max(var(--space-3), calc(var(--space-3) + env(safe-area-inset-right)));
   }
+
+  .app-modal-surface.picker-modal[class] .picker-scroll {
+    align-content: start;
+    grid-auto-rows: max-content;
+  }
+
+  .app-modal-surface.picker-modal[class] .picker-scroll > .catalog-status { order: -1; }
 
   .app-modal-surface[class] > header,
   .modal-shell-header {

@@ -56,3 +56,37 @@ test("keeps photo actions in one compact mobile row", async ({ page }) => {
   expect(layout.buttons[1].top).toBe(layout.buttons[0].top);
   expect(layout.buttons[0].height).toBeGreaterThanOrEqual(48);
 });
+
+test("keeps the food picker rows and scroll owner stable on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page);
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+
+  await expect(page.locator(".catalog-status").first()).toBeVisible();
+  const layout = await page.locator(".picker-modal").evaluate((modal) => {
+    const getRect = (selector) => modal.querySelector(selector)?.getBoundingClientRect().toJSON();
+    const tabs = getRect(".picker-tabs");
+    const tools = getRect(".picker-tools");
+    const scroll = getRect(".picker-scroll");
+    const status = getRect(".picker-scroll > .catalog-status");
+    const pickerScroll = getComputedStyle(modal.querySelector(".picker-scroll"));
+    return {
+      rows: getComputedStyle(modal).gridTemplateRows.split(" ").length,
+      tabs,
+      tools,
+      scroll,
+      status,
+      overflowY: pickerScroll.overflowY,
+      statusOrder: getComputedStyle(modal.querySelector(".picker-scroll > .catalog-status")).order,
+    };
+  });
+
+  expect(layout.rows).toBe(5);
+  expect(layout.tabs.height).toBeLessThan(60);
+  expect(layout.status.top).toBeGreaterThanOrEqual(layout.scroll.top);
+  expect(layout.status.bottom).toBeLessThanOrEqual(layout.scroll.bottom);
+  expect(layout.tools.bottom).toBeLessThanOrEqual(layout.scroll.top);
+  expect(layout.overflowY).toBe("auto");
+  expect(layout.statusOrder).toBe("-1");
+});
