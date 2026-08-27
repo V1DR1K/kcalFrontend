@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedAuthenticatedApp(page) {
+async function seedAuthenticatedApp(page, { aiAvailable = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -13,7 +13,7 @@ async function seedAuthenticatedApp(page) {
     if (url.includes("/nutrition/dashboard")) body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals: [{ mealType: "BREAKFAST", items: [] }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }], waterConsumed: 0, waterGoal: 2, plan: null };
     if (url.includes("/nutrition/meal-types")) body = [{ code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" }, { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" }];
     if (url.includes("/nutrition/day-presets")) body = [];
-    if (url.includes("/nutrition/ai-estimates/usage")) body = { available: false };
+    if (url.includes("/nutrition/ai-estimates/usage")) body = { available: aiAvailable };
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
 }
@@ -89,4 +89,21 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
   expect(layout.tools.bottom).toBeLessThanOrEqual(layout.scroll.top);
   expect(layout.overflowY).toBe("auto");
   expect(layout.statusOrder).toBe("-1");
+});
+
+test("keeps the AI description textarea at a non-zooming size on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { aiAvailable: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.locator(".ai-gallery-trigger input").setInputFiles({
+    name: "comida.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from("test-image"),
+  });
+
+  const textarea = page.locator(".ai-context-field textarea").first();
+  await expect(textarea).toBeVisible();
+  await textarea.focus();
+  await expect(textarea).toHaveCSS("font-size", "16px");
 });

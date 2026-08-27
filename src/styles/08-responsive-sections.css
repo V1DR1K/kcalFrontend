@@ -7,6 +7,8 @@
   textarea,
   button { font-size: 16px; }
 
+  .ai-context-field textarea { font-size: 16px; }
+
   input:focus,
   select:focus,
   textarea:focus { scroll-margin-bottom: 16px; }
