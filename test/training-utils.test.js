@@ -32,3 +32,12 @@ test("serializa un plan canónico y limpia el día en modo dinámico", () => {
   assert.equal(payload.days[0].dayOfWeek, undefined);
   assert.deepEqual(payload.days[0].exercises[0], { exerciseId: 12, targetSets: 4, targetRepetitions: 8, notes: null, position: 0 });
 });
+
+test("serializa objetivos por tiempo y distancia sin campos incompatibles", () => {
+  const time = sessionPayload({ date: "2026-08-26", planId: "", planDayId: "", title: "", durationMinutes: 30, notes: "", exercises: [{ exerciseId: "12", targetSets: 3, targetSeconds: 30, targetWeightKg: 20, registrationType: "TIME", notes: "", sets: [{ seconds: 30, weightKg: 20 }] }] }, "CALISTHENICS");
+  const distance = planPayload({ name: "Carrera", module: "CALISTHENICS", frequencyMode: "DYNAMIC", targetSessionsPerWeek: 2, active: true, days: [{ name: "Cardio", exercises: [{ exerciseId: "12", targetSets: 2, targetDistanceMeters: 500, registrationType: "DISTANCE", notes: "" }] }] });
+  assert.deepEqual(time.exercises[0].sets[0], { setNumber: 1, seconds: 30, completed: false, notes: null });
+  assert.equal(distance.days[0].exercises[0].targetDistanceMeters, 500);
+  assert.equal("description" in distance, false);
+  assert.equal("description" in distance.days[0], false);
+});

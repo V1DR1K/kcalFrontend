@@ -3,7 +3,7 @@ import { Icon } from "../../components/Icon";
 import { Header, Panel, Stat } from "../../components/Layout";
 import { CatalogStatus } from "../catalog/CatalogComponents";
 import { formatNumber } from "../../utils/format";
-import { ChangePasswordForm as ProfileChangePasswordForm, NutritionTutorial as ProfileNutritionTutorial, WeightPanel as ProfileWeightPanel } from "./components/ProfilePanels";
+import { NutritionTutorial as ProfileNutritionTutorial, WeightPanel as ProfileWeightPanel } from "./components/ProfilePanels";
 import { NutritionPlanManager } from "./components/NutritionPlanManager";
 import { TrainingPlanManager } from "./components/TrainingPlanManager";
 import { trainingApi } from "../training/training-api";
@@ -103,7 +103,7 @@ export function Profile({ api, logout, mode = "nutrition" }) {
           <ProfileWeightPanel api={api} profile={profile} setProfile={setProfile} entries={weightEntries} setEntries={setWeightEntries} setWeight={setWeight} weight={weight} savingWeight={savingWeight} setSavingWeight={setSavingWeight} />
         </div>
         <TrainingPlanManager api={api} plans={plans} exercises={trainingExercises} onChanged={load} />
-        <div className="profile-support-grid training-profile-account-grid"><Panel title="Cuenta" className="account-panel"><p>Podés actualizar tu contraseña o cerrar tu sesión de forma segura en este dispositivo.</p><ProfileChangePasswordForm api={api} /><button className="danger-button" onClick={async () => { const confirmed = await api.confirm({ title: "¿Cerrar sesión?", description: "Tendrás que volver a ingresar para usar tu cuenta en este dispositivo.", confirmLabel: "Cerrar sesión", tone: "neutral" }); if (confirmed) logout(); }}><Icon name="logout" />Cerrar sesión</button></Panel></div>
+        <div className="profile-support-grid training-profile-account-grid"><Panel title="Cuenta" className="account-panel"><p>Podés cerrar tu sesión de forma segura en este dispositivo.</p><button className="danger-button" onClick={async () => { const confirmed = await api.confirm({ title: "¿Cerrar sesión?", description: "Tendrás que volver a ingresar para usar tu cuenta en este dispositivo.", confirmLabel: "Cerrar sesión", tone: "neutral" }); if (confirmed) logout(); }}><Icon name="logout" />Cerrar sesión</button></Panel></div>
       </> : <>
       <div className="profile-overview-grid">
         <Panel title={profile?.fullName || "Perfil"}>
@@ -123,8 +123,7 @@ export function Profile({ api, logout, mode = "nutrition" }) {
         </Panel>
         <ProfileNutritionTutorial />
         <Panel title="Cuenta" className="account-panel">
-          <p>Podés actualizar tu contraseña o cerrar tu sesión de forma segura en este dispositivo.</p>
-          <ProfileChangePasswordForm api={api} />
+          <p>Podés cerrar tu sesión de forma segura en este dispositivo.</p>
           <button
             className="danger-button"
             onClick={async () => {

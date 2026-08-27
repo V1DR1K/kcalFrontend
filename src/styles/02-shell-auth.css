@@ -1,7 +1,8 @@
 .app-shell {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
 }
 
 .sidebar {
@@ -9,8 +10,9 @@
   top: 0;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   gap: var(--space-7);
-  height: 100vh;
+  height: 100dvh;
   padding: var(--space-6);
   border-right: 1px solid color-mix(in srgb, var(--outline) 70%, transparent);
   background: var(--surface-sidebar);
@@ -121,6 +123,8 @@ nav button.active {
   margin: 0 auto;
   padding: 36px 0 96px;
 }
+
+.sidebar nav { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--outline) transparent; }
 
 .page {
   display: grid;

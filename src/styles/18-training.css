@@ -331,6 +331,7 @@
 .training-tabs button:hover { color: var(--training-text); }
 .training-tabs .training-tab-active { background: color-mix(in srgb, var(--training-primary) 16%, var(--training-surface-raised)); color: var(--training-primary-hover); }
 .training-filter-row { display: grid; grid-template-columns: minmax(170px, .36fr) minmax(0, .64fr); gap: var(--space-3); }
+.training-catalog-filters { grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: end; }
 .training-page .field span, .training-session-editor .field span, .training-routine-editor .field span, .training-exercise-editor .field span { color: var(--training-muted); }
 .training-page .field input, .training-page .field select, .training-page .field textarea, .training-session-editor .field input, .training-session-editor .field select, .training-session-editor .field textarea, .training-routine-editor .field input, .training-routine-editor .field select, .training-routine-editor .field textarea, .training-exercise-editor .field input, .training-exercise-editor .field select, .training-exercise-editor .field textarea { border-color: var(--training-border); background: var(--training-surface-raised); color: var(--training-text); }
 .training-page .field input:focus, .training-page .field select:focus, .training-page .field textarea:focus, .training-session-editor .field input:focus, .training-session-editor .field select:focus, .training-session-editor .field textarea:focus, .training-routine-editor .field input:focus, .training-routine-editor .field select:focus, .training-routine-editor .field textarea:focus, .training-exercise-editor .field input:focus, .training-exercise-editor .field select:focus, .training-exercise-editor .field textarea:focus { border-color: var(--training-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--training-focus) 23%, transparent); }
@@ -356,6 +357,13 @@
 .training-exercise-card p { overflow: hidden; margin: 0; color: var(--training-muted); font-size: var(--type-meta); text-overflow: ellipsis; white-space: nowrap; }
 .training-catalog-sections { display: grid; gap: var(--space-7); }
 .training-catalog-sections > section { display: grid; gap: var(--space-3); }
+.training-category-panel { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--training-border); border-radius: var(--radius-panel); background: var(--training-surface); }
+.training-category-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.training-category-card { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: 1px solid var(--training-border); border-radius: var(--radius-control); background: var(--training-surface-raised); }
+.training-category-card > div:first-child { display: grid; gap: var(--space-1); min-width: 0; }
+.training-category-card small { color: var(--training-muted); font-size: var(--type-micro); }
+.training-pagination { display: flex; align-items: center; justify-content: center; gap: var(--space-3); }
+.training-pagination span { color: var(--training-muted); font-size: var(--type-small); }
 .training-catalog-heading { align-items: end; }
 .training-catalog-heading > strong { color: var(--training-primary); font-family: var(--font-display); font-size: var(--type-heading); }
 
@@ -396,6 +404,8 @@
 .training-plan-exercise-heading > div { display: flex; gap: var(--space-1); }
 .training-plan-volume { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 .training-plan-volume-no-weight { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.training-plan-registration { color: var(--training-primary-hover); font-size: var(--type-micro); font-weight: 800; }
+.training-form-notice { margin: 0; padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--training-primary) 42%, var(--training-border)); border-radius: var(--radius-control); color: var(--training-primary-hover); font-size: var(--type-small); }
 .training-add-exercise { justify-self: start; }
 .training-session-source { display: grid; gap: var(--space-1); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--training-primary) 42%, var(--training-border)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--training-primary) 9%, transparent); }
 .training-session-source span, .training-session-source small { color: var(--training-muted); font-size: var(--type-meta); }
@@ -420,6 +430,7 @@
 
 .training-editor-form { display: grid; gap: var(--space-4); padding: var(--space-5); }
 .training-editor-meta, .training-routine-meta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, .55fr); gap: var(--space-3); }
+.training-session-targets { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: var(--space-2); }
 .training-date-button { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); min-height: 52px; padding: var(--space-2) var(--space-3); border: 1px solid var(--training-border); border-radius: var(--radius-control); background: var(--training-surface-raised); color: var(--training-text); text-align: left; }
 .training-date-button > .material-symbols-outlined:first-child { color: var(--training-primary); }
 .training-date-button > .material-symbols-outlined:last-child { color: var(--training-muted); }
@@ -438,6 +449,18 @@
 .training-set-row .field span { font-size: var(--type-micro); }
 .training-set-row .training-icon-action { align-self: end; min-height: 48px; }
 .training-notes-field textarea { width: 100%; min-height: 76px; resize: vertical; padding: var(--space-3); border-radius: var(--radius-control); }
+.training-combobox { position: relative; min-width: 0; }
+.training-combobox-selected { display: grid; gap: 2px; margin-top: -4px; padding: var(--space-2) var(--space-3); border: 1px solid color-mix(in srgb, var(--training-primary) 48%, var(--training-border)); border-radius: var(--radius-tight); background: color-mix(in srgb, var(--training-primary) 8%, var(--training-surface)); }
+.training-combobox-selected span, .training-combobox-selected small { color: var(--training-muted); font-size: var(--type-micro); }
+.training-combobox-list { position: absolute; z-index: 4; top: calc(100% - 2px); right: 0; left: 0; display: grid; max-height: 300px; overflow-y: auto; border: 1px solid var(--training-border); border-radius: var(--radius-control); background: var(--training-surface-raised); box-shadow: 0 18px 30px color-mix(in srgb, var(--training-background) 68%, transparent); }
+.training-combobox-option { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2); min-height: 60px; padding: var(--space-2) var(--space-3); border: 0; border-bottom: 1px solid color-mix(in srgb, var(--training-border) 72%, transparent); background: transparent; color: var(--training-text); text-align: left; }
+.training-combobox-option:hover, .training-combobox-option.is-selected { background: color-mix(in srgb, var(--training-primary) 12%, var(--training-surface-raised)); }
+.training-combobox-option > span { display: grid; gap: 2px; min-width: 0; }
+.training-combobox-option small, .training-combobox-option em { color: var(--training-muted); font-size: var(--type-micro); font-style: normal; }
+.training-combobox-option em { white-space: nowrap; }
+.training-combobox-state, .training-combobox-more { min-height: 48px; padding: var(--space-3); color: var(--training-muted); font-size: var(--type-small); }
+.training-combobox-error { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.training-combobox-more { border: 0; border-top: 1px solid var(--training-border); background: color-mix(in srgb, var(--training-primary) 8%, transparent); color: var(--training-primary-hover); font-weight: 800; }
 .training-form-error { margin: 0; padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--training-danger) 55%, var(--training-border)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--training-danger) 10%, var(--training-surface)); color: var(--training-danger); font-size: var(--type-small); font-weight: 700; }
 
 .training-toggle { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2); align-items: center; min-height: 52px; padding: var(--space-2) var(--space-3); border: 1px solid var(--training-border); border-radius: var(--radius-control); background: var(--training-surface-raised); cursor: pointer; }
@@ -500,7 +523,7 @@
   .training-routine-card-actions { justify-content: stretch; }
   .training-routine-card-actions .training-secondary { flex: 1 1 100%; }
   .training-routine-card-actions .training-icon-action { flex: 1 1 0; }
-  .training-filter-row, .training-editor-meta, .training-routine-meta { grid-template-columns: 1fr; }
+  .training-filter-row, .training-editor-meta, .training-routine-meta, .training-catalog-filters { grid-template-columns: 1fr; }
   .training-catalog-heading { grid-template-columns: 1fr; gap: var(--space-2); }
   .training-exercise-card { min-height: 72px; }
   .training-set-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; }
@@ -516,6 +539,7 @@
   .training-planned-actions, .training-plan-history-actions { justify-content: stretch; }
   .training-planned-actions .training-primary, .training-plan-history-actions .training-secondary, .training-plan-history-actions .training-icon-action { flex: 1 1 0; }
   .training-plan-field-row, .training-plan-day-fields, .training-plan-volume, .training-plan-volume-no-weight { grid-template-columns: 1fr; }
+  .training-category-list { grid-template-columns: 1fr; }
   .training-plan-add { width: 100%; }
 }
 

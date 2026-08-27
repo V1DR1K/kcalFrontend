@@ -20,7 +20,12 @@ export const trainingApi = {
   deletePlan: (api, id) => api.request(`/api/training/plans/${encoded(id)}`, { method: "DELETE" }),
   resolvePlan: (api, id, date) => api.request(`/api/training/plans/${encoded(id)}/resolve?date=${encoded(date)}`),
   skipPlan: (api, id, payload) => api.request(`/api/training/plans/${encoded(id)}/skip`, { method: "POST", body: JSON.stringify(payload) }),
-  exercises: (api, { q, module, page = 0, size = 50 } = {}) => api.request(`/api/training/exercises?${query({ q, module: module === "ALL" ? undefined : module, page, size })}`),
+  categories: (api, { q, module, includeInactive = false, page = 0, size = 50 } = {}) => api.request(`/api/training/categories?${query({ q, module: module === "ALL" ? undefined : module, includeInactive, page, size })}`),
+  category: (api, id) => api.request(`/api/training/categories/${encoded(id)}`),
+  saveCategory: (api, category, payload) => api.request(category?.id ? `/api/training/categories/${encoded(category.id)}` : "/api/training/categories", { method: category?.id ? "PUT" : "POST", body: JSON.stringify(payload) }),
+  deleteCategory: (api, id) => api.request(`/api/training/categories/${encoded(id)}`, { method: "DELETE" }),
+  exercises: (api, { q, module, category, categoryId, equipment, difficulty, registrationType, includeInactive = false, page = 0, size = 50 } = {}) => api.request(`/api/training/exercises?${query({ q, module: module === "ALL" ? undefined : module, category, categoryId, equipment, difficulty, registrationType, includeInactive, page, size })}`),
+  exercise: (api, id) => api.request(`/api/training/exercises/${encoded(id)}`),
   saveExercise: (api, exercise, payload) => api.request(exercise.id ? `/api/training/exercises/${encoded(exercise.id)}` : "/api/training/exercises", { method: exercise.id ? "PUT" : "POST", body: JSON.stringify(payload) }),
   deleteExercise: (api, id) => api.request(`/api/training/exercises/${encoded(id)}`, { method: "DELETE" }),
 };
