@@ -29,7 +29,7 @@
 .modal-shell-header h2 { margin: 2px 0 0; }
 .modal-shell-header p { margin: 6px 0 0; color: var(--muted); line-height: 1.45; }
 .modal-shell-eyebrow { color: var(--primary); font-size: var(--type-meta); font-weight: 800; }
-.modal-shell-content { min-height: 0; overflow: auto; overscroll-behavior: contain; scroll-padding-block: 16px calc(16px + env(safe-area-inset-bottom)); scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+.modal-shell-content { min-height: 0; overflow: auto; overscroll-behavior: contain; scroll-padding-block: 16px var(--dialog-footer-space, calc(16px + env(safe-area-inset-bottom))); scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 .modal-shell-footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-5) var(--space-5); }
 
 [data-dialog-scroll-owner="true"],
@@ -41,7 +41,7 @@
   overscroll-behavior: contain;
   touch-action: pan-y;
   scroll-padding-block-start: 16px;
-  scroll-padding-block-end: calc(76px + max(env(safe-area-inset-bottom), var(--dialog-keyboard-inset, 0px)));
+  scroll-padding-block-end: var(--dialog-footer-space, calc(16px + env(safe-area-inset-bottom)));
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
 }
@@ -142,10 +142,26 @@
   }
 
   .app-modal-surface[class] {
+    position: relative;
     width: 100%;
     height: min(var(--dialog-viewport-height, var(--app-viewport-height, 100dvh)), 100dvh);
     max-height: none;
     border-radius: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .app-modal-surface.picker-modal[class] { grid-template-rows: auto auto auto minmax(0, 1fr); }
+
+  .app-modal-surface[class]:has(> footer, > .modal-shell-footer) > .modal-shell-content,
+  .app-modal-surface[class]:has(> footer, > .modal-shell-footer) > [data-dialog-scroll-owner="true"] {
+    padding-bottom: calc(var(--dialog-footer-space, 96px) + 8px);
+  }
+
+  .app-modal-surface.date-picker-dialog[class],
+  .app-modal-surface.history-export-dialog[class],
+  .app-modal-surface.recipe-detail-dialog[class],
+  .app-modal-surface.confirmation-dialog[class] {
+    padding-bottom: var(--dialog-footer-space, 96px);
   }
 
   .app-modal-surface:not(.app-modal-compact)[class] {
@@ -154,7 +170,7 @@
   }
 
   .app-modal-surface.picker-modal[class] {
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
     padding-left: max(var(--space-3), calc(var(--space-3) + env(safe-area-inset-left)));
     padding-right: max(var(--space-3), calc(var(--space-3) + env(safe-area-inset-right)));
   }
@@ -188,6 +204,13 @@
 
   .app-modal-surface[class] > footer,
   .app-modal-surface[class] > .modal-shell-footer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    width: 100%;
+    box-sizing: border-box;
     flex: 0 0 auto;
     flex-wrap: wrap;
     justify-content: stretch;
@@ -203,6 +226,8 @@
 
   .app-modal-surface[class] > footer button:only-child,
   .app-modal-surface[class] > .modal-shell-footer button:only-child { flex-basis: 100%; }
+
+  .app-modal-surface[class] > .selected-subpanel { z-index: 3; }
 
   .app-modal-surface[class] > footer.picker-photo-actions {
     display: grid;

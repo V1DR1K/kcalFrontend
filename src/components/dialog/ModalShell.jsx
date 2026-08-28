@@ -1,4 +1,4 @@
-import React, { useId } from "react";
+import React, { useEffect, useId, useRef } from "react";
 import { Icon } from "../Icon";
 import { ModalRoot } from "./ModalRoot";
 import { useDialogLifecycle } from "./useDialogLifecycle";
@@ -29,10 +29,22 @@ export function ModalShell({
   const id = useId().replace(/:/g, "");
   const titleId = `${id}-title`;
   const descriptionId = description ? `${id}-description` : undefined;
+  const footerRef = useRef(null);
   const { dialogRef, onBackdropPointerDown } = useDialogLifecycle({
     onClose: closeDisabled ? undefined : onClose,
     initialFocusRef,
   });
+
+  useEffect(() => {
+    const surface = dialogRef.current;
+    const footerElement = footerRef.current || surface?.querySelector(":scope > footer");
+    if (!surface || !footerElement) return undefined;
+    const updateFooterSpace = () => surface.style.setProperty("--dialog-footer-space", `${footerElement.getBoundingClientRect().height}px`);
+    updateFooterSpace();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateFooterSpace);
+    observer?.observe(footerElement);
+    return () => observer?.disconnect();
+  }, [dialogRef, footer]);
 
   function handleBackdropPointerDown(event) {
     if (closeOnBackdrop && !closeDisabled) onBackdropPointerDown(event);
@@ -56,7 +68,7 @@ export function ModalShell({
           </header>
         )}
         {wrapContent ? <div className="modal-shell-content" data-dialog-scroll-owner="true">{children}</div> : children}
-        {footer && <footer className="modal-shell-footer">{footer}</footer>}
+        {footer && <footer ref={footerRef} className="modal-shell-footer">{footer}</footer>}
       </Element>
     </ModalRoot>
   );

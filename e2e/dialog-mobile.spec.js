@@ -57,6 +57,31 @@ test("keeps photo actions in one compact mobile row", async ({ page }) => {
   expect(layout.buttons[0].height).toBeGreaterThanOrEqual(48);
 });
 
+test("pins modal actions without taking a grid row on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 430 });
+  await seedAuthenticatedApp(page);
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+
+  const layout = await page.locator(".picker-modal").evaluate((modal) => {
+    const scroll = modal.querySelector(".picker-scroll").getBoundingClientRect();
+    const footer = modal.querySelector(":scope > .modal-shell-footer, :scope > footer");
+    const footerRect = footer.getBoundingClientRect();
+    return {
+      modal: modal.getBoundingClientRect().toJSON(),
+      scroll,
+      footer: footerRect.toJSON(),
+      footerPosition: getComputedStyle(footer).position,
+      rows: getComputedStyle(modal).gridTemplateRows.split(" ").length,
+    };
+  });
+
+  expect(layout.footerPosition).toBe("absolute");
+  expect(layout.rows).toBe(4);
+  expect(layout.footer.bottom).toBeLessThanOrEqual(430 + 1);
+  expect(layout.scroll.bottom).toBeLessThanOrEqual(layout.footer.bottom);
+});
+
 test("keeps the food picker rows and scroll owner stable on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedAuthenticatedApp(page);
@@ -84,7 +109,7 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
     };
   });
 
-  expect(layout.rows).toBe(5);
+  expect(layout.rows).toBe(4);
   expect(layout.tabs.height).toBeLessThan(60);
   expect(layout.status.top).toBeGreaterThanOrEqual(layout.scroll.top);
   expect(layout.status.bottom).toBeLessThanOrEqual(layout.scroll.bottom);

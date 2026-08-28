@@ -87,9 +87,12 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
         const owner = target.closest?.(SCROLL_OWNER_SELECTOR) || dialogRef.current;
         const targetRect = target.getBoundingClientRect();
         const ownerRect = owner.getBoundingClientRect();
+        const footer = dialogRef.current.querySelector(":scope > footer, :scope > .modal-shell-footer, :scope > .ai-photo-context-actions, :scope > .ai-estimate-actions, :scope > .selected-editor > .ai-photo-context-actions, :scope > .selected-editor > .ai-estimate-actions, :scope > .selected-editor > .primary");
+        const footerRect = footer?.getBoundingClientRect();
+        const visibleBottom = footerRect && footerRect.top > ownerRect.top && footerRect.top < ownerRect.bottom ? footerRect.top : ownerRect.bottom;
         const padding = 16;
         if (targetRect.top < ownerRect.top + padding) owner.scrollTop -= ownerRect.top + padding - targetRect.top;
-        if (targetRect.bottom > ownerRect.bottom - padding) owner.scrollTop += targetRect.bottom - ownerRect.bottom + padding;
+        if (targetRect.bottom > visibleBottom - padding) owner.scrollTop += targetRect.bottom - visibleBottom + padding;
       });
     }
 

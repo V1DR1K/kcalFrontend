@@ -115,12 +115,16 @@ test("keeps training actions and exercise options inside a reduced mobile viewpo
     return {
       viewport: window.innerHeight,
       surface: getBounds("[data-dialog-surface=\"true\"]"),
+      content: getBounds("[data-dialog-surface=\"true\"] > .modal-shell-content"),
       footer: getBounds("[data-dialog-surface=\"true\"] > .modal-shell-footer"),
       list: getBounds(".training-combobox-list-floating"),
+      footerPosition: getComputedStyle(document.querySelector("[data-dialog-surface=\"true\"] > .modal-shell-footer")).position,
     };
   });
   expect(bounds.surface.bottom).toBeLessThanOrEqual(bounds.viewport + 1);
   expect(bounds.footer.bottom).toBeLessThanOrEqual(bounds.viewport + 1);
+  expect(bounds.content.bottom).toBeGreaterThanOrEqual(bounds.footer.bottom - 1);
+  expect(bounds.footerPosition).toBe("absolute");
   expect(bounds.list.top).toBeGreaterThanOrEqual(-1);
   expect(bounds.list.bottom).toBeLessThanOrEqual(bounds.viewport + 1);
   await option.click();
