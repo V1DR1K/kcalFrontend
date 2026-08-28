@@ -1,6 +1,6 @@
 import React from "react";
 import { Icon } from "../../components/Icon";
-import { formatDuration, moduleLabel } from "./training-utils";
+import { formatDuration, moduleLabel, sessionStatusLabel } from "./training-utils";
 
 export function TrainingStatus({ loading, error, onRetry, empty, action }) {
   if (loading) return <div className="training-loading" aria-busy="true" aria-label="Cargando entrenamiento"><span /><span /><span /></div>;
@@ -14,6 +14,6 @@ export function TrainingModuleBadge({ module }) {
 }
 
 export function TrainingSessionLine({ session, onClick }) {
-  const content = <><TrainingModuleBadge module={session.type} /><strong>{session.title || session.planName || "Sesión libre"}</strong><span>{session.exercises.length} ejercicios · {formatDuration(session.durationMinutes)}</span></>;
+  const content = <><TrainingModuleBadge module={session.type} /><strong>{session.title || session.planName || "Sesión libre"}</strong><span>{sessionStatusLabel(session.status)} · {session.exercises.length} ejercicios · {formatDuration(session.durationMinutes)}</span></>;
   return onClick ? <button type="button" className="training-session-line" onClick={onClick}>{content}<Icon name="chevron_right" /></button> : <div className="training-session-line">{content}</div>;
 }

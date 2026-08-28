@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { monthDays, moveItem, planPayload, sessionPayload } from "../src/features/training/training-utils.js";
+import { monthDays, moveItem, normalizeSession, planPayload, sessionPayload, sessionStatusLabel } from "../src/features/training/training-utils.js";
 
 test("crea una grilla mensual que inicia el lunes", () => {
   const days = monthDays(new Date(2026, 2, 1));
@@ -30,14 +30,20 @@ test("incluye peso en sesiones de gimnasio", () => {
 test("serializa un plan canónico y limpia el día en modo dinámico", () => {
   const payload = planPayload({ name: "Fuerza", description: "", module: "CALISTHENICS", frequencyMode: "DYNAMIC", targetSessionsPerWeek: "3", startDate: "2026-08-26", endDate: "", active: true, days: [{ name: "Tirón", dayOfWeek: "MONDAY", exercises: [{ exerciseId: "12", targetSets: "4", targetRepetitions: "8", targetWeightKg: "20", notes: "", }] }] });
   assert.equal(payload.days[0].dayOfWeek, undefined);
-  assert.deepEqual(payload.days[0].exercises[0], { exerciseId: 12, targetSets: 4, targetRepetitions: 8, notes: null, position: 0 });
+  assert.deepEqual(payload.days[0].exercises[0], { exerciseId: 12, position: 0 });
 });
 
-test("serializa objetivos por tiempo y distancia sin campos incompatibles", () => {
+test("serializa la ejecución por tiempo y no mezcla objetivos del plan", () => {
   const time = sessionPayload({ date: "2026-08-26", planId: "", planDayId: "", title: "", durationMinutes: 30, notes: "", exercises: [{ exerciseId: "12", targetSets: 3, targetSeconds: 30, targetWeightKg: 20, registrationType: "TIME", notes: "", sets: [{ seconds: 30, weightKg: 20 }] }] }, "CALISTHENICS");
-  const distance = planPayload({ name: "Carrera", module: "CALISTHENICS", frequencyMode: "DYNAMIC", targetSessionsPerWeek: 2, active: true, days: [{ name: "Cardio", exercises: [{ exerciseId: "12", targetSets: 2, targetDistanceMeters: 500, registrationType: "DISTANCE", notes: "" }] }] });
   assert.deepEqual(time.exercises[0].sets[0], { setNumber: 1, seconds: 30, completed: false, notes: null });
-  assert.equal(distance.days[0].exercises[0].targetDistanceMeters, 500);
-  assert.equal("description" in distance, false);
-  assert.equal("description" in distance.days[0], false);
+  assert.equal("targetSets" in time.exercises[0], false);
+  assert.equal("targetWeightKg" in time.exercises[0], false);
+});
+
+test("no crea series fake a partir de objetivos y conserva versión y origen", () => {
+  const session = normalizeSession({ status: "IN_PROGRESS", version: 7, exercises: [{ id: 4, exerciseId: 12, targetSets: 4, targetRepetitions: 8, sourcePlanExerciseId: 99, origin: "PLAN", sets: [] }] });
+  assert.equal(session.version, 7);
+  assert.equal(session.exercises[0].sets.length, 0);
+  assert.equal(session.exercises[0].sourcePlanExerciseId, 99);
+  assert.equal(sessionStatusLabel("IN_PROGRESS"), "En proceso");
 });

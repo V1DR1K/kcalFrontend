@@ -70,6 +70,14 @@ export function registrationTypeLabel(value, module) {
   return REGISTRATION_TYPES.find((item) => item.value === registrationType(value, module))?.label || "Repeticiones";
 }
 
+export function sessionStatus(value) {
+  return value === "STARTED" ? "IN_PROGRESS" : value || "IN_PROGRESS";
+}
+
+export function sessionStatusLabel(value) {
+  return { IN_PROGRESS: "En proceso", COMPLETED: "Finalizado", CANCELLED: "Cancelado", SKIPPED: "Omitido" }[sessionStatus(value)] || "En proceso";
+}
+
 export function optionLabel(options, value, fallback = value) {
   return options.find((item) => item.value === value)?.label || fallback || "Sin especificar";
 }
@@ -104,7 +112,8 @@ export function normalizeSession(source = {}) {
     planName: source.planName || "",
     planDayName: source.planDayName || "",
     title: source.title || source.planDayName || source.planName || "Sesión libre",
-    status: source.status || "STARTED",
+    status: sessionStatus(source.status || source.sessionStatus),
+    version: source.version ?? null,
     startedAt: source.startedAt || null,
     finishedAt: source.finishedAt || null,
     durationMinutes: Number(source.durationMinutes || source.duration || 0),
@@ -122,16 +131,10 @@ export function normalizeSession(source = {}) {
       unilateral: Boolean(exercise.unilateral || exercise.exercise?.unilateral),
       category: exercise.category || exercise.exercise?.category || "",
       categoryId: exercise.categoryId || exercise.exercise?.categoryId || "",
+      sourcePlanExerciseId: exercise.sourcePlanExerciseId ?? null,
+      origin: exercise.origin || null,
       notes: exercise.notes || "",
-      sets: (exercise.sets?.length ? exercise.sets : Array.from({ length: Number(exercise.targetSets || 0) }, (_, setIndex) => ({
-        id: `set-${setIndex}`,
-        reps: exercise.targetRepetitions ?? "",
-        seconds: exercise.targetSeconds ?? "",
-        distanceMeters: exercise.targetDistanceMeters ?? "",
-        weightKg: exercise.targetWeightKg ?? "",
-        side: "BOTH",
-        completed: false,
-      }))).map((set, setIndex) => ({
+      sets: (exercise.sets || []).map((set, setIndex) => ({
         id: set.id || `set-${setIndex}`,
         reps: set.reps ?? set.repetitions ?? "",
         seconds: set.seconds ?? "",
@@ -147,37 +150,33 @@ export function normalizeSession(source = {}) {
 
 export function createSessionDraft(type = "GYM", source = {}) {
   const session = normalizeSession({ ...source, module: type });
-  const exercises = session.exercises.length ? session.exercises : [{ id: crypto.randomUUID?.() || Math.random().toString(36), exerciseId: "", name: "", notes: "", targetSets: "", targetRepetitions: "", targetSeconds: "", targetDistanceMeters: "", targetWeightKg: "", registrationType: registrationType(null, type), unilateral: false, sets: [] }];
-  return { ...session, exercises: exercises.map((exercise) => ({ ...exercise, sets: exercise.sets.length ? exercise.sets : [{ id: crypto.randomUUID?.() || Math.random().toString(36), reps: "", seconds: "", distanceMeters: "", weightKg: "", side: "BOTH" }] })) };
+  return { ...session, status: sessionStatus(session.status), exercises: session.exercises.map((exercise) => ({ ...exercise, sets: exercise.sets || [] })) };
 }
 
 export function sessionPayload(draft, type) {
-  const isGym = type === "GYM";
   return {
     date: draft.date,
     module: type,
     planId: draft.planId ? Number(draft.planId) : null,
     planDayId: draft.planDayId ? Number(draft.planDayId) : null,
     title: draft.title?.trim() || draft.planDayName?.trim() || null,
-    status: draft.status || "STARTED",
+    status: sessionStatus(draft.status),
+    ...(draft.version != null ? { version: draft.version } : {}),
     startedAt: draft.startedAt || null,
     finishedAt: draft.finishedAt || null,
     durationMinutes: Number(draft.durationMinutes || 0) || null,
     notes: draft.notes.trim() || null,
     exercises: draft.exercises.map((exercise, position) => ({
       exerciseId: exercise.exerciseId ? Number(exercise.exerciseId) : null,
-      targetSets: Number(exercise.targetSets || 0) || null,
-      ...(exerciseRegistration(exercise, type) === "TIME" || exerciseRegistration(exercise, type) === "REPETITIONS_AND_TIME" ? { targetSeconds: Number(exercise.targetSeconds || 0) || null } : {}),
-      ...(exerciseRegistration(exercise, type) === "DISTANCE" ? { targetDistanceMeters: Number(exercise.targetDistanceMeters || 0) || null } : {}),
-      ...(exerciseRegistration(exercise, type) !== "TIME" && exerciseRegistration(exercise, type) !== "DISTANCE" ? { targetRepetitions: Number(exercise.targetRepetitions || 0) || null } : {}),
-      ...(isGym && exerciseRegistration(exercise, type) === "WEIGHT_AND_REPETITIONS" && exercise.targetWeightKg !== "" && exercise.targetWeightKg != null ? { targetWeightKg: Number(exercise.targetWeightKg) } : {}),
+      ...(Number.isInteger(Number(exercise.id)) ? { id: Number(exercise.id) } : {}),
+      position,
       notes: (exercise.notes || "").trim() || null,
       sets: exercise.sets.map((set, setPosition) => ({
         setNumber: setPosition + 1,
-        ...(exerciseRegistration(exercise, type) !== "TIME" && exerciseRegistration(exercise, type) !== "DISTANCE" ? { repetitions: Number(set.reps || 0) } : {}),
-        ...(exerciseRegistration(exercise, type) === "TIME" || exerciseRegistration(exercise, type) === "REPETITIONS_AND_TIME" ? { seconds: Number(set.seconds || 0) } : {}),
-        ...(exerciseRegistration(exercise, type) === "DISTANCE" ? { distanceMeters: Number(set.distanceMeters || 0) } : {}),
-        ...(isGym && exerciseRegistration(exercise, type) === "WEIGHT_AND_REPETITIONS" && set.weightKg !== "" && set.weightKg != null ? { weightKg: Number(set.weightKg) } : {}),
+        ...(exerciseRegistration(exercise, type) !== "TIME" && exerciseRegistration(exercise, type) !== "DISTANCE" ? { repetitions: set.reps === "" || set.reps == null ? null : Number(set.reps) } : {}),
+        ...(exerciseRegistration(exercise, type) === "TIME" || exerciseRegistration(exercise, type) === "REPETITIONS_AND_TIME" ? { seconds: set.seconds === "" || set.seconds == null ? null : Number(set.seconds) } : {}),
+        ...(exerciseRegistration(exercise, type) === "DISTANCE" ? { distanceMeters: set.distanceMeters === "" || set.distanceMeters == null ? null : Number(set.distanceMeters) } : {}),
+        ...(type === "GYM" && exerciseRegistration(exercise, type) === "WEIGHT_AND_REPETITIONS" && set.weightKg !== "" && set.weightKg != null ? { weightKg: Number(set.weightKg) } : {}),
         ...(exercise.unilateral ? { side: set.side || "BOTH" } : {}),
         completed: Boolean(set.completed),
         notes: set.notes?.trim() || null,
@@ -188,6 +187,7 @@ export function sessionPayload(draft, type) {
 
 export function planPayload(plan) {
   return {
+    ...(plan.version != null ? { version: plan.version } : {}),
     name: plan.name.trim(),
     module: plan.module,
     frequencyMode: plan.frequencyMode,
@@ -201,12 +201,6 @@ export function planPayload(plan) {
       position,
       exercises: (day.exercises || []).map((exercise, exercisePosition) => ({
         exerciseId: Number(exercise.exerciseId),
-        targetSets: Number(exercise.targetSets),
-        ...(exerciseRegistration(exercise, plan.module) === "TIME" || exerciseRegistration(exercise, plan.module) === "REPETITIONS_AND_TIME" ? { targetSeconds: Number(exercise.targetSeconds || 0) || null } : {}),
-        ...(exerciseRegistration(exercise, plan.module) === "DISTANCE" ? { targetDistanceMeters: Number(exercise.targetDistanceMeters || 0) || null } : {}),
-        ...(exerciseRegistration(exercise, plan.module) !== "TIME" && exerciseRegistration(exercise, plan.module) !== "DISTANCE" ? { targetRepetitions: Number(exercise.targetRepetitions || 0) || null } : {}),
-        ...(plan.module === "GYM" && exerciseRegistration(exercise, plan.module) === "WEIGHT_AND_REPETITIONS" && exercise.targetWeightKg !== "" && exercise.targetWeightKg != null ? { targetWeightKg: Number(exercise.targetWeightKg) } : {}),
-        notes: exercise.notes?.trim() || null,
         position: exercisePosition,
       })),
     })),
