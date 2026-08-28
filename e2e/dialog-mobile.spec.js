@@ -77,7 +77,9 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
       tools,
       scroll,
       status,
+      overflowX: pickerScroll.overflowX,
       overflowY: pickerScroll.overflowY,
+      hasHorizontalOverflow: modal.querySelector(".picker-scroll").scrollWidth > modal.querySelector(".picker-scroll").clientWidth,
       statusOrder: getComputedStyle(modal.querySelector(".picker-scroll > .catalog-status")).order,
     };
   });
@@ -87,7 +89,9 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
   expect(layout.status.top).toBeGreaterThanOrEqual(layout.scroll.top);
   expect(layout.status.bottom).toBeLessThanOrEqual(layout.scroll.bottom);
   expect(layout.tools.bottom).toBeLessThanOrEqual(layout.scroll.top);
+  expect(layout.overflowX).toBe("hidden");
   expect(layout.overflowY).toBe("auto");
+  expect(layout.hasHorizontalOverflow).toBe(false);
   expect(layout.statusOrder).toBe("-1");
 });
 

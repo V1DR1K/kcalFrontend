@@ -1150,7 +1150,7 @@ button:disabled {
   min-height: 0;
 }
 
-.picker-scroll { overflow: auto; overscroll-behavior: contain; }
+.picker-scroll { overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
 
 .picker-tabs {
   min-width: 0;
