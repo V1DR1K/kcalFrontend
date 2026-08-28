@@ -4,15 +4,29 @@ import { App } from "./app/App";
 import { Landing } from "./features/landing/Landing";
 import { migrateStoredSession } from "./config/app";
 
+let stableDialogHeight = window.visualViewport?.height || window.innerHeight;
+
+function hasTextInputFocus() {
+  const activeElement = document.activeElement;
+  return activeElement?.matches?.("input, textarea, [contenteditable=\"true\"]") || false;
+}
+
 function syncVisualViewport() {
   const viewport = window.visualViewport;
-  const height = `${viewport?.height || window.innerHeight}px`;
+  const visibleHeight = viewport?.height || window.innerHeight;
   const top = `${viewport?.offsetTop || 0}px`;
-  const keyboardInset = `${Math.max(0, window.innerHeight - (viewport?.height || window.innerHeight) - (viewport?.offsetTop || 0))}px`;
-  document.documentElement.style.setProperty("--app-viewport-height", height);
+  const keyboardInsetValue = Math.max(0, window.innerHeight - visibleHeight - (viewport?.offsetTop || 0));
+  const keyboardOpen = keyboardInsetValue > 120 || (hasTextInputFocus() && visibleHeight < stableDialogHeight - 120);
+  if (!keyboardOpen) stableDialogHeight = visibleHeight;
+  const appHeight = `${visibleHeight}px`;
+  const dialogHeight = `${keyboardOpen ? stableDialogHeight : visibleHeight}px`;
+  const keyboardInset = `${keyboardInsetValue}px`;
+  document.documentElement.style.setProperty("--app-viewport-height", appHeight);
   document.documentElement.style.setProperty("--app-viewport-top", top);
-  document.documentElement.style.setProperty("--dialog-viewport-height", height);
+  document.documentElement.style.setProperty("--dialog-viewport-height", dialogHeight);
+  document.documentElement.style.setProperty("--dialog-visible-height", `${visibleHeight}px`);
   document.documentElement.style.setProperty("--dialog-viewport-top", top);
+  document.documentElement.style.setProperty("--dialog-layout-height", dialogHeight);
   document.documentElement.style.setProperty("--dialog-keyboard-inset", keyboardInset);
 }
 
@@ -21,6 +35,8 @@ migrateStoredSession();
 window.visualViewport?.addEventListener("resize", syncVisualViewport);
 window.visualViewport?.addEventListener("scroll", syncVisualViewport);
 window.addEventListener("resize", syncVisualViewport);
+window.addEventListener("focusin", syncVisualViewport, true);
+window.addEventListener("focusout", syncVisualViewport, true);
 
 function Root() {
   const [pathname, setPathname] = React.useState(() => window.location.pathname);
