@@ -132,7 +132,7 @@ export function App() {
 
   useEffect(() => {
     let active = true;
-    api.request("/api/auth/me", { skipAuthRefresh: true }).then((sessionUser) => {
+    api.request("/api/auth/me").then((sessionUser) => {
       if (!active) return;
       setUser(sessionUser);
       setSessionState("authenticated");

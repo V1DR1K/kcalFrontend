@@ -39,6 +39,20 @@ test("refreshes an expired cookie session and retries the original request", { c
   assert.equal(calls.at(-1).options.credentials, "include");
 });
 
+test("refreshes an expired cookie session while restoring the user", { concurrency: false }, async () => {
+  const calls = [];
+  global.fetch = async (url, options) => {
+    calls.push({ url, options });
+    if (url === "/api/auth/me" && calls.filter((call) => call.url === url).length === 1) return response(401, { message: "expired" });
+    if (url === "/api/auth/refresh") return response(200, {});
+    return response(200, { username: "alex" });
+  };
+
+  assert.deepEqual(await request("/api/auth/me"), { username: "alex" });
+  assert.deepEqual(calls.map((call) => call.url), ["/api/auth/me", "/api/auth/refresh", "/api/auth/me"]);
+  assert.equal(calls[1].options.credentials, "include");
+});
+
 test("emits session-expired when a refresh token is rejected", { concurrency: false }, async () => {
   let expired = 0;
   global.window = { dispatchEvent(event) { if (event.type === "scalegrams:session-expired") expired += 1; } };

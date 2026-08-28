@@ -82,7 +82,9 @@ function toError(status, body) {
 export async function request(path, options = {}) {
   const { skipAuthRefresh = false, ...fetchOptions } = options;
   let result = await requestInner(path, fetchOptions);
-  if (!result.ok && result.status === 401 && !skipAuthRefresh && !path.startsWith("/api/auth/")) {
+  const isAuthBootstrapRequest = path === "/api/auth/me";
+  const isAuthSessionRequest = ["/api/auth/login", "/api/auth/refresh", "/api/auth/logout"].includes(path);
+  if (!result.ok && result.status === 401 && !skipAuthRefresh && (isAuthBootstrapRequest || !isAuthSessionRequest)) {
     let fresh = null;
     let refreshFailed = false;
     try {
