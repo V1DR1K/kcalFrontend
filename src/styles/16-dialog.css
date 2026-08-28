@@ -137,14 +137,18 @@
 /* Long task surfaces remain fullscreen on a phone; compact tasks remain sheets. */
 @media (max-width: 720px) {
   .app-modal-backdrop[class] {
+    top: 0;
     place-items: stretch;
     padding: 0;
+    height: 100vh;
+    height: 100lvh;
   }
 
   .app-modal-surface[class] {
     position: relative;
     width: 100%;
-    height: min(var(--dialog-viewport-height, var(--app-viewport-height, 100dvh)), 100dvh);
+    height: 100vh;
+    height: 100lvh;
     max-height: none;
     border-radius: 0;
     grid-template-rows: auto minmax(0, 1fr);
@@ -197,7 +201,7 @@
   .app-modal-surface.app-modal-compact[class] {
     place-self: end center;
     height: auto;
-    max-height: min(92dvh, 900px);
+    max-height: min(92lvh, 900px);
     border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
     box-shadow: var(--shadow-sheet);
   }
