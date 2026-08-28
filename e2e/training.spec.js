@@ -91,9 +91,39 @@ test("uses persisted categories and a searchable persisted exercise selector", a
   await dialog.getByRole("button", { name: "Agregar ejercicio", exact: true }).click();
   const picker = dialog.getByRole("combobox", { name: "Ejercicio persistido" });
   await picker.fill("Sentadilla");
-  await expect(dialog.getByRole("option", { name: /Sentadilla.*Base/ })).toBeVisible();
-  await dialog.getByRole("option", { name: /Sentadilla.*Base/ }).click();
+  await expect(page.getByRole("option", { name: /Sentadilla.*Base/ })).toBeVisible();
+  await page.getByRole("option", { name: /Sentadilla.*Base/ }).click();
   await expect(dialog.getByText(/Sentadilla/).last()).toBeVisible();
+});
+
+test("keeps training actions and exercise options inside a reduced mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 430 });
+  await seedTrainingApp(page);
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /^(Entrenamiento|Entreno)$/ }).first().click();
+  await page.getByRole("button", { name: "Perfil", exact: true }).first().click();
+  await page.getByRole("button", { name: "Agregar plan", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Agregar día", exact: true }).click();
+  await dialog.getByRole("button", { name: "Agregar ejercicio", exact: true }).click();
+  await dialog.getByRole("combobox", { name: "Ejercicio persistido" }).fill("Sentadilla");
+
+  const option = page.getByRole("option", { name: /Sentadilla.*Base/ });
+  await expect(option).toBeVisible();
+  const bounds = await page.evaluate(() => {
+    const getBounds = (selector) => document.querySelector(selector)?.getBoundingClientRect().toJSON();
+    return {
+      viewport: window.innerHeight,
+      surface: getBounds("[data-dialog-surface=\"true\"]"),
+      footer: getBounds("[data-dialog-surface=\"true\"] > .modal-shell-footer"),
+      list: getBounds(".training-combobox-list-floating"),
+    };
+  });
+  expect(bounds.surface.bottom).toBeLessThanOrEqual(bounds.viewport + 1);
+  expect(bounds.footer.bottom).toBeLessThanOrEqual(bounds.viewport + 1);
+  expect(bounds.list.top).toBeGreaterThanOrEqual(-1);
+  expect(bounds.list.bottom).toBeLessThanOrEqual(bounds.viewport + 1);
+  await option.click();
 });
 
 test("does not render weight fields for calisthenics", async ({ page }) => {

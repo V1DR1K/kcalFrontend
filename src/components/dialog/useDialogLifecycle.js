@@ -21,12 +21,12 @@ function onTouchMove(event) {
   const touch = event.touches?.[0];
   if (!dialog || !touch) return;
   const target = event.target;
-  if (!dialog.dialogRef.current?.contains(target)) {
+  const owner = target.closest?.(SCROLL_OWNER_SELECTOR);
+  if (!dialog.dialogRef.current?.contains(target) && !owner) {
     event.preventDefault();
     return;
   }
 
-  const owner = target.closest?.(SCROLL_OWNER_SELECTOR);
   if (!owner) {
     event.preventDefault();
     return;

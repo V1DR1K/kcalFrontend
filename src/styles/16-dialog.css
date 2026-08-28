@@ -29,7 +29,7 @@
 .modal-shell-header h2 { margin: 2px 0 0; }
 .modal-shell-header p { margin: 6px 0 0; color: var(--muted); line-height: 1.45; }
 .modal-shell-eyebrow { color: var(--primary); font-size: var(--type-meta); font-weight: 800; }
-.modal-shell-content { min-height: 0; overflow: auto; overscroll-behavior: contain; scroll-padding-block: 16px; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+.modal-shell-content { min-height: 0; overflow: auto; overscroll-behavior: contain; scroll-padding-block: 16px calc(16px + env(safe-area-inset-bottom)); scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 .modal-shell-footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-5) var(--space-5); }
 
 [data-dialog-scroll-owner="true"],
@@ -123,6 +123,9 @@
   justify-content: flex-end;
   gap: var(--space-2);
   min-width: 0;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 2;
   padding: var(--space-3) var(--space-5) var(--space-5);
   border-top: 1px solid var(--outline);
   background: var(--surface-low);
@@ -185,6 +188,7 @@
 
   .app-modal-surface[class] > footer,
   .app-modal-surface[class] > .modal-shell-footer {
+    flex: 0 0 auto;
     flex-wrap: wrap;
     justify-content: stretch;
     padding: var(--space-3) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
