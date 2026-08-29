@@ -89,11 +89,15 @@ test("uses persisted categories and a searchable persisted exercise selector", a
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "Agregar día", exact: true }).click();
   await dialog.getByRole("button", { name: "Agregar ejercicio", exact: true }).click();
-  const picker = dialog.getByRole("combobox", { name: "Ejercicio persistido" });
+  await expect(dialog.getByRole("heading", { name: "Día 1", exact: true })).toBeVisible();
+  const picker = dialog.getByRole("combobox", { name: "Buscar ejercicio" });
   await picker.fill("Sentadilla");
   await expect(page.getByRole("option", { name: /Sentadilla.*Base/ })).toBeVisible();
   await page.getByRole("option", { name: /Sentadilla.*Base/ }).click();
-  await expect(dialog.getByText(/Sentadilla/).last()).toBeVisible();
+  await expect(dialog.locator(".training-plan-exercise-copy").getByText("Sentadilla", { exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Volver al plan", exact: true }).click();
+  await expect(dialog.getByRole("heading", { name: "Nuevo plan", exact: true })).toBeVisible();
+  await expect(dialog.locator(".training-plan-day-summary").getByText(/Sentadilla/)).toBeVisible();
 });
 
 test("keeps training actions and exercise options inside a reduced mobile viewport", async ({ page }) => {
@@ -106,7 +110,7 @@ test("keeps training actions and exercise options inside a reduced mobile viewpo
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "Agregar día", exact: true }).click();
   await dialog.getByRole("button", { name: "Agregar ejercicio", exact: true }).click();
-  await dialog.getByRole("combobox", { name: "Ejercicio persistido" }).fill("Sentadilla");
+  await dialog.getByRole("combobox", { name: "Buscar ejercicio" }).fill("Sentadilla");
 
   const option = page.getByRole("option", { name: /Sentadilla.*Base/ });
   await expect(option).toBeVisible();
@@ -117,7 +121,7 @@ test("keeps training actions and exercise options inside a reduced mobile viewpo
       surface: getBounds("[data-dialog-surface=\"true\"]"),
       content: getBounds("[data-dialog-surface=\"true\"] > .modal-shell-content"),
       footer: getBounds("[data-dialog-surface=\"true\"] > .modal-shell-footer"),
-      list: getBounds(".training-combobox-list-floating"),
+      list: getBounds(".training-exercise-picker-results"),
       footerPosition: getComputedStyle(document.querySelector("[data-dialog-surface=\"true\"] > .modal-shell-footer")).position,
     };
   });
