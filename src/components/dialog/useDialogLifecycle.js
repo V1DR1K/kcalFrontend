@@ -107,6 +107,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
     }
     dialogRef.current?.addEventListener("focusin", revealFocusedControl);
     window.visualViewport?.addEventListener("resize", revealFocusedControl);
+    window.visualViewport?.addEventListener("scroll", revealFocusedControl);
 
     function onKeyDown(event) {
       if (activeDialogStack[activeDialogStack.length - 1] !== dialogToken) return;
@@ -147,6 +148,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
       window.removeEventListener("keydown", onKeyDown);
       dialogRef.current?.removeEventListener("focusin", revealFocusedControl);
       window.visualViewport?.removeEventListener("resize", revealFocusedControl);
+      window.visualViewport?.removeEventListener("scroll", revealFocusedControl);
       if (restoreFocus && wasTopDialog && previousFocusRef.current?.isConnected) previousFocusRef.current.focus?.();
     };
   }, [closeOnEscape, initialFocusRef, lockScroll, open, restoreFocus, trapFocus]);

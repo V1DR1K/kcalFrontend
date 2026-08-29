@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedAuthenticatedApp(page, { aiAvailable = false } = {}) {
+async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -10,7 +10,12 @@ async function seedAuthenticatedApp(page, { aiAvailable = false } = {}) {
     const url = route.request().url();
     let body = {};
     if (url.includes("/api/auth/me")) body = { id: 1, fullName: "Persona E2E", email: "e2e@example.com" };
-    if (url.includes("/nutrition/dashboard")) body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals: [{ mealType: "BREAKFAST", items: [] }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }], waterConsumed: 0, waterGoal: 2, plan: null };
+    if (url.includes("/nutrition/dashboard")) {
+      const meals = withFoodLog
+        ? [{ mealType: "BREAKFAST", label: "Desayuno", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, items: [{ id: 101, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } }] }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }]
+        : [{ mealType: "BREAKFAST", items: [] }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }];
+      body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals, waterConsumed: 0, waterGoal: 2, plan: null };
+    }
     if (url.includes("/nutrition/meal-types")) body = [{ code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" }, { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" }];
     if (url.includes("/nutrition/day-presets")) body = [];
     if (url.includes("/nutrition/ai-estimates/usage")) body = { available: aiAvailable };
@@ -34,6 +39,25 @@ test("keeps the scanner form inside a reduced mobile visual viewport", async ({ 
   expect(bounds.bottom).toBeLessThanOrEqual(viewportHeight + 1);
   expect(inputBounds.bottom).toBeLessThanOrEqual(viewportHeight + 1);
   await expect(page.locator(".scanner-result")).toHaveCSS("overflow-y", "auto");
+});
+
+test("opens the consumed quantity editor at the top on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withFoodLog: true });
+  await page.goto("/ingresar");
+  const meal = page.locator(".meal-card").filter({ hasText: "Avena" }).first();
+  await meal.locator(".meal-item").press("Enter");
+  await meal.locator(".meal-item-detail-actions button").filter({ hasText: "Editar" }).click();
+
+  const dialog = page.locator(".edit-log-modal");
+  await expect(dialog).toBeVisible();
+  await expect.poll(() => dialog.evaluate((element) => element.getBoundingClientRect().top)).toBeLessThanOrEqual(1);
+
+  const quantity = dialog.getByLabel("Cantidad");
+  await quantity.focus();
+  await page.setViewportSize({ width: 390, height: 430 });
+  const quantityBottom = await quantity.evaluate((element) => element.getBoundingClientRect().bottom);
+  expect(quantityBottom).toBeLessThanOrEqual(430 + 1);
 });
 
 test("keeps photo actions in one compact mobile row", async ({ page }) => {

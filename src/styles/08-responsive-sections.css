@@ -256,8 +256,8 @@
   .quick-items button span,
   .quick-items button small { max-width: 100%; }
   .selected-subpanel {
-    align-items: stretch;
-    padding: 0;
+    align-items: start;
+    padding: max(var(--space-3), env(safe-area-inset-top)) 0 0;
   }
   .selected-editor {
     position: relative;

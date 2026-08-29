@@ -138,7 +138,7 @@
 @media (max-width: 720px) {
   .app-modal-backdrop[class] {
     top: 0;
-    place-items: stretch;
+    place-items: start center;
     padding: 0;
     height: var(--dialog-layout-height, var(--dialog-viewport-height, 100dvh));
   }
@@ -201,10 +201,11 @@
   .app-modal-surface[class] .field textarea { min-height: 48px; }
 
   .app-modal-surface.app-modal-compact[class] {
-    place-self: end center;
+    place-self: start center;
+    margin-top: env(safe-area-inset-top);
     height: auto;
     max-height: min(calc(var(--dialog-layout-height, 100dvh) * .92), 900px);
-    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    border-radius: 0 0 var(--radius-sheet) var(--radius-sheet);
     box-shadow: var(--shadow-sheet);
   }
 
