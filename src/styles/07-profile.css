@@ -1,4 +1,7 @@
 .current-plan-panel { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; margin-bottom: 14px; padding: var(--space-4); border: 1px solid color-mix(in srgb, var(--primary) 60%, transparent); border-radius: var(--radius-panel); background: linear-gradient(135deg, color-mix(in srgb, var(--primary-container) 28%, transparent), var(--surface)); }
+.plans-page-intro { max-width: 62ch; margin: -10px 0 0; color: var(--muted); }
+.plans-page-grid { display: grid; gap: var(--space-5); }
+.plans-section { min-width: 0; }
 .current-plan-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 5px var(--surface-highlight); }
 .current-plan-panel > div { display: grid; gap: 3px; }
 .current-plan-panel small { color: var(--primary); font-size: 10px; font-weight: 900; letter-spacing: .08em; }
@@ -101,4 +104,8 @@
   .nutrition-plan-dialog .macro-editor { grid-template-columns: 1fr; }
   .nutrition-plan-dialog .modal-shell-footer { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); padding: var(--space-3) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom)); }
   .nutrition-plan-dialog .modal-shell-footer button { min-width: 0; }
+}
+
+@media (min-width: 901px) {
+  .plans-page-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }

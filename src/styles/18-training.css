@@ -556,8 +556,8 @@
 
 @media (max-width: 900px) {
   .training-nav-group { grid-column: 1 / -1; width: 100%; }
-  .training-nav-group .training-nav-items { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-0-5); }
-  .training-shell .training-nav-group .training-nav-items { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .training-nav-group .training-nav-items { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-0-5); }
+  .training-shell .training-nav-group .training-nav-items { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .training-shell .training-mobile-nav { display: grid; grid-template-columns: minmax(0, 1fr); padding-top: var(--space-2); background: color-mix(in srgb, var(--training-background) 96%, transparent); border-color: color-mix(in srgb, var(--training-border) 76%, transparent); }
   .training-shell .training-mobile-nav .training-nav-group { gap: var(--space-1); }
   .training-shell .training-mobile-nav button.active { color: var(--training-primary); }

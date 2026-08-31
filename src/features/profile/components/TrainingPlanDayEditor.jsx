@@ -15,8 +15,13 @@ function ExercisePicker({ api, module, initialItems, onSelect }) {
   const inputId = useId().replace(/:/g, "");
   const inputRef = useRef(null);
   const [query, setQuery] = useState("");
-  const catalog = useTrainingExercises(api, { module, q: query, initialItems, size: 24 });
-  const options = catalog.items.filter((item) => item.active !== false && (item.module === module || !item.module));
+  const catalog = useTrainingExercises(api, { module, initialItems, size: 50, loadAll: true });
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const options = catalog.items.filter((item) => {
+    if (item.active === false || (item.module && item.module !== module)) return false;
+    if (!normalizedQuery) return true;
+    return `${item.name || ""} ${item.code || ""} ${item.category || ""} ${(item.primaryMuscles || []).join(" ")} ${(item.secondaryMuscles || []).join(" ")}`.toLocaleLowerCase().includes(normalizedQuery);
+  });
 
   function choose(exercise) {
     onSelect(exercise);
@@ -62,7 +67,6 @@ function ExercisePicker({ api, module, initialItems, onSelect }) {
             <em>{exercise.systemExercise || exercise.global ? "Base" : "Personal"}</em>
           </button>
         ))}
-        {catalog.hasNext && <button type="button" className="training-exercise-picker-more" onClick={catalog.loadMore}>Cargar más ejercicios</button>}
       </div>
     </section>
   );

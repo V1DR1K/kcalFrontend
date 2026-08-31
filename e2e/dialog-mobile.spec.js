@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false } = {}) {
+async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withPreset = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -17,7 +17,7 @@ async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = f
       body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals, waterConsumed: 0, waterGoal: 2, plan: null };
     }
     if (url.includes("/nutrition/meal-types")) body = [{ code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" }, { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" }];
-    if (url.includes("/nutrition/day-presets")) body = [];
+    if (url.includes("/nutrition/day-presets")) body = withPreset ? [{ id: 1, name: "Día completo", itemCount: 1, mealCounts: { BREAKFAST: 1 }, items: [{ itemType: "FOOD", itemId: 11, mealType: "BREAKFAST", quantity: 100, unit: "GRAM", displayName: "Avena", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7 }] }] : [];
     if (url.includes("/nutrition/ai-estimates/usage")) body = { available: aiAvailable };
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
@@ -159,6 +159,24 @@ test("keeps the AI description textarea at a non-zooming size on mobile", async 
   await expect(textarea).toBeVisible();
   await textarea.focus();
   await expect(textarea).toHaveCSS("font-size", "16px");
+});
+
+test("keeps the last preset action above the mobile close footer", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withPreset: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Abrir Reutilizá tu día" }).click();
+
+  const modal = page.locator(".day-presets-modal");
+  const lastCard = modal.locator(".day-preset-card").last();
+  await lastCard.scrollIntoViewIfNeeded();
+  const layout = await modal.evaluate((element) => {
+    const card = element.querySelector(".day-preset-card:last-of-type");
+    const action = card?.querySelector(".primary")?.getBoundingClientRect();
+    const footer = element.querySelector(":scope > footer")?.getBoundingClientRect();
+    return { actionBottom: action?.bottom, footerTop: footer?.top };
+  });
+  expect(layout.actionBottom).toBeLessThanOrEqual(layout.footerTop + 1);
 });
 
 test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) => {

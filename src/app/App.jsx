@@ -22,6 +22,7 @@ const Scanner = lazyPage(() => import("../features/scanner/Scanner"), "Scanner")
 const TrainingDashboard = lazyPage(() => import("../features/training/TrainingDashboard"), "TrainingDashboard");
 const TrainingCalendar = lazyPage(() => import("../features/training/TrainingCalendar"), "TrainingCalendar");
 const TrainingProfile = lazyPage(() => import("../features/training/TrainingProfile"), "TrainingProfile");
+const PlansPage = lazyPage(() => import("../features/plans/PlansPage"), "PlansPage");
 
 function navigationState() {
   const state = window.history.state || {};
@@ -189,7 +190,7 @@ export function App() {
       document.title = "Ingresar | ScaleGrams";
       return;
     }
-    const titles = { dashboard: "Día", "my-foods": "Alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", profile: "Perfil", "training-dashboard": "Día", "training-calendar": "Calendario de entrenamiento", "training-profile": "Ejercicios" };
+    const titles = { dashboard: "Día", "my-foods": "Alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", plans: "Planes", profile: "Perfil", "training-dashboard": "Día", "training-calendar": "Calendario de entrenamiento", "training-profile": "Ejercicios" };
     document.title = `${titles[page] || "ScaleGrams"} | ScaleGrams`;
   }, [authenticated, mode, page]);
 
@@ -214,6 +215,7 @@ export function App() {
               />
             )}
             {page === "history" && <History api={api} />}
+            {page === "plans" && <PlansPage api={api} />}
             {page === "profile" && <Profile api={api} logout={logout} mode={mode} />}
             {page === "training-dashboard" && <TrainingDashboard api={api} setPage={setPage} />}
             {page === "training-calendar" && <TrainingCalendar api={api} />}

@@ -76,6 +76,7 @@
   .day-preset-item-fields label:first-child { grid-column: 1 / -1; }
   .day-preset-choice > div { display: grid; grid-template-columns: 1fr 1fr; }
   .day-preset-choice .text-button { grid-column: 1 / -1; justify-content: center; }
+  .day-presets-modal .day-presets-list { padding-bottom: calc(var(--dialog-footer-space, 84px) + max(8px, env(safe-area-inset-bottom))); }
 }
 @media (max-width: 390px) {
   .day-presets-save-fields { grid-template-columns: 1fr; }

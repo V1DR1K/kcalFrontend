@@ -3,7 +3,7 @@ import { trainingApi } from "./training-api";
 
 const valueOf = (item) => String(item?.id ?? "");
 
-export function useTrainingExercises(api, { module = "ALL", q = "", filters = {}, selectedIds = [], initialItems = [], size = 24 } = {}) {
+export function useTrainingExercises(api, { module = "ALL", q = "", filters = {}, selectedIds = [], initialItems = [], size = 24, loadAll = false } = {}) {
   const [items, setItems] = useState(() => initialItems.filter(Boolean));
   const [page, setPage] = useState(0);
   const [hasNext, setHasNext] = useState(false);
@@ -12,8 +12,10 @@ export function useTrainingExercises(api, { module = "ALL", q = "", filters = {}
   const cache = useRef(new Map(initialItems.filter(Boolean).map((item) => [valueOf(item), item])));
   const pageIds = useRef(new Set());
   const resolvedIds = useRef(new Set());
+  const requestSequence = useRef(0);
   const selectedKey = selectedIds.map(String).filter(Boolean).sort().join(",");
   const filterKey = JSON.stringify(filters);
+  const effectiveQuery = loadAll ? "" : q;
 
   const merge = useCallback((nextItems, replace = false) => {
     nextItems.filter(Boolean).forEach((item) => cache.current.set(valueOf(item), item));
@@ -26,18 +28,28 @@ export function useTrainingExercises(api, { module = "ALL", q = "", filters = {}
   }, [selectedKey]);
 
   const load = useCallback(async (nextPage = 0, append = false) => {
+    const sequence = requestSequence.current + 1;
+    requestSequence.current = sequence;
     setLoading(true); setError("");
     try {
-      const response = await trainingApi.exercises(api, { module, q: q.trim(), ...filters, page: nextPage, size });
-      if (!append) pageIds.current = new Set((response?.items || []).map(valueOf));
-      else (response?.items || []).forEach((item) => pageIds.current.add(valueOf(item)));
-      merge(response?.items || [], !append);
+      let currentPage = nextPage;
+      let response = null;
+      const fetched = [];
+      do {
+        response = await trainingApi.exercises(api, { module, q: effectiveQuery.trim(), ...filters, page: currentPage, size });
+        fetched.push(...(response?.items || []));
+        currentPage = (response?.page ?? currentPage) + 1;
+      } while (loadAll && response?.hasNext && currentPage < 100);
+      if (sequence !== requestSequence.current) return;
+      if (!append) pageIds.current = new Set(fetched.map(valueOf));
+      else fetched.forEach((item) => pageIds.current.add(valueOf(item)));
+      merge(fetched, !append);
       setPage(response?.page ?? nextPage);
-      setHasNext(Boolean(response?.hasNext ?? (response?.page + 1 < response?.totalPages)));
+      setHasNext(loadAll ? false : Boolean(response?.hasNext ?? (response?.page + 1 < response?.totalPages)));
     } catch (requestError) {
-      setError(requestError?.message || "No se pudo cargar el catálogo de ejercicios.");
-    } finally { setLoading(false); }
-  }, [api, filterKey, merge, module, q, size]);
+      if (sequence === requestSequence.current) setError(requestError?.message || "No se pudo cargar el catálogo de ejercicios.");
+    } finally { if (sequence === requestSequence.current) setLoading(false); }
+  }, [api, effectiveQuery, filterKey, loadAll, merge, module, size]);
 
   useEffect(() => { load(0, false); }, [load]);
 

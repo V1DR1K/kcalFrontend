@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedTrainingApp(page, { planned = false } = {}) {
+async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -16,7 +16,13 @@ async function seedTrainingApp(page, { planned = false } = {}) {
     if (url.includes("/api/training/sessions/20/complete")) body = { id: 20, version: 2, status: "COMPLETED", module: "GYM", date: "2026-08-26", exercises: [] };
     if (url.includes("/api/training/plans/1")) body = { id: 1, name: "Fuerza base", module: "GYM", frequencyMode: "FIXED", targetSessionsPerWeek: 3, days: [{ id: 11, name: "Fuerza", dayOfWeek: "WEDNESDAY", exercises: [{ id: 101, exerciseId: 1, exerciseName: "Sentadilla", targetSets: 4, targetRepetitions: 5, targetWeightKg: 80 }] }] };
     if (url.includes("/api/training/categories")) body = { items: [{ id: 10, name: "Piernas", module: "GYM", system: true, editable: false, active: true }], page: 0, size: 100, totalElements: 1, totalPages: 1, hasNext: false };
-    if (url.includes("/api/training/exercises")) body = { items: [{ id: 1, name: "Sentadilla", module: "GYM", category: "Piernas", categoryId: 10, registrationType: "REPETITIONS", equipment: "BARBELL", global: true, systemExercise: true, editable: false, active: true }], page: 0, size: 50, totalElements: 1, totalPages: 1, hasNext: false };
+    if (url.includes("/api/training/exercises")) {
+      const pageNumber = Number(new URL(url).searchParams.get("page") || 0);
+      const pagedItems = pageNumber === 0
+        ? [{ id: 1, name: "Sentadilla", module: "GYM", category: "Piernas", categoryId: 10, registrationType: "REPETITIONS", equipment: "BARBELL", global: true, systemExercise: true, editable: false, active: true }]
+        : [{ id: 2, name: "Remo persistido", module: "GYM", category: "Espalda", categoryId: 10, registrationType: "REPETITIONS", equipment: "BARBELL", global: false, systemExercise: false, editable: true, active: true }];
+      body = exerciseOnSecondPage ? { items: pagedItems, page: pageNumber, size: 50, totalElements: 2, totalPages: 2, hasNext: pageNumber === 0 } : { items: pagedItems.slice(0, 1), page: 0, size: 50, totalElements: 1, totalPages: 1, hasNext: false };
+    }
     if (url.endsWith("/api/profile")) body = { id: 1, fullName: "Persona E2E", weightKg: 70, heightCm: 175, dailyCalorieGoal: 2200 };
     if (url.includes("/nutrition/dashboard")) body = { date: "2026-08-26", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals: [], waterConsumed: 0, waterGoal: 2, plan: null };
     if (url.includes("/nutrition/meal-types")) body = [];
@@ -68,8 +74,8 @@ test("keeps a long plan scrollable and does not show plan descriptions", async (
   await seedTrainingApp(page);
   await page.goto("/ingresar");
   await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
-  await page.getByRole("button", { name: "Perfil", exact: true }).first().click();
-  await page.getByRole("button", { name: "Agregar plan", exact: true }).click();
+  await page.getByRole("button", { name: "Planes", exact: true }).first().click();
+  await page.locator(".training-plan-manager").getByRole("button", { name: "Agregar plan", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("heading", { name: "Nuevo plan", exact: true })).toBeVisible();
   await expect(dialog.getByText("Descripción", { exact: true })).toHaveCount(0);
@@ -84,8 +90,8 @@ test("uses persisted categories and a searchable persisted exercise selector", a
   await page.getByRole("button", { name: "Ejercicios", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Categorías", exact: true })).toBeVisible();
   await expect(page.getByText("Piernas", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Perfil", exact: true }).first().click();
-  await page.getByRole("button", { name: "Agregar plan", exact: true }).click();
+  await page.getByRole("button", { name: "Planes", exact: true }).first().click();
+  await page.locator(".training-plan-manager").getByRole("button", { name: "Agregar plan", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "Agregar día", exact: true }).click();
   await dialog.getByRole("button", { name: "Agregar ejercicio", exact: true }).click();
@@ -100,13 +106,27 @@ test("uses persisted categories and a searchable persisted exercise selector", a
   await expect(dialog.locator(".training-plan-day-summary").getByText(/Sentadilla/)).toBeVisible();
 });
 
+test("loads every exercise page before filtering the plan day picker", async ({ page }) => {
+  await seedTrainingApp(page, { exerciseOnSecondPage: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
+  await page.getByRole("button", { name: "Planes", exact: true }).first().click();
+  await page.locator(".training-plan-manager").getByRole("button", { name: "Agregar plan", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Agregar día", exact: true }).click();
+  await dialog.getByRole("button", { name: "Agregar ejercicio", exact: true }).click();
+  await dialog.getByRole("combobox", { name: "Buscar ejercicio" }).fill("Remo persistido");
+  await expect(page.getByRole("option", { name: /Remo persistido.*Personal/ })).toBeVisible();
+  await expect(dialog.getByText("Cargar más ejercicios", { exact: true })).toHaveCount(0);
+});
+
 test("keeps training actions and exercise options inside a reduced mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 430 });
   await seedTrainingApp(page);
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /^(Entrenamiento|Entreno)$/ }).first().click();
-  await page.getByRole("button", { name: "Perfil", exact: true }).first().click();
-  await page.getByRole("button", { name: "Agregar plan", exact: true }).click();
+  await page.getByRole("button", { name: "Planes", exact: true }).first().click();
+  await page.locator(".training-plan-manager").getByRole("button", { name: "Agregar plan", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "Agregar día", exact: true }).click();
   await dialog.getByRole("button", { name: "Agregar ejercicio", exact: true }).click();

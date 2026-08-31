@@ -23,3 +23,8 @@ test("usa nombres directos para las secciones propias", () => {
   assert.equal(navItems.find((item) => item.id === "profile")?.label, "Perfil");
   assert.equal(trainingNavItems.find((item) => item.id === "training-dashboard")?.label, "Día");
 });
+
+test("expone Planes en los dos modos", () => {
+  assert.equal(navItems.find((item) => item.id === "plans")?.label, "Planes");
+  assert.equal(trainingNavItems.find((item) => item.id === "plans")?.label, "Planes");
+});
