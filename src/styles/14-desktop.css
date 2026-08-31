@@ -74,7 +74,7 @@
   .dashboard-page-header .date-picker-trigger { min-width: 190px; }
   .dashboard-hero { min-height: 226px; padding: 26px 30px; }
   .dashboard-hero-full { grid-template-columns: 190px minmax(210px, .82fr) minmax(280px, 1fr); gap: 28px; }
-  .dashboard-hero .calorie-ring { width: 176px; }
+  .dashboard-hero .calorie-ring { width: 220px; }
   .dashboard-hero h2 { font-size: 28px; }
   .dashboard-hero .balance-copy p { max-width: 28ch; font-size: 16px; }
   .dashboard-hero .macro-strip { gap: 14px; }
@@ -178,7 +178,7 @@
   .dashboard-hero,
   .dashboard-hero-full { grid-template-columns: minmax(136px, .46fr) minmax(0, 1fr); gap: 20px; }
   .dashboard-hero .macro-strip { grid-column: 1 / -1; }
-  .dashboard-hero .calorie-ring { width: 148px; }
+  .dashboard-hero .calorie-ring { width: 220px; }
   .dashboard-hero h2 { font-size: 24px; }
   .history-calendar-shell { grid-template-columns: minmax(0, 1fr) 200px; gap: 14px; padding: 16px; }
   .history-calendar-aside { padding: 16px; }
