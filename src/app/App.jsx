@@ -215,7 +215,7 @@ export function App() {
               />
             )}
             {page === "history" && <History api={api} />}
-            {page === "plans" && <PlansPage api={api} />}
+            {page === "plans" && <PlansPage api={api} mode={mode} />}
             {page === "profile" && <Profile api={api} logout={logout} mode={mode} />}
             {page === "training-dashboard" && <TrainingDashboard api={api} setPage={setPage} />}
             {page === "training-calendar" && <TrainingCalendar api={api} />}

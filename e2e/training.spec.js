@@ -120,6 +120,18 @@ test("loads every exercise page before filtering the plan day picker", async ({ 
   await expect(dialog.getByText("Cargar más ejercicios", { exact: true })).toHaveCount(0);
 });
 
+test("shows only training plans in training mode", async ({ page }) => {
+  const requests = [];
+  page.on("request", (request) => requests.push(request.url()));
+  await seedTrainingApp(page);
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
+  await page.getByRole("button", { name: "Planes", exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "Planes de entrenamiento", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Plan alimenticio", exact: true })).toHaveCount(0);
+  expect(requests.some((url) => url.includes("/api/profile/nutrition-plans"))).toBe(false);
+});
+
 test("keeps training actions and exercise options inside a reduced mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 430 });
   await seedTrainingApp(page);

@@ -107,5 +107,5 @@
 }
 
 @media (min-width: 901px) {
-  .plans-page-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .plans-page-grid { grid-template-columns: minmax(0, 1fr); align-items: start; }
 }

@@ -179,6 +179,17 @@ test("keeps the last preset action above the mobile close footer", async ({ page
   expect(layout.actionBottom).toBeLessThanOrEqual(layout.footerTop + 1);
 });
 
+test("shows only nutrition plans in nutrition mode", async ({ page }) => {
+  const requests = [];
+  page.on("request", (request) => requests.push(request.url()));
+  await seedAuthenticatedApp(page);
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Planes", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Plan alimenticio", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Planes de entrenamiento", exact: true })).toHaveCount(0);
+  expect(requests.some((url) => url.includes("/api/training/plans"))).toBe(false);
+});
+
 test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedAuthenticatedApp(page, { aiAvailable: true });

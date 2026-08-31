@@ -7,7 +7,8 @@ import { NutritionPlanManager } from "../profile/components/NutritionPlanManager
 import { TrainingPlanManager } from "../profile/components/TrainingPlanManager";
 import "../../styles/07-profile.css";
 
-export function PlansPage({ api }) {
+export function PlansPage({ api, mode = "nutrition" }) {
+  const training = mode === "training";
   const [nutritionPlans, setNutritionPlans] = useState([]);
   const [trainingPlans, setTrainingPlans] = useState([]);
   const [trainingExercises, setTrainingExercises] = useState([]);
@@ -18,20 +19,23 @@ export function PlansPage({ api }) {
     setLoading(true);
     setError("");
     try {
-      const [nextNutritionPlans, nextTrainingPlans, nextTrainingExercises] = await Promise.all([
-        api.request("/api/profile/nutrition-plans", { cache: "no-store" }),
-        trainingApi.plans(api, { includeInactive: true, size: 50 }),
-        trainingApi.exercises(api, { size: 50 }),
-      ]);
-      setNutritionPlans(Array.isArray(nextNutritionPlans) ? nextNutritionPlans : []);
-      setTrainingPlans(nextTrainingPlans?.items || []);
-      setTrainingExercises(nextTrainingExercises?.items || []);
+      if (training) {
+        const [nextTrainingPlans, nextTrainingExercises] = await Promise.all([
+          trainingApi.plans(api, { includeInactive: true, size: 50 }),
+          trainingApi.exercises(api, { size: 50 }),
+        ]);
+        setTrainingPlans(nextTrainingPlans?.items || []);
+        setTrainingExercises(nextTrainingExercises?.items || []);
+      } else {
+        const nextNutritionPlans = await api.request("/api/profile/nutrition-plans", { cache: "no-store" });
+        setNutritionPlans(Array.isArray(nextNutritionPlans) ? nextNutritionPlans : []);
+      }
     } catch (requestError) {
       setError(requestError?.message || "No pudimos cargar tus planes.");
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, training]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -41,14 +45,13 @@ export function PlansPage({ api }) {
   return (
     <section className="page plans-page">
       <Header title="Planes" />
-      <p className="plans-page-intro">Administrá en un solo lugar tus objetivos de alimentación y tus rutinas de entrenamiento.</p>
+      <p className="plans-page-intro">{training ? "Administrá tus rutinas de entrenamiento y organizá los días que vas a repetir." : "Definí tus calorías diarias y la distribución de nutrientes de tu plan."}</p>
       <div className="plans-page-grid">
-        <section className="plans-section">
-          <NutritionPlanManager api={api} plans={nutritionPlans} onChanged={load} />
-        </section>
-        <section className="plans-section plans-training-section training-page training-profile-root">
+        {training ? <section className="plans-section plans-training-section training-page training-profile-root">
           <TrainingPlanManager api={api} plans={trainingPlans} exercises={trainingExercises} onChanged={load} />
-        </section>
+        </section> : <section className="plans-section">
+          <NutritionPlanManager api={api} plans={nutritionPlans} onChanged={load} />
+        </section>}
       </div>
     </section>
   );
