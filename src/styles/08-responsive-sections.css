@@ -278,17 +278,13 @@
   .ai-estimate-editor .edit-log-fields { grid-template-columns: minmax(0, 1fr); }
   .ai-photo-context-preview { max-height: min(32dvh, 260px); }
   .ai-photo-context-editor,
-  .ai-estimate-editor { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .ai-estimate-editor { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
   .ai-photo-context-actions,
   .ai-estimate-actions {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 2;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-    background: var(--surface-low);
-    box-shadow: 0 -10px 22px color-mix(in srgb, var(--surface) 72%, transparent);
+    position: static;
+    padding: 8px 0 0;
+    background: transparent;
+    box-shadow: none;
   }
   .selected-editor > .primary {
     position: absolute;

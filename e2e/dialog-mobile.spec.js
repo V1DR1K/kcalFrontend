@@ -160,3 +160,30 @@ test("keeps the AI description textarea at a non-zooming size on mobile", async 
   await textarea.focus();
   await expect(textarea).toHaveCSS("font-size", "16px");
 });
+
+test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { aiAvailable: true });
+  await page.route("**/api/nutrition/ai-estimates", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ name: "Comida estimada", confidence: 86, description: "Una comida simple", assumptions: [], items: [{ name: "Avena", category: "OTHER", preparation: "UNSPECIFIED", estimatedGrams: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7 }] }) });
+  });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.locator(".ai-gallery-trigger input").setInputFiles({
+    name: "comida.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+  });
+  await page.getByRole("button", { name: "Analizar foto", exact: true }).click();
+
+  const editor = page.locator(".ai-estimate-editor");
+  await expect(editor).toBeVisible();
+  const actions = editor.locator(".ai-estimate-actions");
+  const layout = await actions.evaluate((element) => {
+    const refinement = element.previousElementSibling?.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
+    return { position: getComputedStyle(element).position, top: rect.top, refinementBottom: refinement?.bottom || 0 };
+  });
+  expect(layout.position).toBe("static");
+  expect(layout.top).toBeGreaterThanOrEqual(layout.refinementBottom - 1);
+});
