@@ -6,6 +6,7 @@ import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycl
 import { categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
 import { formatNumber } from "../../../utils/format";
 import { aiProposalFood, macroCalories, scaleFoodNutrition } from "../dashboard.utils";
+import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
 
 export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, onDiscard, onConfirm, mode = "create", standalone = false, mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem }) {
   const embeddedLifecycle = useDialogLifecycle({ open: !standalone, onClose: onDiscard });
@@ -17,7 +18,7 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
   const [catalogMessage, setCatalogMessage] = useState("");
   const itemNutrition = (estimate.items || []).map((item) => mode === "saved"
     ? { proteinGrams: Number(item.proteinGrams || 0), carbsGrams: Number(item.carbsGrams || 0), fatGrams: Number(item.fatGrams || 0) }
-    : scaleFoodNutrition(aiProposalFood(item), item.estimatedGrams));
+    : scaleFoodNutrition(aiProposalFood(item), decimalNumber(item.estimatedGrams)));
   const totals = itemNutrition.reduce((sum, nutrition) => ({
     proteinGrams: sum.proteinGrams + nutrition.proteinGrams,
     carbsGrams: sum.carbsGrams + nutrition.carbsGrams,
@@ -25,7 +26,7 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
   }), { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
   const calories = macroCalories(totals.proteinGrams, totals.carbsGrams, totals.fatGrams);
   function updateItem(index, field, value) {
-    const normalized = value.replace(",", ".").replace(/[^\d.]/g, "");
+    const normalized = normalizeDecimalInput(value);
     setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: normalized } : item) }));
   }
   function removeItem(index) {
@@ -46,7 +47,7 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
     }
   }
   const canConfirm = estimate.name.trim() && estimate.items.length && estimate.items.every((item) => item.name?.trim()
-    && Number(item.estimatedGrams) > 0 && Number(item.estimatedGrams) <= 3000);
+    && decimalNumber(item.estimatedGrams) > 0 && decimalNumber(item.estimatedGrams) <= 3000);
   const editor = (
       <section ref={resolvedDialogRef} className={`selected-editor ai-estimate-editor ${standalone ? "app-modal-surface" : ""}`.trim()} data-dialog-scroll-owner="true" role="dialog" aria-modal="true" aria-label={mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto"}>
         <span className="sheet-handle" aria-hidden="true" />
@@ -72,11 +73,11 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
               <Input label="Alimento" value={item.name} disabled={refining} onChange={(event) => setEstimate((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value, foodId: null, catalogFood: null } : entry) }))} />
               {mode === "create" ? <>
                 <div className="ai-estimate-item-section ai-estimate-readonly-meta"><span className="ai-estimate-section-label">Clasificación IA</span><div className="ai-estimate-meta-values"><span><small>Categoría</small><strong>{categoryLabel(item.category || "OTHER")}</strong></span><span><small>Preparación</small><strong>{preparationLabel(item.preparation || "UNSPECIFIED")}</strong></span></div></div>
-                <label className="ai-estimate-grams-field"><span>Gramos detectados (g)</span><input disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
+                 <label className="ai-estimate-grams-field"><span>Gramos detectados (g)</span><input type="text" disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
                 <div className="ai-estimate-item-section ai-estimate-readonly-nutrition"><span className="ai-estimate-section-label">Resumen nutricional</span><div className="ai-estimate-item-nutrition"><span><small>Kcal</small><strong>{formatNumber(itemNutrition[index]?.calories)}</strong></span><span><small>Proteínas</small><strong>{formatNumber(itemNutrition[index]?.proteinGrams, 1)}g</strong></span><span><small>Carbos</small><strong>{formatNumber(itemNutrition[index]?.carbsGrams, 1)}g</strong></span><span><small>Grasas</small><strong>{formatNumber(itemNutrition[index]?.fatGrams, 1)}g</strong></span></div></div>
               </> : <>
                 <div className="ai-estimate-item-section ai-estimate-readonly-meta"><span className="ai-estimate-section-label">Clasificación IA</span><div className="ai-estimate-meta-values"><span><small>Categoría</small><strong>{categoryLabel(item.category || "OTHER")}</strong></span><span><small>Preparación</small><strong>{preparationLabel(item.preparation || "UNSPECIFIED")}</strong></span></div></div>
-                <label className="ai-estimate-grams-field"><span>Gramos detectados (g)</span><input disabled={refining} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
+                 <label className="ai-estimate-grams-field"><span>Gramos detectados (g)</span><input type="text" disabled={refining} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, "estimatedGrams", event.target.value)} /></label>
                 <div className="ai-estimate-item-section ai-estimate-readonly-nutrition"><span className="ai-estimate-section-label">Resumen nutricional</span><div className="ai-estimate-item-nutrition"><span><small>Kcal</small><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))}</strong></span><span><small>Proteínas</small><strong>{formatNumber(itemNutrition[index]?.proteinGrams ?? item.proteinGrams, 1)}g</strong></span><span><small>Carbos</small><strong>{formatNumber(itemNutrition[index]?.carbsGrams ?? item.carbsGrams, 1)}g</strong></span><span><small>Grasas</small><strong>{formatNumber(itemNutrition[index]?.fatGrams ?? item.fatGrams, 1)}g</strong></span></div></div>
               </>}
             </article>

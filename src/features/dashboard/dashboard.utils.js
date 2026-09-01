@@ -1,13 +1,14 @@
-import { formatNumber } from "../../utils/format";
+import { formatQuantity } from "../../utils/format";
 import { formatRecipeLogAmount } from "../../utils/recipe";
 import { preparationLabel } from "../catalog/CatalogComponents";
 import { normalizeMealLogReference } from "./mealLogPayload";
+import { decimalNumber } from "../../utils/decimal";
 export { mealTotals } from "./nutritionTotals.js";
 
 export function isCopyableMealLog(log) { return ["FOOD", "RECIPE"].includes(log?.itemType || log?.type); }
 
 export function aiProposalFood(item) {
-  const estimatedGrams = Math.max(1, Number(item?.estimatedGrams) || 100);
+  const estimatedGrams = Math.max(1, decimalNumber(item?.estimatedGrams) || 100);
   const factor = 100 / estimatedGrams;
   const nutrients = Object.fromEntries(Object.entries(item?.nutrients || {}).map(([code, value]) => [code, Number(value || 0) * factor]));
   return { name: item?.name?.trim() || "Alimento estimado", category: item?.category || "OTHER", preparation: item?.preparation || "UNSPECIFIED", baseQuantity: 100, proteinGrams: Number(item?.proteinGrams || 0) * factor, carbsGrams: Number(item?.carbsGrams || 0) * factor, fatGrams: Number(item?.fatGrams || 0) * factor, nutrients };
@@ -18,7 +19,7 @@ export function aiEstimateWithServings(result) {
 }
 
 export function aiEstimateDraft(estimate) {
-  return { name: estimate.name, description: estimate.description || "", confidence: Number(estimate.confidence) || 0, assumptions: estimate.assumptions || [], items: (estimate.items || []).map(({ name, estimatedGrams, category, preparation, proteinGrams, carbsGrams, fatGrams, nutrients }) => ({ name, estimatedGrams: Number(estimatedGrams), category: category || "OTHER", preparation: preparation || "UNSPECIFIED", proteinGrams: Number(proteinGrams), carbsGrams: Number(carbsGrams), fatGrams: Number(fatGrams), nutrients: nutrients || {} })) };
+  return { name: estimate.name, description: estimate.description || "", confidence: Number(estimate.confidence) || 0, assumptions: estimate.assumptions || [], items: (estimate.items || []).map(({ name, estimatedGrams, category, preparation, proteinGrams, carbsGrams, fatGrams, nutrients }) => ({ name, estimatedGrams: decimalNumber(estimatedGrams), category: category || "OTHER", preparation: preparation || "UNSPECIFIED", proteinGrams: Number(proteinGrams), carbsGrams: Number(carbsGrams), fatGrams: Number(fatGrams), nutrients: nutrients || {} })) };
 }
 
 export function macroValue(log, key) {
@@ -42,7 +43,7 @@ export function mealCopyErrorMessage(error, fallback) {
 export function formatMealLogAmount(log) {
   if (log.itemType === "RECIPE") return formatRecipeLogAmount(log);
   if (log.itemType === "AI_ESTIMATE") return "Estimación por foto";
-  return `${formatNumber(log.quantity, 1)} g`;
+  return `${formatQuantity(log.quantity)} g`;
 }
 
 export function mealLogName(log) { return log.itemType === "RECIPE" ? log.recipe?.name : log.itemType === "AI_ESTIMATE" ? log.displayName || "Comida estimada" : log.food?.name; }

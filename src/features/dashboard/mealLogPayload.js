@@ -1,3 +1,5 @@
+import { decimalNumber } from "../../utils/decimal.js";
+
 const ITEM_TYPES = new Set(["FOOD", "RECIPE"]);
 const MEAL_TYPES = new Set(["BREAKFAST", "LUNCH", "AFTERNOON_SNACK", "DINNER"]);
 const UNITS = new Set(["GRAM", "MILLILITER", "UNIT", "PORTION"]);
@@ -6,7 +8,7 @@ export function normalizeMealLogReference(log, mealType, logDate) {
   const itemType = log?.itemType || log?.type;
   const rawItemId = log?.itemId ?? (itemType === "RECIPE" ? log?.recipe?.id : log?.food?.id);
   const itemId = Number(rawItemId);
-  const quantity = Number(log?.quantity);
+  const quantity = decimalNumber(log?.quantity);
   const unit = log?.unit || (itemType === "RECIPE" ? "PORTION" : "GRAM");
 
   if (!ITEM_TYPES.has(itemType)) throw new Error("Solo se pueden reutilizar alimentos o recetas guardados.");

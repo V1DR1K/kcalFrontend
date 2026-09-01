@@ -52,6 +52,11 @@ test("normalizes dashboard food references and applies the destination meal and 
   });
 });
 
+test("normalizes comma decimals when copying a food or recipe", () => {
+  assert.equal(buildMealLogPayload({ itemType: "FOOD", food: { id: 43 }, quantity: "42,5", unit: "GRAM" }, "DINNER", "2026-08-12").quantity, 42.5);
+  assert.equal(buildMealLogPayload({ itemType: "RECIPE", recipe: { id: 9 }, quantity: "0,5", unit: "PORTION" }, "DINNER", "2026-08-12").quantity, 0.5);
+});
+
 test("normalizes recipe references and rejects photo estimates", () => {
   assert.equal(normalizeMealLogReference({ type: "RECIPE", recipe: { id: 9 }, quantity: 1 }, "LUNCH", "2026-08-12").itemId, 9);
   assert.throws(() => normalizeMealLogReference({ itemType: "AI_ESTIMATE", quantity: 1 }, "LUNCH", "2026-08-12"), /reutilizar/);

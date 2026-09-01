@@ -3,8 +3,9 @@ import { Icon } from "../../../components/Icon";
 import { Input } from "../../../components/FormControls";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { FoodThumb } from "../../catalog/CatalogComponents";
-import { formatNumber } from "../../../utils/format";
+import { formatNumber, formatQuantity } from "../../../utils/format";
 import { buildRecipePayload, recipeYieldPercent } from "../../../utils/recipe";
+import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
 
 export function EditRecipeModal({ api, recipe, onClose, onDone }) {
   const titleId = `${useId().replace(/:/g, "")}-title`;
@@ -21,7 +22,7 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
   const [trackCookedWeight, setTrackCookedWeight] = useState(() => Number(recipe.cookedTotalWeightGrams) > 0);
   const [cookedWeight, setCookedWeight] = useState(() => recipe.cookedTotalWeightGrams == null ? "" : String(recipe.cookedTotalWeightGrams));
   const [cookedWeightCleared, setCookedWeightCleared] = useState(false);
-  const totalWeight = ingredients.reduce((total, item) => total + (Number(item.quantity) || 0), 0);
+  const totalWeight = ingredients.reduce((total, item) => total + (decimalNumber(item.quantity) || 0), 0);
   const yieldPercent = recipeYieldPercent({ rawTotalWeightGrams: totalWeight, cookedTotalWeightGrams: cookedWeight });
   function updateIngredients(nextIngredients) {
     if (cookedWeight) {
@@ -36,8 +37,8 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
     setError("");
     if (!name.trim()) return setError("Pone un nombre para la receta.");
     if (!ingredients.length) return setError("La receta necesita al menos un ingrediente.");
-    if (ingredients.some((item) => !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0)) return setError("Cada ingrediente debe tener una cantidad mayor a cero.");
-    if (trackCookedWeight && (!Number.isFinite(Number(cookedWeight)) || Number(cookedWeight) <= 0)) return setError("Ingresá un peso cocido final mayor a cero o desactivá esta medición.");
+    if (ingredients.some((item) => !Number.isFinite(decimalNumber(item.quantity)) || decimalNumber(item.quantity) <= 0)) return setError("Cada ingrediente debe tener una cantidad mayor a cero.");
+    if (trackCookedWeight && (!Number.isFinite(decimalNumber(cookedWeight)) || decimalNumber(cookedWeight) <= 0)) return setError("Ingresá un peso cocido final mayor a cero o desactivá esta medición.");
     setSaving(true);
     try {
       await api.runAction(
@@ -79,7 +80,7 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
           {error && <div className="form-error recipe-error" role="alert"><Icon name="error" /><span>{error}</span></div>}
           <Input label="Nombre" value={name} onChange={(event) => setName(event.target.value)} required />
           <Input label="Descripción opcional" value={description} onChange={(event) => setDescription(event.target.value)} />
-          <div className="recipe-weight-summary"><Icon name="scale" /><div><small>Peso de ingredientes antes de cocinar</small><strong>{formatNumber(totalWeight, 1)} g</strong></div></div>
+         <div className="recipe-weight-summary"><Icon name="scale" /><div><small>Peso de ingredientes antes de cocinar</small><strong>{formatQuantity(totalWeight)} g</strong></div></div>
           <section className="recipe-cooked-weight" aria-describedby="edit-recipe-cooked-weight-help">
             <label className="recipe-cooked-toggle">
               <input type="checkbox" checked={trackCookedWeight} onChange={(event) => {
@@ -89,7 +90,7 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
               <span>Registrar peso cocido final</span>
             </label>
             <p id="edit-recipe-cooked-weight-help">Es una medición después de cocinar; usala para registrar la receta en gramos cocidos.</p>
-            {trackCookedWeight && <Input selectOnFocus numericOnly label="Peso cocido final (g)" type="number" inputMode="decimal" min="0.1" step="0.1" value={cookedWeight} onChange={(event) => { setCookedWeight(event.target.value); setCookedWeightCleared(false); }} required />}
+            {trackCookedWeight && <Input decimal selectOnFocus numericOnly label="Peso cocido final (g)" inputMode="decimal" min="0.1" step="0.01" value={cookedWeight} onChange={(event) => { setCookedWeight(event.target.value); setCookedWeightCleared(false); }} required />}
             {yieldPercent != null && <small className="recipe-yield">Rendimiento cocido: {formatNumber(yieldPercent, 1)}%</small>}
             {cookedWeightCleared && <p className="recipe-cooked-reset" role="status">Cambiaste los ingredientes: medí el peso cocido final nuevamente.</p>}
           </section>
@@ -98,7 +99,7 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
               <label className="ingredient-row" key={`${item.foodId}:${index}`}>
                 <span className="ingredient-name">{item.name}</span>
                 <span className="ingredient-quantity">
-                  <input aria-label={`Cantidad de ${item.name} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.1" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(",", ".").replace(/[^\d.]/g, ""); }} onChange={(event) => updateIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: event.target.value } : ingredient)))} />
+                  <input aria-label={`Cantidad de ${item.name} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.01" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onChange={(event) => updateIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: normalizeDecimalInput(event.target.value) } : ingredient)))} />
                   <small>g</small>
                 </span>
                 <button type="button" className="ingredient-remove" onClick={() => updateIngredients(ingredients.filter((_, i) => i !== index))}>

@@ -1,4 +1,5 @@
-import { formatNumber } from "./format.js";
+import { formatQuantity } from "./format.js";
+import { decimalNumber } from "./decimal.js";
 
 export function rawRecipeWeight(recipe) {
   return Number(recipe?.rawTotalWeightGrams ?? recipe?.totalWeightGrams ?? 0);
@@ -19,7 +20,7 @@ export function recipeYieldPercent(recipe) {
 }
 
 export function recipeServingFactor(recipe, quantity, unit) {
-  const numericQuantity = Number(quantity);
+  const numericQuantity = decimalNumber(quantity);
   if (!Number.isFinite(numericQuantity) || numericQuantity <= 0) return 0;
   if (unit !== "GRAM") return numericQuantity;
   const cookedWeight = cookedRecipeWeight(recipe);
@@ -27,16 +28,16 @@ export function recipeServingFactor(recipe, quantity, unit) {
 }
 
 export function formatRecipeLogAmount(log) {
-  if (log?.unit === "GRAM") return `${formatNumber(log.quantity, 1)} g cocidos`;
-  return `${formatNumber(log?.quantity, 1)} ${Number(log?.quantity) === 1 ? "porción" : "porciones"}`;
+  if (log?.unit === "GRAM") return `${formatQuantity(log.quantity)} g cocidos`;
+  return `${formatQuantity(log?.quantity)} ${decimalNumber(log?.quantity) === 1 ? "porción" : "porciones"}`;
 }
 
 export function buildRecipePayload({ name, description, ingredients, cookedTotalWeightGrams, clearCookedTotalWeight = false }) {
-  const cookedWeight = Number(cookedTotalWeightGrams);
+  const cookedWeight = decimalNumber(cookedTotalWeightGrams);
   return {
     name: name.trim(),
     description: description.trim(),
-    ingredients: ingredients.map((item) => ({ foodId: item.foodId, quantity: Number(item.quantity), unit: item.unit })),
+    ingredients: ingredients.map((item) => ({ foodId: item.foodId, quantity: decimalNumber(item.quantity), unit: item.unit })),
     cookedTotalWeightGrams: Number.isFinite(cookedWeight) && cookedWeight > 0 ? cookedWeight : null,
     clearCookedTotalWeight: Boolean(clearCookedTotalWeight),
   };

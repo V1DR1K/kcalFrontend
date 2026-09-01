@@ -1,8 +1,9 @@
 import React from "react";
+import { normalizeDecimalInput } from "../utils/decimal";
 
-export function Input({ label, selectOnFocus = true, numericOnly = false, error, onFocus, ...props }) {
-  const isNumeric = numericOnly || props.type === "number";
-  const effectiveType = props.type;
+export function Input({ label, selectOnFocus = true, numericOnly = false, decimal = false, error, onFocus, ...props }) {
+  const isNumeric = numericOnly || decimal || props.type === "number";
+  const effectiveType = decimal ? "text" : props.type;
   const inputMode = props.inputMode || (props.name === "barcode" ? "numeric" : isNumeric ? "decimal" : undefined);
   const shouldSelect = selectOnFocus && !["file", "checkbox", "radio", "date", "range", "color"].includes(effectiveType);
   const selectValue = (event) => {
@@ -14,7 +15,9 @@ export function Input({ label, selectOnFocus = true, numericOnly = false, error,
     props.onKeyDown?.(event);
   };
   const cleanNumericInput = (event) => {
-    if (isNumeric) {
+    if (decimal) {
+      event.currentTarget.value = normalizeDecimalInput(event.currentTarget.value);
+    } else if (isNumeric) {
       const cleaned = event.currentTarget.value.replace(",", ".").replace(/[^\d.]/g, "");
       const [whole, ...decimals] = cleaned.split(".");
       event.currentTarget.value = decimals.length ? `${whole}.${decimals.join("")}` : whole;

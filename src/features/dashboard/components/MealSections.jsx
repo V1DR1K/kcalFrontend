@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Icon } from "../../../components/Icon";
 import { CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
-import { formatNumber, readableDate } from "../../../utils/format";
+import { formatNumber, formatQuantity, readableDate } from "../../../utils/format";
 import { cookedRecipeWeight, rawRecipeWeight } from "../../../utils/recipe";
 import { createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
 import { NutritionPills } from "./DashboardSections";
@@ -207,9 +207,9 @@ function MealLogDetails({ log, item }) {
     return (
       <div className="meal-item-detail recipe-meal-item-detail">
         <div className="meal-detail-summary">
-          <span><small>{usesCookedGrams ? "Gramos cocidos" : "Porciones"}</small><strong>{usesCookedGrams ? `${formatNumber(log.quantity, 1)} g` : formatNumber(log.quantity, 1)}</strong></span>
-          <span><small>Peso de ingredientes</small><strong>{formatNumber(rawRecipeWeight(item), 1)} g</strong></span>
-          {cookedRecipeWeight(item) > 0 && <span><small>Peso cocido final</small><strong>{formatNumber(cookedRecipeWeight(item), 1)} g</strong></span>}
+          <span><small>{usesCookedGrams ? "Gramos cocidos" : "Porciones"}</small><strong>{usesCookedGrams ? `${formatQuantity(log.quantity)} g` : formatQuantity(log.quantity)}</strong></span>
+          <span><small>Peso de ingredientes</small><strong>{formatQuantity(rawRecipeWeight(item))} g</strong></span>
+          {cookedRecipeWeight(item) > 0 && <span><small>Peso cocido final</small><strong>{formatQuantity(cookedRecipeWeight(item))} g</strong></span>}
         </div>
         <NutritionPills nutrition={log} />
         {log.recipeAdjusted && <small className="daily-recipe-note">Versión ajustada para este día</small>}
@@ -281,7 +281,7 @@ function RecipeIngredientDetail({ ingredient }) {
     <div className="recipe-ingredient-detail">
       <span className="recipe-ingredient-main">
         <FoodThumb item={{ ...food, type: "FOOD" }} compact />
-        <span><strong>{food.name || "Alimento"}</strong><small>{formatNumber(ingredient.quantity, 1)} g{foodPreparationSuffix(food)}</small></span>
+         <span><strong>{food.name || "Alimento"}</strong><small>{formatQuantity(ingredient.quantity)} g{foodPreparationSuffix(food)}</small></span>
         <strong className="recipe-ingredient-kcal">{formatNumber(nutrition.calories)} kcal</strong>
       </span>
     </div>

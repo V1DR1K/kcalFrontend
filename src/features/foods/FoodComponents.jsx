@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { CatalogStatus, FoodThumb, NutrientDetails, preparationLabel } from "../catalog/CatalogComponents";
-import { formatNumber } from "../../utils/format";
+import { formatNumber, formatQuantity } from "../../utils/format";
+import { decimalNumber } from "../../utils/decimal";
 import { cookedRecipeWeight, rawRecipeWeight, recipeServingFactor } from "../../utils/recipe";
 import { NutritionSummary } from "../../components/NutritionSummary";
 import { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
@@ -111,7 +112,7 @@ export function SwipeableRecipeCard({ recipe, resetSignal, disabled, onEdit, onD
         <FoodThumb item={recipe} />
         <div>
           <h3>{recipe.name}</h3>
-          <p>Ingredientes crudos: {formatNumber(rawRecipeWeight(recipe), 1)} g{cookedRecipeWeight(recipe) > 0 ? ` · Cocidos: ${formatNumber(cookedRecipeWeight(recipe), 1)} g` : ""}</p>
+          <p>Ingredientes crudos: {formatQuantity(rawRecipeWeight(recipe))} g{cookedRecipeWeight(recipe) > 0 ? ` · Cocidos: ${formatQuantity(cookedRecipeWeight(recipe))} g` : ""}</p>
         </div>
         <NutritionSummary nutrition={recipe} />
         <div className="recipe-card-menu" data-recipe-menu={recipe.id}>
@@ -170,7 +171,7 @@ export function FoodLogForm({
       )}
       <div className="edit-log-fields">
         <div className={`edit-log-quantity ${isRecipe && unit === "PORTION" ? "portions" : ""}`}>
-          <Input selectOnFocus numericOnly label="Cantidad" type="number" inputMode="decimal" min="0.1" step="0.1" value={quantity} onChange={(event) => onQuantityChange(event.target.value)} />
+          <Input decimal selectOnFocus numericOnly label="Cantidad" inputMode="decimal" min="0.1" step="0.01" value={quantity} onChange={(event) => onQuantityChange(event.target.value)} />
           <small>{isRecipe && unit === "GRAM" ? "g cocidos" : isRecipe ? "porciones" : unit === "GRAM" ? "g" : "porciones"}</small>
         </div>
         {mode === "add" ? (
@@ -197,7 +198,7 @@ export function FoodLogForm({
           <div className="daily-recipe-fields" id={mode === "edit" ? `daily-recipe-${logId}` : undefined} hidden={mode === "edit" && !showIngredients}>
             {recipeIngredientsLocked ? <p className="daily-recipe-locked">Los gramos cocidos usan el peso final medido; no se pueden ajustar ingredientes en este registro.</p> : <>
               {recipeIngredients.map((ingredient, index) => (
-                <Input key={ingredient.foodId} numericOnly label={`${ingredient.name} (g)`} type="number" inputMode="decimal" min="0.1" step="0.1" value={ingredient.quantity} onChange={(event) => onRecipeIngredientChange(index, event.target.value)} />
+                <Input key={ingredient.foodId} decimal numericOnly label={`${ingredient.name} (g)`} inputMode="decimal" min="0.1" step="0.01" value={ingredient.quantity} onChange={(event) => onRecipeIngredientChange(index, event.target.value)} />
               ))}
               {mode === "edit" && showIngredients && onResetRecipe && (
                 <button type="button" className="secondary daily-recipe-reset" disabled={saving} onClick={onResetRecipe}>Restablecer receta base</button>
@@ -272,7 +273,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     .catch(() => setPreparations([item]));
   }, [api, isRecipe, item]);
   useEffect(() => {
-    const numericQuantity = Number(quantity);
+    const numericQuantity = decimalNumber(quantity);
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || !item) {
       setPreview(null);
       return undefined;
@@ -280,7 +281,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     if (isRecipe) {
       const nutrition = ingredients.reduce((total, ingredient) => {
         const food = item?.ingredients?.find((entry) => entry.food?.id === ingredient.foodId)?.food;
-        const factor = Number(ingredient.quantity) / Number(food?.baseQuantity || 100);
+        const factor = decimalNumber(ingredient.quantity) / Number(food?.baseQuantity || 100);
         return {
           proteinGrams: total.proteinGrams + Number(food?.proteinGrams || 0) * factor,
           carbsGrams: total.carbsGrams + Number(food?.carbsGrams || 0) * factor,
@@ -338,8 +339,8 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   }
   async function submit(event) {
     event.preventDefault();
-    const numericQuantity = Number(quantity);
-    const validIngredients = ingredients.every((ingredient) => Number.isFinite(Number(ingredient.quantity)) && Number(ingredient.quantity) > 0);
+    const numericQuantity = decimalNumber(quantity);
+    const validIngredients = ingredients.every((ingredient) => Number.isFinite(decimalNumber(ingredient.quantity)) && decimalNumber(ingredient.quantity) > 0);
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || (isRecipe && !recipeUsesCookedGrams && !validIngredients) || saving) return;
     setSaving(true);
     try {
@@ -366,7 +367,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
                 quantity: numericQuantity,
                 unit,
                 logDate: log.logDate,
-                ...(!recipeUsesCookedGrams ? { recipeIngredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit: ingredientUnit }) => ({ foodId, quantity: Number(ingredientQuantity), unit: ingredientUnit })) } : {}),
+                ...(!recipeUsesCookedGrams ? { recipeIngredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit: ingredientUnit }) => ({ foodId, quantity: decimalNumber(ingredientQuantity), unit: ingredientUnit })) } : {}),
               }
               : body),
           });
@@ -394,7 +395,7 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
           <button type="button" className="secondary" onClick={closeWithAnimation}>
             Cancelar
           </button>
-          <button className="primary" disabled={saving || Number(quantity) <= 0}>
+          <button className="primary" disabled={saving || decimalNumber(quantity) <= 0}>
             {saving ? "Guardando…" : "Guardar cambios"}
           </button>
         </footer>

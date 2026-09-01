@@ -6,6 +6,7 @@ import { Header, Panel } from "../../components/Layout";
 import { CatalogStatus, CookedYieldHint, FoodThumb, NutrientDetails, NutrientEditor, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
 import { rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, today } from "../../utils/format";
+import { decimalNumber } from "../../utils/decimal";
 import { NutritionSummary } from "../../components/NutritionSummary";
 
 export function ConfigureFood({ api, setPage, foodId, user }) {
@@ -67,7 +68,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
         .catch(() => setPreparationOptions([]));
   }, [api, foodId]);
   useEffect(() => {
-    const numericQuantity = Number(quantity);
+    const numericQuantity = decimalNumber(quantity);
     if (!activeFoodId || !Number.isFinite(numericQuantity) || numericQuantity <= 0) {
       setPreview(null);
       return;
@@ -87,7 +88,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
       .catch(() => setPreview(null));
   }, [activeFoodId, api, food, quantity, unit]);
   async function add() {
-    const numericQuantity = Number(quantity);
+    const numericQuantity = decimalNumber(quantity);
     if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || adding) return;
     const quantityInGrams = unit === "SERVING" ? numericQuantity * Number(food?.servingWeightGrams || 0) : numericQuantity;
     if (quantityInGrams <= 0) return;
@@ -184,7 +185,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
           />
         )}
         <div className="split configure-fields">
-          <Input selectOnFocus label="Cantidad" value={quantity} onChange={(event) => setQuantity(event.target.value)} type="number" inputMode="decimal" min="0.1" step="0.1" />
+          <Input decimal selectOnFocus label="Cantidad" value={quantity} onChange={(event) => setQuantity(event.target.value)} inputMode="decimal" min="0.1" step="0.01" />
           <Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={configureUnitOptions} />
         </div>
         <label className="field">
@@ -201,7 +202,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
         {food && <NutrientDetails nutrients={food.nutrients} />}
         {food && <button type="button" className="secondary nutrient-enrich-button" disabled={enriching} onClick={enrich}>{enriching ? "Buscando nutrientes…" : "Completar perfil nutricional"}</button>}
         {food && (food.createdById === user?.id || user?.role === "ADMIN") && <NutrientEditor api={api} food={food} onSaved={setFood} />}
-        <button className="primary configure-submit" disabled={adding || !food || !activeFoodId || Number(quantity) <= 0} onClick={add}>
+        <button className="primary configure-submit" disabled={adding || !food || !activeFoodId || decimalNumber(quantity) <= 0} onClick={add}>
           {adding ? "Agregando…" : "Agregar alimento"}
         </button>
       </Panel>

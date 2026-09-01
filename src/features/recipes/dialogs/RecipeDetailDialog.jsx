@@ -2,7 +2,7 @@ import React, { useId, useState } from "react";
 import { Icon } from "../../../components/Icon";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { FoodThumb, NutrientDetails } from "../../catalog/CatalogComponents";
-import { formatNumber } from "../../../utils/format";
+import { formatNumber, formatQuantity } from "../../../utils/format";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 import { cookedRecipeWeight, rawRecipeWeight, recipeYieldPercent } from "../../../utils/recipe";
 
@@ -21,13 +21,13 @@ export function RecipeDetailDialog({ api, recipe, onClose }) {
         <div className="recipe-detail-body" data-dialog-scroll-owner="true">
           {recipe.description && <p className="recipe-detail-description">{recipe.description}</p>}
           <div className="recipe-detail-summary">
-            <span><small>Ingredientes antes de cocinar</small><strong>{formatNumber(rawRecipeWeight(recipe), 1)} g</strong></span>
-            {cookedRecipeWeight(recipe) > 0 && <span><small>Peso cocido final</small><strong>{formatNumber(cookedRecipeWeight(recipe), 1)} g</strong></span>}
+            <span><small>Ingredientes antes de cocinar</small><strong>{formatQuantity(rawRecipeWeight(recipe))} g</strong></span>
+            {cookedRecipeWeight(recipe) > 0 && <span><small>Peso cocido final</small><strong>{formatQuantity(cookedRecipeWeight(recipe))} g</strong></span>}
             {recipeYieldPercent(recipe) != null && <span><small>Rendimiento cocido</small><strong>{formatNumber(recipeYieldPercent(recipe), 1)}%</strong></span>}
           </div>
           <NutritionSummary nutrition={recipe} size="detail" />
           <NutrientDetails nutrients={recipe.nutrients} label="Ver nutrientes de la receta" />
-          <div className="recipe-detail-ingredients"><h3>Ingredientes</h3>{recipe.ingredients.map((ingredient, index) => <div key={`${ingredient.food?.id || "food"}:${index}`}><span>{ingredient.food?.name || "Alimento"}</span><small>{formatNumber(ingredient.quantity, 1)} {ingredient.unit === "GRAM" ? "g" : ingredient.unit}</small></div>)}</div>
+          <div className="recipe-detail-ingredients"><h3>Ingredientes</h3>{recipe.ingredients.map((ingredient, index) => <div key={`${ingredient.food?.id || "food"}:${index}`}><span>{ingredient.food?.name || "Alimento"}</span><small>{formatQuantity(ingredient.quantity)} {ingredient.unit === "GRAM" ? "g" : ingredient.unit}</small></div>)}</div>
         </div>
         <footer><button type="button" className="secondary" onClick={onClose}>Cerrar</button><button type="button" className="primary" disabled={saving} onClick={save}><Icon name="content_copy" />{saving ? "Guardando..." : "Guardar receta"}</button></footer>
   </ModalShell>

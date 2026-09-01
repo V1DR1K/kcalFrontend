@@ -55,6 +55,8 @@ test("opens the consumed quantity editor at the top on mobile", async ({ page })
 
   const quantity = dialog.getByLabel("Cantidad");
   await quantity.focus();
+  await quantity.fill("42,5");
+  await expect(quantity).toHaveValue("42.5");
   await page.setViewportSize({ width: 390, height: 430 });
   const quantityBottom = await quantity.evaluate((element) => element.getBoundingClientRect().bottom);
   expect(quantityBottom).toBeLessThanOrEqual(430 + 1);
