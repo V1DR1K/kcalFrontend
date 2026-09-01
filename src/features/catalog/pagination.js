@@ -1,6 +1,9 @@
+import { normalizeSearchText } from "../../utils/search.js";
+
 export function buildCatalogQuery({ page, pageSize, query = "", category = "" }) {
   const params = new URLSearchParams({ page: String(Math.max(0, page)), size: String(pageSize) });
-  if (query.trim()) params.set("q", query.trim());
+  const normalizedQuery = normalizeSearchText(query);
+  if (normalizedQuery) params.set("q", normalizedQuery);
   if (category) params.set("category", category);
   return params.toString();
 }

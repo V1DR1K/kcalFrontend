@@ -9,6 +9,7 @@ import { usePagedCatalog } from "../../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../../services/recents";
 import { formatNumber, readableDate } from "../../../utils/format";
 import { decimalNumber } from "../../../utils/decimal";
+import { normalizeSearchText } from "../../../utils/search";
 import { hasCookedRecipeWeight, recipeServingFactor } from "../../../utils/recipe";
 import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./MealPhotoDialog";
@@ -48,7 +49,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const audioStreamRef = useRef(null);
   const aiQuotaBlocked = Boolean(aiUsage?.blockedUntil && new Date(aiUsage.blockedUntil) > new Date());
   const recentFoods = readRecents(user).items.slice(0, 20).map((item) => ({ ...item, type: "FOOD" }));
-  const normalizedQuery = query.trim();
+  const normalizedQuery = normalizeSearchText(query);
   const foodSearchReady = tab !== "FOOD" || normalizedQuery.length >= 2;
   const catalog = usePagedCatalog({
     api,
@@ -485,12 +486,12 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     setRecipeDetail(null);
     setRecipeIngredients(null);
   }
-  const localQuery = normalizedQuery.toLocaleLowerCase();
-  const addedFoods = catalog.items.filter((item) => !localQuery || `${item.name || ""} ${item.brand || ""}`.toLocaleLowerCase().includes(localQuery));
+  const localQuery = normalizedQuery;
+  const addedFoods = catalog.items.filter((item) => !localQuery || normalizeSearchText(`${item.name || ""} ${item.brand || ""}`).includes(localQuery));
   const recentBrackets = catalog.items.filter((meal) => {
     const items = Array.isArray(meal?.items) ? meal.items : [];
     if (!items.length) return false;
-    return !localQuery || `${meal.label || ""} ${items.map((item) => mealLogName(item)).join(" ")}`.toLocaleLowerCase().includes(localQuery);
+    return !localQuery || normalizeSearchText(`${meal.label || ""} ${items.map((item) => mealLogName(item)).join(" ")}`).includes(localQuery);
   });
   async function addRecentMeal(bracket) {
     if (adding || !bracket?.items?.length) return;

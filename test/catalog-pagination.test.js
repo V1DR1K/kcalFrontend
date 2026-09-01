@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { buildCatalogQuery, mergeCatalogItems } from "../src/features/catalog/pagination.js";
 
 test("builds bounded catalog query parameters", () => {
-  assert.equal(buildCatalogQuery({ page: -1, pageSize: 20, query: "  arroz  ", category: "CEREAL" }), "page=0&size=20&q=arroz&category=CEREAL");
+  assert.equal(buildCatalogQuery({ page: -1, pageSize: 20, query: "  ÁRROZ  ", category: "CEREAL" }), "page=0&size=20&q=arroz&category=CEREAL");
 });
 
 test("merges pages without duplicate ids", () => {
