@@ -84,6 +84,10 @@
   animation: app-modal-surface-in var(--duration-enter) var(--ease-emphasized) both;
 }
 
+.app-modal-surface.picker-modal[class] {
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+}
+
 .app-modal-surface:not(.selected-editor)[class] { overflow: hidden; }
 
 .app-modal-surface.date-picker-dialog[class],

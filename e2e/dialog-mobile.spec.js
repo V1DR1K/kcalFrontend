@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withPreset = false } = {}) {
+async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withPreset = false, withManyPickerResults = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -19,6 +19,9 @@ async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = f
     if (url.includes("/nutrition/meal-types")) body = [{ code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" }, { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" }];
     if (url.includes("/nutrition/day-presets")) body = withPreset ? [{ id: 1, name: "Día completo", itemCount: 1, mealCounts: { BREAKFAST: 1 }, items: [{ itemType: "FOOD", itemId: 11, mealType: "BREAKFAST", quantity: 100, unit: "GRAM", displayName: "Avena", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7 }] }] : [];
     if (url.includes("/nutrition/ai-estimates/usage")) body = { available: aiAvailable };
+    if (url.includes("/api/foods?")) body = withManyPickerResults
+      ? Array.from({ length: 30 }, (_, index) => ({ id: 1000 + index, name: `Avena ${index + 1}`, baseQuantity: 100, calories: 120, proteinGrams: 10, carbsGrams: 20, fatGrams: 5, category: "CEREAL" }))
+      : [];
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
 }
@@ -144,6 +147,39 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
   expect(layout.overflowY).toBe("auto");
   expect(layout.hasHorizontalOverflow).toBe(false);
   expect(layout.statusOrder).toBe("-1");
+});
+
+test("keeps desktop food picker controls above long results", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await seedAuthenticatedApp(page, { withManyPickerResults: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.getByPlaceholder("Buscar alimentos...").fill("avena");
+  await expect(page.locator(".picker-results .catalog-row")).toHaveCount(30);
+
+  const layout = await page.locator(".picker-modal").evaluate((modal) => {
+    const getRect = (selector) => modal.querySelector(selector).getBoundingClientRect();
+    const scrollElement = modal.querySelector(".picker-scroll");
+    const tabs = getRect(".picker-tabs");
+    const tools = getRect(".picker-tools");
+    const scroll = scrollElement.getBoundingClientRect();
+    const footer = modal.querySelector(":scope > footer").getBoundingClientRect();
+    return {
+      tabsBottom: tabs.bottom,
+      toolsTop: tools.top,
+      toolsBottom: tools.bottom,
+      scrollTop: scroll.top,
+      scrollBottom: scroll.bottom,
+      footerTop: footer.top,
+      scrollHeight: scrollElement.scrollHeight,
+      clientHeight: scrollElement.clientHeight,
+    };
+  });
+
+  expect(layout.tabsBottom).toBeLessThanOrEqual(layout.toolsTop + 1);
+  expect(layout.toolsBottom).toBeLessThanOrEqual(layout.scrollTop + 1);
+  expect(layout.scrollBottom).toBeLessThanOrEqual(layout.footerTop + 1);
+  expect(layout.scrollHeight).toBeGreaterThan(layout.clientHeight);
 });
 
 test("keeps the AI description textarea at a non-zooming size on mobile", async ({ page }) => {
