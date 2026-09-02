@@ -235,6 +235,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             items: estimate.items.map((item) => {
               const servedGrams = decimalNumber(item.estimatedGrams);
               const proposal = aiProposalFood(item);
+              if (item.catalogFoodId) return { servedGrams, foodId: Number(item.catalogFoodId) };
               return {
                 servedGrams,
                 proposal: {

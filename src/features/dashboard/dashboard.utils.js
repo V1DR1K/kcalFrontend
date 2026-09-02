@@ -15,7 +15,7 @@ export function aiProposalFood(item) {
 }
 
 export function aiEstimateWithServings(result) {
-  return { ...result, items: (result.items || []).map((item) => ({ ...item, estimatedGrams: String(item.estimatedGrams ?? 100), foodId: null, catalogFood: null, category: item.category || "OTHER", preparation: item.preparation || "UNSPECIFIED" })) };
+  return { ...result, items: (result.items || []).map((item) => ({ ...item, estimatedGrams: String(item.estimatedGrams ?? 100), category: item.category || "OTHER", preparation: item.preparation || "UNSPECIFIED" })) };
 }
 
 export function aiEstimateDraft(estimate) {
