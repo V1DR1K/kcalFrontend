@@ -197,7 +197,7 @@ export function App() {
   return (
     <>
       {sessionState === "checking" ? <PageLoader page={page} mode={mode} /> : authenticated ? (
-        <Shell user={user} page={page} mode={mode} setPage={setPage} setMode={setMode} logout={logout}>
+        <Shell page={page} mode={mode} setPage={setPage} setMode={setMode} logout={logout}>
           <Suspense fallback={<PageLoader page={page} mode={mode} />}>
             {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
             {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}

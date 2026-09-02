@@ -22,7 +22,7 @@
 
   .sidebar {
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     z-index: 1;
     height: 100dvh;
     gap: 16px;
@@ -37,28 +37,6 @@
   .sidebar nav button { min-height: 42px; padding-inline: 12px; font-size: 13px; }
   .sidebar nav button .material-symbols-outlined { color: color-mix(in srgb, currentColor 78%, transparent); }
   .sidebar nav button.active { box-shadow: inset 3px 0 var(--primary); transform: none; }
-  .sidebar-profile {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    min-height: 52px;
-    margin-top: auto;
-    padding: 7px 8px;
-    border: 1px solid color-mix(in srgb, var(--outline) 68%, transparent);
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--surface-low) 82%, transparent);
-    color: var(--text);
-    text-align: left;
-    transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
-  }
-  .sidebar-profile:hover { border-color: color-mix(in srgb, var(--primary) 52%, var(--outline)); background: var(--surface-high); transform: translateY(-1px); }
-  .sidebar-profile > .material-symbols-outlined:first-child { color: var(--primary); font-size: 25px; }
-  .sidebar-profile > span { display: grid; min-width: 0; gap: 2px; }
-  .sidebar-profile strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-  .sidebar-profile small { color: var(--muted); font-size: 11px; }
-  .sidebar-profile > .material-symbols-outlined:last-child { color: var(--muted); font-size: 18px; }
   .sidebar > .ghost { min-height: 42px; margin-top: 0; padding-inline: 12px; }
 
   .content { position: relative; z-index: 1; width: min(1240px, calc(100% - 56px)); height: 100%; min-height: 0; padding-top: 42px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--outline) transparent; }

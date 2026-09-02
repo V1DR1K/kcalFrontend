@@ -3,7 +3,7 @@ import { Icon } from "../../../components/Icon";
 import { Input, Select } from "../../../components/FormControls";
 import { EQUIPMENT_OPTIONS, optionLabel, registrationTypeLabel } from "../../training/training-utils";
 import { useTrainingExercises } from "../../training/useTrainingExercises";
-import { GlobalExerciseDialog } from "./GlobalExerciseDialog";
+import { GlobalExerciseDialog } from "../../training/GlobalExerciseDialog";
 
 const weekdays = [
   { value: "MONDAY", label: "Lunes" }, { value: "TUESDAY", label: "Martes" },

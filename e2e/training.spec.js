@@ -22,10 +22,15 @@ async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = f
       body = { id: 99, name: request.name, module: request.module, category: "Piernas", categoryId: 10, registrationType: "WEIGHT_AND_REPETITIONS", equipment: "NONE", global: true, systemExercise: true, editable: false, active: true };
     } else if (url.includes("/api/training/exercises")) {
       const pageNumber = Number(new URL(url).searchParams.get("page") || 0);
+      const query = (new URL(url).searchParams.get("q") || "").toLocaleLowerCase();
+      if (query && !["sentadilla", "remo persistido"].some((term) => query.includes(term))) {
+        body = { items: [], page: 0, size: 50, totalElements: 0, totalPages: 0, hasNext: false };
+      } else {
       const pagedItems = pageNumber === 0
         ? [{ id: 1, name: "Sentadilla", module: "GYM", category: "Piernas", categoryId: 10, registrationType: "REPETITIONS", equipment: "BARBELL", global: true, systemExercise: true, editable: false, active: true }]
         : [{ id: 2, name: "Remo persistido", module: "GYM", category: "Espalda", categoryId: 10, registrationType: "REPETITIONS", equipment: "BARBELL", global: false, systemExercise: false, editable: true, active: true }];
       body = exerciseOnSecondPage ? { items: pagedItems, page: pageNumber, size: 50, totalElements: 2, totalPages: 2, hasNext: pageNumber === 0 } : { items: pagedItems.slice(0, 1), page: 0, size: 50, totalElements: 1, totalPages: 1, hasNext: false };
+      }
     }
     if (url.endsWith("/api/profile")) body = { id: 1, fullName: "Persona E2E", weightKg: 70, heightCm: 175, dailyCalorieGoal: 2200 };
     if (url.includes("/nutrition/dashboard")) body = { date: "2026-08-26", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals: [], waterConsumed: 0, waterGoal: 2, plan: null };
@@ -57,6 +62,26 @@ test("opens a gym session editor from the training dashboard", async ({ page }) 
   await expect(page.getByRole("heading", { name: /Editar gimnasio/i })).toBeVisible();
   await expect(page.getByText("Autoguardado activo", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Peso (kg)")).toHaveCount(0);
+});
+
+test("creates a missing exercise from the session exercise combobox", async ({ page }) => {
+  await seedTrainingApp(page);
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
+  await page.getByRole("button", { name: "Iniciar gimnasio", exact: true }).click();
+  const editor = page.getByRole("dialog");
+  await editor.getByRole("button", { name: "Agregar", exact: true }).click();
+  await editor.getByRole("combobox", { name: "Ejercicio persistido" }).fill("Ejercicio de sesión nuevo");
+  await expect(page.getByRole("button", { name: /Agregar "Ejercicio de sesión nuevo" como global/ })).toBeVisible();
+  await page.getByRole("button", { name: /Agregar "Ejercicio de sesión nuevo" como global/ }).click();
+
+  const globalDialog = page.getByRole("dialog").filter({ hasText: "Nuevo ejercicio global" }).last();
+  await expect(globalDialog).toBeVisible();
+  await globalDialog.getByLabel("Categoría base").selectOption("10");
+  const createRequest = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/api/training/exercises"));
+  await globalDialog.getByRole("button", { name: "Agregar ejercicio", exact: true }).click();
+  expect((await createRequest).postDataJSON()).toMatchObject({ name: "Ejercicio de sesión nuevo", module: "GYM", global: true });
+  await expect(editor.locator(".training-combobox-selected").getByText("Ejercicio de sesión nuevo", { exact: true })).toBeVisible();
 });
 
 test("creates a planned session before opening it and can finish it", async ({ page }) => {

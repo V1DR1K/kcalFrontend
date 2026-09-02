@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Input, Select } from "../../../components/FormControls";
-import { ModalShell } from "../../../components/dialog/ModalShell";
-import { trainingApi } from "../../training/training-api";
+import { Input, Select } from "../../components/FormControls";
+import { ModalShell } from "../../components/dialog/ModalShell";
+import { trainingApi } from "./training-api";
 
 export function GlobalExerciseDialog({ api, module, initialName, onClose, onSaved }) {
   const [name, setName] = useState(initialName || "");
@@ -29,6 +29,7 @@ export function GlobalExerciseDialog({ api, module, initialName, onClose, onSave
 
   async function submit(event) {
     event.preventDefault();
+    event.stopPropagation();
     if (!name.trim()) return setError("Escribí el nombre del ejercicio.");
     if (!categoryId) return setError("Elegí una categoría para el ejercicio.");
     setSaving(true);

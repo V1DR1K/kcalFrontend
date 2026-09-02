@@ -8,7 +8,8 @@ export function Input({ label, selectOnFocus = true, numericOnly = false, decima
   const shouldSelect = selectOnFocus && !["file", "checkbox", "radio", "date", "range", "color"].includes(effectiveType);
   const selectValue = (event) => {
     onFocus?.(event);
-    if (shouldSelect) requestAnimationFrame(() => event.currentTarget.select());
+    const target = event.currentTarget;
+    if (shouldSelect) requestAnimationFrame(() => target?.select());
   };
   const blockNonNumericKeys = (event) => {
     if (isNumeric && ["e", "E", "+", "-"].includes(event.key)) event.preventDefault();
