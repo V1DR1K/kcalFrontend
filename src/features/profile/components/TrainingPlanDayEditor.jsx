@@ -3,6 +3,7 @@ import { Icon } from "../../../components/Icon";
 import { Input, Select } from "../../../components/FormControls";
 import { EQUIPMENT_OPTIONS, optionLabel, registrationTypeLabel } from "../../training/training-utils";
 import { useTrainingExercises } from "../../training/useTrainingExercises";
+import { GlobalExerciseDialog } from "./GlobalExerciseDialog";
 
 const weekdays = [
   { value: "MONDAY", label: "Lunes" }, { value: "TUESDAY", label: "Martes" },
@@ -15,9 +16,12 @@ function ExercisePicker({ api, module, initialItems, onSelect }) {
   const inputId = useId().replace(/:/g, "");
   const inputRef = useRef(null);
   const [query, setQuery] = useState("");
+  const [createdExercises, setCreatedExercises] = useState([]);
+  const [editorOpen, setEditorOpen] = useState(false);
   const catalog = useTrainingExercises(api, { module, initialItems, size: 50, loadAll: true });
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const options = catalog.items.filter((item) => {
+  const available = [...createdExercises, ...catalog.items].filter((item, index, items) => items.findIndex((candidate) => String(candidate.id) === String(item.id)) === index);
+  const options = available.filter((item) => {
     if (item.active === false || (item.module && item.module !== module)) return false;
     if (!normalizedQuery) return true;
     return `${item.name || ""} ${item.code || ""} ${item.category || ""} ${(item.primaryMuscles || []).join(" ")} ${(item.secondaryMuscles || []).join(" ")}`.toLocaleLowerCase().includes(normalizedQuery);
@@ -27,6 +31,11 @@ function ExercisePicker({ api, module, initialItems, onSelect }) {
     onSelect(exercise);
     setQuery("");
     requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
+  function saveCreatedExercise(exercise) {
+    setCreatedExercises((current) => [exercise, ...current.filter((item) => String(item.id) !== String(exercise.id))]);
+    choose(exercise);
   }
 
   return (
@@ -56,7 +65,7 @@ function ExercisePicker({ api, module, initialItems, onSelect }) {
       <div id={`${inputId}-listbox`} className="training-exercise-picker-results" role="listbox" aria-label="Ejercicios disponibles">
         {catalog.loading && <div className="training-exercise-picker-state" aria-busy="true">Cargando ejercicios…</div>}
         {!catalog.loading && catalog.error && <div className="training-exercise-picker-state training-exercise-picker-error" role="alert"><span>{catalog.error}</span><button type="button" className="training-text-button" onClick={catalog.reload}>Reintentar</button></div>}
-        {!catalog.loading && !catalog.error && !options.length && <div className="training-exercise-picker-state">No hay ejercicios para esta búsqueda.</div>}
+        {!catalog.loading && !catalog.error && !options.length && <div className="training-exercise-picker-state"><span>No hay ejercicios para esta búsqueda.</span>{normalizedQuery && <button type="button" className="training-secondary training-add-exercise" onClick={() => setEditorOpen(true)}>Agregar &quot;{query.trim()}&quot; como global</button>}</div>}
         {!catalog.loading && !catalog.error && options.map((exercise) => (
           <button type="button" role="option" className="training-exercise-option" key={String(exercise.id)} onClick={() => choose(exercise)}>
             <span className="training-exercise-option-index"><Icon name="add" /></span>
@@ -68,6 +77,7 @@ function ExercisePicker({ api, module, initialItems, onSelect }) {
           </button>
         ))}
       </div>
+      {editorOpen && <GlobalExerciseDialog api={api} module={module} initialName={query.trim()} onClose={() => setEditorOpen(false)} onSaved={saveCreatedExercise} />}
     </section>
   );
 }

@@ -8,6 +8,7 @@ async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = f
   });
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
+    const method = route.request().method();
     let body = {};
     if (url.includes("/api/auth/me")) body = { id: 1, fullName: "Persona E2E", email: "e2e@example.com" };
     if (url.includes("/api/training/dashboard")) body = { date: "2026-08-26", plans: [{ id: 1, name: "Fuerza base", module: "GYM", frequencyMode: "FIXED", targetSessionsPerWeek: 3, active: true }], recentSession: { id: 1, module: "GYM", date: "2026-08-26", title: "Fuerza base", durationMinutes: 45, exercises: [{ exerciseName: "Sentadilla", sets: [{ repetitions: 5, weightKg: 80 }] }] }, weeklySummary: { sessionCount: 2, totalMinutes: 90, totalSets: 18 }, exercises: [{ id: 1, name: "Sentadilla", module: "GYM", global: true, editable: false, active: true }], plannedPlans: planned ? [{ planId: 1, planDayId: 11, module: "GYM", planDayName: "Fuerza", recommended: true }] : [] };
@@ -16,7 +17,10 @@ async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = f
     if (url.includes("/api/training/sessions/20/complete")) body = { id: 20, version: 2, status: "COMPLETED", module: "GYM", date: "2026-08-26", exercises: [] };
     if (url.includes("/api/training/plans/1")) body = { id: 1, name: "Fuerza base", module: "GYM", frequencyMode: "FIXED", targetSessionsPerWeek: 3, days: [{ id: 11, name: "Fuerza", dayOfWeek: "WEDNESDAY", exercises: [{ id: 101, exerciseId: 1, exerciseName: "Sentadilla", targetSets: 4, targetRepetitions: 5, targetWeightKg: 80 }] }] };
     if (url.includes("/api/training/categories")) body = { items: [{ id: 10, name: "Piernas", module: "GYM", system: true, editable: false, active: true }], page: 0, size: 100, totalElements: 1, totalPages: 1, hasNext: false };
-    if (url.includes("/api/training/exercises")) {
+    if (method === "POST" && url.endsWith("/api/training/exercises")) {
+      const request = route.request().postDataJSON();
+      body = { id: 99, name: request.name, module: request.module, category: "Piernas", categoryId: 10, registrationType: "WEIGHT_AND_REPETITIONS", equipment: "NONE", global: true, systemExercise: true, editable: false, active: true };
+    } else if (url.includes("/api/training/exercises")) {
       const pageNumber = Number(new URL(url).searchParams.get("page") || 0);
       const pagedItems = pageNumber === 0
         ? [{ id: 1, name: "Sentadilla", module: "GYM", category: "Piernas", categoryId: 10, registrationType: "REPETITIONS", equipment: "BARBELL", global: true, systemExercise: true, editable: false, active: true }]
@@ -118,6 +122,29 @@ test("loads every exercise page before filtering the plan day picker", async ({ 
   await dialog.getByRole("combobox", { name: "Buscar ejercicio" }).fill("Remo persistido");
   await expect(page.getByRole("option", { name: /Remo persistido.*Personal/ })).toBeVisible();
   await expect(dialog.getByText("Cargar más ejercicios", { exact: true })).toHaveCount(0);
+});
+
+test("creates a missing exercise globally from the plan day picker", async ({ page }) => {
+  await seedTrainingApp(page);
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
+  await page.getByRole("button", { name: "Planes", exact: true }).first().click();
+  await page.locator(".training-plan-manager").getByRole("button", { name: "Agregar plan", exact: true }).click();
+  const planDialog = page.getByRole("dialog").first();
+  await planDialog.getByRole("button", { name: "Agregar día", exact: true }).click();
+  await planDialog.getByRole("button", { name: "Agregar ejercicio", exact: true }).click();
+  const picker = planDialog.getByRole("combobox", { name: "Buscar ejercicio" });
+  await picker.fill("Ejercicio global nuevo");
+  await expect(planDialog.getByRole("button", { name: /Agregar "Ejercicio global nuevo" como global/ })).toBeVisible();
+
+  await planDialog.getByRole("button", { name: /Agregar "Ejercicio global nuevo" como global/ }).click();
+  const globalDialog = page.getByRole("dialog").filter({ hasText: "Nuevo ejercicio global" }).last();
+  await expect(globalDialog).toBeVisible();
+  await globalDialog.getByLabel("Categoría base").selectOption("10");
+  const createRequest = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/api/training/exercises"));
+  await globalDialog.getByRole("button", { name: "Agregar ejercicio", exact: true }).click();
+  expect((await createRequest).postDataJSON()).toMatchObject({ name: "Ejercicio global nuevo", module: "GYM", global: true });
+  await expect(planDialog.locator(".training-plan-exercise-copy").getByText("Ejercicio global nuevo", { exact: true })).toBeVisible();
 });
 
 test("shows only training plans in training mode", async ({ page }) => {
