@@ -49,8 +49,8 @@ test("no crea series fake a partir de objetivos y conserva versión y origen", (
   assert.equal(sessionStatusLabel("IN_PROGRESS"), "En proceso");
 });
 
-test("serializa un registro de caminadora en minutos y conserva la inclinación", () => {
-  const payload = cardioPayload({ recordedAt: "2026-08-26T08:30", distanceKm: "4.50", durationMinutes: "35", inclined: true });
+test("serializa un registro de caminadora en minutos y acepta kilometraje con coma", () => {
+  const payload = cardioPayload({ recordedAt: "2026-08-26T08:30", distanceKm: "4,50", durationMinutes: "35", inclined: true });
   assert.equal(payload.equipment, "TREADMILL");
   assert.equal(payload.distanceKm, 4.5);
   assert.equal(payload.durationMinutes, 35);

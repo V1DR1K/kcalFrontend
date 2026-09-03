@@ -5,6 +5,7 @@ import { Input } from "../../components/FormControls";
 import { ModalShell } from "../../components/dialog/ModalShell";
 import { TrainingStatus } from "./TrainingComponents";
 import { cardioPayload, cardioProgress, formatCardioDate, formatCardioMinutes, localDateTimeInput, toOffsetDateTime } from "./cardio-utils";
+import { decimalNumber } from "../../utils/decimal";
 import { trainingApi } from "./training-api";
 import { useTrainingData } from "./useTrainingData";
 
@@ -25,7 +26,8 @@ function CardioRecordEditor({ api, record, onClose, onSaved }) {
 
   async function submit(event) {
     event.preventDefault();
-    if (!form.recordedAt || form.distanceKm === "" || !Number.isFinite(Number(form.distanceKm)) || Number(form.distanceKm) < 0 || !Number.isFinite(Number(form.durationMinutes)) || !Number(form.durationMinutes) || Number(form.durationMinutes) < 1) {
+    const distanceKm = decimalNumber(form.distanceKm);
+    if (!form.recordedAt || !Number.isFinite(distanceKm) || distanceKm < 0 || !Number.isFinite(Number(form.durationMinutes)) || !Number(form.durationMinutes) || Number(form.durationMinutes) < 1) {
       setError("Completá una fecha, un kilometraje válido y un tiempo mayor a cero.");
       return;
     }
@@ -45,7 +47,7 @@ function CardioRecordEditor({ api, record, onClose, onSaved }) {
 
   return <ModalShell title={record ? "Editar cardio" : "Registrar cardio"} description="Anotá lo que marcó tu caminadora." onClose={onClose} closeDisabled={saving} theme="training" className="training-cardio-editor" backdropClassName="training-session-backdrop" footer={<><button type="button" className="training-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" form="cardio-record-form" className="training-primary" disabled={saving}>{saving ? "Guardando…" : "Guardar registro"}</button></>}>
     <form id="cardio-record-form" className="training-editor-form" onSubmit={submit}>
-      <div className="training-cardio-form-grid"><Input label="Fecha y hora" type="datetime-local" value={form.recordedAt} onChange={(event) => setField("recordedAt", event.target.value)} /><Input label="Kilometraje (km)" type="number" min="0" step="0.01" numericOnly value={form.distanceKm} onChange={(event) => setField("distanceKm", event.target.value)} placeholder="Ej.: 4,50" /><Input label="Tiempo (minutos)" type="number" min="1" step="1" numericOnly value={form.durationMinutes} onChange={(event) => setField("durationMinutes", event.target.value)} placeholder="Ej.: 35" /></div>
+      <div className="training-cardio-form-grid"><Input label="Fecha y hora" type="datetime-local" value={form.recordedAt} onChange={(event) => setField("recordedAt", event.target.value)} /><Input label="Kilometraje (km)" decimal value={form.distanceKm} onChange={(event) => setField("distanceKm", event.target.value)} placeholder="Ej.: 4,50" /><Input label="Tiempo (minutos)" type="number" min="1" step="1" numericOnly value={form.durationMinutes} onChange={(event) => setField("durationMinutes", event.target.value)} placeholder="Ej.: 35" /></div>
       <label className="training-toggle"><input type="checkbox" checked={form.inclined} onChange={(event) => setField("inclined", event.target.checked)} /><span><strong>Caminadora inclinada</strong><small>Marcá si usaste la única inclinación disponible.</small></span></label>
       {error && <p className="training-form-error" role="alert">{error}</p>}
     </form>

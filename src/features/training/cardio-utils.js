@@ -28,8 +28,9 @@ export function cardioPayload(form) {
   return {
     equipment: "TREADMILL",
     recordedAt: toOffsetDateTime(form.recordedAt),
-    distanceKm: Number(form.distanceKm),
+    distanceKm: decimalNumber(form.distanceKm),
     durationMinutes: Number(form.durationMinutes),
     inclined: Boolean(form.inclined),
   };
 }
+import { decimalNumber } from "../../utils/decimal.js";
