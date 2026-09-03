@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { cardioPayload, cardioProgress, formatCardioMinutes } from "../src/features/training/cardio-utils.js";
 import { monthDays, moveItem, normalizeSession, planPayload, sessionPayload, sessionStatusLabel } from "../src/features/training/training-utils.js";
 
 test("crea una grilla mensual que inicia el lunes", () => {
@@ -46,4 +47,19 @@ test("no crea series fake a partir de objetivos y conserva versión y origen", (
   assert.equal(session.exercises[0].sets.length, 0);
   assert.equal(session.exercises[0].sourcePlanExerciseId, 99);
   assert.equal(sessionStatusLabel("IN_PROGRESS"), "En proceso");
+});
+
+test("serializa un registro de caminadora en minutos y conserva la inclinación", () => {
+  const payload = cardioPayload({ recordedAt: "2026-08-26T08:30", distanceKm: "4.50", durationMinutes: "35", inclined: true });
+  assert.equal(payload.equipment, "TREADMILL");
+  assert.equal(payload.distanceKm, 4.5);
+  assert.equal(payload.durationMinutes, 35);
+  assert.equal(payload.inclined, true);
+  assert.equal(new Date(payload.recordedAt).getTime(), new Date("2026-08-26T08:30").getTime());
+});
+
+test("calcula el progreso y formatea el contador de service", () => {
+  assert.equal(formatCardioMinutes(125), "2 h 5 min");
+  assert.equal(cardioProgress({ totalDurationMinutes: 600, thresholdMinutes: 1200 }), 50);
+  assert.equal(cardioProgress({ totalDurationMinutes: 1400, thresholdMinutes: 1200 }), 100);
 });

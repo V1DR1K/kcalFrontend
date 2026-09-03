@@ -21,6 +21,7 @@ const ConfigureFood = lazyPage(() => import("../features/foods/ConfigureFood"), 
 const Scanner = lazyPage(() => import("../features/scanner/Scanner"), "Scanner");
 const TrainingDashboard = lazyPage(() => import("../features/training/TrainingDashboard"), "TrainingDashboard");
 const TrainingCalendar = lazyPage(() => import("../features/training/TrainingCalendar"), "TrainingCalendar");
+const CardioPage = lazyPage(() => import("../features/training/CardioPage"), "CardioPage");
 const TrainingProfile = lazyPage(() => import("../features/training/TrainingProfile"), "TrainingProfile");
 const PlansPage = lazyPage(() => import("../features/plans/PlansPage"), "PlansPage");
 
@@ -190,7 +191,7 @@ export function App() {
       document.title = "Ingresar | ScaleGrams";
       return;
     }
-    const titles = { dashboard: "Día", "my-foods": "Alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", plans: "Planes", profile: "Perfil", "training-dashboard": "Día", "training-calendar": "Calendario de entrenamiento", "training-profile": "Ejercicios" };
+    const titles = { dashboard: "Día", "my-foods": "Alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", plans: "Planes", profile: "Perfil", "training-dashboard": "Día", "training-calendar": "Calendario de entrenamiento", "training-cardio": "Cardio", "training-profile": "Ejercicios" };
     document.title = `${titles[page] || "ScaleGrams"} | ScaleGrams`;
   }, [authenticated, mode, page]);
 
@@ -219,6 +220,7 @@ export function App() {
             {page === "profile" && <Profile api={api} logout={logout} mode={mode} />}
             {page === "training-dashboard" && <TrainingDashboard api={api} />}
             {page === "training-calendar" && <TrainingCalendar api={api} />}
+            {page === "training-cardio" && <CardioPage api={api} />}
             {page === "training-profile" && <TrainingProfile api={api} />}
           </Suspense>
         </Shell>

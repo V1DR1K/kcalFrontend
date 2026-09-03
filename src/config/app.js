@@ -32,6 +32,7 @@ export const navItems = [
 export const trainingNavItems = [
   { id: "training-dashboard", label: "Día", icon: "monitoring" },
   { id: "training-calendar", label: "Calendario", icon: "calendar_month" },
+  { id: "training-cardio", label: "Cardio", mobileLabel: "Cardio", icon: "directions_run" },
   { id: "plans", label: "Planes", icon: "view_list" }, { id: "profile", label: "Perfil", icon: "account_circle" },
   { id: "training-profile", label: "Ejercicios", mobileLabel: "Ejercicios", icon: "fitness_center" },
   { id: "nutrition", label: "Nutrición", mobileLabel: "Nutrición", icon: "nutrition", mode: "nutrition" },

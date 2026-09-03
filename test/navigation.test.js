@@ -28,3 +28,10 @@ test("expone Planes en los dos modos", () => {
   assert.equal(navItems.find((item) => item.id === "plans")?.label, "Planes");
   assert.equal(trainingNavItems.find((item) => item.id === "plans")?.label, "Planes");
 });
+
+test("expone Cardio dentro del módulo de entrenamiento", () => {
+  const cardio = trainingNavItems.find((item) => item.id === "training-cardio");
+  assert.ok(cardio);
+  assert.equal(cardio.label, "Cardio");
+  assert.equal(cardio.mobileLabel, "Cardio");
+});
