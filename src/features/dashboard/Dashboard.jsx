@@ -10,6 +10,7 @@ import { macroValue, mealLogName, mealTotals } from "./dashboard.utils";
 import { EditAiEstimateDialog } from "./dialogs/EditAiEstimateDialog";
 import { DayPresetsDialog } from "./dialogs/DayPresetsDialog";
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./dialogs/MealPhotoDialog";
+import { ConvertMealToRecipeDialog } from "./dialogs/ConvertMealToRecipeDialog";
 import { FoodPicker, AiEstimateEditor } from "./dialogs/FoodPickerDialog";
 import { CompactBalanceBar, DateNavigator, PastMealsPreview } from "./components/DashboardSections";
 import { MealCard } from "./components/MealSections";
@@ -49,6 +50,7 @@ export function Dashboard({ api, user, setPage }) {
   const [mealClipboard, setMealClipboard] = useState(null);
   const [mealBulkActionLoading, setMealBulkActionLoading] = useState(false);
   const [dayPresetModal, setDayPresetModal] = useState(false);
+  const [convertingMeal, setConvertingMeal] = useState(null);
   const [swipeResetSignal, setSwipeResetSignal] = useState(0);
   const dashboardTopRef = useRef(null);
   const balanceRef = useRef(null);
@@ -293,6 +295,10 @@ export function Dashboard({ api, user, setPage }) {
             bulkActionLoading={mealBulkActionLoading}
             setBulkActionLoading={setMealBulkActionLoading}
             onCopyMeal={(items) => { setMealClipboard(items); api.notify("Comida copiada."); }}
+            onConvertToRecipe={() => {
+              resetMealSwipes();
+              setConvertingMeal({ mealType, meal: mealByCode.get(mealType.code) });
+            }}
             deletingLogId={deletingLogId}
             movingLogId={movingLogId}
             resetSignal={swipeResetSignal}
@@ -492,6 +498,7 @@ export function Dashboard({ api, user, setPage }) {
         />
       )}
       {editingAiEstimate && <EditAiEstimateDialog api={api} log={editingAiEstimate} mealTypes={mealTypes} onClose={closeEditingAiEstimate} onDone={finishEditingAiEstimate} EditorComponent={AiEstimateEditor} />}
+      {convertingMeal && <ConvertMealToRecipeDialog api={api} mealType={convertingMeal.mealType} meal={convertingMeal.meal} date={selectedDate} onClose={() => setConvertingMeal(null)} onDone={() => setConvertingMeal(null)} />}
     </section>
   );
 }

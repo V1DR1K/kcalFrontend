@@ -182,6 +182,33 @@ test("keeps desktop food picker controls above long results", async ({ page }) =
   expect(layout.scrollHeight).toBeGreaterThan(layout.clientHeight);
 });
 
+test("converts a logged meal into a recipe from the meal actions", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withFoodLog: true });
+  await page.goto("/ingresar");
+
+  const meal = page.locator(".meal-card").filter({ hasText: "Avena" }).first();
+  await meal.locator(".meal-menu summary").click();
+  await meal.getByRole("button", { name: "Convertir en receta" }).click();
+
+  const dialog = page.getByRole("dialog").filter({ hasText: "Convertir desayuno en receta" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel("Nombre de la receta").fill("Avena del desayuno");
+  const currentDate = await page.evaluate(() => {
+    const date = new Date();
+    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+  });
+  const requestPromise = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/api/recipes/from-meal"));
+  await dialog.getByRole("button", { name: "Guardar receta" }).click();
+  expect((await requestPromise).postDataJSON()).toMatchObject({
+    name: "Avena del desayuno",
+    mealType: "BREAKFAST",
+    logDate: currentDate,
+    cookedTotalWeightGrams: null,
+  });
+  await expect(dialog).toBeHidden();
+});
+
 test("keeps the AI description textarea at a non-zooming size on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedAuthenticatedApp(page, { aiAvailable: true });

@@ -613,6 +613,15 @@ select:focus-visible,
 .meal-menu button:not(:disabled):hover { background: var(--surface-hover); }
 .meal-menu button:not(:disabled):active { transform: translateX(2px); }
 .meal-menu .danger-text { color: var(--error); }
+.convert-meal-form { display: grid; gap: var(--space-4); }
+.convert-meal-summary { display: grid; gap: 10px; padding: 14px; border: 1px solid color-mix(in srgb, var(--primary) 26%, var(--outline)); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--primary) 7%, var(--surface-low)); }
+.convert-meal-summary > div { display: grid; gap: 3px; }
+.convert-meal-summary small { color: var(--muted); font-size: var(--type-small); }
+.convert-meal-summary ul { display: grid; gap: 6px; max-height: 190px; margin: 0; padding: 0 4px 0 18px; overflow: auto; }
+.convert-meal-summary li { display: flex; justify-content: space-between; gap: 12px; min-width: 0; color: var(--text); }
+.convert-meal-summary li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.convert-meal-summary li small { flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.convert-meal-warning { margin: 0; color: var(--warning); font-size: var(--type-small); line-height: 1.4; }
 
 .meal-card header span {
   color: var(--muted);

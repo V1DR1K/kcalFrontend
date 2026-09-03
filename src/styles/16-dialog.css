@@ -31,6 +31,7 @@
 .modal-shell-eyebrow { color: var(--primary); font-size: var(--type-meta); font-weight: 800; }
 .modal-shell-content { min-height: 0; overflow: auto; overscroll-behavior: contain; scroll-padding-block: 16px var(--dialog-footer-space, calc(16px + env(safe-area-inset-bottom))); scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 .modal-shell-footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-5) var(--space-5); }
+.convert-meal-modal .modal-shell-content { padding: var(--space-5) var(--space-6); }
 
 [data-dialog-scroll-owner="true"],
 .history-preview-scroll,
@@ -199,6 +200,7 @@
 
   .modal-shell-header h2 { font-size: var(--type-heading-sm); line-height: 1.1; }
   .modal-shell-header p { margin-top: 4px; font-size: var(--type-small); }
+  .convert-meal-modal .modal-shell-content { padding: var(--space-4); }
 
   .app-modal-surface[class] .field input,
   .app-modal-surface[class] .field select,
