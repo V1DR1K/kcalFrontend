@@ -101,6 +101,11 @@ export function formatDuration(minutes) {
   return value >= 60 ? `${Math.floor(value / 60)} h ${value % 60 ? `${value % 60} min` : ""}`.trim() : `${value} min`;
 }
 
+export function formatTrainingDate(value) {
+  if (!value) return "Fecha no disponible";
+  return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", year: "numeric" }).format(new Date(`${value}T00:00:00`));
+}
+
 export function normalizeSession(source = {}) {
   const type = source.module || "GYM";
   return {

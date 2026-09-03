@@ -181,6 +181,43 @@
   box-shadow: 0 16px 34px color-mix(in srgb, var(--training-background) 58%, transparent);
 }
 
+.training-day-focus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-6);
+  align-items: center;
+  padding: clamp(var(--space-5), 4vw, var(--space-8));
+  border: 1px solid color-mix(in srgb, var(--training-primary) 48%, var(--training-border));
+  border-radius: var(--radius-surface);
+  background: radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--training-primary) 18%, transparent), transparent 28rem), linear-gradient(145deg, color-mix(in srgb, var(--training-primary) 12%, var(--training-surface)), var(--training-surface));
+}
+
+.training-day-focus-copy { display: grid; gap: var(--space-2); min-width: 0; }
+.training-day-focus h2 { margin: 0; font-family: var(--font-display); font-size: clamp(var(--type-heading-lg), 3vw, var(--type-display-sm)); letter-spacing: -.03em; }
+.training-day-focus-date { color: var(--training-muted); font-size: var(--type-body-sm); text-transform: capitalize; }
+.training-day-focus-empty { max-width: 48ch; margin: var(--space-2) 0 0; color: var(--training-muted); font-size: var(--type-body-sm); }
+.training-day-focus-action { min-width: 172px; min-height: 52px; }
+.training-day-plan-list { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
+.training-day-plan { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.training-day-plan > div:last-child { display: grid; gap: var(--space-0-5); min-width: 0; }
+.training-day-plan strong { overflow: hidden; font-size: var(--type-body-emphasis); text-overflow: ellipsis; white-space: nowrap; }
+.training-day-plan span:not(.training-module-badge) { overflow: hidden; color: var(--training-muted); font-size: var(--type-meta); text-overflow: ellipsis; white-space: nowrap; }
+.training-day-overview { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: var(--space-4); }
+.training-week-summary, .training-recent-surface, .training-routines-surface { padding: var(--space-5); }
+.training-week-summary > .training-section-heading > .material-symbols-outlined, .training-recent-surface > .training-section-heading > .material-symbols-outlined { color: var(--training-primary); font-size: 25px; }
+
+.training-module-picker { width: min(520px, 100%); }
+.training-module-choice-list { display: grid; gap: var(--space-2); padding: var(--space-5); }
+.training-module-choice { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); min-height: 72px; padding: var(--space-3); border: 1px solid var(--training-border); border-radius: var(--radius-control); background: var(--training-surface-raised); color: var(--training-text); text-align: left; }
+.training-module-choice:hover, .training-module-choice:focus-visible { border-color: var(--training-primary); background: color-mix(in srgb, var(--training-primary) 10%, var(--training-surface-raised)); }
+.training-module-choice > span:nth-child(2) { display: grid; gap: var(--space-1); min-width: 0; }
+.training-module-choice strong { font-size: var(--type-body-emphasis); }
+.training-module-choice small { color: var(--training-muted); font-size: var(--type-small); }
+.training-module-choice > .material-symbols-outlined:last-child { color: var(--training-primary); }
+.training-module-choice-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: var(--radius-control); background: color-mix(in srgb, var(--training-primary) 14%, transparent); color: var(--training-primary); }
+.training-module-choice-icon .material-symbols-outlined { font-size: 23px; }
+.training-module-choice .training-module-badge { justify-self: start; }
+
 .training-start-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
 
 .training-start-card {
@@ -562,7 +599,7 @@
   .training-shell .training-mobile-nav .training-nav-group { gap: var(--space-1); }
   .training-shell .training-mobile-nav button.active { color: var(--training-primary); }
   .training-shell .training-mobile-nav button.active::before { background: var(--training-primary); }
-  .training-start-grid, .training-dashboard-grid, .training-exercise-list { grid-template-columns: 1fr; }
+  .training-start-grid, .training-dashboard-grid, .training-day-overview, .training-exercise-list { grid-template-columns: 1fr; }
   .training-start-card { min-height: 0; }
   .training-calendar-surface, .training-week-summary, .training-recent-surface, .training-routines-surface { padding: var(--space-4); }
   .training-calendar-day { min-height: 62px; padding: var(--space-1-5); }
@@ -573,6 +610,8 @@
 
 @media (max-width: 560px) {
   .training-page-intro { margin-top: -14px; }
+  .training-day-focus { grid-template-columns: 1fr; gap: var(--space-4); padding: var(--space-4); }
+  .training-day-focus-action { width: 100%; }
   .training-start-card { grid-template-columns: 1fr; gap: var(--space-3); padding: var(--space-4); }
   .training-start-card .training-primary, .training-start-card .training-secondary { width: 100%; }
   .training-week-values { gap: var(--space-1); }
@@ -602,6 +641,7 @@
   .training-planned-card, .training-plan-current-item, .training-plan-history-item, .training-day-plan-row { align-items: stretch; flex-direction: column; }
   .training-planned-actions, .training-plan-history-actions { justify-content: stretch; }
   .training-planned-actions .training-primary, .training-plan-history-actions .training-secondary, .training-plan-history-actions .training-icon-action { flex: 1 1 0; }
+  .training-module-choice-list { padding: var(--space-4); }
   .training-plan-field-row, .training-plan-day-fields, .training-plan-volume, .training-plan-volume-no-weight { grid-template-columns: 1fr; }
   .training-plan-day-summary-body { grid-template-columns: 1fr; align-items: stretch; }
   .training-plan-day-open { width: 100%; }

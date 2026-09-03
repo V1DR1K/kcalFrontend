@@ -48,6 +48,10 @@ test("swaps the nutrition shell for training and restores nutrition with browser
   await expect(page.getByRole("button", { name: "Nutrición", exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Ejercicios", exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Ver calendario", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Iniciar (gimnasio|calistenia)/i })).toHaveCount(0);
+  await expect(page.getByText("Planes guardados", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Esta semana", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Última sesión", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Nutrición", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Día", exact: true })).toBeVisible();
   await page.goBack();
@@ -58,7 +62,8 @@ test("opens a gym session editor from the training dashboard", async ({ page }) 
   await seedTrainingApp(page);
   await page.goto("/ingresar");
   await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
-  await page.getByRole("button", { name: "Iniciar gimnasio", exact: true }).click();
+  await page.getByRole("button", { name: "Registrar día", exact: true }).click();
+  await page.getByRole("button", { name: /Gimnasio/ }).last().click();
   await expect(page.getByRole("heading", { name: /Editar gimnasio/i })).toBeVisible();
   await expect(page.getByText("Autoguardado activo", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Peso (kg)")).toHaveCount(0);
@@ -68,7 +73,8 @@ test("creates a missing exercise from the session exercise combobox", async ({ p
   await seedTrainingApp(page);
   await page.goto("/ingresar");
   await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
-  await page.getByRole("button", { name: "Iniciar gimnasio", exact: true }).click();
+  await page.getByRole("button", { name: "Registrar día", exact: true }).click();
+  await page.getByRole("button", { name: /Gimnasio/ }).last().click();
   const editor = page.getByRole("dialog");
   await editor.getByRole("button", { name: "Agregar", exact: true }).click();
   await editor.getByRole("combobox", { name: "Ejercicio persistido" }).fill("Ejercicio de sesión nuevo");
@@ -89,7 +95,7 @@ test("creates a planned session before opening it and can finish it", async ({ p
   await page.goto("/ingresar");
   await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
   const createRequest = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/api/training/sessions"));
-  await page.getByRole("button", { name: "Iniciar día", exact: true }).click();
+  await page.getByRole("button", { name: "Registrar día", exact: true }).click();
   expect((await createRequest).postDataJSON()).toEqual({ date: "2026-08-26", module: "GYM", planId: 1, planDayId: 11 });
   await expect(page.getByRole("heading", { name: /Editar gimnasio/i })).toBeVisible();
   await expect(page.getByText("Sentadilla", { exact: true })).toBeVisible();
@@ -222,7 +228,8 @@ test("does not render weight fields for calisthenics", async ({ page }) => {
   await seedTrainingApp(page);
   await page.goto("/ingresar");
   await page.getByRole("button", { name: "Entrenamiento", exact: true }).first().click();
-  await page.getByRole("button", { name: "Iniciar calistenia", exact: true }).click();
+  await page.getByRole("button", { name: "Registrar día", exact: true }).click();
+  await page.getByRole("button", { name: /Calistenia/ }).last().click();
   await expect(page.getByRole("heading", { name: /Editar calistenia/i })).toBeVisible();
   await expect(page.getByLabel("Peso (kg)")).toHaveCount(0);
   await expect(page.getByText("Agregá un ejercicio para comenzar la sesión.", { exact: true })).toBeVisible();
