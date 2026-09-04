@@ -3,8 +3,13 @@ import { test, expect } from "@playwright/test";
 test("renders the public landing and links to account access", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveTitle(/ScaleGrams/i);
-  await expect(page.getByRole("heading", { name: /tu plan se entiende/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /ingresar a scalegrams/i })).toHaveAttribute("href", "/ingresar");
+  await expect(page.getByRole("heading", { name: /tu plan, en contexto/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /una foto te da un punto de partida/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /entrená con estructura/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /cada kilómetro también cuenta/i })).toBeVisible();
+  await expect(page.locator(".landing-hero").getByRole("link", { name: /ingresar a scalegrams/i })).toHaveAttribute("href", "/ingresar");
+  await expect(page.getByRole("link", { name: /entender la estimación/i })).toHaveAttribute("href", "#capacidades");
+  await expect(page.getByRole("link", { name: /saltar al contenido/i })).toHaveAttribute("href", "#landing-title");
 });
 
 test("keeps public access controls touch-safe and allows browser zoom", async ({ page }) => {

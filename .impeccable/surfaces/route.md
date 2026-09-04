@@ -15,7 +15,7 @@ People with an existing ScaleGrams account who need to understand what the produ
 
 ## Proof and Content
 
-Use only the product's real capabilities: meal, hydration, calorie and macro tracking; food catalog, recipes, barcode scanning and history. The daily ledger is illustrative and labeled as such. Do not imply public registration, medical outcomes, testimonials or unavailable AI access.
+Use only the product's real capabilities: meal, hydration, calorie and macro tracking; food catalog, recipes, barcode scanning and history; assisted photo estimates when enabled; gym and calisthenics training plans; and treadmill cardio with distance, duration, incline and service tracking. Landing demos are illustrative and labeled as such. Do not imply public registration, medical outcomes, testimonials, exact AI results or universal AI availability.
 
 ## Constraints
 
@@ -23,4 +23,4 @@ The landing inherits the ScaleGrams design system, uses the "Bitacora cotidiana"
 
 ## Memorable Moment
 
-The hero is a readable daily ledger: completed meals, an open next meal and macros in one quiet instrument panel.
+The hero is a readable day board: completed meals, an open next meal, energy progress and a glimpse of training and hydration in one quiet instrument panel. The scroll story then reveals photo assistance, structured training and treadmill cardio without turning the page into a generic feature grid.
