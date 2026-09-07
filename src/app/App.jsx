@@ -6,6 +6,7 @@ import { AuthScreen } from "../features/auth/AuthScreen";
 import { DashboardSkeleton, SkeletonRows } from "../components/Loading";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
 import { Notification } from "../components/Notification";
+import { MealShareAcceptDialog } from "../features/dashboard/dialogs/MealShareDialogs";
 
 function lazyPage(load, name) {
   return lazy(() => load().then((module) => ({ default: module[name] })));
@@ -75,6 +76,7 @@ export function App() {
   const [prefillBarcode, setPrefillBarcode] = useState("");
   const [confirmation, setConfirmation] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [sharedMealToken, setSharedMealToken] = useState(() => new URLSearchParams(window.location.search).get("compartir") || "");
   const confirmationResolver = useRef(null);
   const notify = React.useCallback((message, tone = "success") => {
     if (message) setNotification({ message, tone });
@@ -130,6 +132,13 @@ export function App() {
     confirmationResolver.current = null;
     setConfirmation(null);
     resolve?.(confirmed);
+  }
+
+  function clearSharedMeal() {
+    setSharedMealToken("");
+    const url = new URL(window.location.href);
+    url.searchParams.delete("compartir");
+    window.history.replaceState({ ...(window.history.state || {}) }, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
   useEffect(() => {
@@ -229,6 +238,7 @@ export function App() {
       )}
       {confirmation && <ConfirmationDialog {...confirmation} mode={mode} onCancel={() => resolveConfirmation(false)} onConfirm={() => resolveConfirmation(true)} />}
       {notification && <Notification message={notification.message} tone={notification.tone} onDismiss={() => setNotification(null)} />}
+      {authenticated && sharedMealToken && <MealShareAcceptDialog api={api} token={sharedMealToken} onClose={clearSharedMeal} onDone={() => { clearSharedMeal(); setPage("dashboard"); }} />}
     </>
   );
 }

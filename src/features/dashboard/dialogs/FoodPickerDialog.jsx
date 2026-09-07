@@ -15,6 +15,7 @@ import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, 
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./MealPhotoDialog";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { compressMealPhoto } from "../../../services/image";
+import { MealShareDialog } from "./MealShareDialogs";
 
 import { AiEstimateEditor } from "./AiEstimateEditor";
 export { FoodPicker, AiEstimateEditor };
@@ -42,6 +43,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const [aiRefinementError, setAiRefinementError] = useState("");
   const [pendingMealPhoto, setPendingMealPhoto] = useState(null);
   const [pendingMealPhotoUrl, setPendingMealPhotoUrl] = useState("");
+  const [shareBracket, setShareBracket] = useState(null);
   const [audioRecording, setAudioRecording] = useState(false);
   const [audioTranscribing, setAudioTranscribing] = useState(false);
   const galleryInputRef = useRef(null);
@@ -579,13 +581,16 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           {tab === "MINE" && <div className="picker-results">
             {groupFoodVariants(addedFoods).map((item) => <CatalogRowWithImage key={`MINE:${item.id}`} item={{ ...item, type: "FOOD" }} onPick={setSelected} />)}
           </div>}
-          {tab === "RECENT" && <div className="recent-meals picker-recent-meals">
-            {recentBrackets.map((bracket) => <button type="button" className="catalog-row recent-meal-card recent-bracket-card" key={`${bracket.sourceDate}:${bracket.mealType}`} disabled={adding} aria-label={`Agregar ${bracket.label} completo`} onClick={() => addRecentMeal(bracket)}>
-              <div className="recent-bracket-heading"><div><strong>{bracket.label}</strong><small>{readableDate(bracket.sourceDate)}</small></div><span className="recent-bracket-total"><strong>{formatNumber(bracket.calories)} kcal</strong><small>P {formatNumber(bracket.proteinGrams, 1)}g · C {formatNumber(bracket.carbsGrams, 1)}g · G {formatNumber(bracket.fatGrams, 1)}g</small></span></div>
-              <div className="recent-bracket-items">{(Array.isArray(bracket.items) ? bracket.items : []).map((item) => <span className="recent-bracket-item" key={item.id}><strong>{mealLogName(item)}</strong><small>{formatMealLogAmount(item)} · {formatNumber(item.calories)} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></span>)}</div>
-              <Icon name="chevron_right" className="row-action recent-bracket-action" />
-            </button>)}
-          </div>}
+           {tab === "RECENT" && <div className="recent-meals picker-recent-meals">
+             {recentBrackets.map((bracket) => <article className={`catalog-row recent-meal-card recent-bracket-card ${adding ? "adding" : ""}`} key={`${bracket.sourceDate}:${bracket.mealType}`}>
+               <button type="button" className="recent-bracket-main" disabled={adding} aria-label={`Agregar ${bracket.label} completo`} onClick={() => addRecentMeal(bracket)}>
+                 <div className="recent-bracket-heading"><div><strong>{bracket.label}</strong><small>{readableDate(bracket.sourceDate)}</small></div><span className="recent-bracket-total"><strong>{formatNumber(bracket.calories)} kcal</strong><small>P {formatNumber(bracket.proteinGrams, 1)}g · C {formatNumber(bracket.carbsGrams, 1)}g · G {formatNumber(bracket.fatGrams, 1)}g</small></span></div>
+                 <div className="recent-bracket-items">{(Array.isArray(bracket.items) ? bracket.items : []).map((item) => <span className="recent-bracket-item" key={item.id}><strong>{mealLogName(item)}</strong><small>{formatMealLogAmount(item)} · {formatNumber(item.calories)} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></span>)}</div>
+                 <Icon name="chevron_right" className="row-action recent-bracket-action" />
+               </button>
+               <div className="recent-bracket-actions"><button type="button" className="secondary recent-bracket-share" aria-label={`Compartir ${bracket.label}`} onClick={() => setShareBracket(bracket)}><Icon name="share" /><span>Compartir</span></button><button type="button" className="primary recent-bracket-add" disabled={adding} onClick={() => addRecentMeal(bracket)}><Icon name="add" /><span>Agregar</span></button></div>
+             </article>)}
+           </div>}
           {tab === "FOOD" && normalizedQuery.length === 1 && <CatalogStatus>Escribí al menos 2 caracteres para buscar.</CatalogStatus>}
           {tab === "FOOD" && !normalizedQuery && !recentFoods.length && <CatalogStatus>Buscá un alimento para empezar.</CatalogStatus>}
           {catalog.initialLoading && <CatalogStatus>Buscando alimentos…</CatalogStatus>}
@@ -606,6 +611,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           )}
           {tab !== "FOOD" && <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />}
         </div>
+        {shareBracket && <MealShareDialog api={api} bracket={shareBracket} onClose={() => setShareBracket(null)} />}
         {selected && (
           <FoodLogDialog
             item={selected}

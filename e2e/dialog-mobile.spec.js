@@ -150,6 +150,38 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
   expect(layout.statusOrder).toBe("-1");
 });
 
+test("keeps the create food form scrollable above its fixed actions", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 430 });
+  await seedAuthenticatedApp(page);
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Registrar", exact: true }).first().click();
+  await page.locator(".register-option").filter({ hasText: "Crear alimento" }).click();
+
+  const dialog = page.locator(".catalog-dialog");
+  await expect(dialog).toBeVisible();
+  const layout = await dialog.evaluate((element) => {
+    const content = element.querySelector(".catalog-dialog-content");
+    const footer = element.querySelector(":scope > footer");
+    content.scrollTop = content.scrollHeight;
+    const lastField = content.querySelector('input[name="tags"]');
+    return {
+      contentOverflowY: getComputedStyle(content).overflowY,
+      contentHeight: content.clientHeight,
+      contentScrollHeight: content.scrollHeight,
+      ownerCount: element.querySelectorAll('[data-dialog-scroll-owner="true"]').length,
+      footerPosition: getComputedStyle(footer).position,
+      footerTop: footer.getBoundingClientRect().top,
+      lastFieldBottom: lastField.getBoundingClientRect().bottom,
+    };
+  });
+
+  expect(layout.contentOverflowY).toBe("auto");
+  expect(layout.contentScrollHeight).toBeGreaterThan(layout.contentHeight);
+  expect(layout.ownerCount).toBe(1);
+  expect(layout.footerPosition).toBe("absolute");
+  expect(layout.lastFieldBottom).toBeLessThanOrEqual(layout.footerTop + 1);
+});
+
 test("keeps desktop food picker controls above long results", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await seedAuthenticatedApp(page, { withManyPickerResults: true });
@@ -281,4 +313,71 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   });
   expect(layout.position).toBe("static");
   expect(layout.top).toBeGreaterThanOrEqual(layout.refinementBottom - 1);
+});
+
+test("creates a share link from a recent meal bracket", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page);
+  await page.route("**/api/nutrition/recent-meals*", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([{
+      sourceDate: "2026-08-24",
+      mealType: "LUNCH",
+      label: "Almuerzo",
+      calories: 540,
+      proteinGrams: 32,
+      carbsGrams: 48,
+      fatGrams: 18,
+      items: [{ id: 10, itemType: "FOOD", food: { name: "Pollo", id: 10 }, quantity: 200, unit: "GRAM", calories: 540, proteinGrams: 32, carbsGrams: 48, fatGrams: 18 }],
+    }] ) });
+  });
+  await page.route("**/api/nutrition/meal-shares", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+      token: "created-token",
+      expiresAt: "2026-08-31T00:00:00Z",
+      preview: {
+        sourceDate: "2026-08-24",
+        sourceMealType: "LUNCH",
+        sourceMealLabel: "Almuerzo",
+        calories: 540,
+        proteinGrams: 32,
+        carbsGrams: 48,
+        fatGrams: 18,
+        items: [{ itemType: "FOOD", name: "Pollo", quantity: 200, unit: "GRAM", calories: 540, proteinGrams: 32, carbsGrams: 48, fatGrams: 18, estimated: false }],
+      },
+    }) });
+  });
+  const createShare = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/api/nutrition/meal-shares"));
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.getByRole("tab", { name: "Recientes" }).click();
+  await page.getByRole("button", { name: "Compartir Almuerzo" }).click();
+  await expect(page.getByRole("heading", { name: "Compartir comida" })).toBeVisible();
+  const request = await createShare;
+  expect(request.postDataJSON()).toEqual({ sourceDate: "2026-08-24", mealType: "LUNCH" });
+  await expect(page.getByLabel("Enlace de invitación")).toHaveValue(/\/ingresar\?compartir=/);
+});
+
+test("accepts a shared meal link after authentication", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page);
+  await page.route("**/api/nutrition/meal-shares/shared-token", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+      sourceDate: "2026-08-24",
+      sourceMealType: "LUNCH",
+      sourceMealLabel: "Almuerzo",
+      calories: 540,
+      proteinGrams: 32,
+      carbsGrams: 48,
+      fatGrams: 18,
+      expiresAt: "2026-08-31T00:00:00Z",
+      alreadyAccepted: false,
+      items: [{ itemType: "FOOD", name: "Pollo", quantity: 200, unit: "GRAM", calories: 540, proteinGrams: 32, carbsGrams: 48, fatGrams: 18, estimated: false }],
+    }) });
+  });
+  const acceptShare = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/api/nutrition/meal-shares/shared-token/accept"));
+  await page.goto("/ingresar?compartir=shared-token");
+  await expect(page.getByRole("heading", { name: "Agregar comida compartida" })).toBeVisible();
+  await page.getByRole("button", { name: "Agregar a mi día" }).click();
+  const request = await acceptShare;
+  expect(request.postDataJSON()).toMatchObject({ mealType: "LUNCH" });
 });

@@ -63,10 +63,8 @@ export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClos
         </div>
       )}
     >
-        <div className="catalog-dialog-content">
-          <div id="catalog-panel-food" data-dialog-scroll-owner="true">
-            <CreateFoodForm id="create-food-form" hideSubmit title={null} api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, food: value }))} />
-          </div>
+        <div id="catalog-panel-food" className="catalog-dialog-content" data-dialog-scroll-owner="true">
+          <CreateFoodForm id="create-food-form" hideSubmit title={null} api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, food: value }))} />
         </div>
     </ModalShell>
   );
