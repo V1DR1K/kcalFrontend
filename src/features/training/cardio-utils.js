@@ -19,6 +19,16 @@ export function formatCardioMinutes(value) {
   return `${minutes} min`;
 }
 
+export function formatCardioSpeed(value) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return "Velocidad no disponible";
+  return `${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(Number(value))} km/h`;
+}
+
+export function formatCardioSteps(value) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return "No disponible";
+  return new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value));
+}
+
 export function cardioProgress(summary = {}) {
   const threshold = Number(summary.thresholdMinutes || 1200);
   return threshold ? Math.min(100, Math.round((Number(summary.totalDurationMinutes || 0) / threshold) * 100)) : 0;

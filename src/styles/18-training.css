@@ -576,7 +576,7 @@
 .training-cardio-service-icon { display: grid; place-items: center; width: 52px; height: 52px; flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--cardio-accent) 42%, var(--training-border)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--cardio-accent) 12%, transparent); color: var(--cardio-accent); }
 .training-cardio-service-card.is-due .training-cardio-service-icon { border-color: color-mix(in srgb, var(--training-danger) 50%, var(--training-border)); background: color-mix(in srgb, var(--training-danger) 12%, transparent); color: var(--training-danger); }
 .training-cardio-service-icon .material-symbols-outlined { font-size: 28px; }
-.training-cardio-kpi-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(220px, .65fr); gap: var(--space-3); }
+.training-cardio-kpi-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(180px, .8fr)); gap: var(--space-3); }
 .training-cardio-kpi-grid > div { display: grid; gap: var(--space-1); min-width: 0; padding: var(--space-4); border: 1px solid color-mix(in srgb, var(--training-border) 78%, transparent); border-radius: var(--radius-control); background: color-mix(in srgb, var(--training-surface-raised) 70%, transparent); }
 .training-cardio-kpi-grid span { color: var(--training-muted); font-size: var(--type-meta); font-weight: 800; }
 .training-cardio-kpi-grid strong { color: var(--cardio-accent); font-family: var(--font-display); font-size: clamp(var(--type-value), 5vw, var(--type-display-compact)); font-variant-numeric: tabular-nums; letter-spacing: -.04em; }

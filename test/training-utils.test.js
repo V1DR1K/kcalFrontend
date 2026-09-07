@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cardioPayload, cardioProgress, formatCardioMinutes } from "../src/features/training/cardio-utils.js";
+import { cardioPayload, cardioProgress, formatCardioMinutes, formatCardioSpeed, formatCardioSteps } from "../src/features/training/cardio-utils.js";
 import { monthDays, moveItem, normalizeSession, planPayload, sessionPayload, sessionStatusLabel } from "../src/features/training/training-utils.js";
 
 test("crea una grilla mensual que inicia el lunes", () => {
@@ -62,4 +62,10 @@ test("calcula el progreso y formatea el contador de service", () => {
   assert.equal(formatCardioMinutes(125), "2 h 5 min");
   assert.equal(cardioProgress({ totalDurationMinutes: 600, thresholdMinutes: 1200 }), 50);
   assert.equal(cardioProgress({ totalDurationMinutes: 1400, thresholdMinutes: 1200 }), 100);
+});
+
+test("formatea velocidad y pasos estimados de cardio", () => {
+  assert.equal(formatCardioSpeed(8.93), "8,93 km/h");
+  assert.equal(formatCardioSteps(8367), "8.367");
+  assert.equal(formatCardioSteps(null), "No disponible");
 });
