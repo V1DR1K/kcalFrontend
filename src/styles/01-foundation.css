@@ -281,8 +281,10 @@ textarea {
 }
 
 .material-symbols-outlined svg {
+  display: block;
   width: 100%;
   height: 100%;
+  overflow: visible;
   fill: currentColor;
 }
 

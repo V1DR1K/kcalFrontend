@@ -27,7 +27,7 @@ export const navItems = [
   { id: "dashboard", label: "Día", mobileLabel: "Día", icon: "monitoring" },
   { id: "history", label: "Historial", icon: "calendar_month" }, { id: "plans", label: "Planes", icon: "view_list" }, { id: "profile", label: "Perfil", icon: "account_circle" },
   { id: "scanner", label: "Registrar", mobileLabel: "Registrar", icon: "qr_code_scanner", activePages: ["my-foods", "recipes", "configure"] },
-  { id: "training", label: "Entrenamiento", mobileLabel: "Entreno", icon: "fitness_center", mode: "training" },
+  { id: "training", label: "Entrenamiento", mobileLabel: "Entreno", icon: "training_section", mode: "training" },
 ];
 export const trainingNavItems = [
   { id: "training-dashboard", label: "Día", icon: "monitoring" },
@@ -35,7 +35,7 @@ export const trainingNavItems = [
   { id: "training-cardio", label: "Cardio", mobileLabel: "Cardio", icon: "directions_run" },
   { id: "plans", label: "Planes", icon: "view_list" }, { id: "profile", label: "Perfil", icon: "account_circle" },
   { id: "training-profile", label: "Ejercicios", mobileLabel: "Ejercicios", icon: "fitness_center" },
-  { id: "nutrition", label: "Nutrición", mobileLabel: "Nutrición", icon: "nutrition", mode: "nutrition" },
+  { id: "nutrition", label: "Nutrición", mobileLabel: "Nutrición", icon: "nutrition_section", mode: "nutrition" },
 ];
 export function isNavItemActive(item, page) {
   return item.id === page || item.activePages?.includes(page);
