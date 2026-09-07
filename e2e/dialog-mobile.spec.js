@@ -242,6 +242,50 @@ test("converts a logged meal into a recipe from the meal actions", async ({ page
   await expect(dialog).toBeHidden();
 });
 
+test("shares a logged meal bracket from the dashboard header", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withFoodLog: true });
+  await page.route("**/api/nutrition/meal-shares", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+      token: "dashboard-share-token",
+      expiresAt: "2026-08-31T00:00:00Z",
+      preview: {
+        sourceDate: "2026-08-25",
+        sourceMealType: "BREAKFAST",
+        sourceMealLabel: "Desayuno",
+        calories: 400,
+        proteinGrams: 13,
+        carbsGrams: 68,
+        fatGrams: 7,
+        items: [{ itemType: "FOOD", name: "Avena", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, estimated: false }],
+      },
+    }) });
+  });
+  const createShare = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/api/nutrition/meal-shares"));
+  await page.goto("/ingresar");
+
+  const breakfast = page.locator(".meal-card").filter({ hasText: "Avena" }).first();
+  const lunch = page.locator('.meal-card[data-meal-type="LUNCH"]');
+  await expect(breakfast.getByRole("button", { name: "Compartir Desayuno" })).toBeEnabled();
+  await expect(lunch.getByRole("button", { name: "Compartir Almuerzo" })).toBeDisabled();
+  const headerActions = await breakfast.locator(".meal-header-actions > *").evaluateAll((elements) => elements.map((element) => {
+    const rect = element.getBoundingClientRect();
+    return { left: rect.left, right: rect.right };
+  }));
+  expect(headerActions).toHaveLength(3);
+  expect(headerActions[1].left).toBeGreaterThanOrEqual(headerActions[0].right - 1);
+  expect(headerActions[2].left).toBeGreaterThanOrEqual(headerActions[1].right - 1);
+  await breakfast.getByRole("button", { name: "Compartir Desayuno" }).click();
+
+  await expect(page.getByRole("heading", { name: "Compartir comida" })).toBeVisible();
+  const request = await createShare;
+  const currentDate = await page.evaluate(() => {
+    const date = new Date();
+    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+  });
+  expect(request.postDataJSON()).toEqual({ sourceDate: currentDate, mealType: "BREAKFAST" });
+});
+
 test("keeps the AI description textarea at a non-zooming size on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedAuthenticatedApp(page, { aiAvailable: true });
@@ -350,7 +394,7 @@ test("creates a share link from a recent meal bracket", async ({ page }) => {
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
   await page.getByRole("tab", { name: "Recientes" }).click();
-  await page.getByRole("button", { name: "Compartir Almuerzo" }).click();
+  await page.locator(".picker-recent-meals").getByRole("button", { name: "Compartir Almuerzo" }).click();
   await expect(page.getByRole("heading", { name: "Compartir comida" })).toBeVisible();
   const request = await createShare;
   expect(request.postDataJSON()).toEqual({ sourceDate: "2026-08-24", mealType: "LUNCH" });

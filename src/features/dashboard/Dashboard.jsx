@@ -12,6 +12,7 @@ import { DayPresetsDialog } from "./dialogs/DayPresetsDialog";
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./dialogs/MealPhotoDialog";
 import { ConvertMealToRecipeDialog } from "./dialogs/ConvertMealToRecipeDialog";
 import { FoodPicker, AiEstimateEditor } from "./dialogs/FoodPickerDialog";
+import { MealShareDialog } from "./dialogs/MealShareDialogs";
 import { CompactBalanceBar, DateNavigator, PastMealsPreview } from "./components/DashboardSections";
 import { MealCard } from "./components/MealSections";
 import { RecentMeals } from "./components/QuickMeals";
@@ -51,6 +52,7 @@ export function Dashboard({ api, user, setPage }) {
   const [mealBulkActionLoading, setMealBulkActionLoading] = useState(false);
   const [dayPresetModal, setDayPresetModal] = useState(false);
   const [convertingMeal, setConvertingMeal] = useState(null);
+  const [sharingMeal, setSharingMeal] = useState(null);
   const [swipeResetSignal, setSwipeResetSignal] = useState(0);
   const dashboardTopRef = useRef(null);
   const balanceRef = useRef(null);
@@ -299,6 +301,10 @@ export function Dashboard({ api, user, setPage }) {
               resetMealSwipes();
               setConvertingMeal({ mealType, meal: mealByCode.get(mealType.code) });
             }}
+            onShare={() => {
+              resetMealSwipes();
+              setSharingMeal({ sourceDate: selectedDate, mealType: mealType.code });
+            }}
             deletingLogId={deletingLogId}
             movingLogId={movingLogId}
             resetSignal={swipeResetSignal}
@@ -499,6 +505,7 @@ export function Dashboard({ api, user, setPage }) {
       )}
       {editingAiEstimate && <EditAiEstimateDialog api={api} log={editingAiEstimate} mealTypes={mealTypes} onClose={closeEditingAiEstimate} onDone={finishEditingAiEstimate} EditorComponent={AiEstimateEditor} />}
       {convertingMeal && <ConvertMealToRecipeDialog api={api} mealType={convertingMeal.mealType} meal={convertingMeal.meal} date={selectedDate} onClose={() => setConvertingMeal(null)} onDone={() => setConvertingMeal(null)} />}
+      {sharingMeal && <MealShareDialog api={api} bracket={sharingMeal} onClose={() => setSharingMeal(null)} />}
     </section>
   );
 }
