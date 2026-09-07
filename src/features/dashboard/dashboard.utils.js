@@ -5,7 +5,7 @@ import { normalizeMealLogReference } from "./mealLogPayload";
 import { decimalNumber } from "../../utils/decimal";
 export { mealTotals } from "./nutritionTotals.js";
 
-export function isCopyableMealLog(log) { return ["FOOD", "RECIPE"].includes(log?.itemType || log?.type); }
+export function isCopyableMealLog(log) { return ["FOOD", "RECIPE", "AI_ESTIMATE"].includes(log?.itemType || log?.type); }
 
 export function aiProposalFood(item) {
   const estimatedGrams = Math.max(1, decimalNumber(item?.estimatedGrams) || 100);
@@ -30,7 +30,7 @@ export function macroValue(log, key) {
 }
 
 export async function createMealLogs(api, logs, mealType, logDate) {
-  if (logs.some((log) => !isCopyableMealLog(log))) throw new Error("Las estimaciones por foto no se pueden copiar como una comida guardada.");
+  if (logs.some((log) => !isCopyableMealLog(log))) throw new Error("Solo se pueden copiar alimentos, recetas o estimaciones por foto.");
   const payloads = logs.map((log) => normalizeMealLogReference(log, mealType, logDate));
   return api.request("/api/nutrition/meal-logs/batch", { method: "POST", body: JSON.stringify({ logs: payloads }) });
 }

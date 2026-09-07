@@ -57,9 +57,36 @@ test("normalizes comma decimals when copying a food or recipe", () => {
   assert.equal(buildMealLogPayload({ itemType: "RECIPE", recipe: { id: 9 }, quantity: "0,5", unit: "PORTION" }, "DINNER", "2026-08-12").quantity, 0.5);
 });
 
-test("normalizes recipe references and rejects photo estimates", () => {
+test("normalizes recipe references and preserves photo estimates", () => {
   assert.equal(normalizeMealLogReference({ type: "RECIPE", recipe: { id: 9 }, quantity: 1 }, "LUNCH", "2026-08-12").itemId, 9);
-  assert.throws(() => normalizeMealLogReference({ itemType: "AI_ESTIMATE", quantity: 1 }, "LUNCH", "2026-08-12"), /reutilizar/);
+  assert.deepEqual(normalizeMealLogReference({
+    itemType: "AI_ESTIMATE",
+    displayName: "Plato estimado",
+    quantity: 1,
+    unit: "PORTION",
+    calories: 480,
+    proteinGrams: 30,
+    carbsGrams: 40,
+    fatGrams: 16,
+    aiEstimateConfidence: 88,
+    aiEstimateDetails: '{"items":[]}',
+    nutrients: [{ code: "IRON", value: 2.1, source: "AI", status: "ESTIMATED" }],
+  }, "DINNER", "2026-08-12"), {
+    itemType: "AI_ESTIMATE",
+    itemId: null,
+    mealType: "DINNER",
+    quantity: 1,
+    unit: "PORTION",
+    logDate: "2026-08-12",
+    displayName: "Plato estimado",
+    aiEstimateConfidence: 88,
+    aiEstimateDetails: '{"items":[]}',
+    calories: 480,
+    proteinGrams: 30,
+    carbsGrams: 40,
+    fatGrams: 16,
+    nutrients: [{ code: "IRON", value: 2.1, source: "AI", status: "ESTIMATED" }],
+  });
 });
 
 test("rejects a recent meal without a valid numeric item id", () => {

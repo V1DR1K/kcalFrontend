@@ -1,23 +1,41 @@
 import { decimalNumber } from "../../utils/decimal.js";
 
-const ITEM_TYPES = new Set(["FOOD", "RECIPE"]);
+const ITEM_TYPES = new Set(["FOOD", "RECIPE", "AI_ESTIMATE"]);
 const MEAL_TYPES = new Set(["BREAKFAST", "LUNCH", "AFTERNOON_SNACK", "DINNER"]);
 const UNITS = new Set(["GRAM", "MILLILITER", "UNIT", "PORTION"]);
 
 export function normalizeMealLogReference(log, mealType, logDate) {
   const itemType = log?.itemType || log?.type;
+  const isAiEstimate = itemType === "AI_ESTIMATE";
   const rawItemId = log?.itemId ?? (itemType === "RECIPE" ? log?.recipe?.id : log?.food?.id);
   const itemId = Number(rawItemId);
   const quantity = decimalNumber(log?.quantity);
   const unit = log?.unit || (itemType === "RECIPE" ? "PORTION" : "GRAM");
 
-  if (!ITEM_TYPES.has(itemType)) throw new Error("Solo se pueden reutilizar alimentos o recetas guardados.");
-  if (!Number.isInteger(itemId) || itemId <= 0) throw new Error("La comida reciente no tiene un alimento válido.");
+  if (!ITEM_TYPES.has(itemType)) throw new Error("Solo se pueden reutilizar alimentos, recetas o estimaciones por foto.");
+  if (!isAiEstimate && (!Number.isInteger(itemId) || itemId <= 0)) throw new Error("La comida reciente no tiene un alimento válido.");
   if (!MEAL_TYPES.has(mealType)) throw new Error("La comida seleccionada no es válida.");
   if (!Number.isFinite(quantity) || quantity <= 0) throw new Error("La cantidad guardada no es válida.");
   if (!UNITS.has(unit)) throw new Error("La unidad guardada no es válida.");
 
-  return { itemType, itemId, mealType, quantity, unit, logDate };
+  return {
+    itemType,
+    itemId: isAiEstimate ? null : itemId,
+    mealType,
+    quantity,
+    unit,
+    logDate,
+    ...(isAiEstimate ? {
+      displayName: log?.displayName || "Comida estimada",
+      aiEstimateConfidence: Number(log?.aiEstimateConfidence || 0),
+      aiEstimateDetails: log?.aiEstimateDetails || "{}",
+      calories: Number(log?.calories || 0),
+      proteinGrams: Number(log?.proteinGrams || 0),
+      carbsGrams: Number(log?.carbsGrams || 0),
+      fatGrams: Number(log?.fatGrams || 0),
+      nutrients: log?.nutrients || [],
+    } : {}),
+  };
 }
 
 export function buildMealLogPayload(log, mealType, logDate) {
