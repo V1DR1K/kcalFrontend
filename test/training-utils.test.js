@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cardioPayload, cardioProgress, formatCardioMinutes, formatCardioSpeed, formatCardioSteps } from "../src/features/training/cardio-utils.js";
+import { cardioDistanceFromSpeed, cardioEstimatedSteps, cardioPayload, cardioProgress, formatCardioDistance, formatCardioMinutes, formatCardioSpeed, formatCardioSteps } from "../src/features/training/cardio-utils.js";
 import { monthDays, moveItem, normalizeSession, planPayload, sessionPayload, sessionStatusLabel } from "../src/features/training/training-utils.js";
 
 test("crea una grilla mensual que inicia el lunes", () => {
@@ -49,13 +49,20 @@ test("no crea series fake a partir de objetivos y conserva versión y origen", (
   assert.equal(sessionStatusLabel("IN_PROGRESS"), "En proceso");
 });
 
-test("serializa un registro de caminadora en minutos y acepta kilometraje con coma", () => {
-  const payload = cardioPayload({ recordedAt: "2026-08-26T08:30", distanceKm: "4,50", durationMinutes: "35", inclined: true });
+test("serializa un registro de caminadora con velocidad decimal y tiempo", () => {
+  const payload = cardioPayload({ recordedAt: "2026-08-26T08:30", speedKmh: "8,50", durationMinutes: "35", inclined: true });
   assert.equal(payload.equipment, "TREADMILL");
-  assert.equal(payload.distanceKm, 4.5);
+  assert.equal(payload.speedKmh, 8.5);
   assert.equal(payload.durationMinutes, 35);
   assert.equal(payload.inclined, true);
   assert.equal(new Date(payload.recordedAt).getTime(), new Date("2026-08-26T08:30").getTime());
+});
+
+test("estima distancia y pasos de una sesión según la altura", () => {
+  assert.equal(cardioDistanceFromSpeed(8.5, 35), 4.958);
+  assert.equal(cardioEstimatedSteps(4.958, 180), 6637);
+  assert.equal(cardioEstimatedSteps(4.958, null), null);
+  assert.equal(formatCardioDistance(4.958), "4,958 km");
 });
 
 test("calcula el progreso y formatea el contador de service", () => {

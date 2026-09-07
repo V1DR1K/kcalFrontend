@@ -10,10 +10,11 @@ function query(params) {
 export const trainingApi = {
   cardio: (api, { page = 0, size = 50 } = {}) => api.request(`/api/training/cardio?${query({ page, size })}`),
   cardioSummary: (api) => api.request("/api/training/cardio/summary"),
+  cardioWeekly: (api, { date, timeZone } = {}) => api.request(`/api/training/cardio/weekly?${query({ date, timeZone })}`),
   saveCardio: (api, record, payload) => api.request(record?.id ? `/api/training/cardio/${encoded(record.id)}` : "/api/training/cardio", { method: record?.id ? "PUT" : "POST", body: JSON.stringify(payload) }),
   deleteCardio: (api, id) => api.request(`/api/training/cardio/${encoded(id)}`, { method: "DELETE" }),
   createCardioService: (api, payload) => api.request("/api/training/cardio/services", { method: "POST", body: JSON.stringify(payload) }),
-  dashboard: (api, date) => api.request(`/api/training/dashboard?date=${encoded(date)}`),
+  dashboard: (api, date, timeZone) => api.request(`/api/training/dashboard?${query({ date, timeZone })}`),
   calendar: (api, from, to) => api.request(`/api/training/calendar?${query({ from, to })}`),
   session: (api, id) => api.request(`/api/training/sessions/${encoded(id)}`),
   createSession: (api, payload) => api.request("/api/training/sessions", { method: "POST", body: JSON.stringify(payload) }),

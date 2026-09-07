@@ -1,3 +1,22 @@
+import { decimalNumber } from "../../utils/decimal.js";
+
+export const CARDIO_STEP_LENGTH_FACTOR = 0.415;
+
+export function cardioDistanceFromSpeed(speedKmh, durationMinutes) {
+  const speed = Number(speedKmh);
+  const duration = Number(durationMinutes);
+  if (!Number.isFinite(speed) || !Number.isFinite(duration) || speed < 0 || duration <= 0) return null;
+  return Number((speed * duration / 60).toFixed(3));
+}
+
+export function cardioEstimatedSteps(distanceKm, heightCm) {
+  const distance = Number(distanceKm);
+  const height = Number(heightCm);
+  if (!Number.isFinite(distance) || distance < 0 || !Number.isFinite(height) || height <= 0) return null;
+  const stepLengthMeters = height * CARDIO_STEP_LENGTH_FACTOR / 100;
+  return Math.round(distance * 1000 / stepLengthMeters);
+}
+
 export function localDateTimeInput(value = new Date()) {
   const date = value instanceof Date ? value : new Date(value);
   const pad = (part) => String(part).padStart(2, "0");
@@ -19,6 +38,11 @@ export function formatCardioMinutes(value) {
   return `${minutes} min`;
 }
 
+export function formatCardioDistance(value) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return "Distancia no disponible";
+  return `${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 3 }).format(Number(value))} km`;
+}
+
 export function formatCardioSpeed(value) {
   if (value === null || value === undefined || !Number.isFinite(Number(value))) return "Velocidad no disponible";
   return `${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(Number(value))} km/h`;
@@ -35,12 +59,16 @@ export function cardioProgress(summary = {}) {
 }
 
 export function cardioPayload(form) {
+  const speedKmh = decimalNumber(form.speedKmh);
   return {
     equipment: "TREADMILL",
     recordedAt: toOffsetDateTime(form.recordedAt),
-    distanceKm: decimalNumber(form.distanceKm),
+    speedKmh: Number.isFinite(speedKmh) ? speedKmh : undefined,
     durationMinutes: Number(form.durationMinutes),
     inclined: Boolean(form.inclined),
   };
 }
-import { decimalNumber } from "../../utils/decimal.js";
+
+export function localTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Argentina/Buenos_Aires";
+}
