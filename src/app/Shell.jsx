@@ -1,6 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 import { APP_NAME, isNavItemActive, navItems, trainingNavItems } from "../config/app";
 import { Icon } from "../components/Icon";
+import { ModalShell } from "../components/dialog/ModalShell";
+
+function MobileNavigation({ mode, page, setPage, setMode }) {
+  const [expanded, setExpanded] = useState(false);
+  const items = mode === "training" ? trainingNavItems : navItems;
+  const mainIds = mode === "training"
+    ? ["training-dashboard", "training-calendar", "training-cardio", "nutrition"]
+    : ["dashboard", "history", "scanner", "training"];
+  const primary = mainIds.map(id => items.find(item => item.id === id));
+  const secondary = items.filter(item => !mainIds.includes(item.id));
+  const select = (item) => { setExpanded(false); item.mode ? setMode(item.mode) : setPage(item.id); };
+  const active = (item) => !item.mode && isNavItemActive(item, page);
+  return <>
+    <div className="mobile-primary-items">
+      {primary.map(item => <button type="button" key={item.id} className={active(item) ? "active" : ""} aria-current={active(item) ? "page" : undefined} onClick={() => select(item)}><Icon name={item.icon} />{item.mobileLabel || item.label}</button>)}
+      <button type="button" className={secondary.some(active) ? "active" : ""} aria-label="Más opciones" aria-haspopup="dialog" aria-expanded={expanded} onClick={() => setExpanded(true)}><Icon name="more_vert" />Más</button>
+    </div>
+    {expanded && <ModalShell title={mode === "training" ? "Tu entrenamiento" : "Tu nutrición"} theme={mode} className="mobile-navigation-dialog app-modal-compact" onClose={() => setExpanded(false)}>
+      <div className="mobile-secondary-items">{secondary.map(item => <button type="button" key={item.id} aria-current={active(item) ? "page" : undefined} onClick={() => select(item)}><Icon name={item.icon} /><span>{item.label}</span><Icon name="chevron_right" /></button>)}</div>
+    </ModalShell>}
+  </>;
+}
 
 function NavigationGroup({ mode, items, activeMode, page, mobile, setPage, setMode }) {
   const active = activeMode === mode;
@@ -25,5 +47,5 @@ function ModeNavigation({ activeMode, page, mobile = false, setPage, setMode }) 
 
 export function Shell({ children, page, mode, setPage, setMode, logout }) {
   const training = mode === "training";
-  return <div className={`app-shell ${training ? "training-shell" : ""}`.trim()} data-app-mode={mode} data-nav-mode={mode}><aside className="sidebar"><div className="brand"><Icon name={training ? "fitness_center" : "vital_signs"} className="fill" /><div><strong>{APP_NAME}</strong><span>{training ? "Entrenamiento" : "Bitácora diaria"}</span></div></div><nav aria-label={training ? "Navegación de entrenamiento" : "Navegación principal"}><ModeNavigation activeMode={mode} page={page} setPage={setPage} setMode={setMode} /></nav><button className="ghost" onClick={logout}><Icon name="logout" />Salir</button></aside><main className="content" data-app-scroll-root="true" key={`${mode}-${page}`}>{children}</main><nav className={`mobile-nav ${training ? "training-mobile-nav" : ""}`.trim()} aria-label={training ? "Navegación de entrenamiento" : "Navegación principal"}><ModeNavigation activeMode={mode} page={page} mobile setPage={setPage} setMode={setMode} /></nav></div>;
+  return <div className={`app-shell ${training ? "training-shell" : ""}`.trim()} data-app-mode={mode} data-nav-mode={mode}><aside className="sidebar"><div className="brand"><Icon name={training ? "fitness_center" : "vital_signs"} className="fill" /><div><strong>{APP_NAME}</strong><span>{training ? "Entrenamiento" : "Bitácora diaria"}</span></div></div><nav aria-label={training ? "Navegación de entrenamiento" : "Navegación principal"}><ModeNavigation activeMode={mode} page={page} setPage={setPage} setMode={setMode} /></nav><button className="ghost" onClick={logout}><Icon name="logout" />Salir</button></aside><main className="content" data-app-scroll-root="true" key={`${mode}-${page}`}>{children}</main><nav className={`mobile-nav ${training ? "training-mobile-nav" : ""}`.trim()} aria-label={training ? "Navegación de entrenamiento" : "Navegación principal"}><MobileNavigation key={mode} mode={mode} page={page} setPage={setPage} setMode={setMode} /></nav></div>;
 }

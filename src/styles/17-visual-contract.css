@@ -114,6 +114,19 @@
 .my-foods-loading::after { display: block; height: 62px; border-radius: var(--radius-compact); background: var(--surface-high); content: ""; }
 
 /* Dialog collections should hug their content instead of stretching one result to fill the viewport. */
+.mobile-secondary-items { display: grid; gap: var(--space-2); padding: var(--space-4); }
+.mobile-secondary-items button { display: flex; align-items: center; gap: var(--space-3); min-height: 52px; padding: var(--space-3); border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-high); color: var(--text); text-align: left; }
+.mobile-secondary-items button > span:nth-child(2) { flex: 1; }
+.mobile-secondary-items button[aria-current="page"] { border-color: var(--primary); color: var(--primary); }
+@media (max-width: 900px) {
+  .mobile-nav .mobile-primary-items { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); width: 100%; gap: var(--space-0-5); }
+  .mobile-nav .mobile-primary-items button { min-width: 0; min-height: 52px; font-size: var(--type-micro); }
+  .mobile-nav { padding-inline: max(var(--space-2), env(safe-area-inset-left)) max(var(--space-2), env(safe-area-inset-right)); }
+  .app-shell input:not([type="checkbox"]):not([type="radio"]), .app-shell select, .app-shell textarea,
+  .app-modal-surface input:not([type="checkbox"]):not([type="radio"]), .app-modal-surface select, .app-modal-surface textarea { font-size: var(--type-body); min-width: 0; max-width: 100%; }
+  .app-modal-surface input[type="date"], .app-modal-surface input[type="datetime-local"] { display: block; width: 100%; -webkit-appearance: none; }
+}
+
 .picker-results,
 .recent-meals,
 .recipe-list,

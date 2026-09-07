@@ -195,6 +195,7 @@ test("keeps training actions and exercise options inside a reduced mobile viewpo
   await seedTrainingApp(page);
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /^(Entrenamiento|Entreno)$/ }).first().click();
+  await page.getByRole("button", { name: "Más opciones", exact: true }).click();
   await page.getByRole("button", { name: "Planes", exact: true }).first().click();
   await page.locator(".training-plan-manager").getByRole("button", { name: "Agregar plan", exact: true }).click();
   const dialog = page.getByRole("dialog");

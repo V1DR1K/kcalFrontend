@@ -14,6 +14,6 @@ export function TrainingModuleBadge({ module }) {
 }
 
 export function TrainingSessionLine({ session, onClick }) {
-  const content = <><TrainingModuleBadge module={session.type} /><strong>{session.title || session.planName || "Sesión libre"}</strong><span>{formatTrainingDate(session.date)} · {sessionStatusLabel(session.status)} · {formatDuration(session.durationMinutes)}</span></>;
+  const content = <><TrainingModuleBadge module={session.module || session.type} /><strong>{session.title || session.planName || "Sesión libre"}</strong><span>{formatTrainingDate(session.date)} · {sessionStatusLabel(session.status)} · {formatDuration(session.durationMinutes)}</span></>;
   return onClick ? <button type="button" className="training-session-line" onClick={onClick}>{content}<Icon name="chevron_right" /></button> : <div className="training-session-line">{content}</div>;
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
 import { Header } from "../../components/Layout";
 import { Input } from "../../components/FormControls";
@@ -17,6 +17,7 @@ function CardioRecordEditor({ api, record, onClose, onSaved }) {
     inclined: Boolean(record?.inclined),
   }));
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [error, setError] = useState("");
 
   function setField(field, value) {
@@ -26,11 +27,13 @@ function CardioRecordEditor({ api, record, onClose, onSaved }) {
 
   async function submit(event) {
     event.preventDefault();
+    if (savingRef.current) return;
     const distanceKm = decimalNumber(form.distanceKm);
     if (!form.recordedAt || !Number.isFinite(distanceKm) || distanceKm < 0 || !Number.isFinite(Number(form.durationMinutes)) || !Number(form.durationMinutes) || Number(form.durationMinutes) < 1) {
       setError("Completá una fecha, un kilometraje válido y un tiempo mayor a cero.");
       return;
     }
+    savingRef.current = true;
     setSaving(true);
     setError("");
     try {
@@ -41,6 +44,7 @@ function CardioRecordEditor({ api, record, onClose, onSaved }) {
     } catch (saveError) {
       setError(saveError?.message || "No se pudo guardar el registro de cardio.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -57,11 +61,14 @@ function CardioRecordEditor({ api, record, onClose, onSaved }) {
 function CardioServiceEditor({ api, onClose, onSaved }) {
   const [form, setForm] = useState(() => ({ servicedAt: localDateTimeInput(), notes: "" }));
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [error, setError] = useState("");
 
   async function submit(event) {
     event.preventDefault();
+    if (savingRef.current) return;
     if (!form.servicedAt) return setError("Elegí la fecha y hora del service.");
+    savingRef.current = true;
     setSaving(true);
     setError("");
     try {
@@ -72,6 +79,7 @@ function CardioServiceEditor({ api, onClose, onSaved }) {
     } catch (saveError) {
       setError(saveError?.message || "No se pudo registrar el service.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -82,16 +90,17 @@ function CardioServiceEditor({ api, onClose, onSaved }) {
 }
 
 function CardioRecordLine({ record, onEdit, onDelete }) {
-  return <article className="training-cardio-record"><div className="training-cardio-record-icon"><Icon name="directions_run" /></div><div className="training-cardio-record-copy"><strong>{formatCardioDate(record.recordedAt)}</strong><span>{record.distanceKm} km · {formatCardioMinutes(record.durationMinutes)}</span>{record.inclined && <small><Icon name="trending_up" /> Inclinada</small>}</div><div className="training-cardio-record-actions"><button type="button" className="training-icon-action" aria-label="Editar registro de cardio" onClick={() => onEdit(record)}><Icon name="edit" /></button><button type="button" className="training-icon-action training-delete-control" aria-label="Eliminar registro de cardio" onClick={() => onDelete(record)}><Icon name="delete" /></button></div></article>;
+  return <article className="training-cardio-record"><div className="training-cardio-record-icon"><Icon name="directions_run" /></div><div className="training-cardio-record-copy"><strong>{formatCardioDate(record.recordedAt)}</strong><span>{new Intl.NumberFormat("es-AR", { maximumFractionDigits: 3 }).format(record.distanceKm)} km · {formatCardioMinutes(record.durationMinutes)}</span>{record.inclined && <small><Icon name="trending_up" /> Inclinada</small>}</div><div className="training-cardio-record-actions"><button type="button" className="training-icon-action" aria-label="Editar registro de cardio" onClick={() => onEdit(record)}><Icon name="edit" /></button><button type="button" className="training-icon-action training-delete-control" aria-label="Eliminar registro de cardio" onClick={() => onDelete(record)}><Icon name="delete" /></button></div></article>;
 }
 
 export function CardioPage({ api }) {
+  const [page, setPage] = useState(0);
   const [editor, setEditor] = useState(null);
   const [serviceEditorOpen, setServiceEditorOpen] = useState(false);
   const load = useCallback(async () => {
-    const [records, summary] = await Promise.all([trainingApi.cardio(api), trainingApi.cardioSummary(api)]);
+    const [records, summary] = await Promise.all([trainingApi.cardio(api, { page }), trainingApi.cardioSummary(api)]);
     return { records: records.items || [], page: records, summary };
-  }, [api]);
+  }, [api, page]);
   const resource = useTrainingData(load, [load]);
   const records = resource.data?.records || [];
   const summary = resource.data?.summary || {};
@@ -104,14 +113,14 @@ export function CardioPage({ api }) {
     try {
       await api.runAction({ title: "Eliminando registro", description: "Estamos actualizando el contador..." }, () => trainingApi.deleteCardio(api, record.id), { quiet: true });
       api.notify("Registro eliminado.");
-      resource.reload();
+      if (records.length === 1 && page > 0) setPage(page - 1); else resource.reload();
     } catch (error) {
       api.notify(error?.message || "No se pudo eliminar el registro.", "error");
     }
   }
 
   return <section className="page training-page training-cardio-page"><Header title="Cardio" action={<button type="button" className="training-primary" onClick={() => setEditor({})}><Icon name="add" />Registrar cardio</button>} /><p className="training-page-intro">Llevá el registro de tu caminadora y sabé cuándo volver a lubricarla.</p><TrainingStatus loading={resource.loading} error={resource.error} onRetry={resource.reload} />{!resource.loading && !resource.error && <>
-    <section className={`training-surface training-cardio-service-card ${due ? "is-due" : ""}`.trim()}><div className="training-cardio-service-heading"><div><span className="training-section-kicker">Mantenimiento de la caminadora</span><h2>Próximo service</h2><p>{summary.latestService ? `Último service: ${formatCardioDate(summary.latestService.servicedAt)}` : "Todavía no registraste un service."}</p></div><div className="training-cardio-service-icon"><Icon name={due ? "warning" : "build"} /></div></div><div className="training-cardio-kpi-grid"><div className="training-cardio-kpi-primary"><span>Tiempo acumulado</span><strong>{formatCardioMinutes(summary.totalDurationMinutes)}</strong><small>de {formatCardioMinutes(summary.thresholdMinutes)} hasta el próximo service</small></div><div className="training-cardio-kpi-secondary"><span>{due ? "Service recomendado" : "Tiempo restante"}</span><strong>{due ? "Ahora" : formatCardioMinutes(summary.remainingMinutes)}</strong><small>{due ? "Ya alcanzaste el límite de 20 horas" : "La cuenta se actualiza con cada registro"}</small></div></div><div className="training-cardio-progress" role="progressbar" aria-label="Horas de uso desde el último service" aria-valuenow={Number(summary.totalDurationMinutes || 0)} aria-valuemin="0" aria-valuemax={Number(summary.thresholdMinutes || 1200)}><span style={{ width: `${progress}%` }} /></div><div className="training-cardio-service-footer"><span>{summary.latestService ? "El contador toma los entrenamientos posteriores a este service." : "El contador suma tus registros hasta que cargues el primer service."}</span><button type="button" className={due ? "training-primary" : "training-secondary"} onClick={() => setServiceEditorOpen(true)}><Icon name="build" />Registrar service</button></div></section>
-    <section className="training-surface training-cardio-history"><div className="training-section-heading"><div><h2>Historial de cardio</h2><span>Distancia y tiempo de cada entrenamiento</span></div><Icon name="history" /></div>{records.length ? <div className="training-cardio-record-list">{records.map((record) => <CardioRecordLine key={record.id} record={record} onEdit={setEditor} onDelete={remove} />)}</div> : <div className="training-empty-inline"><Icon name="directions_run" /><span>Todavía no registraste entrenamientos en la caminadora.</span></div>}</section>
+    <section className={`training-surface training-cardio-service-card ${due ? "is-due" : ""}`.trim()}><div className="training-cardio-service-heading"><div><h2>Próximo service</h2><p>{summary.latestService ? `Último service: ${formatCardioDate(summary.latestService.servicedAt)}` : "Todavía no registraste un service."}</p></div><div className="training-cardio-service-icon"><Icon name={due ? "warning" : "build"} /></div></div><div className="training-cardio-kpi-grid"><div className="training-cardio-kpi-primary"><span>Tiempo acumulado</span><strong>{formatCardioMinutes(summary.totalDurationMinutes)}</strong><small>de {formatCardioMinutes(summary.thresholdMinutes)} hasta el próximo service</small></div><div className="training-cardio-kpi-secondary"><span>{due ? "Service recomendado" : "Tiempo restante"}</span><strong>{due ? "Ahora" : formatCardioMinutes(summary.remainingMinutes)}</strong><small>{due ? "Ya alcanzaste el límite de 20 horas" : "La cuenta se actualiza con cada registro"}</small></div></div><div className="training-cardio-progress" role="progressbar" aria-label="Horas de uso desde el último service" aria-valuenow={Math.min(Number(summary.totalDurationMinutes || 0), Number(summary.thresholdMinutes || 1200))} aria-valuetext={`${formatCardioMinutes(summary.totalDurationMinutes)} de ${formatCardioMinutes(summary.thresholdMinutes)}`} aria-valuemin="0" aria-valuemax={Number(summary.thresholdMinutes || 1200)}><span style={{ width: `${progress}%` }} /></div><div className="training-cardio-service-footer"><span>{summary.latestService ? "El contador toma los entrenamientos posteriores a este service." : "El contador suma tus registros hasta que cargues el primer service."}</span><button type="button" className={due ? "training-primary" : "training-secondary"} onClick={() => setServiceEditorOpen(true)}><Icon name="build" />Registrar service</button></div></section>
+    <section className="training-surface training-cardio-history"><div className="training-section-heading"><div><h2>Historial de cardio</h2><span>Distancia y tiempo de cada entrenamiento</span></div><Icon name="history" /></div>{records.length ? <div className="training-cardio-record-list">{records.map((record) => <CardioRecordLine key={record.id} record={record} onEdit={setEditor} onDelete={remove} />)}</div> : <div className="training-empty-inline"><Icon name="directions_run" /><span>Todavía no registraste entrenamientos en la caminadora.</span></div>}{resource.data?.page?.totalPages > 1 && <nav className="cardio-pagination" aria-label="Páginas del historial de cardio"><button type="button" className="training-secondary" disabled={page === 0 || resource.loading} onClick={() => setPage(current => current - 1)}>Anterior</button><span role="status">Página {page + 1} de {resource.data.page.totalPages}</span><button type="button" className="training-secondary" disabled={!resource.data.page.hasNext || resource.loading} onClick={() => setPage(current => current + 1)}>Siguiente</button></nav>}</section>
   </>}{editor && <CardioRecordEditor api={api} record={editor.id ? editor : null} onClose={() => setEditor(null)} onSaved={resource.reload} />}{serviceEditorOpen && <CardioServiceEditor api={api} onClose={() => setServiceEditorOpen(false)} onSaved={resource.reload} />}</section>;
 }

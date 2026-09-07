@@ -1,4 +1,8 @@
 const paths = {
+  view_list: "M3 4h4v4H3V4Zm6 0h12v4H9V4ZM3 10h4v4H3v-4Zm6 0h12v4H9v-4ZM3 16h4v4H3v-4Zm6 0h12v4H9v-4Z",
+  directions_run: "M14 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM9 7l4-1 3 4h4v2h-5l-2-3-1 5 4 3v5h-2v-4l-4-3-2 4H3v-2h4l2-5 1-3-3 2H4V9h3l2-2Z",
+  build: "M22 19l-9-9a6 6 0 0 0-8-8l4 4-3 3-4-4a6 6 0 0 0 8 8l9 9 3-3Z",
+  warning: "M12 2 1 21h22L12 2Zm1 16h-2v-2h2v2Zm0-4h-2v-4h2v4Z",
   account_circle: "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4Zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4Z",
   add: "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2Z",
   add_box: "M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2Zm0 16H5V5h14v14Zm-6-2v-4h4v-2h-4V7h-2v4H7v2h4v4h2Z",

@@ -6,14 +6,14 @@ import { AuthScreen } from "../features/auth/AuthScreen";
 import { DashboardSkeleton, SkeletonRows } from "../components/Loading";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
 import { Notification } from "../components/Notification";
-import { History } from "../features/history/History";
-import { Profile } from "../features/profile/Profile";
 
 function lazyPage(load, name) {
   return lazy(() => load().then((module) => ({ default: module[name] })));
 }
 
 const Dashboard = lazyPage(() => import("../features/dashboard/Dashboard"), "Dashboard");
+const History = lazyPage(() => import("../features/history/History"), "History");
+const Profile = lazyPage(() => import("../features/profile/Profile"), "Profile");
 const MyFoodsPage = lazyPage(() => import("../features/foods/MyFoodsPage"), "MyFoodsPage");
 const Recipes = lazyPage(() => import("../features/recipes/Recipes"), "Recipes");
 const CreateCatalog = lazyPage(() => import("../features/catalog/CreateCatalog"), "CreateCatalog");

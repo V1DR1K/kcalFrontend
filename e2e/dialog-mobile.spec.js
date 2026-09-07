@@ -87,6 +87,7 @@ test("keeps photo actions in one compact mobile row", async ({ page }) => {
 });
 
 test("pins modal actions without taking a grid row on mobile", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 390, height: 430 });
   await seedAuthenticatedApp(page);
   await page.goto("/ingresar");

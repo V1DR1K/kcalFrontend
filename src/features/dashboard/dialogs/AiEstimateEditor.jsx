@@ -6,7 +6,8 @@ import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycl
 import { categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
 import { formatNumber } from "../../../utils/format";
 import { aiProposalFood, macroCalories, scaleFoodNutrition } from "../dashboard.utils";
-import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
+import { decimalNumber } from "../../../utils/decimal";
+import { resizeAiEstimateItem } from "../aiEstimateAmounts";
 
 export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, onDiscard, onConfirm, mode = "create", standalone = false, mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem }) {
   const embeddedLifecycle = useDialogLifecycle({ open: !standalone, onClose: onDiscard });
@@ -26,8 +27,7 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
   }), { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
   const calories = macroCalories(totals.proteinGrams, totals.carbsGrams, totals.fatGrams);
   function updateItem(index, field, value) {
-    const normalized = normalizeDecimalInput(value);
-    setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: normalized } : item) }));
+    setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? resizeAiEstimateItem(item, value) : item) }));
   }
   function removeItem(index) {
     setEstimate((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== index) }));
@@ -38,7 +38,7 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
     setCatalogMessage("");
     try {
       await onCatalogItem?.(catalogItemIndex, { category: catalogCategory, preparation: catalogPreparation, tags: [] });
-      setCatalogMessage("Alimento guardado como pendiente global.");
+      setCatalogMessage("Alimento disponible en el catálogo. Si ya existía, reutilizamos su ficha.");
       setCatalogItemIndex(null);
     } catch (error) {
       setCatalogMessage(error.message || "No se pudo guardar el alimento.");
@@ -69,7 +69,7 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
         <div className="ai-estimate-items">
           {estimate.items.map((item, index) => (
             <article key={`${item.name}:${index}`}>
-              <div className="ai-estimate-item-heading"><div><span>Alimento {index + 1}</span><strong>{item.name || "Sin nombre"}</strong></div><span className="ai-estimate-item-heading-actions"><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))} kcal</strong>{mode === "saved" && <button type="button" className="secondary ai-estimate-catalog" disabled={refining || saving} onClick={() => { setCatalogItemIndex(index); setCatalogMessage(""); }}>Guardar</button>}<button type="button" className="icon-button ai-estimate-remove" aria-label={`Eliminar ${item.name || `alimento ${index + 1}`}`} disabled={refining || saving} onClick={() => removeItem(index)}><Icon name="delete" /></button></span></div>
+              <div className="ai-estimate-item-heading"><div><span>Alimento {index + 1}</span><strong>{item.name || "Sin nombre"}</strong></div><span className="ai-estimate-item-heading-actions"><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))} kcal</strong>{mode === "saved" && <button type="button" className="secondary ai-estimate-catalog" disabled={refining || saving} onClick={() => { setCatalogItemIndex(index); setCatalogCategory(item.category || "OTHER"); setCatalogPreparation(item.preparation || "UNSPECIFIED"); setCatalogMessage(""); }}>Guardar</button>}<button type="button" className="icon-button ai-estimate-remove" aria-label={`Eliminar ${item.name || `alimento ${index + 1}`}`} disabled={refining || saving} onClick={() => removeItem(index)}><Icon name="delete" /></button></span></div>
               <Input label="Alimento" value={item.name} disabled={refining} onChange={(event) => setEstimate((current) => ({ ...current, items: current.items.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value, catalogFoodId: null, catalogMatchType: null, catalogMatchConfidence: null } : entry) }))} />
               {mode === "create" ? <>
                 <div className="ai-estimate-item-section ai-estimate-readonly-meta"><span className="ai-estimate-section-label">Clasificación IA</span><div className="ai-estimate-meta-values"><span><small>Categoría</small><strong>{categoryLabel(item.category || "OTHER")}</strong></span><span><small>Preparación</small><strong>{preparationLabel(item.preparation || "UNSPECIFIED")}</strong></span></div></div>
@@ -84,7 +84,7 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
             </article>
           ))}
         </div>
-        {mode === "saved" && catalogItemIndex != null && <section className="ai-estimate-catalog-form"><strong>Guardar {estimate.items[catalogItemIndex]?.name || "alimento"}</strong><p>Se publicará como alimento global pendiente, normalizado a 100 g. No modifica esta comida.</p><div><Select label="Categoría" value={catalogCategory} options={CATEGORY_OPTIONS} onChange={(event) => setCatalogCategory(event.target.value)} /><Select label="Preparación" value={catalogPreparation} options={PREPARATION_OPTIONS} onChange={(event) => setCatalogPreparation(event.target.value)} /></div><footer><button type="button" className="secondary" disabled={catalogSaving} onClick={() => setCatalogItemIndex(null)}>Cancelar</button><button type="button" className="primary" disabled={catalogSaving} onClick={saveCatalogItem}>{catalogSaving ? "Guardando..." : "Guardar pendiente"}</button></footer></section>}
+        {mode === "saved" && catalogItemIndex != null && <section className="ai-estimate-catalog-form"><strong>Guardar {estimate.items[catalogItemIndex]?.name || "alimento"}</strong><p>Se guardará en el catálogo a 100 g. Si ya existe una ficha compatible, se reutiliza. Esta comida conserva sus valores.</p><div><Select label="Categoría" value={catalogCategory} options={CATEGORY_OPTIONS} onChange={(event) => setCatalogCategory(event.target.value)} /><Select label="Preparación" value={catalogPreparation} options={PREPARATION_OPTIONS} onChange={(event) => setCatalogPreparation(event.target.value)} /></div><footer><button type="button" className="secondary" disabled={catalogSaving} onClick={() => setCatalogItemIndex(null)}>Cancelar</button><button type="button" className="primary" disabled={catalogSaving} onClick={saveCatalogItem}>{catalogSaving ? "Guardando..." : "Guardar en catálogo"}</button></footer></section>}
         {catalogMessage && <p className="ai-estimate-catalog-message" role="status">{catalogMessage}</p>}
         {saveError && <p className="ai-estimate-error" role="alert">{saveError}</p>}
         {mode === "create" && <section className="ai-estimate-refinement">

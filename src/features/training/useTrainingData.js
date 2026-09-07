@@ -19,6 +19,9 @@ export function useTrainingData(load, dependencies = []) {
       if (sequence === requestSequence.current) setLoading(false);
     }
   }, dependencies);
-  useEffect(() => { reload(); }, [reload]);
+  useEffect(() => {
+    reload();
+    return () => { requestSequence.current += 1; };
+  }, [reload]);
   return { data, loading, error, reload, setData };
 }

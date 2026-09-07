@@ -171,6 +171,8 @@
 .training-delete-control:hover { border-color: var(--training-danger); color: var(--training-danger); }
 .training-text-button { min-height: 40px; padding: 0 var(--space-2); background: transparent; color: var(--training-primary); }
 .training-text-button:hover { background: color-mix(in srgb, var(--training-primary) 9%, transparent); color: var(--training-primary-hover); }
+.cardio-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); padding-top: var(--space-4); }
+.cardio-pagination span { color: var(--training-muted); font-size: var(--type-small); }
 .training-primary:active, .training-secondary:active, .training-danger-button:active, .training-icon-action:active { transform: scale(.97); }
 .training-primary:focus-visible, .training-secondary:focus-visible, .training-danger-button:focus-visible, .training-icon-action:focus-visible, .training-text-button:focus-visible { outline-color: var(--training-focus); }
 
@@ -691,7 +693,11 @@
    .training-cardio-page .page-header { align-items: stretch; }
    .training-cardio-page .page-header .training-primary { width: 100%; }
    .training-cardio-service-card, .training-cardio-history { padding: var(--space-4); }
-   .training-cardio-kpi-grid, .training-cardio-form-grid { grid-template-columns: 1fr; }
+   .training-cardio-form-grid { grid-template-columns: minmax(0, 1fr); }
+   .training-cardio-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+   .training-cardio-kpi-grid > div { padding: 0; border: 0; border-radius: 0; background: transparent; }
+   .training-cardio-kpi-grid strong { font-size: var(--type-heading-lg); letter-spacing: -.02em; }
+   .training-cardio-service-card { gap: var(--space-4); }
    .training-cardio-service-footer { align-items: stretch; flex-direction: column; }
    .training-cardio-service-footer button { width: 100%; }
    .training-cardio-record { grid-template-columns: auto minmax(0, 1fr); }
