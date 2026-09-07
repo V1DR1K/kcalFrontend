@@ -1,6 +1,6 @@
 # ScaleGrams: roadmap de calidad y continuidad
 
-Fecha: 2026-09-05. Estado: auditoría y preparación de rollback en curso.
+Fecha: 2026-09-05. Estado: iteración implementada, desplegada y verificada el 2026-09-06.
 
 ## Objetivo y autorización
 
@@ -28,8 +28,8 @@ Mejorar Nutrición, Entrenamiento y Cardio de extremo a extremo: coherencia visu
 - [x] Cardio: revisar historial paginado, validación de distancias/tiempos/fechas y mantenimiento; corregir fallos verificables.
 - [x] Rendimiento: evitar cascadas/repetición de solicitudes, conservar contenido durante refrescos y diferir herramientas pesadas. Medir con latencia de 300 ms.
 - [x] Ejecutar pruebas backend/frontend y build; verificar migraciones sobre copia PostgreSQL y pantallas a 320, 390, 393, 402, 430, 768 y 1440 px cuando el entorno lo permita.
-- [ ] Push a main; desplegar componentes desde fuentes canónicas; verificar salud, versión, navegación y errores posteriores.
-- [ ] Actualizar este documento con commits, respaldos, resultados, límites y tareas pendientes para otra IA.
+- [x] Push a main; desplegar componentes desde fuentes canónicas; verificar salud, versión, navegación y errores posteriores.
+- [x] Actualizar este documento con commits, respaldos, resultados, límites y tareas pendientes para otra IA.
 
 ## Criterios de aceptación
 
@@ -49,4 +49,7 @@ El respaldo y tag previos están verificados en `/opt/backups/scalegrams/2026090
 - Backend: coincidencia IA determinista solo para una ficha exacta, compatible, sin marca y con preparación/categoría iguales; ambigüedad queda como estimación. El guardado de catálogo es idempotente y usa bloqueo de la estimación propietaria. La edición recalcula snapshots de nutrientes sin duplicarlos.
 - Datos auditados en restauración: 430 alimentos totales, 92 activos de origen `AI_ESTIMATE`, 701 registros de comidas. Hubo 6 grupos de duplicados activos por nombre/preparación; los 12 registros afectados son importados con marcas o valores diferentes, más una ficha derivada/IA con procedencias distintas. No se eliminaron ni fusionaron filas.
 - Validación local: `npm test` (51), `npm run build`, `npm run check:frontend`, `npm run test:e2e` (26), `mvn test` (64 backend). La matriz adicional tomó 320/390/393/402/430/768/1440 px. La consola local mostró un 502 esperado porque el API no corre en el entorno local.
-- Pendiente para el cierre operativo: commit, push a `main`, despliegue desde `/opt/projects` y smoke check contra `https://scalegrams.neticar.com.ar`.
+- Cierre operativo: frontend `0e1a614`, backend `1f093f9`, ambos publicados en `main` y desplegados desde `/opt/projects`.
+- Smoke check posterior: contenedores `scalegrams-app-1` y `scalegrams-frontend-1` activos; `https://scalegrams.neticar.com.ar/api/health` devolvió `status: ok`; el sitio público devolvió HTTP 200.
+- Límite conocido: la matriz de resoluciones es emulación de navegador; queda pendiente validar físicamente en iPhone 15/17 y observar métricas reales de uso.
+- Próxima iteración sugerida: revisar los seis grupos de duplicados con decisiones de producto por marca/procedencia y añadir alimentos únicamente con fuente y porción verificables.
