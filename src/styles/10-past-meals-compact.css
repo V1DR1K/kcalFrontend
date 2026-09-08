@@ -16,7 +16,7 @@
 .ghost-meal header, .ghost-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .ghost-meal header > div:first-child { display: grid; }
 .ghost-actions button { min-height: 40px; border: 0; border-radius: var(--radius-control); color: var(--color-white); display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
-.ghost-actions .copy-accept { flex: 1; padding: 0 12px; background: var(--primary-soft); color: var(--primary); font-weight: 800; }
+.ghost-actions .copy-accept { flex: 1; padding: 0 12px; background: transparent; color: var(--primary); font-weight: 800; }
 .copy-reject { width: 40px; padding: 0; border: none; background: transparent; color: var(--error); }
 .copy-accept span { white-space: nowrap; }
 .ghost-actions button:disabled { opacity: .55; cursor: default; }
@@ -49,10 +49,6 @@
 @media (max-width: 370px) {
   .compact-calories > .material-symbols-outlined { display: none; }
   .compact-calories strong { font-size: 13px; }
-}
-
-@media (min-width: 901px) {
-  .ghost-actions .copy-accept { background-color: transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {
