@@ -50,7 +50,7 @@ test("swaps the nutrition shell for training and restores nutrition with browser
   await expect(page.getByRole("button", { name: "Ver calendario", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Iniciar (gimnasio|calistenia)/i })).toHaveCount(0);
   await expect(page.getByText("Planes guardados", { exact: true })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Esta semana", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Últimos 7 días", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Última sesión", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Nutrición", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Día", exact: true })).toBeVisible();

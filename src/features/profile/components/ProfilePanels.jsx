@@ -16,6 +16,38 @@ function dateLabel(value) {
   return parts.length === 3 ? `${parts[2]}/${parts[1]}` : value;
 }
 
+export function HeightEditor({ api, profile, setProfile }) {
+  const [height, setHeight] = useState(profile?.heightCm ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function save(event) {
+    event.preventDefault();
+    if (saving) return;
+    setError("");
+    const value = Number(height);
+    if (!Number.isFinite(value) || value <= 0) {
+      setError("Ingresá una altura válida.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const saved = await api.runAction({ title: "Actualizando altura", description: "Estamos guardando tu medida..." }, () => api.request("/api/profile", { method: "PATCH", body: JSON.stringify({ heightCm: value }) }), { quiet: true });
+      setProfile((current) => current ? { ...current, heightCm: saved.heightCm } : current);
+      setHeight(saved.heightCm);
+      api.notify("Altura actualizada.");
+    } catch (saveError) {
+      const message = saveError?.fields?.heightCm || saveError?.message || "No se pudo actualizar la altura.";
+      setError(message);
+      api.notify(message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return <form className="height-edit-form" onSubmit={save}><Input label="Altura (cm)" type="number" min="1" step="0.1" inputMode="decimal" value={height} onChange={(event) => setHeight(event.target.value)} error={error} required /><button type="submit" className="secondary" disabled={saving}>{saving ? "Guardando…" : "Guardar altura"}</button></form>;
+}
+
 export function WeightPanel({ api, profile, setProfile, entries, setEntries, weight, setWeight, savingWeight, setSavingWeight }) {
   async function record(event) {
     event.preventDefault();

@@ -74,6 +74,8 @@
 
 .weight-summary { gap: 10px; margin-bottom: 16px; }
 .weight-summary .stat { display: grid; gap: 3px; padding: 12px; border: 1px solid var(--outline); border-radius: var(--radius-panel); background: var(--surface-low); }
+.height-edit-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--outline); }
+.height-edit-form button { min-height: 44px; }
 .weight-chart { position: relative; margin-top: 10px; margin-bottom: 16px; }
 .weight-curve { display: block; width: 100%; height: auto; overflow: visible; }
 .weight-chart-empty { margin: 0 0 16px; padding: 18px; text-align: center; border: 1px dashed var(--outline); border-radius: 12px; color: var(--muted); font-size: 13px; }
@@ -85,6 +87,8 @@
 
 @media (max-width: 520px) {
   .weight-record-form { grid-template-columns: minmax(0, 1fr) auto; }
+  .height-edit-form { grid-template-columns: 1fr; }
+  .height-edit-form button { width: 100%; }
   .plan-history-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .plan-history-actions .use-plan-button { min-height: 44px; }
   .plan-history-actions .danger-text { grid-column: 1 / -1; }

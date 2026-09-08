@@ -3,7 +3,7 @@ import { Icon } from "../../components/Icon";
 import { Header, Panel, Stat } from "../../components/Layout";
 import { CatalogStatus } from "../catalog/CatalogComponents";
 import { formatNumber } from "../../utils/format";
-import { NutritionTutorial as ProfileNutritionTutorial, WeightPanel as ProfileWeightPanel } from "./components/ProfilePanels";
+import { HeightEditor as ProfileHeightEditor, NutritionTutorial as ProfileNutritionTutorial, WeightPanel as ProfileWeightPanel } from "./components/ProfilePanels";
 import "../../styles/06-history.css";
 import "../../styles/07-profile.css";
 
@@ -75,6 +75,7 @@ export function Profile({ api, logout, mode = "nutrition" }) {
               <Stat icon="height" label="Altura" value={`${formatNumber(profile?.heightCm)} cm`} />
               <Stat icon="local_fire_department" label="Meta diaria" value={`${formatNumber(profile?.dailyCalorieGoal)} kcal`} />
             </div>
+            <ProfileHeightEditor api={api} profile={profile} setProfile={setProfile} />
           </Panel>
           <ProfileWeightPanel api={api} profile={profile} setProfile={setProfile} entries={weightEntries} setEntries={setWeightEntries} setWeight={setWeight} weight={weight} savingWeight={savingWeight} setSavingWeight={setSavingWeight} />
         </div>
@@ -87,6 +88,7 @@ export function Profile({ api, logout, mode = "nutrition" }) {
             <Stat icon="height" label="Altura" value={`${formatNumber(profile?.heightCm)} cm`} />
             <Stat icon="local_fire_department" label="Meta diaria" value={`${formatNumber(profile?.dailyCalorieGoal)} kcal`} />
           </div>
+          <ProfileHeightEditor api={api} profile={profile} setProfile={setProfile} />
         </Panel>
         <ProfileWeightPanel api={api} profile={profile} setProfile={setProfile} entries={weightEntries} setEntries={setWeightEntries} setWeight={setWeight} weight={weight} savingWeight={savingWeight} setSavingWeight={setSavingWeight} />
       </div>

@@ -3,6 +3,7 @@ import { test, expect } from "@playwright/test";
 test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
 
 async function seedCardioApp(page, { withHeight = true } = {}) {
+  await page.clock.install({ time: new Date("2026-09-08T12:00:00-03:00") });
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -24,12 +25,12 @@ async function seedCardioApp(page, { withHeight = true } = {}) {
         totalMinutes: 35,
         totalSets: 0,
         cardio: {
-          from: "2026-09-07",
-          to: "2026-09-13",
+          from: "2026-09-02",
+          to: "2026-09-08",
           totalDistanceKm: 4.958,
           totalEstimatedSteps: withHeight ? 6637 : null,
           stepsAvailable: withHeight,
-          days: ["2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13"].map((date, index) => ({ date, distanceKm: index === 0 ? 4.958 : 0, estimatedSteps: withHeight && index === 0 ? 6637 : null, sessionCount: index === 0 ? 1 : 0 })),
+          days: ["2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08"].map((date, index) => ({ date, distanceKm: index === 5 ? 4.958 : 0, estimatedSteps: withHeight && index === 5 ? 6637 : null, sessionCount: index === 5 ? 1 : 0 })),
         },
       },
       exercises: [],
@@ -47,12 +48,12 @@ async function seedCardioApp(page, { withHeight = true } = {}) {
       latestService: null,
     };
     if (requestUrl.includes("/api/training/cardio/weekly")) body = {
-      from: "2026-09-07",
-      to: "2026-09-13",
+      from: "2026-09-02",
+      to: "2026-09-08",
       totalDistanceKm: 4.958,
       totalEstimatedSteps: withHeight ? 6637 : null,
       stepsAvailable: withHeight,
-      days: ["2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13"].map((date, index) => ({ date, distanceKm: index === 0 ? 4.958 : 0, estimatedSteps: withHeight && index === 0 ? 6637 : null, sessionCount: index === 0 ? 1 : 0 })),
+      days: ["2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08"].map((date, index) => ({ date, distanceKm: index === 5 ? 4.958 : 0, estimatedSteps: withHeight && index === 5 ? 6637 : null, sessionCount: index === 5 ? 1 : 0 })),
     };
     if (requestUrl.includes("/api/training/cardio?") || requestUrl.endsWith("/api/training/cardio")) body = {
       items: [{ id: 1, equipment: "TREADMILL", recordedAt: "2026-09-07T10:00:00Z", distanceKm: 4.958, durationMinutes: 35, inclined: true, speedKmh: 8.5, estimatedSteps: withHeight ? 6637 : null }],

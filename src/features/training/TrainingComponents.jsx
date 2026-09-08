@@ -31,8 +31,8 @@ export function CardioWeekSummary({ summary, embedded = false, today }) {
   const values = days.map((day) => Number(day.estimatedSteps || 0));
   const max = Math.max(...values, 1);
   return <section className={`training-cardio-week-summary ${embedded ? "is-embedded" : ""}`.trim()}>
-    <div className="training-section-heading"><div><h2>Pasos de caminadora</h2><span>Estimados · lunes a domingo</span></div><Icon name="directions_run" /></div>
-    <div className="training-cardio-week-total"><strong>{available && summary.totalEstimatedSteps !== null && summary.totalEstimatedSteps !== undefined ? formatCardioSteps(summary.totalEstimatedSteps) : "—"}</strong><span>pasos esta semana</span><small>{formatCardioDistance(summary.totalDistanceKm)}</small></div>
+    <div className="training-section-heading"><div><h2>Pasos de caminadora</h2><span>Estimados · últimos 7 días</span></div><Icon name="directions_run" /></div>
+    <div className="training-cardio-week-total"><strong>{available && summary.totalEstimatedSteps !== null && summary.totalEstimatedSteps !== undefined ? formatCardioSteps(summary.totalEstimatedSteps) : "—"}</strong><span>pasos en los últimos 7 días</span><small>{formatCardioDistance(summary.totalDistanceKm)}</small></div>
     <div className="training-cardio-week-chart" role="list" aria-label="Pasos estimados por día">
       {days.map((day) => {
         const steps = Number(day.estimatedSteps || 0);
