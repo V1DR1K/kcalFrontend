@@ -227,7 +227,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     }
     setAdding(true);
     try {
-      await api.runAction(
+      const savedLogs = await api.runAction(
         { title: "Agregando estimación", description: "Estamos sumando los macros revisados a tu comida..." },
         () => api.request("/api/nutrition/ai-estimates/confirm", {
           method: "POST",
@@ -254,6 +254,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           }),
         }),
       );
+      (savedLogs || []).forEach((log) => rememberMeal(user, mealType.code, log));
       api.notify("Alimentos agregados. Revisá siempre las porciones y salsas.");
       discardAiEstimate();
       onDone();

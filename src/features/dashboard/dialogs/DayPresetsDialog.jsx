@@ -7,7 +7,7 @@ import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
 
 function presetItemFromLog(log, mealType) {
   const itemType = log.itemType || log.type;
-  if (itemType === "AI_ESTIMATE") return { itemType, itemId: null, mealType, quantity: decimalNumber(log.quantity || 1), unit: log.unit || "PORTION", displayName: mealLogName(log) || "Comida estimada", calories: Number(log.calories || 0), proteinGrams: Number(log.proteinGrams || 0), carbsGrams: Number(log.carbsGrams || 0), fatGrams: Number(log.fatGrams || 0), aiEstimateConfidence: log.aiEstimateConfidence || 0, aiEstimateDetails: log.aiEstimateDetails || "{}" };
+  if (itemType === "AI_ESTIMATE") return { itemType, itemId: null, mealType, quantity: decimalNumber(log.quantity || 1), unit: log.unit || "PORTION", displayName: mealLogName(log) || "Comida estimada", calories: Number(log.calories || 0), proteinGrams: Number(log.proteinGrams || 0), carbsGrams: Number(log.carbsGrams || 0), fatGrams: Number(log.fatGrams || 0), aiEstimateConfidence: log.aiEstimateConfidence || 0, aiEstimateDetails: log.aiEstimateDetails || "{}", nutrients: log.nutrients || [] };
   const item = itemType === "RECIPE" ? log.recipe : log.food;
   return { itemType, itemId: item?.id, mealType, quantity: decimalNumber(log.quantity || 0), unit: log.unit || (itemType === "RECIPE" ? "PORTION" : "GRAM"), displayName: item?.name || mealLogName(log), calories: Number(log.calories || 0), proteinGrams: Number(log.proteinGrams || 0), carbsGrams: Number(log.carbsGrams || 0), fatGrams: Number(log.fatGrams || 0) };
 }

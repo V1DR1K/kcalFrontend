@@ -1,8 +1,8 @@
-import { formatQuantity } from "../../utils/format";
-import { formatRecipeLogAmount } from "../../utils/recipe";
-import { preparationLabel } from "../catalog/CatalogComponents";
-import { normalizeMealLogReference } from "./mealLogPayload";
-import { decimalNumber } from "../../utils/decimal";
+import { formatQuantity } from "../../utils/format.js";
+import { formatRecipeLogAmount } from "../../utils/recipe.js";
+import { preparationLabel } from "../catalog/catalog.utils.js";
+import { normalizeMealLogReference } from "./mealLogPayload.js";
+import { decimalNumber } from "../../utils/decimal.js";
 export { mealTotals } from "./nutritionTotals.js";
 
 export function isCopyableMealLog(log) { return ["FOOD", "RECIPE", "AI_ESTIMATE"].includes(log?.itemType || log?.type); }
@@ -19,7 +19,7 @@ export function aiEstimateWithServings(result) {
 }
 
 export function aiEstimateDraft(estimate) {
-  return { name: estimate.name, description: estimate.description || "", confidence: Number(estimate.confidence) || 0, assumptions: estimate.assumptions || [], items: (estimate.items || []).map(({ name, estimatedGrams, category, preparation, proteinGrams, carbsGrams, fatGrams, nutrients }) => ({ name, estimatedGrams: decimalNumber(estimatedGrams), category: category || "OTHER", preparation: preparation || "UNSPECIFIED", proteinGrams: Number(proteinGrams), carbsGrams: Number(carbsGrams), fatGrams: Number(fatGrams), nutrients: nutrients || {} })) };
+  return { name: estimate.name, description: estimate.description || "", confidence: Number(estimate.confidence) || 0, assumptions: estimate.assumptions || [], items: (estimate.items || []).map(({ name, estimatedGrams, category, preparation, proteinGrams, carbsGrams, fatGrams, nutrients, catalogFoodId, catalogMatchType, catalogMatchConfidence }) => ({ name, estimatedGrams: decimalNumber(estimatedGrams), category: category || "OTHER", preparation: preparation || "UNSPECIFIED", proteinGrams: Number(proteinGrams), carbsGrams: Number(carbsGrams), fatGrams: Number(fatGrams), nutrients: nutrients || {}, catalogFoodId: catalogFoodId || null, catalogMatchType: catalogMatchType || null, catalogMatchConfidence: catalogMatchConfidence ?? null })) };
 }
 
 export function macroValue(log, key) {

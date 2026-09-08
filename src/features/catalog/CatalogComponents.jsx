@@ -3,6 +3,9 @@ import { CATEGORY_OPTIONS, PREPARATION_OPTIONS, CATEGORY_ART, RECIPE_ART } from 
 import { Icon } from "../../components/Icon";
 import { formatNumber } from "../../utils/format";
 import { NutritionSummary } from "../../components/NutritionSummary";
+import { preparationLabel } from "./catalog.utils.js";
+
+export { preparationLabel } from "./catalog.utils.js";
 
 export function CatalogStatus({ children, error = false }) {
   return (
@@ -109,9 +112,6 @@ export function CookedYieldHint({ food }) {
   return <small className="cooked-yield-hint" title={assumption || undefined}>{approximate ? "Rendimiento aprox." : "Rendimiento"}: 100 g crudos rinden {formatNumber(factor * 100, 0)} g cocidos</small>;
 }
 
-export function preparationLabel(preparation) {
-  return PREPARATION_OPTIONS.find(({ value }) => value === preparation)?.label || "Sin especificar";
-}
 export function categoryLabel(category) {
   return CATEGORY_OPTIONS.find((option) => option.value === category)?.label || "Otros";
 }

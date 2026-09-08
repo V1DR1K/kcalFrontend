@@ -14,7 +14,7 @@ export function readRecents(user) {
       ? saved.items.filter((item) => Number.isInteger(Number(item?.id)) && Number(item.id) > 0).map((item) => ({ ...item, id: Number(item.id) }))
       : [];
     const meals = Array.isArray(saved.meals)
-      ? saved.meals.filter((meal) => Number.isInteger(Number(meal?.itemId)) && Number(meal.itemId) > 0).map((meal) => ({ ...meal, itemId: Number(meal.itemId) }))
+      ? saved.meals.filter((meal) => meal?.itemType === "AI_ESTIMATE" ? Boolean(meal.id) : Number.isInteger(Number(meal?.itemId)) && Number(meal.itemId) > 0).map((meal) => ({ ...meal, itemId: meal.itemType === "AI_ESTIMATE" ? null : Number(meal.itemId) }))
       : [];
     return { items, meals };
   } catch {
@@ -32,12 +32,13 @@ function write(user, value) {
 export function rememberItem(user, item) { const value = readRecents(user); const id = `${item.type}:${item.id}`; value.items = [item, ...value.items.filter((saved) => `${saved.type}:${saved.id}` !== id)].slice(0, 20); return write(user, value); }
 export function rememberMeal(user, mealType, log) {
   const value = readRecents(user); const item = log.itemType === "RECIPE" ? log.recipe : log.food;
+  const isAiEstimate = log.itemType === "AI_ESTIMATE";
   const entry = {
-    id: `${mealType}:${log.itemType}:${item?.id}:${log.quantity}:${Date.now()}`,
+    id: `${mealType}:${log.itemType}:${isAiEstimate ? log.id || log.aiEstimateName || "estimate" : item?.id}:${log.quantity}:${Date.now()}`,
     mealType,
     label: item?.name || "Comida",
     itemType: log.itemType,
-    itemId: item?.id ?? log.itemId,
+    itemId: isAiEstimate ? null : item?.id ?? log.itemId,
     quantity: log.quantity,
     unit: log.unit,
     calories: log.calories,
@@ -46,7 +47,10 @@ export function rememberMeal(user, mealType, log) {
     fatGrams: log.fatGrams,
     imageUrl: item?.imageUrl,
     category: item?.category,
+    aiEstimateConfidence: log.aiEstimateConfidence,
+    aiEstimateDetails: log.aiEstimateDetails,
+    nutrients: log.nutrients || [],
     lastUsedAt: new Date().toISOString(),
   };
-  value.meals = [entry, ...value.meals.filter((saved) => saved.itemId !== entry.itemId || saved.itemType !== entry.itemType)].slice(0, 10); return write(user, value);
+  value.meals = [entry, ...value.meals.filter((saved) => saved.itemType !== entry.itemType || (isAiEstimate ? saved.id !== entry.id : saved.itemId !== entry.itemId))].slice(0, 10); return write(user, value);
 }
