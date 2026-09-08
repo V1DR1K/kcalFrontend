@@ -51,6 +51,10 @@
   .compact-calories strong { font-size: 13px; }
 }
 
+@media (min-width: 901px) {
+  .ghost-actions .copy-accept { background-color: transparent; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .compact-balance-shell { transition: none; }
   .swipe-row .meal-item-shell,
