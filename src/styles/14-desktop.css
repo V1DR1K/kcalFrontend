@@ -1,11 +1,7 @@
 /* Desktop composition. Mobile keeps the existing responsive surfaces untouched. */
 .dashboard-page-header > div:not(.date-nav) { display: none; }
-.history-calendar-aside { display: none; }
-.history-calendar-shell,
-.history-calendar-main,
 .profile-overview-grid,
 .profile-support-grid { display: contents; }
-.calendar-grid > button > .material-symbols-outlined { display: none; }
 
 @media (min-width: 901px) {
   .app-shell { position: relative; grid-template-columns: 248px minmax(0, 1fr); height: 100dvh; min-height: 100dvh; overflow: hidden; }
@@ -71,53 +67,6 @@
   .history-summary .panel { padding: 18px 20px; }
   .history-summary .panel h2 { margin-bottom: 8px; font-size: 13px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
   .history-summary .panel .big { margin: 0; font-size: 30px; }
-  .history-calendar-shell {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 238px;
-    gap: 20px;
-    padding: 22px;
-    border: 1px solid color-mix(in srgb, var(--outline) 58%, transparent);
-    border-radius: var(--radius-surface);
-    background: color-mix(in srgb, var(--surface-low) 68%, transparent);
-  }
-  .history-calendar-main { display: block; min-width: 0; }
-  .history-calendar-aside {
-    display: grid;
-    align-content: start;
-    gap: 10px;
-    min-height: 250px;
-    padding: 20px;
-    border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--outline));
-    border-radius: var(--radius-panel);
-    background: linear-gradient(155deg, color-mix(in srgb, var(--primary-container) 24%, transparent), color-mix(in srgb, var(--surface) 86%, transparent));
-  }
-  .history-calendar-aside > .material-symbols-outlined { color: var(--primary); font-size: 28px; }
-  .history-calendar-aside h3 { margin: 0; font-size: 20px; }
-  .history-calendar-aside p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
-  .history-calendar-aside > div { display: grid; gap: 8px; margin-top: auto; }
-  .history-calendar-aside > div span { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
-  .history-status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--outline); }
-  .history-status-dot.complete { background: var(--primary); }
-  .history-status-dot.recorded { background: var(--tertiary); }
-  .calendar-heading { margin-bottom: 18px; }
-  .calendar-heading h2 { font-size: 25px; }
-  .calendar-heading span { font-size: 12px; }
-  .calendar-weekdays, .calendar-grid { gap: 8px; }
-  .calendar-grid > span,
-  .calendar-grid > button {
-    aspect-ratio: auto;
-    min-height: 84px;
-    align-content: start;
-    justify-items: start;
-    padding: 11px 12px;
-    border-radius: var(--radius-control);
-  }
-  .calendar-grid > button { gap: 6px; }
-  .calendar-grid > button b { font-size: 18px; }
-  .calendar-grid > button small { width: 100%; padding: 0; font-size: 11px; line-height: 1.2; text-align: left; }
-  .calendar-grid > button > .material-symbols-outlined { display: grid; justify-self: end; width: 18px; height: 18px; margin-top: auto; color: var(--primary); }
-  .calendar-grid .done { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent); }
-  .plan-legend { margin-top: 16px; }
 
   .profile-page { gap: 22px; }
   .profile-page > .page-header { margin-bottom: 2px; }
@@ -158,8 +107,5 @@
   .dashboard-hero .macro-strip { grid-column: 1 / -1; }
   .dashboard-hero .calorie-ring { width: 220px; }
   .dashboard-hero h2 { font-size: 24px; }
-  .history-calendar-shell { grid-template-columns: minmax(0, 1fr) 200px; gap: 14px; padding: 16px; }
-  .history-calendar-aside { padding: 16px; }
-  .calendar-grid > span, .calendar-grid > button { min-height: 72px; padding: 9px; }
   .profile-overview-grid, .profile-support-grid { gap: 16px; }
 }
