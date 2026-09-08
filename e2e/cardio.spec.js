@@ -74,6 +74,12 @@ test("muestra pasos por sesión y permite registrar velocidad con preview en mó
   await page.getByRole("button", { name: "Entreno", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Pasos de caminadora", exact: true })).toBeVisible();
   await expect(page.locator(".training-cardio-week-day")).toHaveCount(7);
+  const dashboardSummary = page.locator(".training-surface.training-week-summary");
+  await expect(dashboardSummary.locator(".training-cardio-week-total strong")).toHaveText("6.637");
+  const activeDay = dashboardSummary.locator(".training-cardio-week-day.is-today");
+  await expect(activeDay.locator("small")).toHaveText("6.637");
+  await expect(activeDay.locator(".training-cardio-week-bar span")).toHaveAttribute("style", /height:\s*100%/);
+  await expect(activeDay.locator(".training-cardio-week-bar span")).toHaveCSS("background-color", "rgb(137, 206, 255)");
   await page.getByRole("button", { name: "Cardio", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Historial de cardio", exact: true })).toBeVisible();
   await expect(page.getByText("~6.637 pasos estimados", { exact: true })).toBeVisible();
