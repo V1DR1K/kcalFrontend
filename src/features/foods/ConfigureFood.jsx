@@ -34,8 +34,8 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
         .then((nextFood) => {
           setFood(nextFood);
           if (nextFood.servingWeightGrams) {
-            setQuantity("1");
-            setUnit("SERVING");
+            setQuantity(String(Number(nextFood.servingWeightGrams)));
+            setUnit("GRAM");
           } else {
             setQuantity(nextFood.category === "FAT" ? "10" : "100");
             setUnit("GRAM");

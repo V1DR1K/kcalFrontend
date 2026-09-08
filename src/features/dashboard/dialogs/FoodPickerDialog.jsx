@@ -277,9 +277,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   }, [api, selected?.id, selected?.type]);
   useEffect(() => {
     if (!selected) return;
-    if (selected.type === "FOOD" && selected.servingWeightGrams) {
-      setQuantity("1");
-      setUnit("SERVING");
+    if (selected.type === "FOOD") {
+      const servingWeightGrams = Number(selected.servingWeightGrams);
+      setQuantity(Number.isFinite(servingWeightGrams) && servingWeightGrams > 0 ? String(servingWeightGrams) : selected.category === "FAT" ? "10" : "100");
+      setUnit("GRAM");
     } else if (selected.type === "RECIPE") {
       setQuantity("1");
       setUnit("PORTION");

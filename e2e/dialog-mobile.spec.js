@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withPreset = false, withManyPickerResults = false } = {}) {
+async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withPreset = false, withManyPickerResults = false, withServingFood = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -19,7 +19,9 @@ async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = f
     if (url.includes("/nutrition/meal-types")) body = [{ code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" }, { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" }];
     if (url.includes("/nutrition/day-presets")) body = withPreset ? [{ id: 1, name: "Día completo", itemCount: 1, mealCounts: { BREAKFAST: 1 }, items: [{ itemType: "FOOD", itemId: 11, mealType: "BREAKFAST", quantity: 100, unit: "GRAM", displayName: "Avena", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7 }] }] : [];
     if (url.includes("/nutrition/ai-estimates/usage")) body = { available: aiAvailable };
-    if (url.includes("/api/foods?")) body = withManyPickerResults
+    if (url.includes("/api/foods?")) body = withServingFood
+      ? [{ id: 11, name: "Avena", baseQuantity: 100, calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "CEREAL", servingName: "Porción", servingWeightGrams: 30 }]
+      : withManyPickerResults
       ? Array.from({ length: 30 }, (_, index) => ({ id: 1000 + index, name: `Avena ${index + 1}`, baseQuantity: 100, calories: 120, proteinGrams: 10, carbsGrams: 20, fatGrams: 5, category: "CEREAL" }))
       : [];
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
@@ -150,6 +152,22 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
   expect(layout.statusOrder).toBe("-1");
 });
 
+test("preselects grams when adding a food with a serving definition", async ({ page }) => {
+  await seedAuthenticatedApp(page, { withServingFood: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.getByPlaceholder("Buscar alimentos...").fill("Avena");
+  const foodRow = page.locator(".catalog-row-image").first();
+  const metadata = foodRow.locator(".catalog-copy .catalog-meta");
+  await expect(metadata).toHaveCSS("display", "flex");
+  await expect(metadata).toHaveCSS("flex-direction", "column");
+  await foodRow.click();
+
+  const dialog = page.locator(".edit-log-modal");
+  await expect(dialog.getByLabel("Unidad")).toHaveValue("GRAM");
+  await expect(dialog.getByLabel("Cantidad")).toHaveValue("30");
+});
+
 test("keeps the create food form scrollable above its fixed actions", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 430 });
   await seedAuthenticatedApp(page);
@@ -189,6 +207,8 @@ test("keeps desktop food picker controls above long results", async ({ page }) =
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
   await page.getByPlaceholder("Buscar alimentos...").fill("avena");
   await expect(page.locator(".picker-results .catalog-row")).toHaveCount(30);
+  await expect(page.locator(".picker-results .catalog-row-image .catalog-copy .catalog-meta").first()).toHaveCSS("display", "flex");
+  await expect(page.locator(".picker-results .catalog-row-image .catalog-copy .catalog-meta").first()).toHaveCSS("flex-direction", "column");
 
   const layout = await page.locator(".picker-modal").evaluate((modal) => {
     const getRect = (selector) => modal.querySelector(selector).getBoundingClientRect();

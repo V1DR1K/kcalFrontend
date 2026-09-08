@@ -1219,6 +1219,7 @@ button:disabled {
 }
 
 .catalog-copy { display: grid; gap: 4px; min-width: 0; }
+.catalog-row-image .catalog-copy .catalog-meta { display: flex; flex-direction: column; gap: .35em; padding: .4em; }
 .catalog-copy strong,
 .catalog-copy small,
 .food-brand-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

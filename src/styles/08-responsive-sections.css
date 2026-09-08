@@ -551,6 +551,7 @@
   .catalog-row { min-height: 52px; padding: 8px 10px; }
   .catalog-row-image .food-thumb.compact { width: 40px; height: 40px; }
   .catalog-copy { gap: 2px; }
+  .catalog-row-image .catalog-copy .catalog-meta { gap: .4em; padding: .5em; }
   .recent-meal-card { min-height: 58px; gap: 8px; padding: 7px 8px; }
   .recent-meal-card .food-thumb.compact { width: 40px; height: 40px; border-radius: var(--radius-control); }
   .recent-meal-card > button { width: 44px; min-width: 44px; height: 44px; min-height: 44px; border-radius: var(--radius-control); }
