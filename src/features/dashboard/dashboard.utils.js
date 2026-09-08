@@ -42,7 +42,14 @@ export function mealCopyErrorMessage(error, fallback) {
 
 export function formatMealLogAmount(log) {
   if (log.itemType === "RECIPE") return formatRecipeLogAmount(log);
-  if (log.itemType === "AI_ESTIMATE") return "Estimación por foto";
+  if (log.itemType === "AI_ESTIMATE") {
+    try {
+      const details = JSON.parse(log.aiEstimateDetails || "{}");
+      const totalGrams = (details.items || []).reduce((sum, item) => sum + (Number(item.estimatedGrams) || 0), 0);
+      if (totalGrams > 0) return `~${formatQuantity(totalGrams)} g`;
+    } catch {}
+    return "Estimación por foto";
+  }
   return `${formatQuantity(log.quantity)} g`;
 }
 
