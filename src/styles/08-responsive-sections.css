@@ -445,6 +445,8 @@
 
   .recipe-meal-item-detail { gap: 12px; }
 
+  .recipe-detail-heading { font-size: 12px; }
+
   .meal-detail-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 
   .meal-detail-summary > span {

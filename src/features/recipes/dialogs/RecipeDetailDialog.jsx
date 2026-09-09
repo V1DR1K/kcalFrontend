@@ -1,7 +1,7 @@
 import React, { useId, useState } from "react";
 import { Icon } from "../../../components/Icon";
 import { ModalShell } from "../../../components/dialog/ModalShell";
-import { FoodThumb, NutrientDetails } from "../../catalog/CatalogComponents";
+import { FoodThumb } from "../../catalog/CatalogComponents";
 import { formatNumber, formatQuantity } from "../../../utils/format";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 import { cookedRecipeWeight, rawRecipeWeight, recipeYieldPercent } from "../../../utils/recipe";
@@ -26,7 +26,6 @@ export function RecipeDetailDialog({ api, recipe, onClose }) {
             {recipeYieldPercent(recipe) != null && <span><small>Rendimiento cocido</small><strong>{formatNumber(recipeYieldPercent(recipe), 1)}%</strong></span>}
           </div>
           <NutritionSummary nutrition={recipe} size="detail" />
-          <NutrientDetails nutrients={recipe.nutrients} label="Ver nutrientes de la receta" />
           <div className="recipe-detail-ingredients"><h3>Ingredientes</h3>{recipe.ingredients.map((ingredient, index) => <div key={`${ingredient.food?.id || "food"}:${index}`}><span>{ingredient.food?.name || "Alimento"}</span><small>{formatQuantity(ingredient.quantity)} {ingredient.unit === "GRAM" ? "g" : ingredient.unit}</small></div>)}</div>
         </div>
         <footer><button type="button" className="secondary" onClick={onClose}>Cerrar</button><button type="button" className="primary" disabled={saving} onClick={save}><Icon name="content_copy" />{saving ? "Guardando..." : "Guardar receta"}</button></footer>

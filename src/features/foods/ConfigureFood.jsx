@@ -3,7 +3,7 @@ import { DEFAULT_MEALS } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { Header, Panel } from "../../components/Layout";
-import { CatalogStatus, CookedYieldHint, FoodThumb, NutrientDetails, NutrientEditor, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
+import { CatalogStatus, CookedYieldHint, FoodThumb, NutrientEditor, PreparationBadge, categoryLabel, preparationLabel } from "../catalog/CatalogComponents";
 import { rememberItem, rememberMeal } from "../../services/recents";
 import { formatNumber, today } from "../../utils/format";
 import { decimalNumber } from "../../utils/decimal";
@@ -199,7 +199,6 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
           </select>
         </label>
         <div className="configure-preview"><NutritionSummary nutrition={preview || {}} size="detail" /></div>
-        {food && <NutrientDetails nutrients={food.nutrients} />}
         {food && <button type="button" className="secondary nutrient-enrich-button" disabled={enriching} onClick={enrich}>{enriching ? "Buscando nutrientes…" : "Completar perfil nutricional"}</button>}
         {food && (food.createdById === user?.id || user?.role === "ADMIN") && <NutrientEditor api={api} food={food} onSaved={setFood} />}
         <button className="primary configure-submit" disabled={adding || !food || !activeFoodId || decimalNumber(quantity) <= 0} onClick={add}>

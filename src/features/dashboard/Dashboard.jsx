@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
 import { Header, Macro, Panel } from "../../components/Layout";
 import { DatePickerDialog } from "../../components/DatePickerDialog";
-import { CatalogStatus, NutrientDetails } from "../catalog/CatalogComponents";
+import { CatalogStatus } from "../catalog/CatalogComponents";
 import { EditFoodLog } from "../foods/FoodComponents";
 import { readRecents } from "../../services/recents";
 import { formatNumber, today } from "../../utils/format";
@@ -270,12 +270,6 @@ export function Dashboard({ api, user, setPage }) {
           {macros.map((macro) => (
             <Macro key={macro.key} macro={macro} />
           ))}
-          {data?.nutrients?.length > 0 && (
-            <NutrientDetails
-              nutrients={data.nutrients}
-              label="Resumen nutricional del día"
-            />
-          )}
         </div>
       </div>
       <div className="meal-grid">

@@ -6,6 +6,10 @@ const LONG_PRESS_MOVE_TOLERANCE = 18;
 const AUTO_SCROLL_EDGE_SIZE = 76;
 const AUTO_SCROLL_MAX_STEP = 14;
 
+function interactionTime() {
+  return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
+}
+
 function clearDropTargets() {
   document.querySelectorAll(".meal-card.drag-over").forEach((card) => card.classList.remove("drag-over"));
 }
@@ -17,7 +21,7 @@ function targetMealTypeAt(clientX, clientY) {
   return target?.dataset.mealType || null;
 }
 
-export function useMealGesture({ disabled = false, dragData, resetSignal, expanded = false, onMove }) {
+export function useMealGesture({ disabled = false, dragData, resetSignal, expanded = false, onMove, onTap }) {
   const gestureRef = useRef(null);
   const holdTimerRef = useRef(null);
   const shellRef = useRef(null);
@@ -138,6 +142,7 @@ export function useMealGesture({ disabled = false, dragData, resetSignal, expand
       pointerId: event.pointerId,
       x: event.clientX,
       y: event.clientY,
+      startedAt: interactionTime(),
       axis: null,
       mode: "holding",
     };
@@ -179,6 +184,14 @@ export function useMealGesture({ disabled = false, dragData, resetSignal, expand
   const handlePointerUp = useCallback((event) => {
     const current = gestureRef.current;
     if (!current || current.pointerId !== event.pointerId) return;
+    const quickPress = current.mode === "holding" && interactionTime() - current.startedAt < LONG_PRESS_DURATION;
+    if (quickPress) {
+      suppressClickRef.current = true;
+      onTap?.();
+      window.setTimeout(() => { suppressClickRef.current = false; }, 220);
+      close();
+      return;
+    }
     if (current.mode === "dragging") {
       if (event.cancelable) event.preventDefault();
       stopAutoScroll();
@@ -193,7 +206,7 @@ export function useMealGesture({ disabled = false, dragData, resetSignal, expand
       return;
     }
     close();
-  }, [close, dragData, finishSwipe, onMove, stopAutoScroll]);
+  }, [close, dragData, finishSwipe, onMove, onTap, stopAutoScroll]);
 
   const handlePointerCancel = useCallback((event) => {
     if (!gestureRef.current || gestureRef.current.pointerId !== event.pointerId) return;

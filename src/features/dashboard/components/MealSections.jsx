@@ -1,18 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "../../../components/Icon";
-import { CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
+import { CatalogStatus, FoodThumb, PreparationBadge, categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { formatNumber, formatQuantity, readableDate } from "../../../utils/format";
 import { cookedRecipeWeight, rawRecipeWeight } from "../../../utils/recipe";
-import { createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
+import { createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition, sortMealLogs, sortRecipeIngredients } from "../dashboard.utils";
 import { NutritionPills } from "./DashboardSections";
 import { useMealGesture } from "../hooks/useMealGesture";
 
 export { MealCard, MealLogDetails, RecipeIngredientDetail, SwipeableMealItem };
 
 function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, onConvertToRecipe, onShare, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove, entryDelay = 0 }) {
-  const items = meal?.items || [];
+  const items = sortMealLogs(meal?.items || []);
   const cardRef = useRef(null);
   const menuRef = useRef(null);
   const [expandedLogId, setExpandedLogId] = useState(null);
@@ -203,7 +203,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
 
 function MealLogDetails({ log, item }) {
   if (log.itemType === "RECIPE") {
-    const ingredients = aggregateRecipeIngredients(item?.ingredients || []);
+    const ingredients = sortRecipeIngredients(aggregateRecipeIngredients(item?.ingredients || []));
     const usesCookedGrams = log.unit === "GRAM";
     return (
       <div className="meal-item-detail recipe-meal-item-detail">
@@ -214,6 +214,7 @@ function MealLogDetails({ log, item }) {
         </div>
         <NutritionPills nutrition={log} />
         {log.recipeAdjusted && <small className="daily-recipe-note">Versión ajustada para este día</small>}
+        <div className="recipe-detail-heading"><span>Alimentos</span><small>{ingredients.length} {ingredients.length === 1 ? "ingrediente" : "ingredientes"}</small></div>
         <div className="recipe-detail-list">
           {ingredients.length ? ingredients.map((ingredient) => (
             <RecipeIngredientDetail ingredient={ingredient} key={ingredient.key} />
@@ -290,7 +291,7 @@ function RecipeIngredientDetail({ ingredient }) {
 }
 
 function SwipeableMealItem({ children, className = "", resetSignal, expanded = false, onToggle, details, onEdit, onDelete, disabled = false, dragData, onMove, mealTypes = [] }) {
-  const gesture = useMealGesture({ disabled, dragData, resetSignal, expanded, onMove });
+  const gesture = useMealGesture({ disabled, dragData, resetSignal, expanded, onMove, onTap: onToggle });
   return (
     <div className={`swipe-row ${gesture.revealed} ${gesture.horizontalDragging ? "swiping" : ""} ${expanded ? "expanded" : ""}`}>
       <button className="swipe-action swipe-edit" aria-label="Editar registro" disabled={disabled} tabIndex={gesture.revealed === "edit" ? 0 : -1} aria-hidden={gesture.revealed !== "edit"} onClick={() => { gesture.close(); onEdit(); }}><Icon name="edit" /></button>

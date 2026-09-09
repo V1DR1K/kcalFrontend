@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { DatePickerDialog } from "../../../components/DatePickerDialog";
 import { Input } from "../../../components/FormControls";
 import { Icon } from "../../../components/Icon";
-import { CatalogRowWithImage, CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, groupFoodVariants, preparationLabel } from "../../catalog/CatalogComponents";
+import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, categoryLabel, groupFoodVariants, preparationLabel } from "../../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { readRecents, rememberItem, rememberMeal } from "../../../services/recents";
 import { formatNumber, readableDate, shiftDate, today } from "../../../utils/format";
@@ -17,7 +17,6 @@ function NutritionPills({ nutrition }) {
   return (
     <>
       <NutritionSummary nutrition={nutrition} size="detail" />
-      {nutrition?.nutrients?.length > 0 && <NutrientDetails nutrients={nutrition.nutrients} label="Más nutrientes" defaultOpen />}
     </>
   );
 }

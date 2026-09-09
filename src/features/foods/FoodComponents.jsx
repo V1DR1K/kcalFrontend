@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
-import { CatalogStatus, FoodThumb, NutrientDetails, preparationLabel } from "../catalog/CatalogComponents";
+import { CatalogStatus, FoodThumb, preparationLabel } from "../catalog/CatalogComponents";
 import { formatNumber, formatQuantity } from "../../utils/format";
 import { decimalNumber } from "../../utils/decimal";
 import { cookedRecipeWeight, rawRecipeWeight, recipeServingFactor } from "../../utils/recipe";
@@ -225,7 +225,6 @@ export function FoodLogForm({
           <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
         </span>
       </div>
-      {preview?.nutrients?.length > 0 && <NutrientDetails nutrients={preview.nutrients} label="Más nutrientes" />}
     </>
   );
 }

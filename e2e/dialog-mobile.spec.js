@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withPreset = false, withManyPickerResults = false, withServingFood = false } = {}) {
+async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withRecipeLog = false, withNutrients = false, withPreset = false, withManyPickerResults = false, withServingFood = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -11,10 +11,15 @@ async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = f
     let body = {};
     if (url.includes("/api/auth/me")) body = { id: 1, fullName: "Persona E2E", email: "e2e@example.com" };
     if (url.includes("/nutrition/dashboard")) {
-      const meals = withFoodLog
-        ? [{ mealType: "BREAKFAST", label: "Desayuno", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, items: [{ id: 101, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } }] }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }]
+      const loggedItems = withRecipeLog
+        ? [{ id: 202, itemType: "RECIPE", quantity: 1, unit: "PORTION", calories: 350, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, recipe: { id: 22, name: "Tostada proteica", rawTotalWeightGrams: 300, cookedTotalWeightGrams: 260, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, ingredients: [{ food: { id: 14, name: "Zanahoria", baseQuantity: 100, proteinGrams: 1, carbsGrams: 10, fatGrams: 0, category: "VEGETABLE" }, quantity: 90, unit: "GRAM" }, { food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "CEREAL" }, quantity: 150, unit: "GRAM" }] } }]
+        : withFoodLog
+          ? [{ id: 101, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } }]
+          : [];
+      const meals = (withFoodLog || withRecipeLog)
+        ? [{ mealType: "BREAKFAST", label: "Desayuno", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, items: loggedItems }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }]
         : [{ mealType: "BREAKFAST", items: [] }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }];
-      body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals, waterConsumed: 0, waterGoal: 2, plan: null };
+      body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals, nutrients: withNutrients ? [{ code: "IRON", name: "Hierro", group: "MINERAL", value: 2, unit: "mg" }] : [], waterConsumed: 0, waterGoal: 2, plan: null };
     }
     if (url.includes("/nutrition/meal-types")) body = [{ code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" }, { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" }];
     if (url.includes("/nutrition/day-presets")) body = withPreset ? [{ id: 1, name: "Día completo", itemCount: 1, mealCounts: { BREAKFAST: 1 }, items: [{ itemType: "FOOD", itemId: 11, mealType: "BREAKFAST", quantity: 100, unit: "GRAM", displayName: "Avena", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7 }] }] : [];
@@ -65,6 +70,54 @@ test("opens the consumed quantity editor at the top on mobile", async ({ page })
   await page.setViewportSize({ width: 390, height: 430 });
   const quantityBottom = await quantity.evaluate((element) => element.getBoundingClientRect().bottom);
   expect(quantityBottom).toBeLessThanOrEqual(430 + 1);
+});
+
+test("expands a meal item with a brief desktop click", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await seedAuthenticatedApp(page, { withFoodLog: true });
+  await page.goto("/ingresar");
+
+  const meal = page.locator(".meal-card").filter({ hasText: "Avena" }).first();
+  await meal.locator(".meal-item").click();
+  await expect(meal.locator(".meal-item-detail")).toBeVisible();
+});
+
+test("keeps long press drag available without stealing a short click", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await seedAuthenticatedApp(page, { withFoodLog: true });
+  await page.goto("/ingresar");
+
+  const item = page.locator(".meal-card").filter({ hasText: "Avena" }).first().locator(".meal-item");
+  const target = page.locator('.meal-card[data-meal-type="LUNCH"]');
+  const itemBox = await item.boundingBox();
+  const targetBox = await target.boundingBox();
+  await page.mouse.move(itemBox.x + itemBox.width / 2, itemBox.y + itemBox.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(550);
+  await expect(page.locator(".meal-item-shell.dragging")).toBeVisible();
+  await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2);
+  await expect(target).toHaveClass(/drag-over/);
+  await page.mouse.up();
+});
+
+test("shows sorted recipe ingredients below the nutrition summary", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withRecipeLog: true });
+  await page.goto("/ingresar");
+
+  const meal = page.locator(".meal-card").filter({ hasText: "Tostada proteica" }).first();
+  await meal.locator(".meal-item").click();
+  await expect(meal.locator(".recipe-detail-heading")).toHaveText(/Alimentos/);
+  await expect(meal.locator(".recipe-ingredient-main > span:nth-child(2) > strong")).toHaveText(["Avena", "Zanahoria"]);
+});
+
+test("hides nutrient details even when nutrient data is present", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withFoodLog: true, withNutrients: true });
+  await page.goto("/ingresar");
+
+  await expect(page.getByText("Más nutrientes", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Resumen nutricional del día", { exact: true })).toHaveCount(0);
 });
 
 test("keeps photo actions in one compact mobile row", async ({ page }) => {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Icon } from "../../components/Icon";
 import { Header, Panel } from "../../components/Layout";
-import { CatalogStatus, FoodThumb, NutrientDetails } from "../catalog/CatalogComponents";
+import { CatalogStatus, FoodThumb } from "../catalog/CatalogComponents";
 import { formatNumber } from "../../utils/format";
 import { usePagedCatalog } from "../catalog/usePagedCatalog";
 import { EditRecipeModal, SwipeableRecipeCard } from "../foods/FoodComponents";

@@ -65,6 +65,51 @@ export function mealLogItem(log) {
   return { ...log.food, type: "FOOD" };
 }
 
+const nutritionItemCollator = new Intl.Collator("es-AR", { sensitivity: "base", numeric: true });
+
+export function compareNutritionItemNames(left, right) {
+  return nutritionItemCollator.compare(String(left || "").trim(), String(right || "").trim());
+}
+
+export function mealLogWeight(log) {
+  if (log?.itemType === "RECIPE") {
+    if (log.unit === "GRAM") return Number(log.quantity || 0);
+    const recipeWeight = log.recipeCookedTotalWeightGrams
+      ?? log.recipe?.cookedTotalWeightGrams
+      ?? log.recipeRawTotalWeightGrams
+      ?? log.recipe?.rawTotalWeightGrams
+      ?? log.recipe?.totalWeightGrams
+      ?? 0;
+    return Number(log.quantity || 0) * Number(recipeWeight || 0);
+  }
+  if (log?.itemType === "AI_ESTIMATE") {
+    return savedAiEstimate(log).items.reduce((total, item) => total + Number(item.estimatedGrams || 0), 0);
+  }
+  return Number(log?.quantity || 0);
+}
+
+export function sortMealLogs(logs = []) {
+  return logs
+    .map((item, index) => ({ item, index }))
+    .sort((left, right) => (
+      compareNutritionItemNames(mealLogName(left.item) || "Alimento", mealLogName(right.item) || "Alimento")
+      || mealLogWeight(left.item) - mealLogWeight(right.item)
+      || left.index - right.index
+    ))
+    .map(({ item }) => item);
+}
+
+export function sortRecipeIngredients(ingredients = []) {
+  return ingredients
+    .map((ingredient, index) => ({ ingredient, index }))
+    .sort((left, right) => (
+      compareNutritionItemNames(left.ingredient.food?.name || "Alimento", right.ingredient.food?.name || "Alimento")
+      || Number(left.ingredient.quantity || 0) - Number(right.ingredient.quantity || 0)
+      || left.index - right.index
+    ))
+    .map(({ ingredient }) => ingredient);
+}
+
 export function savedAiEstimate(log) {
   try {
     const details = JSON.parse(log.aiEstimateDetails || "{}");

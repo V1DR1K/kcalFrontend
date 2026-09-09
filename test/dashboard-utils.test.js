@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mealTotals } from "../src/features/dashboard/nutritionTotals.js";
-import { aiEstimateDraft } from "../src/features/dashboard/dashboard.utils.js";
+import { aiEstimateDraft, sortMealLogs, sortRecipeIngredients } from "../src/features/dashboard/dashboard.utils.js";
 
 test("suma los totales nutricionales de un preset", () => {
   assert.deepEqual(mealTotals([
@@ -30,4 +30,30 @@ test("preserves catalog matching metadata when refining an AI estimate", () => {
     catalogMatchType: "EXACT",
     catalogMatchConfidence: 99,
   });
+});
+
+test("ordena registros por nombre, acentos y peso sin mutar la lista original", () => {
+  const logs = [
+    { id: 1, itemType: "FOOD", quantity: 180, food: { name: "Banana" } },
+    { id: 2, itemType: "FOOD", quantity: 90, food: { name: "Avena" } },
+    { id: 3, itemType: "FOOD", quantity: 120, food: { name: "áVena" } },
+  ];
+
+  assert.deepEqual(sortMealLogs(logs).map((log) => log.id), [2, 3, 1]);
+  assert.deepEqual(logs.map((log) => log.id), [1, 2, 3]);
+});
+
+test("ordena recetas por peso consumido y sus ingredientes por cantidad", () => {
+  const logs = [
+    { id: 1, itemType: "RECIPE", quantity: 1, unit: "PORTION", recipe: { name: "Tostada", cookedTotalWeightGrams: 300 } },
+    { id: 2, itemType: "RECIPE", quantity: 100, unit: "GRAM", recipe: { name: "Tostada" } },
+  ];
+  const ingredients = [
+    { food: { name: "Zanahoria" }, quantity: 80 },
+    { food: { name: "Avena" }, quantity: 150 },
+    { food: { name: "avena" }, quantity: 60 },
+  ];
+
+  assert.deepEqual(sortMealLogs(logs).map((log) => log.id), [2, 1]);
+  assert.deepEqual(sortRecipeIngredients(ingredients).map((ingredient) => `${ingredient.food.name}:${ingredient.quantity}`), ["avena:60", "Avena:150", "Zanahoria:80"]);
 });

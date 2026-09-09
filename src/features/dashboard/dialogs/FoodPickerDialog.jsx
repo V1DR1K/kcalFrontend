@@ -3,7 +3,7 @@ import { CATEGORY_OPTIONS, PREPARATION_OPTIONS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
 import { InfiniteSentinel } from "../../../components/InfiniteSentinel";
 import { Input, Select } from "../../../components/FormControls";
-import { CatalogRowWithImage, CatalogStatus, FoodThumb, NutrientDetails, PreparationBadge, categoryLabel, groupFoodVariants, preparationLabel } from "../../catalog/CatalogComponents";
+import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, categoryLabel, groupFoodVariants, preparationLabel } from "../../catalog/CatalogComponents";
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { usePagedCatalog } from "../../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../../services/recents";
@@ -11,7 +11,7 @@ import { formatNumber, readableDate } from "../../../utils/format";
 import { decimalNumber } from "../../../utils/decimal";
 import { normalizeSearchText } from "../../../utils/search";
 import { hasCookedRecipeWeight, recipeServingFactor } from "../../../utils/recipe";
-import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition } from "../dashboard.utils";
+import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition, sortMealLogs } from "../dashboard.utils";
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./MealPhotoDialog";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { compressMealPhoto } from "../../../services/image";
@@ -587,7 +587,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
              {recentBrackets.map((bracket) => <article className={`catalog-row recent-meal-card recent-bracket-card ${adding ? "adding" : ""}`} key={`${bracket.sourceDate}:${bracket.mealType}`}>
                <button type="button" className="recent-bracket-main" disabled={adding} aria-label={`Agregar ${bracket.label} completo`} onClick={() => addRecentMeal(bracket)}>
                  <div className="recent-bracket-heading"><div><strong>{bracket.label}</strong><small>{readableDate(bracket.sourceDate)}</small></div><span className="recent-bracket-total"><strong>{formatNumber(bracket.calories)} kcal</strong><small>P {formatNumber(bracket.proteinGrams, 1)}g · C {formatNumber(bracket.carbsGrams, 1)}g · G {formatNumber(bracket.fatGrams, 1)}g</small></span></div>
-                 <div className="recent-bracket-items">{(Array.isArray(bracket.items) ? bracket.items : []).map((item) => <span className="recent-bracket-item" key={item.id}><strong>{mealLogName(item)}</strong><small>{formatMealLogAmount(item)} · {formatNumber(item.calories)} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></span>)}</div>
+                  <div className="recent-bracket-items">{sortMealLogs(Array.isArray(bracket.items) ? bracket.items : []).map((item) => <span className="recent-bracket-item" key={item.id}><strong>{mealLogName(item)}</strong><small>{formatMealLogAmount(item)} · {formatNumber(item.calories)} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></span>)}</div>
                  <Icon name="chevron_right" className="row-action recent-bracket-action" />
                </button>
                <div className="recent-bracket-actions"><button type="button" className="secondary recent-bracket-share" aria-label={`Compartir ${bracket.label}`} onClick={() => setShareBracket(bracket)}><Icon name="share" /><span>Compartir</span></button><button type="button" className="primary recent-bracket-add" disabled={adding} onClick={() => addRecentMeal(bracket)}><Icon name="add" /><span>Agregar</span></button></div>
