@@ -1,25 +1,44 @@
 import { test, expect } from "@playwright/test";
 
-async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withRecipeLog = false, withNutrients = false, withPreset = false, withManyPickerResults = false, withServingFood = false } = {}) {
+async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withRecipeLog = false, withNutrients = false, withPreset = false, withManyPickerResults = false, withServingFood = false, withYesterdaySuggestion = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
     localStorage.removeItem("scalegrams.user");
   });
+  const yesterdayItem = { id: 301, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } };
+  let targetDashboardDate = null;
+  let currentMealItems = [];
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
+    const method = route.request().method();
     let body = {};
     if (url.includes("/api/auth/me")) body = { id: 1, fullName: "Persona E2E", email: "e2e@example.com" };
     if (url.includes("/nutrition/dashboard")) {
-      const loggedItems = withRecipeLog
-        ? [{ id: 202, itemType: "RECIPE", quantity: 1, unit: "PORTION", calories: 350, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, recipe: { id: 22, name: "Tostada proteica", rawTotalWeightGrams: 300, cookedTotalWeightGrams: 260, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, ingredients: [{ food: { id: 14, name: "Zanahoria", baseQuantity: 100, proteinGrams: 1, carbsGrams: 10, fatGrams: 0, category: "VEGETABLE" }, quantity: 90, unit: "GRAM" }, { food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "CEREAL" }, quantity: 150, unit: "GRAM" }] } }]
-        : withFoodLog
-          ? [{ id: 101, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } }]
-          : [];
-      const meals = (withFoodLog || withRecipeLog)
-        ? [{ mealType: "BREAKFAST", label: "Desayuno", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, items: loggedItems }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }]
-        : [{ mealType: "BREAKFAST", items: [] }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }];
-      body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals, nutrients: withNutrients ? [{ code: "IRON", name: "Hierro", group: "MINERAL", value: 2, unit: "mg" }] : [], waterConsumed: 0, waterGoal: 2, plan: null };
+      const requestedDate = new URL(url).searchParams.get("date");
+      if (withYesterdaySuggestion) {
+        if (!targetDashboardDate) targetDashboardDate = requestedDate;
+        const loggedItems = requestedDate !== targetDashboardDate ? [yesterdayItem] : currentMealItems;
+        const hasItems = loggedItems.length > 0;
+        const meals = [{ mealType: "BREAKFAST", label: "Desayuno", calories: hasItems ? 400 : 0, proteinGrams: hasItems ? 13 : 0, carbsGrams: hasItems ? 68 : 0, fatGrams: hasItems ? 7 : 0, items: loggedItems }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }];
+        body = { date: requestedDate, caloriesConsumed: hasItems ? 400 : 0, calorieGoal: 2000, macros: [], meals, nutrients: [], waterConsumed: 0, waterGoal: 2, plan: null };
+      } else {
+        const loggedItems = withRecipeLog
+          ? [{ id: 202, itemType: "RECIPE", quantity: 1, unit: "PORTION", calories: 350, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, recipe: { id: 22, name: "Tostada proteica", rawTotalWeightGrams: 300, cookedTotalWeightGrams: 260, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, ingredients: [{ food: { id: 14, name: "Zanahoria", baseQuantity: 100, proteinGrams: 1, carbsGrams: 10, fatGrams: 0, category: "VEGETABLE" }, quantity: 90, unit: "GRAM" }, { food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "CEREAL" }, quantity: 150, unit: "GRAM" }] } }]
+          : withFoodLog
+            ? [{ id: 101, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } }]
+            : [];
+        const meals = (withFoodLog || withRecipeLog)
+          ? [{ mealType: "BREAKFAST", label: "Desayuno", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, items: loggedItems }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }]
+          : [{ mealType: "BREAKFAST", items: [] }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }];
+        body = { date: "2026-08-25", caloriesConsumed: 0, calorieGoal: 2000, macros: [], meals, nutrients: withNutrients ? [{ code: "IRON", name: "Hierro", group: "MINERAL", value: 2, unit: "mg" }] : [], waterConsumed: 0, waterGoal: 2, plan: null };
+      }
+    }
+    if (withYesterdaySuggestion && method === "POST" && url.includes("/api/nutrition/meal-logs/batch")) {
+      currentMealItems = [{ ...yesterdayItem, id: 302 }];
+    }
+    if (withYesterdaySuggestion && method === "DELETE" && url.includes("/api/nutrition/food-logs")) {
+      currentMealItems = [];
     }
     if (url.includes("/nutrition/meal-types")) body = [{ code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" }, { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" }];
     if (url.includes("/nutrition/day-presets")) body = withPreset ? [{ id: 1, name: "Día completo", itemCount: 1, mealCounts: { BREAKFAST: 1 }, items: [{ itemType: "FOOD", itemId: 11, mealType: "BREAKFAST", quantity: 100, unit: "GRAM", displayName: "Avena", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7 }] }] : [];
@@ -98,6 +117,66 @@ test("keeps long press drag available without stealing a short click", async ({ 
   await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2);
   await expect(target).toHaveClass(/drag-over/);
   await page.mouse.up();
+});
+
+test("allows copying yesterday again after deleting its last meal item", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await seedAuthenticatedApp(page, { withYesterdaySuggestion: true });
+  await page.goto("/ingresar");
+
+  const meal = page.locator('.meal-card[data-meal-type="BREAKFAST"]');
+  const copyButton = meal.getByRole("button", { name: "Copiar Desayuno de ayer" });
+  await expect(copyButton).toBeVisible();
+  await copyButton.click();
+  await expect(meal.locator(".meal-item")).toHaveCount(1);
+  await expect(page.getByText("Desayuno copiado de ayer.", { exact: true })).toBeVisible();
+
+  await meal.locator(".meal-item").click();
+  await meal.locator(".meal-item-detail-actions button").filter({ hasText: "Eliminar" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Eliminar", exact: true }).click();
+  await expect(meal.locator(".meal-item")).toHaveCount(0);
+  await expect(copyButton).toBeEnabled();
+
+  await copyButton.click();
+  await expect(meal.locator(".meal-item")).toHaveCount(1);
+});
+
+test("re-enables the other-day copy action after deleting the copied meal", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await seedAuthenticatedApp(page, { withYesterdaySuggestion: true });
+  await page.goto("/ingresar");
+
+  const meal = page.locator('.meal-card[data-meal-type="BREAKFAST"]');
+  const pastMeals = page.locator(".past-meals-panel");
+  await pastMeals.locator("summary").click();
+  await pastMeals.getByRole("button", { name: "Vista previa" }).click();
+  const applyButton = pastMeals.getByRole("button", { name: "Aplicar Desayuno" });
+  await expect(applyButton).toBeVisible();
+  await applyButton.click();
+  await expect(applyButton).toBeDisabled();
+  await expect(meal.locator(".meal-item")).toHaveCount(1);
+  await expect(page.getByText("Comida copiada respetando su horario.", { exact: true })).toBeVisible();
+
+  await meal.locator(".meal-item").click();
+  await meal.locator(".meal-item-detail-actions button").filter({ hasText: "Eliminar" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Eliminar", exact: true }).click();
+  await expect(meal.locator(".meal-item")).toHaveCount(0);
+  await expect(applyButton).toBeEnabled();
+
+  await applyButton.click();
+  await expect(meal.locator(".meal-item")).toHaveCount(1);
+});
+
+test("keeps a dismissed yesterday suggestion hidden", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withYesterdaySuggestion: true });
+  await page.goto("/ingresar");
+
+  const meal = page.locator('.meal-card[data-meal-type="BREAKFAST"]');
+  const suggestion = meal.locator(".yesterday-suggestion");
+  await expect(suggestion).toBeVisible();
+  await suggestion.getByRole("button", { name: "Descartar sugerencia" }).click();
+  await expect(suggestion).toHaveCount(0);
 });
 
 test("shows sorted recipe ingredients below the nutrition summary", async ({ page }) => {

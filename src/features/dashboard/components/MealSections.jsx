@@ -20,6 +20,9 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
   const [bulkActionState, setBulkActionState] = useState("idle");
   const yesterdayItems = (yesterdayMeal?.items || []).filter(isCopyableMealLog);
   useEffect(() => setSuggestionState("idle"), [targetDate, mealType.code]);
+  useEffect(() => {
+    if (!items.length && suggestionState === "copied") setSuggestionState("idle");
+  }, [items.length, suggestionState]);
   useEffect(() => setExpandedLogId(null), [targetDate, mealType.code, resetSignal]);
   useEffect(() => {
     if (!expandedLogId) return undefined;

@@ -458,7 +458,7 @@ export function Dashboard({ api, user, setPage }) {
           <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
         </Panel>}
       </div>
-       <PastMealsPreview api={api} targetDate={selectedDate} mealTypes={mealTypes} onCopied={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
+       <PastMealsPreview api={api} targetDate={selectedDate} targetMeals={data?.meals || []} mealTypes={mealTypes} onCopied={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
        <DayPresetsDialog
          api={api}
          user={user}

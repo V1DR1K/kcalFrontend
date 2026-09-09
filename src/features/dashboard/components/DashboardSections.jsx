@@ -59,7 +59,7 @@ function DateNavigator({ date, setDate, changing = false }) {
   );
 }
 
-function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAdd, onOptimisticRollback }) {
+function PastMealsPreview({ api, targetDate, targetMeals = [], mealTypes, onCopied, onOptimisticAdd, onOptimisticRollback }) {
   const [sourceDate, setSourceDate] = useState(() => shiftDate(targetDate, -1));
   const [source, setSource] = useState(null);
   const [status, setStatus] = useState({});
@@ -69,6 +69,20 @@ function PastMealsPreview({ api, targetDate, mealTypes, onCopied, onOptimisticAd
     setSource(null);
     setStatus({});
   }, [targetDate]);
+  useEffect(() => {
+    setStatus((current) => {
+      let changed = false;
+      const next = { ...current };
+      for (const [mealType, state] of Object.entries(current)) {
+        const targetMeal = targetMeals.find((meal) => meal.mealType === mealType);
+        if (state === "copied" && !(targetMeal?.items || []).length) {
+          delete next[mealType];
+          changed = true;
+        }
+      }
+      return changed ? next : current;
+    });
+  }, [targetMeals]);
   async function preview() {
     setLoading(true);
     setStatus({});
