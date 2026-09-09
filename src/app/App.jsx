@@ -25,6 +25,7 @@ const TrainingCalendar = lazyPage(() => import("../features/training/TrainingCal
 const CardioPage = lazyPage(() => import("../features/training/CardioPage"), "CardioPage");
 const TrainingProfile = lazyPage(() => import("../features/training/TrainingProfile"), "TrainingProfile");
 const PlansPage = lazyPage(() => import("../features/plans/PlansPage"), "PlansPage");
+const DayPresetsPage = lazyPage(() => import("../features/day-presets/DayPresetsPage"), "DayPresetsPage");
 
 function navigationState() {
   const state = window.history.state || {};
@@ -74,6 +75,7 @@ export function App() {
   const [sessionState, setSessionState] = useState("checking");
   const [selectedFoodId, setSelectedFoodId] = useState(null);
   const [prefillBarcode, setPrefillBarcode] = useState("");
+  const [dayPresetSeed, setDayPresetSeed] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
   const [notification, setNotification] = useState(null);
   const [sharedMealToken, setSharedMealToken] = useState(() => new URLSearchParams(window.location.search).get("compartir") || "");
@@ -125,6 +127,11 @@ export function App() {
     setUser(null);
     setSessionState("anonymous");
     setPage("login");
+  }
+
+  function openDayPresets(seed = null) {
+    setDayPresetSeed(seed);
+    setPage("day-presets");
   }
 
   function resolveConfirmation(confirmed) {
@@ -200,7 +207,7 @@ export function App() {
       document.title = "Ingresar | ScaleGrams";
       return;
     }
-    const titles = { dashboard: "Día", "my-foods": "Alimentos", recipes: "Recetas", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", plans: "Planes", profile: "Perfil", "training-dashboard": "Día", "training-calendar": "Calendario de entrenamiento", "training-cardio": "Cardio", "training-profile": "Ejercicios" };
+    const titles = { dashboard: "Día", "my-foods": "Alimentos", recipes: "Recetas", "day-presets": "Reutilizá tu día", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", plans: "Planes", profile: "Perfil", "training-dashboard": "Día", "training-calendar": "Calendario de entrenamiento", "training-cardio": "Cardio", "training-profile": "Ejercicios" };
     document.title = `${titles[page] || "ScaleGrams"} | ScaleGrams`;
   }, [authenticated, mode, page]);
 
@@ -209,12 +216,11 @@ export function App() {
       {sessionState === "checking" ? <PageLoader page={page} mode={mode} /> : authenticated ? (
         <Shell page={page} mode={mode} setPage={setPage} setMode={setMode} logout={logout}>
           <Suspense fallback={<PageLoader page={page} mode={mode} />}>
-            {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} />}
+            {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} onOpenDayPresets={openDayPresets} />}
             {page === "configure" && <ConfigureFood api={api} setPage={setPage} foodId={selectedFoodId} user={user} />}
-            {["scanner", "recipes", "my-foods"].includes(page) && (
+            {page === "scanner" && (
               <Scanner
                 api={api}
-                initialDialog={page === "scanner" ? null : page}
                 user={user}
                 setPage={setPage}
                 setSelectedFoodId={setSelectedFoodId}
@@ -226,6 +232,9 @@ export function App() {
             )}
             {page === "history" && <History api={api} />}
             {page === "plans" && <PlansPage api={api} mode={mode} />}
+            {page === "my-foods" && <MyFoodsPage api={api} setPage={setPage} />}
+            {page === "recipes" && <Recipes api={api} setPage={setPage} />}
+            {page === "day-presets" && <DayPresetsPage api={api} user={user} seed={dayPresetSeed} onSeedConsumed={() => setDayPresetSeed(null)} />}
             {page === "profile" && <Profile api={api} logout={logout} mode={mode} />}
             {page === "training-dashboard" && <TrainingDashboard api={api} />}
             {page === "training-calendar" && <TrainingCalendar api={api} />}

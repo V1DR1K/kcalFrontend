@@ -8,7 +8,6 @@ import { readRecents } from "../../services/recents";
 import { formatNumber, today } from "../../utils/format";
 import { macroValue, mealLogName, mealTotals } from "./dashboard.utils";
 import { EditAiEstimateDialog } from "./dialogs/EditAiEstimateDialog";
-import { DayPresetsDialog } from "./dialogs/DayPresetsDialog";
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./dialogs/MealPhotoDialog";
 import { ConvertMealToRecipeDialog } from "./dialogs/ConvertMealToRecipeDialog";
 import { FoodPicker, AiEstimateEditor } from "./dialogs/FoodPickerDialog";
@@ -25,20 +24,17 @@ const LONG_PRESS_DURATION = 500;
 const LONG_PRESS_MOVE_TOLERANCE = 18;
 let optimisticSequence = 0;
 
-export function Dashboard({ api, user, setPage }) {
+export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
   const {
     data,
     setData,
     loading,
     error,
     mealTypes,
-    dayPresets,
-    setDayPresets,
     selectedDate,
     dateChanging,
     yesterdayData,
     load,
-    loadDayPresets,
     changeDate,
   } = useDashboardData(api);
   const [pickerMeal, setPickerMeal] = useState(null);
@@ -50,7 +46,6 @@ export function Dashboard({ api, user, setPage }) {
   const [waterActionState, setWaterActionState] = useState("idle");
   const [mealClipboard, setMealClipboard] = useState(null);
   const [mealBulkActionLoading, setMealBulkActionLoading] = useState(false);
-  const [dayPresetModal, setDayPresetModal] = useState(false);
   const [convertingMeal, setConvertingMeal] = useState(null);
   const [sharingMeal, setSharingMeal] = useState(null);
   const [swipeResetSignal, setSwipeResetSignal] = useState(0);
@@ -459,20 +454,12 @@ export function Dashboard({ api, user, setPage }) {
         </Panel>}
       </div>
        <PastMealsPreview api={api} targetDate={selectedDate} targetMeals={data?.meals || []} mealTypes={mealTypes} onCopied={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
-       <DayPresetsDialog
-         api={api}
-         user={user}
-         date={selectedDate}
-         data={data}
-         mealTypes={mealTypes}
-         presets={dayPresets}
-         onReload={loadDayPresets}
-         onApplied={load}
-         open={dayPresetModal}
-         onOpen={() => setDayPresetModal(true)}
-         onClose={() => setDayPresetModal(false)}
-         FoodPickerComponent={FoodPicker}
-       />
+       <section className="day-presets-actions" aria-label="Presets de alimentación">
+         <button type="button" className="day-presets-trigger" onClick={() => onOpenDayPresets?.({ data, date: selectedDate, autoOpenCreate: true })}>
+           <span><strong>Guardar este día</strong><small>Guardá la combinación actual y reutilizala cuando la necesites.</small></span>
+           <Icon name="arrow_forward" />
+         </button>
+       </section>
       {pickerMeal && (
         <FoodPicker
           api={api}

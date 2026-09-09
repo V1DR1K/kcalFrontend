@@ -25,8 +25,13 @@ export const DEFAULT_MEALS = [
 ];
 export const navItems = [
   { id: "dashboard", label: "Día", mobileLabel: "Día", icon: "monitoring" },
-  { id: "history", label: "Historial", icon: "calendar_month" }, { id: "plans", label: "Planes", icon: "view_list" }, { id: "profile", label: "Perfil", icon: "account_circle" },
-  { id: "scanner", label: "Registrar", mobileLabel: "Registrar", icon: "qr_code_scanner", activePages: ["my-foods", "recipes", "configure"] },
+  { id: "history", label: "Historial", icon: "calendar_month" },
+  { id: "plans", label: "Planes", icon: "view_list" },
+  { id: "my-foods", label: "Alimentos", icon: "nutrition" },
+  { id: "recipes", label: "Recetas", icon: "restaurant" },
+  { id: "day-presets", label: "Reutilizá tu día", mobileLabel: "Reutilizar", icon: "bookmark" },
+  { id: "profile", label: "Perfil", icon: "account_circle" },
+  { id: "scanner", label: "Registrar", mobileLabel: "Registrar", icon: "qr_code_scanner", activePages: ["configure"] },
   { id: "training", label: "Entrenamiento", mobileLabel: "Entreno", icon: "training_section", mode: "training" },
 ];
 export const trainingNavItems = [

@@ -196,12 +196,12 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
             <span><strong>Crear alimento</strong><small>Agregá un alimento nuevo al catálogo personal.</small></span>
             <Icon name="arrow_forward" />
           </button>
-          <button className="register-option" type="button" onClick={() => setActiveDialog("recipes")}>
+          <button className="register-option" type="button" onClick={() => setPage("recipes")}>
             <span className="register-option-icon"><Icon name="restaurant" /></span>
             <span><strong>Recetas</strong><small>Consultá tus recetas o explorá las que compartió la comunidad.</small></span>
             <Icon name="arrow_forward" />
           </button>
-          <button className="register-option register-option-compact" type="button" onClick={() => setActiveDialog("my-foods")}>
+          <button className="register-option register-option-compact" type="button" onClick={() => setPage("my-foods")}>
             <span className="register-option-icon"><Icon name="nutrition" /></span>
             <span><strong>Alimentos</strong><small>Consultá y editá los alimentos que creaste.</small></span>
             <Icon name="arrow_forward" />

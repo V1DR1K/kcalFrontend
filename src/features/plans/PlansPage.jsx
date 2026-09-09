@@ -43,8 +43,8 @@ export function PlansPage({ api, mode = "nutrition" }) {
   if (error) return <section className="page plans-page"><Header title="Planes" /><CatalogStatus error>{error}<button className="secondary" onClick={load}>Reintentar</button></CatalogStatus></section>;
 
   return (
-    <section className="page plans-page">
-      <Header title="Planes" />
+    <section className="page abm-page plans-page">
+      <header className="abm-page-header"><div><h1>Planes</h1><p>{training ? "Organizá tus rutinas de entrenamiento." : "Definí el objetivo diario que guía tu bitácora."}</p></div></header>
       <p className="plans-page-intro">{training ? "Administrá tus rutinas de entrenamiento y organizá los días que vas a repetir." : "Definí tus calorías diarias y la distribución de nutrientes de tu plan."}</p>
       <div className="plans-page-grid">
         {training ? <section className="plans-section plans-training-section training-page training-profile-root">

@@ -82,12 +82,15 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
 
     function revealFocusedControl() {
       const target = document.activeElement;
-      if (!dialogRef.current?.contains(target)) return;
+      const dialog = dialogRef.current;
+      if (!dialog || !target || !dialog.contains(target)) return;
       window.requestAnimationFrame(() => {
+        if (!dialogRef.current?.contains(target)) return;
         const owner = target.closest?.(SCROLL_OWNER_SELECTOR) || dialogRef.current;
+        if (!owner) return;
         const targetRect = target.getBoundingClientRect();
         const ownerRect = owner.getBoundingClientRect();
-        const footer = dialogRef.current.querySelector(":scope > footer, :scope > .modal-shell-footer, :scope > .ai-photo-context-actions, :scope > .ai-estimate-actions, :scope > .selected-editor > .ai-photo-context-actions, :scope > .selected-editor > .ai-estimate-actions, :scope > .selected-editor > .primary");
+        const footer = dialogRef.current?.querySelector(":scope > footer, :scope > .modal-shell-footer, :scope > .ai-photo-context-actions, :scope > .ai-estimate-actions, :scope > .selected-editor > .ai-photo-context-actions, :scope > .selected-editor > .ai-estimate-actions, :scope > .selected-editor > .primary");
         const footerRect = footer?.getBoundingClientRect();
         const viewport = window.visualViewport;
         const viewportBottom = viewport ? (viewport.offsetTop || 0) + viewport.height : ownerRect.bottom;

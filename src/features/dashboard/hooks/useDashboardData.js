@@ -7,7 +7,6 @@ export function useDashboardData(api) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mealTypes, setMealTypes] = useState(DEFAULT_MEALS);
-  const [dayPresets, setDayPresets] = useState([]);
   const [selectedDate, setSelectedDate] = useState(today());
   const [dateChanging, setDateChanging] = useState(false);
   const [yesterdayData, setYesterdayData] = useState(null);
@@ -58,12 +57,6 @@ export function useDashboardData(api) {
     return () => window.removeEventListener("scalegrams:plan-updated", refreshPlan);
   }, [load, selectedDate]);
 
-  const loadDayPresets = useCallback(() => api.request("/api/nutrition/day-presets")
-    .then(setDayPresets)
-    .catch(() => setDayPresets([])), [api]);
-
-  useEffect(() => { loadDayPresets(); }, [loadDayPresets]);
-
   useEffect(() => {
     let active = true;
     setYesterdayData(null);
@@ -85,13 +78,10 @@ export function useDashboardData(api) {
     loading,
     error,
     mealTypes,
-    dayPresets,
-    setDayPresets,
     selectedDate,
     dateChanging,
     yesterdayData,
     load,
-    loadDayPresets,
     changeDate,
   };
 }

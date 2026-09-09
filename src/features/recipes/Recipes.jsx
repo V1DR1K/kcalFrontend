@@ -22,14 +22,11 @@ export function Recipes({ api, setPage, embedded = false }) {
     </button>
   );
   return (
-    <section className={`page recipes-page ${embedded ? "register-embedded-page" : ""}`}>
+    <section className={`page abm-page recipes-page ${embedded ? "register-embedded-page" : ""}`}>
       {embedded ? (
         <div className="recipes-embedded-toolbar">{createAction}</div>
       ) : (
-        <Header
-          title="Recetas"
-          action={<div className="header-actions">{createAction}</div>}
-        />
+        <header className="abm-page-header"><div><h1>Recetas</h1><p>Creá preparaciones propias, revisá sus nutrientes y reutilizalas al registrar una comida.</p></div><div className="header-actions">{createAction}</div></header>
       )}
       <div className="tabs recipes-tabs" role="tablist" aria-label="Secciones de recetas">
         <button type="button" role="tab" aria-selected={tab === "mine"} className={tab === "mine" ? "selected" : ""} onClick={() => setTab("mine")}>
