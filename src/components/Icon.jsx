@@ -68,7 +68,7 @@ export function Icon({ name, className = "", ...props }) {
   const path = paths[name] || paths.error;
   return (
     <span className={`material-symbols-outlined ${className}`.trim()} aria-hidden="true" {...props}>
-      <svg viewBox="0 0 24 24" focusable="false"><path d={path} /></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" focusable="false" aria-hidden="true"><path d={path} /></svg>
     </span>
   );
 }

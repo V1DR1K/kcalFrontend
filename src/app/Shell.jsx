@@ -27,7 +27,7 @@ function MobileNavigation({ mode, page, setPage, setMode }) {
 function NavigationGroup({ mode, items, activeMode, page, mobile, setPage, setMode }) {
   const active = activeMode === mode;
   return (
-    <div className={`training-nav-group training-${mode}-nav-group`.trim()} aria-hidden={!active} inert={active ? undefined : ""}>
+    <div className={`training-nav-group training-${mode}-nav-group`.trim()} aria-hidden={!active} inert={active ? undefined : true}>
       <div className="training-nav-group-content">
         <div className="training-nav-items">
           {items.map((item) => {
