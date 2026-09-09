@@ -1,12 +1,16 @@
 import { test, expect } from "@playwright/test";
 
-async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withRecipeLog = false, withNutrients = false, withPreset = false, withManyPickerResults = false, withServingFood = false, withYesterdaySuggestion = false } = {}) {
+async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withRecipeLog = false, recipeUnit = "PORTION", withManyRecipeIngredients = false, withNutrients = false, withPreset = false, withManyPickerResults = false, withServingFood = false, withYesterdaySuggestion = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
     localStorage.removeItem("scalegrams.user");
   });
   const yesterdayItem = { id: 301, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } };
+  const recipeIngredients = withManyRecipeIngredients
+    ? ["Zanahoria", "Avena", "Banana", "Cacao", "Canela", "Chía", "Frutilla", "Huevo", "Leche", "Manzana", "Miel", "Nuez", "Pera", "Queso", "Semillas", "Tomate", "Yogur", "Zapallo"].map((name, index) => ({ food: { id: 40 + index, name, baseQuantity: 100, proteinGrams: 5, carbsGrams: 15, fatGrams: 3, category: "OTHER" }, quantity: 40 + index, unit: "GRAM" }))
+    : [{ food: { id: 14, name: "Zanahoria", baseQuantity: 100, proteinGrams: 1, carbsGrams: 10, fatGrams: 0, category: "VEGETABLE" }, quantity: 90, unit: "GRAM" }, { food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "CEREAL" }, quantity: 150, unit: "GRAM" }];
+  const recipeItem = { id: 202, itemType: "RECIPE", quantity: recipeUnit === "GRAM" ? 180 : 1, unit: recipeUnit, calories: 350, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, recipe: { id: 22, name: "Tostada proteica", rawTotalWeightGrams: 300, cookedTotalWeightGrams: 260, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, ingredients: recipeIngredients } };
   let targetDashboardDate = null;
   let currentMealItems = [];
   await page.route("**/api/**", async (route) => {
@@ -24,7 +28,7 @@ async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = f
         body = { date: requestedDate, caloriesConsumed: hasItems ? 400 : 0, calorieGoal: 2000, macros: [], meals, nutrients: [], waterConsumed: 0, waterGoal: 2, plan: null };
       } else {
         const loggedItems = withRecipeLog
-          ? [{ id: 202, itemType: "RECIPE", quantity: 1, unit: "PORTION", calories: 350, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, recipe: { id: 22, name: "Tostada proteica", rawTotalWeightGrams: 300, cookedTotalWeightGrams: 260, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, ingredients: [{ food: { id: 14, name: "Zanahoria", baseQuantity: 100, proteinGrams: 1, carbsGrams: 10, fatGrams: 0, category: "VEGETABLE" }, quantity: 90, unit: "GRAM" }, { food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "CEREAL" }, quantity: 150, unit: "GRAM" }] } }]
+          ? [recipeItem]
           : withFoodLog
             ? [{ id: 101, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } }]
             : [];
@@ -188,6 +192,115 @@ test("shows sorted recipe ingredients below the nutrition summary", async ({ pag
   await meal.locator(".meal-item").click();
   await expect(meal.locator(".recipe-detail-heading")).toHaveText(/Alimentos/);
   await expect(meal.locator(".recipe-ingredient-main > span:nth-child(2) > strong")).toHaveText(["Avena", "Zanahoria"]);
+});
+
+test("opens the food log editor with an accessible desktop footer", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 480 });
+  await seedAuthenticatedApp(page, { withFoodLog: true });
+  await page.goto("/ingresar");
+
+  const meal = page.locator(".meal-card").filter({ hasText: "Avena" }).first();
+  await meal.locator(".meal-item").click();
+  await meal.locator(".meal-item-detail-actions button").filter({ hasText: "Editar" }).click();
+
+  const dialog = page.locator(".edit-log-modal");
+  await expect(dialog).toBeVisible();
+  const layout = await dialog.evaluate((element) => {
+    const body = element.querySelector(".edit-log-body");
+    const footer = element.querySelector(":scope > footer");
+    return {
+      rows: getComputedStyle(element).gridTemplateRows.split(" ").length,
+      bodyOverflowY: getComputedStyle(body).overflowY,
+      bodyOverflowX: getComputedStyle(body).overflowX,
+      dialog: element.getBoundingClientRect().toJSON(),
+      footer: footer.getBoundingClientRect().toJSON(),
+      save: footer.querySelector(".primary").getBoundingClientRect().toJSON(),
+      horizontalOverflow: element.scrollWidth > element.clientWidth,
+    };
+  });
+
+  expect(layout.rows).toBe(3);
+  expect(layout.bodyOverflowY).toBe("auto");
+  expect(layout.bodyOverflowX).toBe("hidden");
+  expect(layout.dialog.bottom).toBeLessThanOrEqual(480 + 1);
+  expect(layout.footer.bottom).toBeLessThanOrEqual(480 + 1);
+  expect(layout.save.bottom).toBeLessThanOrEqual(480 + 1);
+  expect(layout.horizontalOverflow).toBe(false);
+});
+
+test("shows the editable recipe composition from the start", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withRecipeLog: true });
+  await page.goto("/ingresar");
+
+  const meal = page.locator(".meal-card").filter({ hasText: "Tostada proteica" }).first();
+  await meal.locator(".meal-item").click();
+  await meal.locator(".meal-item-detail-actions button").filter({ hasText: "Editar" }).click();
+
+  const dialog = page.locator(".edit-log-modal");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Alimentos de la receta", { exact: true })).toBeVisible();
+  await expect(dialog.locator(".daily-recipe-ingredient-copy strong")).toHaveText(["Avena", "Zanahoria"]);
+  await expect(dialog.locator(".daily-recipe-ingredient .food-thumb")).toHaveCount(2);
+  await expect(dialog.locator(".daily-recipe-ingredient-kcal")).toHaveText(["581 kcal", "40 kcal"]);
+  await expect(dialog.getByLabel("Cantidad de Avena en gramos")).toBeVisible();
+  await expect(dialog.getByText("Resumen nutricional", { exact: true })).toBeVisible();
+});
+
+test("keeps cooked-gram recipe ingredients visible and read only", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withRecipeLog: true, recipeUnit: "GRAM" });
+  await page.goto("/ingresar");
+
+  const meal = page.locator(".meal-card").filter({ hasText: "Tostada proteica" }).first();
+  await meal.locator(".meal-item").click();
+  await meal.locator(".meal-item-detail-actions button").filter({ hasText: "Editar" }).click();
+
+  const dialog = page.locator(".edit-log-modal");
+  await expect(dialog.locator(".daily-recipe-locked")).toBeVisible();
+  await expect(dialog.locator(".daily-recipe-ingredient-copy strong")).toHaveText(["Avena", "Zanahoria"]);
+  await expect(dialog.locator(".daily-recipe-ingredient input")).toHaveCount(0);
+  await expect(dialog.locator(".daily-recipe-ingredient-quantity strong")).toHaveText(["150", "90"]);
+});
+
+test("scrolls a long recipe body without losing the footer in mobile landscape", async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await seedAuthenticatedApp(page, { withRecipeLog: true, withManyRecipeIngredients: true });
+  await page.goto("/ingresar");
+
+  const meal = page.locator(".meal-card").filter({ hasText: "Tostada proteica" }).first();
+  await meal.locator(".meal-item").click();
+  await meal.locator(".meal-item-detail-actions button").filter({ hasText: "Editar" }).click();
+
+  const dialog = page.locator(".edit-log-modal");
+  const body = dialog.locator(".edit-log-body");
+  const save = dialog.getByRole("button", { name: "Guardar cambios" });
+  await expect(dialog).toBeVisible();
+  const beforeScroll = await body.evaluate((element) => ({ scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }));
+  expect(beforeScroll.scrollHeight).toBeGreaterThan(beforeScroll.clientHeight);
+  await body.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "auto" }));
+
+  const layout = await dialog.evaluate((element) => {
+    const bodyElement = element.querySelector(".edit-log-body");
+    const footer = element.querySelector(":scope > footer");
+    return {
+      bodyScrollTop: bodyElement.scrollTop,
+      bodyOverflowY: getComputedStyle(bodyElement).overflowY,
+      footerPosition: getComputedStyle(footer).position,
+      footer: footer.getBoundingClientRect().toJSON(),
+      body: bodyElement.getBoundingClientRect().toJSON(),
+      save: footer.querySelector(".primary").getBoundingClientRect().toJSON(),
+      pageOverflow: document.documentElement.scrollWidth > window.innerWidth,
+    };
+  });
+
+  expect(layout.bodyScrollTop).toBeGreaterThan(0);
+  expect(layout.bodyOverflowY).toBe("auto");
+  expect(layout.footerPosition).toBe("relative");
+  expect(layout.footer.bottom).toBeLessThanOrEqual(390 + 1);
+  expect(layout.save.bottom).toBeLessThanOrEqual(390 + 1);
+  expect(layout.body.bottom).toBeLessThanOrEqual(layout.footer.top + 1);
+  expect(layout.pageOverflow).toBe(false);
 });
 
 test("hides nutrient details even when nutrient data is present", async ({ page }) => {
