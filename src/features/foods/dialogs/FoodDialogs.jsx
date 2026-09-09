@@ -123,10 +123,13 @@ export function FoodLogDialog({ item, eyebrow, title = item?.name, isRecipe = fa
   return (
     <ModalShell as="form" onClose={onClose} hideHeader labelledBy={resolvedTitleId} className={`app-modal-compact edit-log-modal ${isRecipe ? "recipe-log-modal" : ""} ${closing ? "closing" : ""}`} backdropClassName="modal-backdrop compact-modal" wrapContent={false} dialogProps={{ onSubmit }}>
         <header className="edit-log-header">
-          <FoodThumb item={isRecipe ? { ...item, type: "RECIPE" } : item} compact />
-          <div className="edit-log-identity">
-            <span>{eyebrow}</span>
-          <h2 id={resolvedTitleId}>{title}</h2>
+          <div className="edit-log-header-main">
+            <FoodThumb item={isRecipe ? { ...item, type: "RECIPE" } : item} compact />
+            <div className="edit-log-identity">
+              <span>{eyebrow}</span>
+              <h2 id={resolvedTitleId}>{title}</h2>
+              <small>{isRecipe ? "Receta" : "Alimento"}</small>
+            </div>
           </div>
           <button type="button" className="icon-button" onClick={onClose} aria-label="Cerrar">
             <Icon name="close" />

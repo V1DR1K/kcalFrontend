@@ -4,8 +4,9 @@ import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { CatalogStatus, FoodThumb, preparationLabel } from "../catalog/CatalogComponents";
 import { formatNumber, formatQuantity } from "../../utils/format";
-import { decimalNumber } from "../../utils/decimal";
+import { decimalNumber, normalizeDecimalInput } from "../../utils/decimal";
 import { cookedRecipeWeight, rawRecipeWeight, recipeServingFactor } from "../../utils/recipe";
+import { foodPreparationSuffix, scaleFoodNutrition, sortRecipeIngredients } from "../dashboard/dashboard.utils";
 import { NutritionSummary } from "../../components/NutritionSummary";
 import { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
 
@@ -149,8 +150,6 @@ export function FoodLogForm({
   recipeIngredients,
   onRecipeIngredientChange,
   recipeIngredientsLocked = false,
-  showIngredients,
-  onToggleIngredients,
   onResetRecipe,
   saving,
   logId,
@@ -158,56 +157,67 @@ export function FoodLogForm({
 }) {
   return (
     <>
-      {!isRecipe && preparations.length > 1 && (
-        <Select
-          label="Peso del alimento"
-          value={String(preparationValue)}
-          onChange={(event) => onPreparationChange(Number(event.target.value))}
-          options={preparations.map((item) => ({
-            value: String(item.id),
-            label: preparationLabel(item.preparation),
-          }))}
-        />
-      )}
-      <div className="edit-log-fields">
-        <div className={`edit-log-quantity ${isRecipe && unit === "PORTION" ? "portions" : ""}`}>
-          <Input decimal selectOnFocus numericOnly label="Cantidad" inputMode="decimal" min="0.1" step="0.01" value={quantity} onChange={(event) => onQuantityChange(event.target.value)} />
-          <small>{isRecipe && unit === "GRAM" ? "g cocidos" : isRecipe ? "porciones" : unit === "GRAM" ? "g" : "porciones"}</small>
+      <section className="edit-log-section edit-log-entry-section" aria-label="Datos del registro">
+        <div className="edit-log-section-heading">
+          <div><span>Registro</span><strong>Cantidad y comida</strong></div>
+          <Icon name="tune" />
         </div>
-        {mode === "add" ? (
-          <Select label="Unidad" value={unit} onChange={(event) => onUnitChange(event.target.value)} options={unitOptions} />
-        ) : (
-          <Select label="Comida" value={mealType} onChange={(event) => onMealTypeChange(event.target.value)} options={mealTypeOptions} />
+        {!isRecipe && preparations.length > 1 && (
+          <Select
+            label="Peso del alimento"
+            value={String(preparationValue)}
+            onChange={(event) => onPreparationChange(Number(event.target.value))}
+            options={preparations.map((item) => ({
+              value: String(item.id),
+              label: preparationLabel(item.preparation),
+            }))}
+          />
         )}
-      </div>
+        <div className="edit-log-fields">
+          <div className={`edit-log-quantity ${isRecipe && unit === "PORTION" ? "portions" : ""}`}>
+            <Input decimal selectOnFocus numericOnly label="Cantidad" inputMode="decimal" min="0.1" step="0.01" value={quantity} onChange={(event) => onQuantityChange(event.target.value)} />
+            <small>{isRecipe && unit === "GRAM" ? "g cocidos" : isRecipe ? "porciones" : unit === "GRAM" ? "g" : "porciones"}</small>
+          </div>
+          {mode === "add" ? (
+            <Select label="Unidad" value={unit} onChange={(event) => onUnitChange(event.target.value)} options={unitOptions} />
+          ) : (
+            <Select label="Comida" value={mealType} onChange={(event) => onMealTypeChange(event.target.value)} options={mealTypeOptions} />
+          )}
+        </div>
+      </section>
       {isRecipe && recipeIngredients && (
-        <section className="daily-recipe-editor" aria-label="Ingredientes de la receta">
-          <button
-            type="button"
-            className="daily-recipe-toggle"
-            aria-expanded={mode === "add" || showIngredients}
-            aria-controls={mode === "edit" ? `daily-recipe-${logId}` : undefined}
-            onClick={mode === "edit" ? onToggleIngredients : undefined}
-          >
-            <span>
-              <strong>Ingredientes</strong>
-              <small>{recipeIngredientsLocked ? "La cantidad se calcula con el peso cocido medido." : mode === "add" ? "Ajusta las cantidades antes de agregar." : "Los cambios no modifican la receta base."}</small>
-            </span>
-            <Icon name={mode === "add" || showIngredients ? "expand_less" : "expand_more"} />
-          </button>
-          <div className="daily-recipe-fields" id={mode === "edit" ? `daily-recipe-${logId}` : undefined} hidden={mode === "edit" && !showIngredients}>
-            {recipeIngredientsLocked ? <p className="daily-recipe-locked">Los gramos cocidos usan el peso final medido; no se pueden ajustar ingredientes en este registro.</p> : <>
-              {recipeIngredients.map((ingredient, index) => (
-                <Input key={ingredient.foodId} decimal numericOnly label={`${ingredient.name} (g)`} inputMode="decimal" min="0.1" step="0.01" value={ingredient.quantity} onChange={(event) => onRecipeIngredientChange(index, event.target.value)} />
-              ))}
-              {mode === "edit" && showIngredients && onResetRecipe && (
-                <button type="button" className="secondary daily-recipe-reset" disabled={saving} onClick={onResetRecipe}>Restablecer receta base</button>
-              )}
-            </>}
+        <section className="edit-log-section daily-recipe-editor" aria-label="Composición de la receta">
+          <div className="edit-log-section-heading daily-recipe-heading">
+            <div>
+              <span>Composición</span>
+              <strong>Alimentos de la receta</strong>
+              <small>{recipeIngredientsLocked ? "El peso cocido medido bloquea las cantidades." : mode === "add" ? "Ajustá las cantidades antes de agregar." : "Los cambios solo afectan este registro."}</small>
+            </div>
+            <Icon name="restaurant_menu" />
+          </div>
+          {recipeIngredientsLocked && <p className="daily-recipe-locked">Los gramos cocidos usan el peso final medido; no se pueden ajustar ingredientes en este registro.</p>}
+          <div className="daily-recipe-fields" id={mode === "edit" ? `daily-recipe-${logId}` : undefined}>
+            {recipeIngredients.map((ingredient, index) => (
+              <RecipeIngredientEditorRow
+                key={`${ingredient.foodId}:${index}`}
+                ingredient={ingredient}
+                index={index}
+                locked={recipeIngredientsLocked}
+                onChange={onRecipeIngredientChange}
+              />
+            ))}
+            {mode === "edit" && onResetRecipe && (
+              <button type="button" className="secondary daily-recipe-reset" disabled={saving} onClick={onResetRecipe}>Restablecer receta base</button>
+            )}
           </div>
         </section>
       )}
-      <div className="nutrition-preview edit-log-preview" aria-label="Resumen nutricional">
+      <section className="edit-log-section edit-log-nutrition-section" aria-label="Resumen nutricional">
+        <div className="edit-log-section-heading">
+          <div><span>Resultado</span><strong>Resumen nutricional</strong></div>
+          <Icon name="monitoring" />
+        </div>
+        <div className="nutrition-preview edit-log-preview">
         <span className="edit-log-calories">
           <small>Kcal</small>
           <strong>{formatNumber(preview?.calories)}</strong>
@@ -224,17 +234,45 @@ export function FoodLogForm({
           <small>G</small>
           <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
         </span>
-      </div>
+        </div>
+      </section>
     </>
+  );
+}
+
+function RecipeIngredientEditorRow({ ingredient, index, locked, onChange }) {
+  const food = ingredient.food || { name: ingredient.name };
+  const nutrition = scaleFoodNutrition(food, ingredient.quantity);
+  return (
+    <div className="daily-recipe-ingredient">
+      <FoodThumb item={{ ...food, type: "FOOD" }} compact />
+      <div className="daily-recipe-ingredient-copy">
+        <strong>{ingredient.name || "Alimento"}</strong>
+        <small>{foodPreparationSuffix(food) || "Ingrediente de la receta"}</small>
+      </div>
+      <div className="daily-recipe-ingredient-meta">
+        {locked ? (
+          <span className="daily-recipe-ingredient-quantity"><strong>{formatQuantity(ingredient.quantity)}</strong><small>g</small></span>
+        ) : (
+          <label className="daily-recipe-ingredient-quantity">
+            <span className="sr-only">Cantidad de {ingredient.name || "alimento"} en gramos</span>
+            <input aria-label={`Cantidad de ${ingredient.name || "alimento"} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.01" value={ingredient.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onChange={(event) => onChange(index, normalizeDecimalInput(event.target.value))} />
+            <small>g</small>
+          </label>
+        )}
+        <span className="daily-recipe-ingredient-kcal">{formatNumber(nutrition.calories)} kcal</span>
+      </div>
+    </div>
   );
 }
 
 export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [quantity, setQuantity] = useState(String(log.quantity));
   const [mealType, setMealType] = useState(log.mealType);
-  const [ingredients, setIngredients] = useState(() => (log.recipe?.ingredients || []).map((ingredient) => ({
+  const [ingredients, setIngredients] = useState(() => sortRecipeIngredients(log.recipe?.ingredients || []).map((ingredient) => ({
     foodId: ingredient.food?.id,
     name: ingredient.food?.name || "Alimento",
+    food: ingredient.food,
     quantity: String(ingredient.quantity ?? ""),
     unit: ingredient.unit || "GRAM",
   })));
@@ -244,7 +282,6 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     carbsGrams: log.carbsGrams,
     fatGrams: log.fatGrams,
   });
-  const [showIngredients, setShowIngredients] = useState(Boolean(log.recipeAdjusted) || (log.itemType === "RECIPE" && log.unit === "GRAM"));
   const [saving, setSaving] = useState(false);
   const [closing, setClosing] = useState(false);
   const [preparations, setPreparations] = useState([]);
@@ -415,8 +452,6 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
             recipeIngredients={isRecipe ? ingredients : null}
             onRecipeIngredientChange={updateIngredient}
             recipeIngredientsLocked={recipeUsesCookedGrams}
-            showIngredients={showIngredients}
-            onToggleIngredients={() => setShowIngredients((current) => !current)}
             onResetRecipe={log.recipeAdjusted && !recipeUsesCookedGrams ? resetRecipe : null}
             saving={saving}
             logId={log.id}

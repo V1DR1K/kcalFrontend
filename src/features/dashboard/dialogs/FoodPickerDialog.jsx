@@ -11,7 +11,7 @@ import { formatNumber, readableDate } from "../../../utils/format";
 import { decimalNumber } from "../../../utils/decimal";
 import { normalizeSearchText } from "../../../utils/search";
 import { hasCookedRecipeWeight, recipeServingFactor } from "../../../utils/recipe";
-import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition, sortMealLogs } from "../dashboard.utils";
+import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition, sortMealLogs, sortRecipeIngredients } from "../dashboard.utils";
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./MealPhotoDialog";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { compressMealPhoto } from "../../../services/image";
@@ -299,9 +299,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       .request(`/api/recipes/${selected.id}`)
       .then((fullRecipe) => {
         setRecipeDetail(fullRecipe);
-        setRecipeIngredients((fullRecipe.ingredients || []).map((ing) => ({
+        setRecipeIngredients(sortRecipeIngredients(fullRecipe.ingredients || []).map((ing) => ({
           foodId: ing.food?.id,
           name: ing.food?.name || "Alimento",
+          food: ing.food,
           quantity: String(ing.quantity ?? ""),
           unit: ing.unit || "GRAM",
         })));
