@@ -31,7 +31,8 @@
 
   .sidebar nav { gap: 4px; overflow-y: auto; }
   .sidebar nav button { min-height: 42px; padding-inline: 12px; font-size: 13px; }
-  .sidebar nav button .material-symbols-outlined { color: color-mix(in srgb, currentColor 78%, transparent); }
+  .sidebar nav button .material-symbols-outlined,
+  .sidebar > .ghost .material-symbols-outlined { width: 20px; height: 20px; font-size: 20px; color: color-mix(in srgb, currentColor 78%, transparent); }
   .sidebar nav button.active { box-shadow: inset 3px 0 var(--primary); transform: none; }
   .sidebar > .ghost { min-height: 42px; margin-top: 0; padding-inline: 12px; }
 
@@ -91,7 +92,6 @@
   .modal-backdrop { place-items: center; padding: 32px; }
   .picker-modal { max-height: min(820px, calc(100dvh - 64px)); border-radius: var(--radius-modal); }
   .compact-modal { place-items: center; padding: 32px; }
-  .edit-log-modal { max-height: min(760px, calc(100dvh - 64px)); overflow: auto; }
   .date-picker-dialog { width: min(480px, 100%); padding: 24px; border-radius: var(--radius-modal); }
   .confirmation-dialog { width: min(480px, 100%); padding: 24px; }
   .confirmation-dialog footer { grid-template-columns: auto auto; justify-content: end; }

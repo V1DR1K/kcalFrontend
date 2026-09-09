@@ -98,6 +98,32 @@
   width: min(480px, 100%);
 }
 
+.edit-log-modal.app-modal-surface.app-modal-compact[class] {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.edit-log-modal.app-modal-surface.app-modal-compact[class] .edit-log-body {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scroll-padding-block: 16px var(--dialog-footer-space, calc(16px + env(safe-area-inset-bottom)));
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+@media (min-width: 721px) {
+  .edit-log-modal.app-modal-surface.app-modal-compact[class] {
+    width: min(600px, 100%);
+    max-height: min(780px, calc(var(--dialog-viewport-height, 100dvh) - 64px), calc(100dvh - 64px));
+  }
+}
+
 /* Critical dialogs keep their semantic warning color while sharing the same frame. */
 .app-modal-backdrop.confirmation-backdrop[class] {
   z-index: var(--z-critical);
@@ -157,6 +183,11 @@
     grid-template-rows: auto minmax(0, 1fr);
   }
 
+  .edit-log-modal.app-modal-surface.app-modal-compact[class] {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .app-modal-surface[class]:has(> footer, > .modal-shell-footer) {
     height: var(--dialog-layout-height, var(--dialog-viewport-height, 100dvh));
   }
@@ -213,6 +244,17 @@
     max-height: min(calc(var(--dialog-layout-height, 100dvh) * .92), 900px);
     border-radius: 0 0 var(--radius-sheet) var(--radius-sheet);
     box-shadow: var(--shadow-sheet);
+  }
+
+  .edit-log-modal.app-modal-surface.app-modal-compact[class] > footer {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
+  }
+
+  .edit-log-modal.app-modal-surface.app-modal-compact[class] .edit-log-body {
+    padding-bottom: 16px;
   }
 
   .app-modal-surface[class] > footer,

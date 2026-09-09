@@ -200,18 +200,28 @@
     scroll-padding: 16px 16px 76px;
     padding: 16px;
   }
-  .edit-log-fields { gap: 10px; }
+  .edit-log-fields { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .edit-log-fields .field { gap: 5px; }
   .edit-log-fields .field span { font-size: 12px; }
   .edit-log-fields input,
   .edit-log-fields select { min-height: 50px; }
   .edit-log-quantity > small { bottom: 17px; }
-  .daily-recipe-editor { gap: 0; padding: 0; overflow: hidden; border-color: color-mix(in srgb, var(--primary) 22%, transparent); background: color-mix(in srgb, var(--primary) 5%, transparent); }
-  .daily-recipe-toggle { min-height: 58px; padding: 10px 12px; }
-  .daily-recipe-toggle small { font-size: 11px; }
-  .daily-recipe-fields { padding: 0 var(--space-3) var(--space-3); border-top: 1px solid color-mix(in srgb, var(--primary) 16%, transparent); }
+  .edit-log-header-main { grid-template-columns: 44px minmax(0, 1fr); gap: 10px; }
+  .edit-log-section { gap: 10px; padding: 12px; }
+  .edit-log-section-heading { gap: 8px; }
+  .edit-log-section-heading strong { font-size: 14px; }
+  .edit-log-section-heading small { font-size: 11px; }
+  .daily-recipe-editor { gap: 10px; padding: 12px; overflow: hidden; border-color: color-mix(in srgb, var(--primary) 22%, transparent); background: color-mix(in srgb, var(--primary) 5%, transparent); }
+  .daily-recipe-fields { gap: 8px; }
   .daily-recipe-fields .field { gap: 5px; }
   .daily-recipe-fields .field span { font-size: 12px; }
+  .daily-recipe-ingredient { grid-template-columns: 36px minmax(0, 1fr); gap: 8px; padding: 8px; }
+  .daily-recipe-ingredient .food-thumb.compact { width: 36px; height: 36px; }
+  .daily-recipe-ingredient-copy { align-self: center; }
+  .daily-recipe-ingredient-meta { grid-column: 2; display: flex; align-items: center; justify-content: space-between; width: 100%; min-width: 0; gap: 8px; }
+  .daily-recipe-ingredient-quantity { flex: 0 1 auto; min-width: 100px; }
+  .daily-recipe-ingredient-quantity input { width: 68px; font-size: 16px; }
+  .daily-recipe-ingredient-kcal { flex: 0 0 auto; }
   .edit-log-modal .modal-actions {
     display: grid;
     grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr);
