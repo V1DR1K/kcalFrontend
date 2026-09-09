@@ -58,7 +58,6 @@
   .meal-card.action-surface::before { opacity: 0; transform: none; }
   .meal-card header { padding: 16px 18px; }
   .meal-card .meal-item { padding: 14px 18px; }
-  .meal-card .meal-item-detail-actions { display: flex; }
   .meal-card .meal-item-detail-actions button { min-height: 40px; }
   .panel:hover { transform: none; border-color: color-mix(in srgb, var(--outline) 70%, transparent); }
   .food-card:hover, .recent-meal-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 55%, transparent); }
