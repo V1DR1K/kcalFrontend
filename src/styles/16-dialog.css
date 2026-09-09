@@ -186,6 +186,9 @@
   .edit-log-modal.app-modal-surface.app-modal-compact[class] {
     width: 100%;
     max-width: 100%;
+    height: min(640px, calc(var(--dialog-layout-height, 100dvh) - max(12px, env(safe-area-inset-top))));
+    max-height: min(calc(var(--dialog-layout-height, 100dvh) - max(12px, env(safe-area-inset-top))), 900px);
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
   .app-modal-surface[class]:has(> footer, > .modal-shell-footer) {
@@ -255,6 +258,30 @@
 
   .edit-log-modal.app-modal-surface.app-modal-compact[class] .edit-log-body {
     padding-bottom: 16px;
+  }
+
+  .edit-log-modal.app-modal-surface.app-modal-compact[class] .daily-recipe-editor {
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .edit-log-modal.app-modal-surface.app-modal-compact[class] .daily-recipe-fields {
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .edit-log-modal.app-modal-surface.app-modal-compact[class] .daily-recipe-heading > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 3px;
+  }
+
+  .edit-log-modal.app-modal-surface.app-modal-compact[class] .daily-recipe-heading span,
+  .edit-log-modal.app-modal-surface.app-modal-compact[class] .daily-recipe-heading strong,
+  .edit-log-modal.app-modal-surface.app-modal-compact[class] .daily-recipe-heading small {
+    display: block;
+    min-width: 0;
   }
 
   .app-modal-surface[class] > footer,

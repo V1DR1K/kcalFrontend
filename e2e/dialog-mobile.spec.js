@@ -264,7 +264,7 @@ test("keeps cooked-gram recipe ingredients visible and read only", async ({ page
 });
 
 test("scrolls a long recipe body without losing the footer in mobile landscape", async ({ page }) => {
-  await page.setViewportSize({ width: 844, height: 390 });
+  await page.setViewportSize({ width: 667, height: 390 });
   await seedAuthenticatedApp(page, { withRecipeLog: true, withManyRecipeIngredients: true });
   await page.goto("/ingresar");
 
@@ -278,7 +278,8 @@ test("scrolls a long recipe body without losing the footer in mobile landscape",
   await expect(dialog).toBeVisible();
   const beforeScroll = await body.evaluate((element) => ({ scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }));
   expect(beforeScroll.scrollHeight).toBeGreaterThan(beforeScroll.clientHeight);
-  await body.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "auto" }));
+  await body.hover();
+  await page.mouse.wheel(0, 1000);
 
   const layout = await dialog.evaluate((element) => {
     const bodyElement = element.querySelector(".edit-log-body");
@@ -301,6 +302,53 @@ test("scrolls a long recipe body without losing the footer in mobile landscape",
   expect(layout.save.bottom).toBeLessThanOrEqual(390 + 1);
   expect(layout.body.bottom).toBeLessThanOrEqual(layout.footer.top + 1);
   expect(layout.pageOverflow).toBe(false);
+});
+
+test("keeps recipe composition visible and scrollable in short mobile portrait", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 430 });
+  await seedAuthenticatedApp(page, { withRecipeLog: true, withManyRecipeIngredients: true });
+  await page.goto("/ingresar");
+
+  const meal = page.locator(".meal-card").filter({ hasText: "Tostada proteica" }).first();
+  await meal.locator(".meal-item").click();
+  await meal.locator(".meal-item-detail-actions button").filter({ hasText: "Editar" }).click();
+
+  const dialog = page.locator(".edit-log-modal");
+  const body = dialog.locator(".edit-log-body");
+  const footer = dialog.locator(":scope > footer");
+  await expect(dialog.getByText("Composición", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Alimentos de la receta", { exact: true })).toBeVisible();
+  await expect(dialog.locator(".daily-recipe-ingredient").first()).toBeVisible();
+
+  const beforeScroll = await body.evaluate((element) => ({ scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }));
+  expect(beforeScroll.scrollHeight).toBeGreaterThan(beforeScroll.clientHeight);
+  await body.hover();
+  await page.mouse.wheel(0, 1000);
+  await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await body.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "auto" }));
+
+  const layout = await dialog.evaluate((element) => {
+    const bodyElement = element.querySelector(".edit-log-body");
+    const footerElement = element.querySelector(":scope > footer");
+    const lastIngredient = [...element.querySelectorAll(".daily-recipe-ingredient")].at(-1);
+    return {
+      dialog: element.getBoundingClientRect().toJSON(),
+      body: bodyElement.getBoundingClientRect().toJSON(),
+      footer: footerElement.getBoundingClientRect().toJSON(),
+      lastIngredient: lastIngredient?.getBoundingClientRect().toJSON(),
+      overflowY: getComputedStyle(bodyElement).overflowY,
+      overflowX: getComputedStyle(bodyElement).overflowX,
+      pageOverflow: document.documentElement.scrollWidth > window.innerWidth,
+    };
+  });
+
+  expect(layout.dialog.bottom).toBeLessThanOrEqual(430 + 1);
+  expect(layout.footer.bottom).toBeLessThanOrEqual(430 + 1);
+  expect(layout.lastIngredient.bottom).toBeLessThanOrEqual(layout.body.bottom + 1);
+  expect(layout.overflowY).toBe("auto");
+  expect(layout.overflowX).toBe("hidden");
+  expect(layout.pageOverflow).toBe(false);
+  await expect(footer.getByRole("button", { name: "Guardar cambios" })).toBeVisible();
 });
 
 test("hides nutrient details even when nutrient data is present", async ({ page }) => {
