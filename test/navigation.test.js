@@ -2,17 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { isNavItemActive, navItems, trainingNavItems } from "../src/config/app.js";
 
-test("expone los ABM de nutrición como secciones propias", () => {
-  for (const id of ["recipes", "my-foods", "day-presets"]) {
-    const item = navItems.find((entry) => entry.id === id);
-    assert.ok(item);
-    assert.equal(isNavItemActive(item, id), true);
-  }
+test("mantiene Registrar como entrada única a alimentos y recetas", () => {
+  assert.equal(navItems.some((entry) => entry.id === "recipes"), false);
+  assert.equal(navItems.some((entry) => entry.id === "my-foods"), false);
   const register = navItems.find((item) => item.id === "scanner");
   assert.ok(register);
   assert.equal(isNavItemActive(register, "scanner"), true);
   assert.equal(isNavItemActive(register, "configure"), true);
-  assert.equal(isNavItemActive(register, "my-foods"), false);
+  assert.equal(isNavItemActive(register, "my-foods"), true);
+  assert.equal(isNavItemActive(register, "recipes"), true);
 });
 
 test("separa Perfil de Ejercicios en entrenamiento", () => {

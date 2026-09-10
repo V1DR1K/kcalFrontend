@@ -196,3 +196,110 @@
 @media (prefers-reduced-motion: reduce) {
   .day-preset-library-card, .my-foods-page .my-food-row, .recipes-page .recipe-swipe-card { transition: none; }
 }
+
+/* Shared library/detail workspace for recipes and saved days. */
+.collection-browser { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr); gap: 16px; align-items: start; }
+.collection-browser-list, .collection-browser-preview { min-width: 0; }
+.collection-browser-preview { position: sticky; top: 18px; min-height: 420px; padding: 20px; border: 1px solid var(--outline); border-radius: var(--radius-panel); background: var(--surface-low); }
+.collection-browser-heading { display: flex; justify-content: space-between; gap: 16px; align-items: start; margin-bottom: 14px; }
+.collection-browser-heading h2 { margin: 0; font-family: var(--font-display); font-size: var(--type-heading-lg); letter-spacing: -.025em; }
+.collection-browser-heading p { margin: 5px 0 0; color: var(--muted); font-size: var(--type-small); }
+.collection-library-list { display: grid; gap: 10px; }
+.collection-library-card { overflow: hidden; border: 1px solid var(--outline); border-radius: var(--radius-panel); background: var(--surface-low); transition: border-color 180ms ease, transform 180ms ease; }
+.collection-library-card:hover, .collection-library-card.selected { border-color: color-mix(in srgb, var(--primary) 62%, var(--outline)); transform: translateY(-1px); }
+.collection-library-select { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; width: 100%; min-height: 92px; padding: 14px 16px; border: 0; background: transparent; color: var(--text); text-align: left; }
+.collection-library-select > span { display: grid; gap: 4px; min-width: 0; }
+.collection-library-select strong, .collection-library-select small, .collection-library-select em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.collection-library-select strong { font-family: var(--font-display); font-size: var(--type-body-emphasis); }
+.collection-library-select small, .collection-library-select em { color: var(--muted); font-size: var(--type-small); font-style: normal; }
+.collection-library-select > .nutrition-summary { margin-left: auto; }
+.collection-library-select > .material-symbols-outlined { color: var(--primary); }
+.collection-library-card .food-thumb { width: 60px; height: 60px; border-radius: var(--radius-control); }
+.collection-library-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 14px; }
+.collection-library-actions button { min-height: 44px; }
+.collection-preview { min-width: 0; }
+.collection-preview-back { display: none; align-items: center; gap: 6px; min-height: 44px; margin-bottom: 8px; padding: 0; border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 800; }
+.collection-preview-hero { display: flex; align-items: center; gap: 14px; }
+.collection-preview-image-stack { position: relative; width: 88px; height: 64px; flex: 0 0 88px; }
+.collection-preview-image-stack .food-thumb { position: absolute; top: 0; width: 64px; height: 64px; border: 2px solid var(--surface-low); border-radius: var(--radius-control); }
+.collection-preview-image-stack .food-thumb:nth-child(1) { left: 0; z-index: 1; }
+.collection-preview-image-stack .food-thumb:nth-child(2) { left: 8px; z-index: 2; }
+.collection-preview-image-stack .food-thumb:nth-child(3) { left: 16px; z-index: 3; }
+.collection-preview-image-stack .food-thumb:nth-child(4) { left: 24px; z-index: 4; }
+.collection-preview-heading { min-width: 0; }
+.collection-preview-heading h2 { margin: 0; font-family: var(--font-display); font-size: var(--type-heading-lg); letter-spacing: -.025em; overflow-wrap: anywhere; }
+.collection-preview-heading small { display: block; margin-top: 5px; color: var(--muted); font-size: var(--type-small); }
+.collection-preview-description { margin: 14px 0; color: var(--muted); font-size: var(--type-body-sm); }
+.collection-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin-top: 18px; }
+.collection-metrics span { display: grid; gap: 2px; min-width: 0; padding: 9px; border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-high); }
+.collection-metrics small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.collection-metrics strong { overflow: hidden; font-size: 13px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.collection-preview-groups { display: grid; gap: 18px; margin-top: 20px; }
+.collection-preview-group { position: relative; padding-left: 18px; border-left: 1px solid color-mix(in srgb, var(--primary) 44%, var(--outline)); }
+.collection-preview-group h3 { display: flex; align-items: center; gap: 7px; margin: 0 0 8px -28px; color: var(--text); font-size: var(--type-body-sm); }
+.collection-preview-group h3 > .material-symbols-outlined { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font-size: 14px; }
+.collection-preview-group h3 small { margin-left: auto; color: var(--muted); font-size: var(--type-meta); }
+.collection-preview-items { display: grid; gap: 4px; }
+.collection-preview-item { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 9px; align-items: center; min-height: 52px; }
+.collection-preview-item .food-thumb { width: 36px; height: 36px; border-radius: 8px; }
+.collection-preview-item > span { display: grid; gap: 2px; min-width: 0; }
+.collection-preview-item strong, .collection-preview-item small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.collection-preview-item strong { font-size: var(--type-small); }
+.collection-preview-item small { color: var(--muted); font-size: var(--type-meta); }
+.collection-preview-item b { color: var(--muted); font-size: var(--type-meta); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.collection-preview-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--outline); }
+.collection-preview-empty { display: grid; align-content: center; justify-items: start; gap: 8px; min-height: 370px; color: var(--muted); }
+.collection-preview-empty > .material-symbols-outlined { color: var(--primary); font-size: 34px; }
+.collection-preview-empty strong { color: var(--text); font-family: var(--font-display); font-size: var(--type-heading-sm); }
+.collection-preview-empty span { max-width: 30ch; font-size: var(--type-small); }
+.day-preset-card-select { grid-template-columns: 52px minmax(0, 1fr) auto; }
+.day-preset-card-image, .day-preset-card-image img { width: 52px; height: 52px; border-radius: var(--radius-control); }
+.day-preset-card-image { overflow: hidden; background: var(--surface-high); }
+.day-preset-card-image img { display: block; object-fit: cover; }
+.day-preset-card-copy { align-content: center; }
+.day-preset-card-copy em { color: var(--muted); font-size: var(--type-meta); font-style: normal; }
+.day-preset-card-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 0 16px 10px 80px; color: var(--muted); font-size: var(--type-meta); }
+.day-preset-card-meta span:first-child { color: var(--text); font-weight: 800; }
+.day-preset-card-meta small { width: 100%; }
+.day-editor-item-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.day-editor-item-main > div:last-child { display: grid; gap: 3px; min-width: 0; }
+.day-editor-item-main strong, .day-editor-item-main small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.day-editor-thumb, .day-editor-thumb img { width: 42px; height: 42px; border-radius: 8px; }
+.day-editor-thumb { overflow: hidden; flex: 0 0 42px; background: var(--surface-high); }
+.day-editor-thumb img { display: block; object-fit: cover; }
+.abm-field textarea { width: 100%; min-height: 82px; padding: 10px 12px; border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-high); color: var(--text); font: inherit; resize: vertical; }
+.plans-page .plan-history-header { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.plans-page .plan-history-header h3 { margin: 0; font-family: var(--font-display); font-size: var(--type-heading-sm); }
+.plans-page .plan-history-header p { margin: 4px 0 0; color: var(--muted); font-size: var(--type-small); }
+.plans-page .plan-history-header .primary { min-height: 44px; }
+.plans-page .plan-history > article.plan-history-card { margin-top: 10px; padding: 16px; border: 1px solid var(--outline); border-radius: var(--radius-panel); background: var(--surface-low); }
+.plans-page .plan-history > article.plan-history-card:first-of-type { border-top: 1px solid var(--outline); }
+
+@media (max-width: 760px) {
+  .collection-browser { grid-template-columns: 1fr; gap: 12px; }
+  .collection-browser-preview { position: static; padding: 14px; }
+  .collection-preview-back { display: inline-flex; }
+  .collection-library-select { grid-template-columns: 52px minmax(0, 1fr) auto; padding: 12px; }
+  .collection-library-select > .nutrition-summary { display: none; }
+  .collection-library-card .food-thumb { width: 52px; height: 52px; }
+  .collection-library-actions { padding-inline: 12px; }
+  .collection-library-actions .secondary { flex: 1; }
+  .collection-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .collection-preview-hero { align-items: flex-start; }
+  .collection-preview-image-stack { width: 70px; height: 54px; flex-basis: 70px; }
+  .collection-preview-image-stack .food-thumb { width: 54px; height: 54px; }
+  .collection-preview-image-stack .food-thumb:nth-child(1) { left: 0; }
+  .collection-preview-image-stack .food-thumb:nth-child(2) { left: 5px; }
+  .collection-preview-image-stack .food-thumb:nth-child(3) { left: 10px; }
+  .collection-preview-image-stack .food-thumb:nth-child(4) { left: 16px; }
+  .collection-preview-heading h2 { font-size: var(--type-heading); }
+  .day-preset-card-meta { padding-left: 76px; }
+  .day-editor-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .day-editor-controls .icon-button { grid-column: 2; justify-self: end; }
+  .plans-page .plan-history-header { align-items: stretch; flex-direction: column; }
+  .plans-page .plan-history-header .primary { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collection-library-card { transition: none; }
+}

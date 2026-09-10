@@ -10,6 +10,7 @@ const paths = {
   arrow_back: "M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2Z",
   arrow_forward: "m12 4-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8Z",
   barcode_scanner: "M3 5V3h4v2H5v2H3Zm14-2v2h2v2h2V3h-4ZM3 17v4h4v-2H5v-2H3Zm16 0v2h-2v2h4v-4h-2ZM7 7h2v10H7V7Zm3 0h1v10h-1V7Zm3 0h2v10h-2V7Zm3 0h1v10h-1V7Z",
+  bookmark: "M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2Zm0 14.97-5-2.14-5 2.14V5h10v12.97Z",
   bookmark_add: "M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2Zm0 14.97-5-2.14-5 2.14V5h10v12.97ZM13 9h2v2h2v2h-2v2h-2v-2h-2v-2h2V9Z",
   bookmark_border: "M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2Zm0 14.97-5-2.14-5 2.14V5h10v12.97Z",
   calendar_month: "M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 16H5V9h14v11ZM5 7V6h14v1H5Zm2 4h5v5H7v-5Z",
@@ -53,6 +54,7 @@ const paths = {
   refresh: "M17.65 6.35A7.95 7.95 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8S7.58 20 12 20c3.73 0 6.84-2.55 7.73-6h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35Z",
   remove: "M19 13H5v-2h14v2Z",
   restaurant: "M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.98V22h2v-9.02A4 4 0 0 0 11 9Zm5-3c-1.66 0-3 1.34-3 3v6h2v7h2V2h-1v4Z",
+  restaurant_menu: "M3 5h18v2H3V5Zm0 4h18v2H3V9Zm0 4h12v2H3v-2Zm14.5 1.5 2-2 1.5 1.5-2 2 2 2-1.5 1.5-2-2-2 2-1.5-1.5 2-2-2-2 1.5-1.5 2 2Z",
   scale: "M7 2h10l5 7v11H2V9l5-7Zm1.05 2L5 8.27V18h14V8.27L15.95 4h-7.9ZM12 7a3 3 0 0 0-3 3h2a1 1 0 0 1 2 0h2a3 3 0 0 0-3-3Z",
   search: "M9.5 3a6.5 6.5 0 1 0 4.08 11.56L19.01 20 20.5 18.51l-5.44-5.43A6.5 6.5 0 0 0 9.5 3Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z",
   share: "M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92Z",
@@ -61,10 +63,18 @@ const paths = {
   vital_signs: "M3 12h3l2-5 4 10 2-5h7v2h-8l-1 3-4-10-1 3H3v2Z",
   trending_up: "m16 6 2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6Z",
   trending_down: "m16 18 2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6h-6Z",
+  swap_vert: "M16 17.01V10h-2v7.01h-3L13 20l2-2.99h1ZM8 6.99V14h2V6.99h3L12 4 10 6.99H8Z",
+  tune: "M3 17v2h6v-2H3ZM3 5v2h10V5H3Zm10 16v-2h8v-2h-8v-2h-2v6h2ZM7 9v2H3v2h4v2h2V9H7Zm14 4v-2H11v2h10Zm-6-6h2V5h4V3h-4V1h-2v6Z",
   water_drop: "M12 2S5 9.3 5 14a7 7 0 0 0 14 0c0-4.7-7-12-7-12Zm0 17a5 5 0 0 1-5-5c0-2.18 2.77-6.09 5-8.84 2.23 2.74 5 6.65 5 8.84a5 5 0 0 1-5 5Z",
+  visibility: "M12 5c-5 0-9.27 3.11-11 7 1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-2.5A2.5 2.5 0 1 0 12 9a2.5 2.5 0 0 0 0 5.5Z",
 };
 
+export const ICON_NAMES = Object.freeze(Object.keys(paths));
+
 export function Icon({ name, className = "", ...props }) {
+  if (import.meta.env?.DEV && !paths[name]) {
+    console.warn(`[ScaleGrams] Icon inexistente: "${String(name)}". Usá uno de ICON_NAMES.`);
+  }
   const path = paths[name] || paths.error;
   return (
     <span className={`material-symbols-outlined ${className}`.trim()} aria-hidden="true" {...props}>

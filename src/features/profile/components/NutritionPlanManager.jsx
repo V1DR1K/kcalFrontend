@@ -67,14 +67,13 @@ export function NutritionPlanManager({ api, plans, onChanged }) {
     <Panel title="Plan alimenticio">
       <div className="current-plan-panel">
         <span className="current-plan-dot" style={{ background: planColor(currentPlan?.id || currentPlan?.name) }} />
-        <div><small>PLAN ACTUAL</small><strong>{currentPlan?.name || "Sin plan activo"}</strong>{currentPlan && <span>Desde {readableDate(currentPlan.startDate)} · {currentPlan.dailyCalories} kcal</span>}</div>
+        <div><small>PLAN ACTUAL</small><strong>{currentPlan?.name || "Sin plan activo"}</strong>{currentPlan && <span>Desde {readableDate(currentPlan.startDate)} · {currentPlan.dailyCalories} kcal</span>}{currentPlan && <em className="active-plan-badge">En uso hoy</em>}</div>
         {currentPlan && <div className="current-plan-actions"><div className="current-plan-macros"><span>{currentPlan.proteinPercent}% P</span><span>{currentPlan.carbsPercent}% C</span><span>{currentPlan.fatPercent}% G</span></div><button type="button" className="secondary use-plan-button" onClick={() => startEdit(currentPlan)}><Icon name="edit" />Editar</button></div>}
       </div>
-      <button type="button" className="primary add-plan-button" onClick={startCreate}><Icon name="add" />Agregar plan</button>
       <div className="plan-history">
-        <h3>Historial de planes</h3>
+        <div className="plan-history-header"><div><h3>Otros planes</h3><p>Conservá alternativas listas para volver a usarlas.</p></div><button type="button" className="primary" onClick={startCreate}><Icon name="add" />Agregar plan</button></div>
         {plans.filter((plan) => !plan.current && plan.id !== currentPlan?.id).map((plan) => (
-          <article key={plan.id || `${plan.name}-${plan.startDate}`}>
+          <article className="plan-history-card" key={plan.id || `${plan.name}-${plan.startDate}`}>
             <div className="plan-history-heading"><strong>{plan.name}</strong></div>
             <span>
               {plan.startDate} - {plan.endDate || "actual"}

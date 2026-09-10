@@ -380,6 +380,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         quantity: logQuantity,
         unit: selected.type === "RECIPE" ? unit : "GRAM",
         displayName: selected.name,
+        imageUrl: selected.imageUrl || null,
+        category: selected.category || "OTHER",
         calories: preview?.calories || 0,
         proteinGrams: preview?.proteinGrams || 0,
         carbsGrams: preview?.carbsGrams || 0,
