@@ -89,7 +89,7 @@ export function NutritionPlanManager({ api, plans, onChanged }) {
           </article>
         ))}
       </div>
-      {dialog && <NutritionPlanDialog key={dialog.plan?.id || "new"} api={api} plan={dialog.plan} onClose={() => setDialog(null)} onChanged={onChanged} />}
+      {dialog && <NutritionPlanDialog key={dialog.plan?.id || "new"} api={api} plan={dialog.plan} plans={plans} onClose={() => setDialog(null)} onChanged={onChanged} />}
     </Panel>
   );
 }

@@ -26,7 +26,7 @@ function foodMeta(item) {
 
 export function CatalogRow({ item, onPick }) {
   return (
-    <button className="catalog-row" onClick={() => onPick(item)}>
+    <button type="button" className="catalog-row" onClick={() => onPick(item)}>
       <span>{item.name}</span>
       {(foodMeta(item) || item.preparation) && <span className="catalog-meta">
         {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
@@ -58,7 +58,7 @@ export function groupFoodVariants(items) {
 
 export function CatalogRowWithImage({ item, onPick }) {
   return (
-    <button className="catalog-row catalog-row-image" onClick={() => onPick(item)}>
+    <button type="button" className="catalog-row catalog-row-image" onClick={() => onPick(item)}>
       <FoodThumb item={item} compact />
       <span className="catalog-copy">
         <strong>{item.name}</strong>

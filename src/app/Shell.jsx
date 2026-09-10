@@ -8,7 +8,7 @@ function MobileNavigation({ mode, page, setPage, setMode }) {
   const items = mode === "training" ? trainingNavItems : navItems;
   const mainIds = mode === "training"
     ? ["training-dashboard", "training-calendar", "training-cardio", "nutrition"]
-    : ["dashboard", "scanner", "day-presets", "plans"];
+    : ["dashboard", "scanner", "day-presets", "training"];
   const primary = mainIds.map(id => items.find(item => item.id === id));
   const secondary = items.filter(item => !mainIds.includes(item.id));
   const select = (item) => { setExpanded(false); item.mode ? setMode(item.mode) : setPage(item.id); };

@@ -3,6 +3,7 @@ import { Input } from "../../../components/FormControls";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { formatNumber, macroGrams, today } from "../../../utils/format";
 import { MacroControl } from "./ProfilePanels";
+import { DUPLICATE_PLAN_NAME_ERROR, hasDuplicatePlanName, isDuplicatePlanNameError } from "./plan-name.utils";
 
 function formFromPlan(plan) {
   return plan
@@ -26,11 +27,12 @@ function formFromPlan(plan) {
       };
 }
 
-export function NutritionPlanDialog({ api, plan, onClose, onChanged }) {
+export function NutritionPlanDialog({ api, plan, plans = [], onClose, onChanged }) {
   const editing = Boolean(plan);
   const [form, setForm] = useState(() => formFromPlan(plan));
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [nameError, setNameError] = useState("");
   const total = Number(form.proteinPercent) + Number(form.carbsPercent) + Number(form.fatPercent);
   const grams = {
     protein: macroGrams(form.dailyCalories, form.proteinPercent, 4),
@@ -40,6 +42,7 @@ export function NutritionPlanDialog({ api, plan, onClose, onChanged }) {
 
   function setField(field, value) {
     setFormError("");
+    if (field === "name") setNameError("");
     setForm((current) => ({ ...current, [field]: value }));
   }
 
@@ -61,6 +64,10 @@ export function NutritionPlanDialog({ api, plan, onClose, onChanged }) {
     }
     if (form.endDate && form.endDate < form.startDate) {
       setFormError("La fecha de fin no puede ser anterior al inicio.");
+      return;
+    }
+    if (hasDuplicatePlanName(plans, form.name, plan?.id)) {
+      setNameError(DUPLICATE_PLAN_NAME_ERROR);
       return;
     }
     setSaving(true);
@@ -91,7 +98,8 @@ export function NutritionPlanDialog({ api, plan, onClose, onChanged }) {
       onClose();
     } catch (error) {
       const message = error.message || (editing ? "No se pudo actualizar el plan." : "No se pudo guardar el plan.");
-      setFormError(message);
+      if (isDuplicatePlanNameError(error)) setNameError(error.fields?.name || DUPLICATE_PLAN_NAME_ERROR);
+      else setFormError(message);
       api.notify(message, "error");
     } finally {
       setSaving(false);
@@ -124,7 +132,7 @@ export function NutritionPlanDialog({ api, plan, onClose, onChanged }) {
         <details className="plan-details" open>
           <summary>Detalles del plan</summary>
           <div className="form-grid">
-            <Input label="Nombre del plan" value={form.name} onChange={(event) => setField("name", event.target.value)} minLength="2" required />
+            <label className="field" htmlFor="nutrition-plan-name"><span>Nombre del plan</span><input id="nutrition-plan-name" value={form.name} onChange={(event) => setField("name", event.target.value)} minLength="2" aria-invalid={Boolean(nameError)} aria-describedby={nameError ? "nutrition-plan-name-error" : undefined} required />{nameError && <span id="nutrition-plan-name-error" className="form-error" role="alert">{nameError}</span>}</label>
             <div className="split">
               <Input label="Comienza" type="date" value={form.startDate} onChange={(event) => setField("startDate", event.target.value)} required />
               <Input label="Finaliza (opcional)" type="date" value={form.endDate} onChange={(event) => setField("endDate", event.target.value)} />
