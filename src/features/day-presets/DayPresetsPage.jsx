@@ -7,7 +7,7 @@ import { CatalogStatus } from "../catalog/CatalogComponents";
 import { FoodPicker } from "../dashboard/dialogs/FoodPickerDialog";
 import { mealTotals } from "../dashboard/dashboard.utils";
 import { NutritionCollectionPreview } from "../shared/NutritionCollectionPreview";
-import { scalePresetNutrition, serializablePresetItem } from "./day-preset.utils";
+import { normalizePresetPreviewItem, scalePresetNutrition, serializablePresetItem } from "./day-preset.utils";
 import { decimalNumber, normalizeDecimalInput } from "../../utils/decimal";
 import { formatNumber, readableDate, today } from "../../utils/format";
 
@@ -28,8 +28,8 @@ function presetItemFromLog(log, mealType) {
 function itemsFromDay(data) { return (data?.meals || []).flatMap((meal) => (meal.items || []).map((item) => presetItemFromLog(item, meal.mealType))); }
 
 function mealLabel(code) { return DEFAULT_MEALS.find((meal) => meal.code === code)?.label || code || "Comida"; }
-function presetGroups(preset) { return DEFAULT_MEALS.map((meal) => ({ id: meal.code, label: meal.label, icon: "restaurant", items: (preset?.items || []).filter((item) => item.mealType === meal.code) })).filter((group) => group.items.length); }
-function presetHeroItems(preset) { return (preset?.items || []).map((item) => ({ ...item, type: item.itemType, name: item.displayName })).filter((item) => item.itemType !== "AI_ESTIMATE").slice(0, 4); }
+function presetGroups(preset) { return DEFAULT_MEALS.map((meal) => ({ id: meal.code, label: meal.label, icon: "restaurant", items: (preset?.items || []).filter((item) => item.mealType === meal.code).map(normalizePresetPreviewItem) })).filter((group) => group.items.length); }
+function presetHeroItems(preset) { return (preset?.items || []).map(normalizePresetPreviewItem).filter((item) => item.itemType !== "AI_ESTIMATE").slice(0, 4); }
 
 function DayPresetApplyDialog({ preset, currentItems, selectedDate, onClose, onApply }) {
   const [applying, setApplying] = useState(false);

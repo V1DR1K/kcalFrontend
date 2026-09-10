@@ -8,19 +8,31 @@ import { NutritionSummary } from "../../../components/NutritionSummary";
 import { formatNumber, formatQuantity } from "../../../utils/format";
 import { buildRecipePayload, recipeYieldPercent } from "../../../utils/recipe";
 import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
+import { scaleFoodNutrition } from "../../dashboard/dashboard.utils";
+
+function recipeIngredientDraft(item) {
+  const food = item?.food || item || {};
+  return {
+    food,
+    foodId: item?.food?.id || item?.foodId || food.id,
+    name: item?.food?.name || item?.name || food.name || "Alimento",
+    imageUrl: item?.imageUrl || food.imageUrl || null,
+    category: item?.category || food.category || "OTHER",
+    quantity: item?.quantity,
+    unit: item?.unit || "GRAM",
+  };
+}
+
+function ingredientNutrition(item) {
+  return scaleFoodNutrition(item?.food || item, decimalNumber(item?.quantity));
+}
 
 export function EditRecipeModal({ api, recipe, onClose, onDone }) {
-  const titleId = `${useId().replace(/:/g, "")}-title`;
   const [name, setName] = useState(recipe.name || "");
   const [description, setDescription] = useState(recipe.description || "");
   const [ingredientQuery, setIngredientQuery] = useState("");
   const [nutritionPreview, setNutritionPreview] = useState(null);
-  const [ingredients, setIngredients] = useState(() => (recipe.ingredients || []).map((item) => ({
-    foodId: item.food?.id,
-    name: item.food?.name,
-    quantity: item.quantity,
-    unit: item.unit || "GRAM",
-  })).filter((item) => item.foodId));
+  const [ingredients, setIngredients] = useState(() => (recipe.ingredients || []).map(recipeIngredientDraft).filter((item) => item.foodId));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [trackCookedWeight, setTrackCookedWeight] = useState(() => Number(recipe.cookedTotalWeightGrams) > 0);
@@ -48,7 +60,7 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
     setIngredients(nextIngredients);
   }
   function addIngredient(food) {
-    updateIngredients([...ingredients, { foodId: food.id, name: food.name, quantity: 100, unit: "GRAM" }]);
+    updateIngredients([...ingredients, recipeIngredientDraft({ food, quantity: 100, unit: "GRAM" })]);
     setIngredientQuery("");
   }
   async function submit(event) {
@@ -85,17 +97,8 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
     }
   }
   return (
-    <ModalShell as="form" onClose={onClose} hideHeader labelledBy={titleId} className="app-modal-compact edit-food-sheet edit-recipe-sheet" backdropClassName="edit-food-backdrop" wrapContent={false} dialogProps={{ onSubmit: submit }}>
-        <header>
-          <div>
-            <span>Editar receta</span>
-            <h2 id={titleId}>{recipe.name}</h2>
-          </div>
-          <button type="button" className="icon-button" aria-label="Cerrar" onClick={onClose}>
-            <Icon name="close" />
-          </button>
-        </header>
-         <div className="edit-food-fields" data-dialog-scroll-owner="true">
+    <ModalShell as="form" onClose={onClose} title="Editar receta" description={recipe.name} className="abm-editor-modal recipe-editor-modal" backdropClassName="abm-editor-backdrop" wrapContent={false} dialogProps={{ onSubmit: submit }} footer={<><button type="button" className="secondary" disabled={saving} onClick={onClose}>Cancelar</button><button type="submit" className="primary" disabled={saving || totalWeight <= 0}>{saving ? "Guardando…" : "Guardar cambios"}</button></>}>
+         <div className="abm-editor-body recipe-editor-body" data-dialog-scroll-owner="true">
           {error && <div className="form-error recipe-error" role="alert"><Icon name="error" /><span>{error}</span></div>}
           <Input label="Nombre" value={name} onChange={(event) => setName(event.target.value)} required />
           <Input label="Descripción opcional" value={description} onChange={(event) => setDescription(event.target.value)} />
@@ -120,22 +123,16 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
           </section>
           <div className="ingredient-list">
             {ingredients.map((item, index) => (
-              <label className="ingredient-row" key={`${item.foodId}:${index}`}>
-                <span className="ingredient-name">{item.name}</span>
-                <span className="ingredient-quantity">
-                  <input aria-label={`Cantidad de ${item.name} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.01" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onChange={(event) => updateIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: normalizeDecimalInput(event.target.value) } : ingredient)))} />
-                  <small>g</small>
-                </span>
-                <button type="button" className="ingredient-remove" onClick={() => updateIngredients(ingredients.filter((_, i) => i !== index))}>
-                  <Icon name="remove" />Quitar
-                </button>
-              </label>
+              <article className="recipe-edit-ingredient-card" key={`${item.foodId}:${index}`}>
+                <div className="recipe-edit-ingredient-main"><FoodThumb item={item} compact /><div><strong>{item.name}</strong><NutritionSummary nutrition={ingredientNutrition(item)} /></div></div>
+                <div className="recipe-edit-ingredient-controls">
+                  <label className="abm-field"><span>Cantidad</span><span className="ingredient-quantity"><input aria-label={`Cantidad de ${item.name} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.01" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onChange={(event) => updateIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: normalizeDecimalInput(event.target.value) } : ingredient)))} /><small>g</small></span></label>
+                  <button type="button" className="ingredient-remove" onClick={() => updateIngredients(ingredients.filter((_, i) => i !== index))}><Icon name="delete" />Quitar</button>
+                </div>
+              </article>
             ))}
           </div>
         </div>
-        <footer className="edit-food-actions">
-          <button className="primary" disabled={saving || totalWeight <= 0}>{saving ? "Guardando..." : "Guardar cambios"}</button>
-        </footer>
   </ModalShell>
   );
 }
@@ -155,7 +152,6 @@ export function FoodLogDialog({ item, eyebrow, title = item?.name, isRecipe = fa
               <small>{isRecipe ? "Receta" : "Alimento"}</small>
             </div>
           </div>
-          {nutritionPreview && <div className="recipe-edit-preview" aria-live="polite"><div><strong>Vista previa nutricional</strong><small>Se recalcula al cambiar cantidades o ingredientes.</small></div><NutritionSummary nutrition={nutritionPreview} /></div>}
           <button type="button" className="icon-button" onClick={onClose} aria-label="Cerrar">
             <Icon name="close" />
           </button>

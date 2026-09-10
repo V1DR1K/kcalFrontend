@@ -1,5 +1,17 @@
 import { decimalNumber } from "../../utils/decimal.js";
 
+export function normalizePresetPreviewItem(item) {
+  const itemType = item?.itemType || item?.type || "FOOD";
+  return {
+    ...item,
+    id: item?.itemId || item?.id,
+    type: itemType,
+    name: item?.displayName || item?.name || item?.food?.name || item?.recipe?.name || "Alimento",
+    imageUrl: item?.imageUrl || item?.food?.imageUrl || item?.recipe?.imageUrl || null,
+    category: item?.category || item?.food?.category || "OTHER",
+  };
+}
+
 export function serializablePresetItem(item) {
   const allowed = ["itemType", "itemId", "mealType", "quantity", "unit", "displayName", "imageUrl", "calories", "proteinGrams", "carbsGrams", "fatGrams", "aiEstimateConfidence", "aiEstimateDetails", "nutrients"];
   return Object.fromEntries(allowed.filter((key) => item[key] !== undefined).map((key) => [key, key === "quantity" ? decimalNumber(item[key]) : item[key]]));

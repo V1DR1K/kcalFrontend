@@ -18,16 +18,18 @@ export function ConfirmationDialog({ title, description, confirmLabel = "Confirm
       wrapContent={false}
       labelledBy={`${id}-title`}
       describedBy={`${id}-description`}
+      footer={
+        <>
+          <button ref={cancelRef} type="button" className="secondary" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="confirmation-confirm" onClick={onConfirm}>{confirmLabel}</button>
+        </>
+      }
     >
         <div className="confirmation-icon" aria-hidden="true"><Icon name="error" /></div>
         <div>
           <h2 id={`${id}-title`}>{title}</h2>
           <p id={`${id}-description`}>{description}</p>
         </div>
-        <footer>
-          <button ref={cancelRef} type="button" className="secondary" onClick={onCancel}>Cancelar</button>
-          <button type="button" className="confirmation-confirm" onClick={onConfirm}>{confirmLabel}</button>
-        </footer>
     </ModalShell>
   );
 }
