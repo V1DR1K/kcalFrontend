@@ -1,14 +1,38 @@
 import { decimalNumber } from "../../utils/decimal.js";
 
-export function normalizePresetPreviewItem(item) {
+export function isSpecificPresetImage(imageUrl) {
+  const normalized = String(imageUrl || "").trim();
+  return Boolean(normalized) && !/(^|\/)category-assets\//i.test(normalized);
+}
+
+function resolvedItemImage(item, resolvedItem) {
+  const resolvedIngredientImage = resolvedItem?.ingredients?.map((ingredient) => ingredient?.food?.imageUrl).find(Boolean);
+  return resolvedItem?.imageUrl || resolvedIngredientImage || null;
+}
+
+export function presetItemCacheKey(item) {
   const itemType = item?.itemType || item?.type || "FOOD";
+  const itemId = item?.itemId || item?.id;
+  return itemId ? `${itemType}:${itemId}` : null;
+}
+
+export function presetItemNeedsImageHydration(item) {
+  const itemType = item?.itemType || item?.type || "FOOD";
+  return ["FOOD", "RECIPE"].includes(itemType) && Boolean(presetItemCacheKey(item))
+    && !isSpecificPresetImage(item?.imageUrl || item?.food?.imageUrl || item?.recipe?.imageUrl);
+}
+
+export function normalizePresetPreviewItem(item, resolvedItem) {
+  const itemType = item?.itemType || item?.type || "FOOD";
+  const savedImage = item?.imageUrl || item?.food?.imageUrl || item?.recipe?.imageUrl || null;
+  const currentImage = resolvedItemImage(item, resolvedItem);
   return {
     ...item,
     id: item?.itemId || item?.id,
     type: itemType,
     name: item?.displayName || item?.name || item?.food?.name || item?.recipe?.name || "Alimento",
-    imageUrl: item?.imageUrl || item?.food?.imageUrl || item?.recipe?.imageUrl || null,
-    category: item?.category || item?.food?.category || "OTHER",
+    imageUrl: isSpecificPresetImage(savedImage) ? savedImage : currentImage || savedImage,
+    category: item?.category || item?.food?.category || resolvedItem?.category || "OTHER",
   };
 }
 

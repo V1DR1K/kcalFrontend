@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizePresetPreviewItem, scalePresetNutrition, serializablePresetItem } from "../src/features/day-presets/day-preset.utils.js";
+import { isSpecificPresetImage, normalizePresetPreviewItem, presetItemCacheKey, presetItemNeedsImageHydration, scalePresetNutrition, serializablePresetItem } from "../src/features/day-presets/day-preset.utils.js";
 
 test("normaliza fotos y metadatos por item en la preview del día", () => {
   const item = normalizePresetPreviewItem({ itemType: "FOOD", itemId: 12, displayName: "Pollo", imageUrl: "/uploads/pollo.webp", category: "MEAT" });
@@ -11,6 +11,26 @@ test("la preview usa la imagen anidada si el preset antiguo no la guardó", () =
   const item = normalizePresetPreviewItem({ itemType: "FOOD", itemId: 12, food: { name: "Pollo", imageUrl: "/uploads/pollo.webp", category: "MEAT" } });
   assert.equal(item.imageUrl, "/uploads/pollo.webp");
   assert.equal(item.category, "MEAT");
+});
+
+test("hidrata la foto actual de un alimento cuando el preset solo tiene fallback", () => {
+  const item = normalizePresetPreviewItem({ itemType: "FOOD", itemId: 12, displayName: "Pollo", imageUrl: "/category-assets/other.webp", category: "MEAT" }, { id: 12, name: "Pollo", imageUrl: "/uploads/pollo.webp", category: "MEAT" });
+  assert.equal(item.imageUrl, "/uploads/pollo.webp");
+  assert.equal(presetItemCacheKey(item), "FOOD:12");
+});
+
+test("resuelve la foto de una receta desde su primer ingrediente con imagen", () => {
+  const item = normalizePresetPreviewItem({ itemType: "RECIPE", itemId: 4, displayName: "Bowl", category: "OTHER" }, { id: 4, name: "Bowl", ingredients: [{ food: { imageUrl: null } }, { food: { imageUrl: "/uploads/avena.webp" } }] });
+  assert.equal(item.imageUrl, "/uploads/avena.webp");
+});
+
+test("mantiene una foto persistida y deja fallback para items sin imagen actual", () => {
+  assert.equal(isSpecificPresetImage("/uploads/pollo.webp"), true);
+  assert.equal(isSpecificPresetImage("/category-assets/other.webp"), false);
+  assert.equal(presetItemNeedsImageHydration({ itemType: "FOOD", itemId: 12, imageUrl: null }), true);
+  assert.equal(presetItemNeedsImageHydration({ itemType: "FOOD", itemId: 12, imageUrl: "/uploads/pollo.webp" }), false);
+  const item = normalizePresetPreviewItem({ itemType: "FOOD", itemId: 12, imageUrl: "/category-assets/other.webp", category: "OTHER" }, null);
+  assert.equal(item.imageUrl, "/category-assets/other.webp");
 });
 
 test("escala nutrición al cambiar cantidad sin perder el item", () => {
