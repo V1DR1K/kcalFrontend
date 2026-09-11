@@ -672,6 +672,40 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   expect(layout.top).toBeGreaterThanOrEqual(layout.refinementBottom - 1);
 });
 
+test("keeps the AI photo context actions visible above the picker footer on desktop", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await seedAuthenticatedApp(page, { aiAvailable: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.locator(".ai-gallery-trigger input").setInputFiles({
+    name: "comida.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from("test-image"),
+  });
+
+  const editor = page.locator(".ai-photo-context-editor");
+  const analyzeButton = editor.getByRole("button", { name: "Analizar foto", exact: true });
+  await expect(editor).toBeVisible();
+  await expect(analyzeButton).toBeVisible();
+  const layout = await editor.evaluate((element) => {
+    const button = element.querySelector(".ai-photo-context-actions .primary");
+    const buttonBounds = button.getBoundingClientRect();
+    const subpanel = element.parentElement;
+    const footer = element.closest(".picker-modal")?.querySelector(":scope > footer");
+    const hitTarget = document.elementFromPoint(buttonBounds.left + buttonBounds.width / 2, buttonBounds.top + buttonBounds.height / 2);
+    return {
+      buttonBottom: buttonBounds.bottom,
+      viewportBottom: window.innerHeight,
+      subpanelZIndex: getComputedStyle(subpanel).zIndex,
+      footerZIndex: footer ? getComputedStyle(footer).zIndex : "auto",
+      hitTarget: hitTarget?.closest("button")?.textContent?.trim(),
+    };
+  });
+  expect(layout.buttonBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
+  expect(Number(layout.subpanelZIndex)).toBeGreaterThan(Number(layout.footerZIndex));
+  expect(layout.hitTarget).toBe("Analizar foto");
+});
+
 test("creates a share link from a recent meal bracket", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedAuthenticatedApp(page);
