@@ -797,12 +797,13 @@ summary:focus-visible {
   box-shadow: var(--shadow);
   animation: modal-in 180ms var(--ease-out);
 }
-.date-picker-dialog > header,
-.date-picker-dialog > footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.date-picker-dialog > header > div { display: grid; gap: 2px; }
-.date-picker-dialog > header span { color: var(--primary); font-size: 12px; font-weight: 800; }
+.date-picker-dialog .modal-shell-content > header,
+.date-picker-dialog .modal-shell-content > footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.date-picker-dialog .modal-shell-content > header > div { display: grid; gap: 2px; }
+.date-picker-dialog .modal-shell-content > header .icon-button { flex: 0 0 46px; width: 46px; height: 46px; min-height: 46px; padding: 0; border-radius: 50%; }
+.date-picker-dialog .modal-shell-content > header span { color: var(--primary); font-size: 12px; font-weight: 800; }
 .date-picker-dialog h2 { margin: 0; text-transform: capitalize; }
-.date-picker-month-actions { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; }
+.date-picker-month-actions { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; margin: 1em; }
 .date-picker-month-actions button { min-width: 0; min-height: 40px; padding: 0 10px; font-size: 13px; }
 .date-picker-month-actions button:last-child { justify-content: flex-end; }
 .date-picker-weekdays,
@@ -812,7 +813,7 @@ summary:focus-visible {
 .date-picker-grid button:hover { background: var(--surface-hover); }
 .date-picker-grid button.today { border-color: color-mix(in srgb, var(--primary) 42%, transparent); color: var(--primary); }
 .date-picker-grid button.selected { border-color: var(--primary); background: var(--primary); color: var(--on-primary); }
-.date-picker-dialog > footer .primary { width: 100%; }
+.date-picker-dialog .modal-shell-content > footer .primary { width: 100%; }
 
 .meal-macros {
   justify-content: center;

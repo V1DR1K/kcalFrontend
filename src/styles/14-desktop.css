@@ -93,6 +93,7 @@
   .picker-modal { max-height: min(820px, calc(100dvh - 64px)); border-radius: var(--radius-modal); }
   .compact-modal { place-items: center; padding: 32px; }
   .date-picker-dialog { width: min(480px, 100%); padding: 24px; border-radius: var(--radius-modal); }
+  .date-picker-dialog .modal-shell-content > header { display: flex; justify-content: space-between; padding: 1em; }
   .confirmation-dialog { width: min(480px, 100%); padding: 24px; }
   .confirmation-dialog footer { grid-template-columns: auto auto; justify-content: end; }
   .confirmation-dialog footer button { min-width: 142px; }
