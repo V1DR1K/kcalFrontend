@@ -45,7 +45,7 @@
 .my-foods-page .my-foods-toolbar { margin: 0 0 14px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--outline)); border-radius: var(--radius-panel); background: var(--primary-soft); }
 .my-foods-page .my-foods-toolbar > span { color: var(--text); font-size: var(--type-small); font-weight: 700; }
 .my-foods-page .my-foods-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.my-foods-page .my-food-row { min-height: 132px; padding: 16px; border-radius: var(--radius-panel); background: var(--surface-low); box-shadow: none; }
+.my-foods-page .my-food-row { min-height: 132px; gap: 3em; padding: 16px; border-radius: var(--radius-panel); background: var(--surface-low); box-shadow: none; }
 .my-foods-page .my-food-row:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 48%, var(--outline)); }
 .my-foods-page .my-food-row .food-thumb { width: 64px; height: 64px; border-radius: var(--radius-control); }
 .my-foods-page .my-food-row .catalog-copy { align-self: stretch; align-content: center; gap: 7px; }
