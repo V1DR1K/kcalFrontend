@@ -323,7 +323,7 @@
 .ai-photo-trigger.disabled { opacity: .55; pointer-events: none; }
 .ai-context-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
 .ai-context-field { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: 12px; font-weight: 800; }
-.ai-context-field textarea { width: 100%; min-height: 58px; resize: vertical; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; }
+.ai-context-field textarea { box-sizing: border-box; width: 100%; min-height: 112px; max-height: min(30dvh, 220px); overflow-y: auto; resize: vertical; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; }
 .ai-note-record { min-height: 46px; white-space: nowrap; }
 .ai-note-record.recording { border-color: var(--error); color: var(--error); }
 .ai-photo-context-editor > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }

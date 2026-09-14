@@ -289,12 +289,23 @@
   .ai-photo-context-preview { max-height: min(32dvh, 260px); }
   .ai-photo-context-editor,
   .ai-estimate-editor { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  .ai-photo-context-editor { min-height: 0; align-content: start; }
+  .ai-photo-context-editor .ai-context-field,
+  .ai-photo-context-editor .ai-context-tools { min-width: 0; }
+  .ai-photo-context-editor .ai-context-field textarea { min-height: clamp(104px, 18dvh, 132px); max-height: min(22dvh, 160px); }
   .ai-photo-context-actions,
   .ai-estimate-actions {
     position: static;
     padding: 8px 0 0;
     background: transparent;
     box-shadow: none;
+  }
+  .ai-photo-context-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent, var(--surface-sheet-end) 28%);
   }
   .selected-editor > .primary {
     position: absolute;

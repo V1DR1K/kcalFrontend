@@ -12,6 +12,23 @@ function topDialog() {
   return activeDialogStack[activeDialogStack.length - 1];
 }
 
+function scrollOwnersFor(target) {
+  const owners = [];
+  let element = target?.nodeType === Node.ELEMENT_NODE ? target : target?.parentElement;
+  while (element && element !== document.body) {
+    if (element.matches?.(SCROLL_OWNER_SELECTOR) || element.matches?.("textarea")) owners.push(element);
+    element = element.parentElement;
+  }
+  return owners;
+}
+
+function canScrollInDirection(owner, delta) {
+  if (!owner || owner.scrollHeight <= owner.clientHeight) return false;
+  if (delta > 0) return owner.scrollTop < owner.scrollHeight - owner.clientHeight - 1;
+  if (delta < 0) return owner.scrollTop > 0;
+  return true;
+}
+
 function onTouchStart(event) {
   touchStartY = event.touches?.[0]?.clientY || 0;
 }
@@ -21,21 +38,19 @@ function onTouchMove(event) {
   const touch = event.touches?.[0];
   if (!dialog || !touch) return;
   const target = event.target;
-  const owner = target.closest?.(SCROLL_OWNER_SELECTOR);
-  if (!dialog.dialogRef.current?.contains(target) && !owner) {
+  const owners = scrollOwnersFor(target);
+  if (!dialog.dialogRef.current?.contains(target) && !owners.length) {
     event.preventDefault();
     return;
   }
 
-  if (!owner) {
+  if (!owners.length) {
     event.preventDefault();
     return;
   }
 
   const delta = touchStartY - touch.clientY;
-  const atTop = owner.scrollTop <= 0;
-  const atBottom = owner.scrollTop + owner.clientHeight >= owner.scrollHeight - 1;
-  if (!owner.scrollHeight || (atTop && delta < 0) || (atBottom && delta > 0)) event.preventDefault();
+  if (!owners.some((owner) => canScrollInDirection(owner, delta))) event.preventDefault();
 }
 
 function setTouchLock(locked) {

@@ -445,6 +445,83 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
   expect(layout.statusOrder).toBe("-1");
 });
 
+test("keeps a long AI photo description scrollable on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { aiAvailable: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+
+  await page.locator(".ai-gallery-trigger input").setInputFiles({
+    name: "comida.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+  });
+
+  const dialog = page.locator(".ai-photo-context-editor");
+  const description = dialog.getByLabel("Descripción opcional");
+  await expect(dialog).toBeVisible();
+  await description.fill("Ensalada completa con pollo grillado, arroz integral, tomate, palta, semillas y aderezo casero. La porción es abundante y está servida en un plato grande. También incluye zanahoria, cebolla morada y hojas verdes frescas.");
+
+  const layout = await dialog.evaluate((element) => {
+    const textarea = element.querySelector("textarea");
+    const actions = element.querySelector(".ai-photo-context-actions");
+    return {
+      dialog: element.getBoundingClientRect().toJSON(),
+      textarea: textarea.getBoundingClientRect().toJSON(),
+      textareaOverflowY: getComputedStyle(textarea).overflowY,
+      textareaScrollHeight: textarea.scrollHeight,
+      textareaClientHeight: textarea.clientHeight,
+      actions: actions.getBoundingClientRect().toJSON(),
+      horizontalOverflow: element.scrollWidth > element.clientWidth,
+    };
+  });
+
+  expect(layout.textareaOverflowY).toBe("auto");
+  expect(layout.textareaScrollHeight).toBeGreaterThan(layout.textareaClientHeight);
+  expect(layout.horizontalOverflow).toBe(false);
+  expect(layout.actions.bottom).toBeLessThanOrEqual(844 + 1);
+
+  await description.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect.poll(() => description.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  const touchResult = await description.evaluate((element) => {
+    const dispatchTouch = (type, clientY) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "touches", { value: [{ clientY }] });
+      element.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    element.scrollTop = Math.min(24, element.scrollHeight - element.clientHeight);
+    dispatchTouch("touchstart", 200);
+    const upwardPrevented = dispatchTouch("touchmove", 240);
+    element.scrollTop = 0;
+    dispatchTouch("touchstart", 200);
+    const downwardPrevented = dispatchTouch("touchmove", 150);
+    return { upwardPrevented, downwardPrevented };
+  });
+  expect(touchResult.upwardPrevented).toBe(false);
+  expect(touchResult.downwardPrevented).toBe(false);
+  await description.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await expect.poll(() => description.evaluate((element) => element.scrollTop)).toBe(0);
+
+  await page.setViewportSize({ width: 390, height: 430 });
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty("--app-viewport-height", "430px");
+    document.documentElement.style.setProperty("--dialog-viewport-height", "430px");
+    document.documentElement.style.setProperty("--dialog-visible-height", "430px");
+    document.documentElement.style.setProperty("--dialog-layout-height", "430px");
+  });
+  const reducedLayout = await dialog.evaluate((element) => ({
+    dialog: element.getBoundingClientRect().toJSON(),
+    actions: element.querySelector(".ai-photo-context-actions").getBoundingClientRect().toJSON(),
+  }));
+  expect(reducedLayout.dialog.bottom).toBeLessThanOrEqual(430 + 1);
+  expect(reducedLayout.actions.bottom).toBeLessThanOrEqual(430 + 1);
+});
+
 test("preselects grams when adding a food with a serving definition", async ({ page }) => {
   await seedAuthenticatedApp(page, { withServingFood: true });
   await page.goto("/ingresar");
