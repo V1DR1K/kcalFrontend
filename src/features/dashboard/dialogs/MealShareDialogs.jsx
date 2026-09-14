@@ -9,6 +9,13 @@ function shareUrl(token) {
   return `${window.location.origin}/ingresar?compartir=${encodeURIComponent(token)}`;
 }
 
+function shareAcceptancePayload(preview, targetDate, targetMealType) {
+  return {
+    targetDate: targetDate || today(),
+    mealType: targetMealType || preview?.sourceMealType || "BREAKFAST",
+  };
+}
+
 function ShareSummary({ preview }) {
   return (
     <section className="meal-share-summary" aria-label="Contenido de la comida">
@@ -112,9 +119,10 @@ export function MealShareAcceptDialog({ api, token, onClose, onDone }) {
     setSaving(true);
     setError("");
     try {
+      const destination = shareAcceptancePayload(preview, targetDate, targetMealType);
       await api.request(`/api/nutrition/meal-shares/${encodeURIComponent(token)}/accept`, {
         method: "POST",
-        body: JSON.stringify({ targetDate, mealType: targetMealType }),
+        body: JSON.stringify(destination),
       });
       api.notify("Comida compartida agregada a tu día.");
       onDone?.();
