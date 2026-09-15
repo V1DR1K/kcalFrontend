@@ -21,6 +21,7 @@ export function RecipeIngredientRow({ ingredient, index, locked = false, onChang
         {onRemove && <NutritionSummary nutrition={nutrition} />}
       </div>
       <div className="daily-recipe-ingredient-meta">
+        <span className="daily-recipe-ingredient-kcal">{formatNumber(nutrition.calories)} kcal</span>
         {locked ? (
           <span className="daily-recipe-ingredient-quantity"><strong>{formatQuantity(ingredient?.quantity)}</strong><small>g</small></span>
         ) : (
@@ -41,10 +42,9 @@ export function RecipeIngredientRow({ ingredient, index, locked = false, onChang
             <small>g</small>
           </label>
         )}
-        <span className="daily-recipe-ingredient-kcal">{formatNumber(nutrition.calories)} kcal</span>
         {onRemove && (
-          <button type="button" className="ingredient-remove recipe-ingredient-remove" onClick={() => onRemove(index)}>
-            <Icon name="delete" /><span>Quitar</span>
+          <button type="button" className="ingredient-remove recipe-ingredient-remove" aria-label="Quitar" title={`Quitar ingrediente ${name}`} onClick={() => onRemove(index)}>
+            <Icon name="delete" /><span className="sr-only">Quitar</span>
           </button>
         )}
       </div>
