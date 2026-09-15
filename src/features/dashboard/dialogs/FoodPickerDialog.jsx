@@ -621,6 +621,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           <FoodLogDialog
             item={selected}
             eyebrow={`Agregar a ${mealType.label}`}
+            description={selected.type === "RECIPE" ? (recipeDetail?.description || selected.description) : null}
             isRecipe={selected.type === "RECIPE"}
             onClose={() => {
               setSelected(null);

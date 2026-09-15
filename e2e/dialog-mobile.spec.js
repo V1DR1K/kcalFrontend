@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withRecipeLog = false, recipeUnit = "PORTION", withManyRecipeIngredients = false, withNutrients = false, withPreset = false, withManyPickerResults = false, withServingFood = false, withYesterdaySuggestion = false } = {}) {
+async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = false, withRecipeLog = false, recipeUnit = "PORTION", withManyRecipeIngredients = false, withNutrients = false, withPreset = false, withManyPickerResults = false, withServingFood = false, withRecipePicker = false, withRecipeLibrary = false, withYesterdaySuggestion = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -10,7 +10,8 @@ async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = f
   const recipeIngredients = withManyRecipeIngredients
     ? ["Zanahoria", "Avena", "Banana", "Cacao", "Canela", "Chía", "Frutilla", "Huevo", "Leche", "Manzana", "Miel", "Nuez", "Pera", "Queso", "Semillas", "Tomate", "Yogur", "Zapallo"].map((name, index) => ({ food: { id: 40 + index, name, baseQuantity: 100, proteinGrams: 5, carbsGrams: 15, fatGrams: 3, category: "OTHER" }, quantity: 40 + index, unit: "GRAM" }))
     : [{ food: { id: 14, name: "Zanahoria", baseQuantity: 100, proteinGrams: 1, carbsGrams: 10, fatGrams: 0, category: "VEGETABLE" }, quantity: 90, unit: "GRAM" }, { food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "CEREAL" }, quantity: 150, unit: "GRAM" }];
-  const recipeItem = { id: 202, itemType: "RECIPE", quantity: recipeUnit === "GRAM" ? 180 : 1, unit: recipeUnit, calories: 350, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, recipe: { id: 22, name: "Tostada proteica", rawTotalWeightGrams: 300, cookedTotalWeightGrams: 260, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, ingredients: recipeIngredients } };
+  const recipe = { id: 22, name: "Tostada proteica", description: "Una preparación simple para el desayuno.", rawTotalWeightGrams: 300, cookedTotalWeightGrams: 260, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, ingredients: recipeIngredients };
+  const recipeItem = { id: 202, itemType: "RECIPE", quantity: recipeUnit === "GRAM" ? 180 : 1, unit: recipeUnit, calories: 350, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, recipe };
   let targetDashboardDate = null;
   let currentMealItems = [];
   await page.route("**/api/**", async (route) => {
@@ -45,6 +46,9 @@ async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = f
       currentMealItems = [];
     }
     if (url.includes("/nutrition/meal-types")) body = [{ code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" }, { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" }];
+    if (url.includes("/api/recipes/22")) body = recipe;
+    if (url.includes("/api/recipes/mine?")) body = withRecipeLibrary ? [recipe] : [];
+    if (url.includes("/api/recipes?")) body = withRecipePicker ? [recipe] : [];
     if (url.includes("/nutrition/day-presets")) body = withPreset ? [{ id: 1, name: "Día completo", itemCount: 1, mealCounts: { BREAKFAST: 1 }, items: [{ itemType: "FOOD", itemId: 11, mealType: "BREAKFAST", quantity: 100, unit: "GRAM", displayName: "Avena", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7 }] }] : [];
     if (url.includes("/nutrition/ai-estimates/usage")) body = { available: aiAvailable };
     if (url.includes("/api/foods?")) body = withServingFood
@@ -192,6 +196,55 @@ test("shows sorted recipe ingredients below the nutrition summary", async ({ pag
   await meal.locator(".meal-item").click();
   await expect(meal.locator(".recipe-detail-heading")).toHaveText(/Alimentos/);
   await expect(meal.locator(".recipe-ingredient-main > span:nth-child(2) > strong")).toHaveText(["Avena", "Zanahoria"]);
+});
+
+test("shows recipe description and composition when adding it to a meal", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withRecipePicker: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.getByRole("tab", { name: "Recetas", exact: true }).click();
+  await page.getByRole("button", { name: /Tostada proteica/ }).click();
+
+  const dialog = page.locator(".recipe-log-modal");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Una preparación simple para el desayuno.", { exact: true })).toBeVisible();
+  await expect(dialog.locator(".daily-recipe-ingredient .food-thumb")).toHaveCount(2);
+  await expect(dialog.getByLabel("Cantidad de Avena en gramos")).toBeVisible();
+  await expect(dialog.getByText("Resumen nutricional", { exact: true })).toBeVisible();
+});
+
+test("uses the composition row in recipe creation and editing", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withServingFood: true, withRecipeLibrary: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Registrar", exact: true }).click();
+  await page.getByRole("button", { name: /Recetas Consultá tus recetas/ }).click();
+  await page.getByRole("button", { name: "Crear receta", exact: true }).click();
+
+  const createDialog = page.locator(".recipe-create-dialog");
+  await expect(createDialog.getByLabel("Descripción opcional")).toBeVisible();
+  await createDialog.getByPlaceholder("Buscar ingredientes...").fill("avena");
+  await createDialog.getByRole("button", { name: /Avena/ }).click();
+  const createRow = createDialog.locator(".daily-recipe-ingredient");
+  await expect(createRow.locator(".food-thumb")).toHaveCount(1);
+  await expect(createDialog.getByLabel("Cantidad de Avena en gramos")).toBeVisible();
+  const createRowLayout = await createRow.evaluate((element) => ({
+    image: element.querySelector(".food-thumb")?.getBoundingClientRect().toJSON(),
+    quantity: element.querySelector(".daily-recipe-ingredient-quantity")?.getBoundingClientRect().toJSON(),
+  }));
+  expect(createRowLayout.image.left).toBeLessThan(createRowLayout.quantity.left);
+  await createDialog.getByRole("button", { name: "Quitar" }).click();
+  await expect(createDialog.locator(".daily-recipe-ingredient")).toHaveCount(0);
+  await createDialog.getByRole("button", { name: "Cancelar" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Descartar cambios" }).click();
+
+  const editButton = page.getByRole("button", { name: "Editar", exact: true }).first();
+  await editButton.click();
+  const editDialog = page.locator(".recipe-editor-modal");
+  await expect(editDialog.getByLabel("Descripción opcional")).toHaveValue("Una preparación simple para el desayuno.");
+  await expect(editDialog.locator(".daily-recipe-ingredient .food-thumb")).toHaveCount(2);
+  await expect(editDialog.getByLabel("Cantidad de Avena en gramos")).toBeVisible();
 });
 
 test("opens the food log editor with an accessible desktop footer", async ({ page }) => {

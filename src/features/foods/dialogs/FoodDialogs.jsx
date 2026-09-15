@@ -4,11 +4,10 @@ import { Input } from "../../../components/FormControls";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { CatalogRowWithImage, FoodThumb } from "../../catalog/CatalogComponents";
 import { usePagedCatalog } from "../../catalog/usePagedCatalog";
-import { NutritionSummary } from "../../../components/NutritionSummary";
 import { formatNumber, formatQuantity } from "../../../utils/format";
 import { buildRecipePayload, recipeYieldPercent } from "../../../utils/recipe";
-import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
-import { scaleFoodNutrition } from "../../dashboard/dashboard.utils";
+import { decimalNumber } from "../../../utils/decimal";
+import { RecipeIngredientRow } from "../../recipes/components/RecipeIngredientRow";
 
 function recipeIngredientDraft(item) {
   const food = item?.food || item || {};
@@ -21,10 +20,6 @@ function recipeIngredientDraft(item) {
     quantity: item?.quantity,
     unit: item?.unit || "GRAM",
   };
-}
-
-function ingredientNutrition(item) {
-  return scaleFoodNutrition(item?.food || item, decimalNumber(item?.quantity));
 }
 
 export function EditRecipeModal({ api, recipe, onClose, onDone }) {
@@ -123,13 +118,13 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
           </section>
           <div className="ingredient-list">
             {ingredients.map((item, index) => (
-              <article className="recipe-edit-ingredient-card" key={`${item.foodId}:${index}`}>
-                <div className="recipe-edit-ingredient-main"><FoodThumb item={item} compact /><div><strong>{item.name}</strong><NutritionSummary nutrition={ingredientNutrition(item)} /></div></div>
-                <div className="recipe-edit-ingredient-controls">
-                  <label className="abm-field"><span>Cantidad</span><span className="ingredient-quantity"><input aria-label={`Cantidad de ${item.name} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.01" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onChange={(event) => updateIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: normalizeDecimalInput(event.target.value) } : ingredient)))} /><small>g</small></span></label>
-                  <button type="button" className="ingredient-remove" onClick={() => updateIngredients(ingredients.filter((_, i) => i !== index))}><Icon name="delete" />Quitar</button>
-                </div>
-              </article>
+              <RecipeIngredientRow
+                key={`${item.foodId}:${index}`}
+                ingredient={item}
+                index={index}
+                onChange={(ingredientIndex, value) => updateIngredients(ingredients.map((ingredient, i) => (i === ingredientIndex ? { ...ingredient, quantity: value } : ingredient)))}
+                onRemove={(ingredientIndex) => updateIngredients(ingredients.filter((_, i) => i !== ingredientIndex))}
+              />
             ))}
           </div>
         </div>
@@ -138,7 +133,7 @@ export function EditRecipeModal({ api, recipe, onClose, onDone }) {
 }
 
 
-export function FoodLogDialog({ item, eyebrow, title = item?.name, isRecipe = false, closing = false, onClose, onSubmit, children, footer, titleId = "food-log-title" }) {
+export function FoodLogDialog({ item, eyebrow, title = item?.name, description, isRecipe = false, closing = false, onClose, onSubmit, children, footer, titleId = "food-log-title" }) {
   const generatedTitleId = `${useId().replace(/:/g, "")}-title`;
   const resolvedTitleId = titleId === "food-log-title" ? generatedTitleId : titleId;
   return (
@@ -156,7 +151,10 @@ export function FoodLogDialog({ item, eyebrow, title = item?.name, isRecipe = fa
             <Icon name="close" />
           </button>
         </header>
-         <div className="edit-log-body" data-dialog-scroll-owner="true">{children}</div>
+         <div className="edit-log-body" data-dialog-scroll-owner="true">
+          {isRecipe && description && <p className="recipe-log-description">{description}</p>}
+          {children}
+        </div>
         {footer}
   </ModalShell>
   );

@@ -12,6 +12,7 @@ import { OCR_MACRO_FIELDS } from "../utils/catalog.utils";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 import { buildRecipePayload, recipeYieldPercent } from "../../../utils/recipe";
 import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
+import { RecipeIngredientRow } from "../../recipes/components/RecipeIngredientRow";
 
 export function CreateFoodForm({ api, prefillBarcode, clearPrefillBarcode, onDirtyChange, onBusyChange, id, hideSubmit = false, title = "Nuevo alimento" }) {
   const [saving, setSaving] = useState(false);
@@ -344,6 +345,7 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id,
                     quantity: 100,
                     unit: "GRAM",
                     name: food.name,
+                    food: { ...food, type: "FOOD" },
                   },
                 ]);
               }}
@@ -369,16 +371,13 @@ export function CreateRecipeForm({ api, onDirtyChange, onBusyChange, onDone, id,
         <InfiniteSentinel enabled={query.trim().length >= 2 && !catalog.initialLoading && !catalog.error && catalog.hasNext} onLoad={catalog.loadNext} />
         <div className="ingredient-list">
           {ingredients.map((item, index) => (
-            <label className="ingredient-row" key={`${item.foodId}:${index}`}>
-              <span className="ingredient-name">{item.name}</span>
-              <span className="ingredient-quantity">
-                <input aria-label={`Cantidad de ${item.name} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.01" value={item.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onChange={(event) => updateIngredients(ingredients.map((ingredient, i) => (i === index ? { ...ingredient, quantity: normalizeDecimalInput(event.target.value) } : ingredient)))} />
-                <small>g</small>
-              </span>
-              <button type="button" className="ingredient-remove" onClick={() => updateIngredients(ingredients.filter((_, i) => i !== index))}>
-                <Icon name="remove" />Quitar
-              </button>
-            </label>
+            <RecipeIngredientRow
+              key={`${item.foodId}:${index}`}
+              ingredient={item}
+              index={index}
+              onChange={(ingredientIndex, value) => updateIngredients(ingredients.map((ingredient, i) => (i === ingredientIndex ? { ...ingredient, quantity: value } : ingredient)))}
+              onRemove={(ingredientIndex) => updateIngredients(ingredients.filter((_, i) => i !== ingredientIndex))}
+            />
           ))}
         </div>
         <NutritionSummary nutrition={preview || {}} size="detail" />

@@ -4,11 +4,12 @@ import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { CatalogStatus, FoodThumb, preparationLabel } from "../catalog/CatalogComponents";
 import { formatNumber, formatQuantity } from "../../utils/format";
-import { decimalNumber, normalizeDecimalInput } from "../../utils/decimal";
+import { decimalNumber } from "../../utils/decimal";
 import { cookedRecipeWeight, rawRecipeWeight, recipeServingFactor } from "../../utils/recipe";
-import { foodPreparationSuffix, scaleFoodNutrition, sortRecipeIngredients } from "../dashboard/dashboard.utils";
+import { sortRecipeIngredients } from "../dashboard/dashboard.utils";
 import { NutritionSummary } from "../../components/NutritionSummary";
 import { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
+import { RecipeIngredientRow } from "../recipes/components/RecipeIngredientRow";
 
 export { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
 
@@ -198,7 +199,7 @@ export function FoodLogForm({
           {recipeIngredientsLocked && <p className="daily-recipe-locked">Los gramos cocidos usan el peso final medido; no se pueden ajustar ingredientes en este registro.</p>}
           <div className="daily-recipe-fields" id={mode === "edit" ? `daily-recipe-${logId}` : undefined}>
             {recipeIngredients.map((ingredient, index) => (
-              <RecipeIngredientEditorRow
+              <RecipeIngredientRow
                 key={`${ingredient.foodId}:${index}`}
                 ingredient={ingredient}
                 index={index}
@@ -237,32 +238,6 @@ export function FoodLogForm({
         </div>
       </section>
     </>
-  );
-}
-
-function RecipeIngredientEditorRow({ ingredient, index, locked, onChange }) {
-  const food = ingredient.food || { name: ingredient.name };
-  const nutrition = scaleFoodNutrition(food, ingredient.quantity);
-  return (
-    <div className="daily-recipe-ingredient">
-      <FoodThumb item={{ ...food, type: "FOOD" }} compact />
-      <div className="daily-recipe-ingredient-copy">
-        <strong>{ingredient.name || "Alimento"}</strong>
-        <small>{foodPreparationSuffix(food) || "Ingrediente de la receta"}</small>
-      </div>
-      <div className="daily-recipe-ingredient-meta">
-        {locked ? (
-          <span className="daily-recipe-ingredient-quantity"><strong>{formatQuantity(ingredient.quantity)}</strong><small>g</small></span>
-        ) : (
-          <label className="daily-recipe-ingredient-quantity">
-            <span className="sr-only">Cantidad de {ingredient.name || "alimento"} en gramos</span>
-            <input aria-label={`Cantidad de ${ingredient.name || "alimento"} en gramos`} type="text" inputMode="decimal" min="0.1" step="0.01" value={ingredient.quantity} onFocus={(event) => event.currentTarget.select()} onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onChange={(event) => onChange(index, normalizeDecimalInput(event.target.value))} />
-            <small>g</small>
-          </label>
-        )}
-        <span className="daily-recipe-ingredient-kcal">{formatNumber(nutrition.calories)} kcal</span>
-      </div>
-    </div>
   );
 }
 
@@ -418,15 +393,16 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     }
   }
   return (
-    <FoodLogDialog
-      item={item}
-      eyebrow="Editar registro"
-      isRecipe={isRecipe}
-      closing={closing}
-      onClose={closeWithAnimation}
-      onSubmit={submit}
-      titleId="edit-log-title"
-      footer={
+      <FoodLogDialog
+        item={item}
+        eyebrow="Editar registro"
+        description={isRecipe ? item?.description : null}
+        isRecipe={isRecipe}
+        closing={closing}
+        onClose={closeWithAnimation}
+        onSubmit={submit}
+        titleId="edit-log-title"
+        footer={
         <footer className="modal-actions">
           <button type="button" className="secondary" onClick={closeWithAnimation}>
             Cancelar

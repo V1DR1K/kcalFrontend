@@ -1134,6 +1134,7 @@ summary:focus-visible {
 .edit-log-modal h2 { overflow: hidden; margin: 2px 0 0; text-overflow: ellipsis; white-space: nowrap; }
 .edit-log-identity > small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
 .edit-log-body { display: grid; align-content: start; gap: 14px; min-width: 0; min-height: 0; padding: 20px 22px; }
+.recipe-log-description { margin: -2px 0 0; color: var(--muted); font-size: var(--type-body-sm); line-height: 1.45; }
 .edit-log-section { display: grid; gap: 12px; min-width: 0; padding: 14px; border: 1px solid var(--outline); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--surface-high) 76%, var(--surface)); }
 .edit-log-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-width: 0; }
 .edit-log-section-heading > div { display: grid; gap: 3px; min-width: 0; }

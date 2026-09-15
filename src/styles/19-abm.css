@@ -174,6 +174,45 @@
 .day-editor-add:hover { background: var(--primary-soft); }
 .abm-editor-modal > .modal-shell-footer { padding: 14px 20px max(14px, env(safe-area-inset-bottom)); }
 
+/* Recipe creation and editing share the compact composition surface used by meal logs. */
+.recipe-create-dialog,
+.recipe-editor-modal {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(600px, 100%);
+  max-height: min(780px, calc(100dvh - 64px));
+  padding: 0;
+  border-radius: var(--radius-dialog);
+  background: linear-gradient(180deg, var(--surface-low), var(--surface));
+  box-shadow: var(--shadow-dialog);
+}
+.recipe-create-dialog .recipe-create-content,
+.recipe-editor-modal .recipe-editor-body {
+  min-width: 0;
+  min-height: 0;
+  padding: 20px 22px;
+}
+.recipe-create-dialog .recipe-create-content { overflow-x: hidden; }
+.recipe-create-dialog .recipe-create-content .recipe-panel { min-height: 0; }
+.recipe-editor-modal .recipe-editor-body { overflow-x: hidden; overflow-y: auto; }
+.recipe-form .ingredient-list,
+.recipe-editor-body .ingredient-list { gap: 10px; }
+.recipe-form .daily-recipe-ingredient,
+.recipe-editor-body .daily-recipe-ingredient { min-width: 0; }
+.recipe-editor-ingredient .daily-recipe-ingredient-copy .nutrition-summary { min-width: 0; margin-top: 3px; }
+.recipe-editor-ingredient .daily-recipe-ingredient-meta {
+  grid-template-columns: minmax(100px, auto) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 4px 8px;
+}
+.recipe-editor-ingredient .daily-recipe-ingredient-kcal { grid-column: 1; }
+.recipe-ingredient-remove {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
 @media (max-width: 900px) {
   .abm-page { width: min(100% - 32px, 720px); }
   .day-presets-workspace { grid-template-columns: 1fr; }
@@ -378,6 +417,11 @@
   .recipe-edit-ingredient-controls { grid-template-columns: minmax(0, 1fr) 44px; }
   .recipe-edit-ingredient-controls .ingredient-remove { justify-content: center; width: 44px; padding: 0; font-size: 0; }
   .recipe-edit-ingredient-controls .ingredient-remove .material-symbols-outlined { font-size: 20px; }
+  .recipe-create-dialog .recipe-create-content,
+  .recipe-editor-modal .recipe-editor-body { padding: 16px 12px max(16px, env(safe-area-inset-bottom)); }
+  .recipe-editor-ingredient .daily-recipe-ingredient-meta { grid-column: 2; display: grid; justify-items: end; }
+  .recipe-editor-ingredient .recipe-ingredient-remove { width: 44px; padding: 0; justify-content: center; font-size: 0; }
+  .recipe-editor-ingredient .recipe-ingredient-remove .material-symbols-outlined { font-size: 20px; }
 }
 
 @media (max-width: 390px) {
