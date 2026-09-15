@@ -213,6 +213,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background: var(--background);
   background:
     radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--primary) 8%, transparent), transparent 28rem),
     radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--tertiary) 7%, transparent), transparent 34rem),
@@ -223,6 +224,14 @@ body {
   min-height: 100dvh;
   scroll-padding-bottom: 0;
   touch-action: inherit;
+}
+
+@supports (height: 100svh) {
+  body { min-height: 100svh; }
+}
+
+@supports (height: 100dvh) {
+  body { min-height: 100dvh; }
 }
 
 #root {
@@ -264,6 +273,12 @@ select,
 textarea {
   min-inline-size: 0;
   max-inline-size: 100%;
+}
+
+@media (max-width: 720px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea { font-size: max(16px, var(--type-body)); }
 }
 
 :focus-visible {
@@ -345,6 +360,7 @@ h3,
   gap: var(--space-3);
   width: min(420px, 100%);
   padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border-color: var(--outline);
   border: 1px solid color-mix(in srgb, var(--primary) 38%, var(--outline));
   border-radius: var(--radius-panel);
   background: var(--surface-low);
@@ -356,7 +372,13 @@ h3,
 }
 
 .notification > .material-symbols-outlined { color: var(--primary); }
-.notification.error { border-color: color-mix(in srgb, var(--error) 46%, var(--outline)); }
+.notification.error { border-color: var(--outline); border-color: color-mix(in srgb, var(--error) 46%, var(--outline)); }
 .notification.error > .material-symbols-outlined { color: var(--error); }
 .notification button { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--muted); }
 .notification button:hover { background: var(--surface-high); color: var(--text); }
+
+@supports not (color: color-mix(in srgb, black, white)) {
+  body { background: var(--background); }
+  .notification { border-color: var(--outline); }
+  .notification.error { border-color: var(--error); }
+}

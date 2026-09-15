@@ -23,7 +23,7 @@ export function DatePickerDialog({ value, onSelect, onClose, className = "", bac
   const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(month);
 
   return (
-    <ModalShell onClose={onClose} initialFocusRef={closeRef} hideHeader labelledBy={titleId} theme={theme} className={`app-modal-compact date-picker-dialog ${className}`.trim()} backdropClassName={`date-picker-backdrop ${backdropClassName}`.trim()}>
+    <ModalShell onClose={onClose} initialFocusRef={closeRef} hideHeader labelledBy={titleId} theme={theme} className={`app-modal-compact date-picker-dialog ${className}`.trim()} backdropClassName={`date-picker-backdrop ${backdropClassName}`.trim()} dialogProps={{ "data-dialog-scroll-owner": "true" }}>
         <header>
           <div>
             <span>Elegir fecha</span>

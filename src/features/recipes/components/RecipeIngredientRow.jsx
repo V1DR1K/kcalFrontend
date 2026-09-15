@@ -3,7 +3,7 @@ import { Icon } from "../../../components/Icon";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
 import { formatNumber, formatQuantity } from "../../../utils/format";
-import { foodPreparationSuffix, scaleFoodNutrition } from "../../dashboard/dashboard.utils";
+import { foodPreparationSuffix, scaleFoodNutrition } from "../recipe.utils";
 import { FoodThumb } from "../../catalog/CatalogComponents";
 
 export function RecipeIngredientRow({ ingredient, index, locked = false, onChange, onRemove }) {

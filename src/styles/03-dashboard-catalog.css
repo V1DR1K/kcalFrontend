@@ -334,6 +334,8 @@
 .ai-photo-context-preview { width: 100%; max-height: min(34vh, 260px); border: 1px solid var(--outline); border-radius: 14px; object-fit: cover; }
 .ai-photo-context-actions { display: grid; grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); gap: 8px; }
 .ai-estimate-editor { display: grid; gap: 16px; }
+.ai-estimate-modal .modal-shell-content { min-height: 0; padding: 0; overflow: auto; }
+.ai-estimate-modal .selected-editor { width: 100%; max-width: none; max-height: none; overflow: visible; padding: var(--space-5); border: 0; border-radius: 0; background: transparent; box-shadow: none; animation: none; }
 .ai-estimate-editor > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
 .ai-estimate-editor > header > div { display: grid; gap: 3px; min-width: 0; }
 .ai-estimate-editor h3 { margin: 0; font-size: 18px; }

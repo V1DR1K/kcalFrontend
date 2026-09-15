@@ -5,7 +5,8 @@ import { CatalogStatus, FoodThumb, PreparationBadge, categoryLabel, preparationL
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { formatNumber, formatQuantity, readableDate } from "../../../utils/format";
 import { cookedRecipeWeight, rawRecipeWeight } from "../../../utils/recipe";
-import { createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, savedAiEstimate, scaleFoodNutrition, sortMealLogs, sortRecipeIngredients } from "../dashboard.utils";
+import { createMealLogs, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, savedAiEstimate, sortMealLogs } from "../dashboard.utils";
+import { foodPreparationSuffix, scaleFoodNutrition, sortRecipeIngredients } from "../../recipes/recipe.utils";
 import { NutritionPills } from "./DashboardSections";
 import { useMealGesture } from "../hooks/useMealGesture";
 

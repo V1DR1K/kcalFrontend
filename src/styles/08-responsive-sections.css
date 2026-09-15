@@ -289,6 +289,8 @@
   .ai-photo-context-preview { max-height: min(32dvh, 260px); }
   .ai-photo-context-editor,
   .ai-estimate-editor { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  .ai-estimate-modal .modal-shell-content { padding: 0; }
+  .ai-estimate-modal .selected-editor { padding: max(12px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-left)) calc(20px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right)); }
   .ai-photo-context-editor { min-height: 0; align-content: start; }
   .ai-photo-context-editor .ai-context-field,
   .ai-photo-context-editor .ai-context-tools { min-width: 0; }

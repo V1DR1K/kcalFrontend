@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { ModalRoot } from "../../../components/dialog/ModalRoot";
-import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycle";
 import { savedAiEstimate } from "../dashboard.utils";
 
 export function EditAiEstimateDialog({ api, log, mealTypes, onClose, onDone, EditorComponent }) {
@@ -9,8 +7,6 @@ export function EditAiEstimateDialog({ api, log, mealTypes, onClose, onDone, Edi
   const [logDate, setLogDate] = useState(log.logDate);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const { dialogRef, onBackdropPointerDown } = useDialogLifecycle({ onClose });
-
   async function save(updated) {
     if (saving) return;
     setSaving(true);
@@ -26,9 +22,7 @@ export function EditAiEstimateDialog({ api, log, mealTypes, onClose, onDone, Edi
   }
 
   return (
-    <ModalRoot className="app-modal-backdrop modal-backdrop" onBackdropPointerDown={onBackdropPointerDown}>
-      <EditorComponent
-        dialogRef={dialogRef}
+    <EditorComponent
         estimate={estimate}
         setEstimate={setEstimate}
         saving={saving}
@@ -43,7 +37,6 @@ export function EditAiEstimateDialog({ api, log, mealTypes, onClose, onDone, Edi
         setLogDate={setLogDate}
         mealTypes={mealTypes}
         onCatalogItem={(index, payload) => api.request(`/api/nutrition/food-logs/${log.id}/ai-estimate/items/${index}/catalog`, { method: "POST", body: JSON.stringify(payload) })}
-      />
-    </ModalRoot>
+    />
   );
 }

@@ -7,7 +7,8 @@ import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, catego
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { readRecents, rememberItem, rememberMeal } from "../../../services/recents";
 import { formatNumber, readableDate, shiftDate, today } from "../../../utils/format";
-import { createMealLogs, foodPreparationSuffix, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals, scaleFoodNutrition } from "../dashboard.utils";
+import { createMealLogs, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealCopyErrorMessage, mealLogItem, mealLogName, mealTotals } from "../dashboard.utils";
+import { foodPreparationSuffix, scaleFoodNutrition } from "../../recipes/recipe.utils";
 import { Header, Macro, Panel } from "../../../components/Layout";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 

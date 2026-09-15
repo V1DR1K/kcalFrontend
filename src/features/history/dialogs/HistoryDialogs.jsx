@@ -24,7 +24,7 @@ export function HistoryExportDialog({ api, monthDate, exporting, setExporting, o
       setExporting(false);
     }
   }
-  return <ModalShell onClose={onClose} closeDisabled={exporting} initialFocusRef={closeRef} hideHeader labelledBy={titleId} className="app-modal-compact history-export-dialog" backdropClassName="history-export-backdrop" wrapContent={false}>
+  return <ModalShell onClose={onClose} closeDisabled={exporting} initialFocusRef={closeRef} hideHeader labelledBy={titleId} className="app-modal-compact history-export-dialog" backdropClassName="history-export-backdrop" wrapContent={false} dialogProps={{ "data-dialog-scroll-owner": "true" }}>
     <header><div><span className="eyebrow">Historial</span><h2 id={titleId}>Exportar comidas</h2><p>Descargá un Excel con todos los alimentos, cantidades y macros registrados.</p></div><button ref={closeRef} type="button" className="history-preview-close" onClick={onClose} disabled={exporting} aria-label="Cerrar exportación"><Icon name="close" /></button></header>
     <div className="history-export-options"><div className="history-export-option selected"><Icon name="calendar_month" /><span><strong>Mes completo</strong><small>{monthLabel} · todas las comidas registradas</small></span><Icon name="check_circle" /></div></div>
     <footer><button type="button" className="secondary" onClick={onClose} disabled={exporting}>Cancelar</button><button type="button" className="primary" onClick={exportSelection} disabled={exporting}><Icon name="download" />{exporting ? "Preparando Excel…" : "Descargar Excel"}</button></footer>
@@ -61,7 +61,7 @@ export function HistoryDayPreview({ api, day, onClose }) {
   }
   return <ModalShell onClose={onClose} initialFocusRef={closeRef} hideHeader labelledBy={titleId} className="history-preview" backdropClassName="history-preview-backdrop" wrapContent={false}>
     <header className="history-preview-header"><div><span className="eyebrow">Resumen del día</span><h2 id={titleId}>{readableDate(day.date)}</h2><small>{day.planName || detail?.plan?.name}</small></div><div className="history-preview-header-actions"><button type="button" className="secondary history-day-export" onClick={exportDay} disabled={!detail || exporting}><Icon name="download" />{exporting ? "Exportando…" : "Exportar día"}</button><button ref={closeRef} className="history-preview-close" onClick={onClose} aria-label="Cerrar detalle"><Icon name="close" /></button></div></header>
-    <div className="history-preview-scroll">
+    <div className="history-preview-scroll" data-dialog-scroll-owner="true">
       <div className="history-calorie-summary"><div className="history-calorie-ring" style={{ "--day-progress": `${progress * 3.6}deg` }}><strong>{formatNumber(consumed)}</strong><small>de {formatNumber(goal)} kcal</small></div><div><span>{day.goalReached ? "Objetivo cumplido" : "Balance del día"}</span><strong>{progress}%</strong><small>{formatNumber(Math.max(0, goal - consumed))} kcal restantes</small></div></div>
        {error && <CatalogStatus error>{error}</CatalogStatus>}
        {loading && <SkeletonRows count={4} className="history-preview-skeleton" label="Cargando detalle del día" />}

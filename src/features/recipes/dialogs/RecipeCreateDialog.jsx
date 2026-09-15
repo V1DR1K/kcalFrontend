@@ -1,8 +1,9 @@
 import React, { useRef, useState } from "react";
-import { CreateRecipeForm } from "../../catalog/components/CatalogForms";
 import { ModalShell } from "../../../components/dialog/ModalShell";
+import { RecipeEditorForm } from "../components/RecipeEditorForm";
 
-export function RecipeCreateDialog({ api, onClose, onDone }) {
+export function RecipeEditorDialog({ api, recipe = null, onClose, onDone }) {
+  const editing = Boolean(recipe?.id);
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const closeRef = useRef(null);
@@ -23,27 +24,28 @@ export function RecipeCreateDialog({ api, onClose, onDone }) {
   return (
     <ModalShell
       onClose={requestClose}
-      closeLabel="Cerrar creación de receta"
+      closeLabel={editing ? "Cerrar edición de receta" : "Cerrar creación de receta"}
       closeDisabled={busy}
       initialFocusRef={closeRef}
-      title="Crear receta"
+      title={editing ? "Editar receta" : "Crear receta"}
       eyebrow="Recetas"
-      className="recipe-create-dialog"
+      className={editing ? "recipe-editor-dialog recipe-editor-modal" : "recipe-create-dialog"}
       backdropClassName="recipe-create-backdrop"
       wrapContent={false}
       footer={(
         <div className="recipe-dialog-actions">
           <button type="button" className="secondary" onClick={requestClose} disabled={busy}>Cancelar</button>
-          <button type="submit" form="create-recipe-form" className="primary" disabled={busy}>{busy ? "Creando…" : "Crear receta"}</button>
+          <button type="submit" form="recipe-editor-form" className="primary" disabled={busy}>{busy ? (editing ? "Guardando…" : "Creando…") : (editing ? "Guardar cambios" : "Crear receta")}</button>
         </div>
       )}
     >
       <div className="recipe-create-content" data-dialog-scroll-owner="true">
-        <CreateRecipeForm
-          id="create-recipe-form"
+        <RecipeEditorForm
+          id="recipe-editor-form"
           hideSubmit
           title={null}
           api={api}
+          recipe={recipe}
           onDirtyChange={setDirty}
           onBusyChange={setBusy}
           onDone={() => {
@@ -54,4 +56,8 @@ export function RecipeCreateDialog({ api, onClose, onDone }) {
       </div>
     </ModalShell>
   );
+}
+
+export function RecipeCreateDialog(props) {
+  return <RecipeEditorDialog {...props} />;
 }

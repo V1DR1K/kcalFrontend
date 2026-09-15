@@ -1,8 +1,8 @@
 import { formatQuantity } from "../../utils/format.js";
 import { formatRecipeLogAmount } from "../../utils/recipe.js";
-import { preparationLabel } from "../catalog/catalog.utils.js";
 import { normalizeMealLogReference } from "./mealLogPayload.js";
 import { decimalNumber } from "../../utils/decimal.js";
+export { foodPreparationSuffix, scaleFoodNutrition, sortRecipeIngredients } from "../recipes/recipe.utils.js";
 export { mealTotals } from "./nutritionTotals.js";
 
 export function isCopyableMealLog(log) { return ["FOOD", "RECIPE", "AI_ESTIMATE"].includes(log?.itemType || log?.type); }
@@ -99,17 +99,6 @@ export function sortMealLogs(logs = []) {
     .map(({ item }) => item);
 }
 
-export function sortRecipeIngredients(ingredients = []) {
-  return ingredients
-    .map((ingredient, index) => ({ ingredient, index }))
-    .sort((left, right) => (
-      compareNutritionItemNames(left.ingredient.food?.name || "Alimento", right.ingredient.food?.name || "Alimento")
-      || Number(left.ingredient.quantity || 0) - Number(right.ingredient.quantity || 0)
-      || left.index - right.index
-    ))
-    .map(({ ingredient }) => ingredient);
-}
-
 export function savedAiEstimate(log) {
   try {
     const details = JSON.parse(log.aiEstimateDetails || "{}");
@@ -118,6 +107,4 @@ export function savedAiEstimate(log) {
 }
 
 export function aiQuotaReset(usage) { if (!usage?.blockedUntil) return ""; return new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" }).format(new Date(usage.blockedUntil)); }
-export function foodPreparationSuffix(food) { return food?.preparation && food.preparation !== "UNSPECIFIED" ? ` · ${preparationLabel(food.preparation)}` : ""; }
 export function macroCalories(proteinGrams, carbsGrams, fatGrams) { return Math.round(Number(proteinGrams || 0) * 4 + Number(carbsGrams || 0) * 4 + Number(fatGrams || 0) * 9); }
-export function scaleFoodNutrition(food, quantity) { const baseQuantity = Number(food?.baseQuantity || 100); const grams = Number(quantity || 0); const factor = baseQuantity > 0 ? grams / baseQuantity : 0; const proteinGrams = Number(food?.proteinGrams || 0) * factor; const carbsGrams = Number(food?.carbsGrams || 0) * factor; const fatGrams = Number(food?.fatGrams || 0) * factor; return { calories: macroCalories(proteinGrams, carbsGrams, fatGrams), proteinGrams, carbsGrams, fatGrams }; }

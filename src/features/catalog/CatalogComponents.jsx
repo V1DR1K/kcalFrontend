@@ -174,7 +174,7 @@ export function NutrientEditor({ api, food, onSaved }) {
   }
   return <section className="nutrient-editor">
     <button type="button" className="secondary" onClick={start}>{open ? "Cerrar edición" : "Editar nutrientes"}</button>
-    {open && <div className="nutrient-editor-fields">{definitions.map((item) => <label key={item.code}><span>{item.name} <small>({item.unit})</small></span><input inputMode="decimal" min="0" step="0.1" value={values[item.code] ?? ""} onChange={(event) => setValues((current) => ({ ...current, [item.code]: event.target.value.replace(",", ".").replace(/[^\d.]/g, "") }))} placeholder="Sin dato" /></label>)}<button type="button" className="primary" disabled={saving} onClick={save}>{saving ? "Guardando…" : "Guardar nutrientes"}</button></div>}
+    {open && <div className="nutrient-editor-fields" data-dialog-scroll-owner="true">{definitions.map((item) => <label key={item.code}><span>{item.name} <small>({item.unit})</small></span><input inputMode="decimal" min="0" step="0.1" value={values[item.code] ?? ""} onChange={(event) => setValues((current) => ({ ...current, [item.code]: event.target.value.replace(",", ".").replace(/[^\d.]/g, "") }))} placeholder="Sin dato" /></label>)}<button type="button" className="primary" disabled={saving} onClick={save}>{saving ? "Guardando…" : "Guardar nutrientes"}</button></div>}
     {message && <small className="nutrient-editor-message" role="status">{message}</small>}
   </section>;
 }

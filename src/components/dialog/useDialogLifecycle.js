@@ -6,19 +6,21 @@ let previousBodyOverflow = "";
 let previousScrollRootOverflow = "";
 let lockedScrollRoot = null;
 let touchStartY = 0;
-const SCROLL_OWNER_SELECTOR = '[data-dialog-scroll-owner="true"], .history-preview-scroll, .nutrient-editor-fields, .app-modal-surface.date-picker-dialog, .app-modal-surface.history-export-dialog';
+const SCROLL_OWNER_SELECTOR = '[data-dialog-scroll-owner="true"]';
 
 function topDialog() {
   return activeDialogStack[activeDialogStack.length - 1];
 }
 
-function scrollOwnersFor(target) {
+function scrollOwnersFor(target, dialogRef, scrollOwnerRef) {
   const owners = [];
   let element = target?.nodeType === Node.ELEMENT_NODE ? target : target?.parentElement;
   while (element && element !== document.body) {
     if (element.matches?.(SCROLL_OWNER_SELECTOR) || element.matches?.("textarea")) owners.push(element);
     element = element.parentElement;
   }
+  if (!owners.length && scrollOwnerRef?.current?.contains(target)) owners.push(scrollOwnerRef.current);
+  if (!owners.length && dialogRef.current?.contains(target)) owners.push(dialogRef.current);
   return owners;
 }
 
@@ -38,7 +40,7 @@ function onTouchMove(event) {
   const touch = event.touches?.[0];
   if (!dialog || !touch) return;
   const target = event.target;
-  const owners = scrollOwnersFor(target);
+  const owners = scrollOwnersFor(target, dialog.dialogRef, dialog.scrollOwnerRef);
   if (!dialog.dialogRef.current?.contains(target) && !owners.length) {
     event.preventDefault();
     return;
@@ -72,7 +74,7 @@ const FOCUSABLE_SELECTOR = [
   "[tabindex]:not([tabindex=\"-1\"])",
 ].join(",");
 
-export function useDialogLifecycle({ open = true, onClose, initialFocusRef, closeOnEscape = true, trapFocus = true, restoreFocus = true, lockScroll = true }) {
+export function useDialogLifecycle({ open = true, onClose, initialFocusRef, closeOnEscape = true, trapFocus = true, restoreFocus = true, lockScroll = true, scrollOwnerRef, footerRef }) {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
   const onCloseRef = useRef(onClose);
@@ -80,7 +82,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
 
   useEffect(() => {
     if (!open) return undefined;
-    const dialogToken = { dialogRef };
+    const dialogToken = { dialogRef, scrollOwnerRef };
     activeDialogStack.push(dialogToken);
     previousFocusRef.current = document.activeElement;
     if (lockScroll) {
@@ -101,11 +103,11 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
       if (!dialog || !target || !dialog.contains(target)) return;
       window.requestAnimationFrame(() => {
         if (!dialogRef.current?.contains(target)) return;
-        const owner = target.closest?.(SCROLL_OWNER_SELECTOR) || dialogRef.current;
+        const owner = target.closest?.(`${SCROLL_OWNER_SELECTOR}, textarea`) || scrollOwnerRef?.current || dialogRef.current;
         if (!owner) return;
         const targetRect = target.getBoundingClientRect();
         const ownerRect = owner.getBoundingClientRect();
-        const footer = dialogRef.current?.querySelector(":scope > footer, :scope > .modal-shell-footer, :scope > .ai-photo-context-actions, :scope > .ai-estimate-actions, :scope > .selected-editor > .ai-photo-context-actions, :scope > .selected-editor > .ai-estimate-actions, :scope > .selected-editor > .primary");
+        const footer = footerRef?.current || dialogRef.current?.querySelector(":scope > footer, :scope > .modal-shell-footer");
         const footerRect = footer?.getBoundingClientRect();
         const viewport = window.visualViewport;
         const viewportBottom = viewport ? (viewport.offsetTop || 0) + viewport.height : ownerRect.bottom;
@@ -169,7 +171,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
       window.visualViewport?.removeEventListener("scroll", revealFocusedControl);
       if (restoreFocus && wasTopDialog && previousFocusRef.current?.isConnected) previousFocusRef.current.focus?.();
     };
-  }, [closeOnEscape, initialFocusRef, lockScroll, open, restoreFocus, trapFocus]);
+  }, [closeOnEscape, footerRef, initialFocusRef, lockScroll, open, restoreFocus, scrollOwnerRef, trapFocus]);
 
   function onBackdropPointerDown(event) {
     if (event.target === event.currentTarget) onCloseRef.current?.();

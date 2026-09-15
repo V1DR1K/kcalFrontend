@@ -6,12 +6,12 @@ import { CatalogStatus, FoodThumb, preparationLabel } from "../catalog/CatalogCo
 import { formatNumber, formatQuantity } from "../../utils/format";
 import { decimalNumber } from "../../utils/decimal";
 import { cookedRecipeWeight, rawRecipeWeight, recipeServingFactor } from "../../utils/recipe";
-import { sortRecipeIngredients } from "../dashboard/dashboard.utils";
+import { sortRecipeIngredients } from "../recipes/recipe.utils";
 import { NutritionSummary } from "../../components/NutritionSummary";
-import { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
+import { FoodLogDialog } from "./dialogs/FoodDialogs";
 import { RecipeIngredientRow } from "../recipes/components/RecipeIngredientRow";
 
-export { EditRecipeModal, FoodLogDialog } from "./dialogs/FoodDialogs";
+export { FoodLogDialog } from "./dialogs/FoodDialogs";
 
 const SWIPE_ACTION_WIDTH = 84;
 const RECIPE_MENU_WIDTH = 178;

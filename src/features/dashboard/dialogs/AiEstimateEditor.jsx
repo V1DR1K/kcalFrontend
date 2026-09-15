@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { CATEGORY_OPTIONS, PREPARATION_OPTIONS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
 import { Input, Select } from "../../../components/FormControls";
+import { ModalShell } from "../../../components/dialog/ModalShell";
 import { useDialogLifecycle } from "../../../components/dialog/useDialogLifecycle";
 import { categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
 import { formatNumber } from "../../../utils/format";
-import { aiProposalFood, macroCalories, scaleFoodNutrition } from "../dashboard.utils";
+import { aiProposalFood, macroCalories } from "../dashboard.utils";
+import { scaleFoodNutrition } from "../../recipes/recipe.utils";
 import { decimalNumber } from "../../../utils/decimal";
 import { resizeAiEstimateItem } from "../aiEstimateAmounts";
 
@@ -49,7 +51,7 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
   const canConfirm = estimate.name.trim() && estimate.items.length && estimate.items.every((item) => item.name?.trim()
     && decimalNumber(item.estimatedGrams) > 0 && decimalNumber(item.estimatedGrams) <= 3000);
   const editor = (
-      <section ref={resolvedDialogRef} className={`selected-editor ai-estimate-editor ${standalone ? "app-modal-surface" : ""}`.trim()} data-dialog-scroll-owner="true" role="dialog" aria-modal="true" aria-label={mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto"}>
+      <section ref={resolvedDialogRef} className="selected-editor ai-estimate-editor" data-dialog-scroll-owner="true" role={standalone ? undefined : "dialog"} aria-modal={standalone ? undefined : "true"} aria-label={mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto"}>
         <span className="sheet-handle" aria-hidden="true" />
         <header><div><span>{mode === "saved" ? "Estimación guardada" : "Estimación IA"}</span><h3>{estimate.name}</h3><small>Confianza estimada: {estimate.confidence}%</small></div><button className="icon-button" aria-label="Cerrar estimación" onClick={onDiscard}><Icon name="close" /></button></header>
         {mode === "saved" && <>
@@ -96,5 +98,19 @@ export function AiEstimateEditor({ dialogRef, estimate, setEstimate, correction 
         <div className="ai-estimate-actions"><button className="secondary" disabled={refining || saving} onClick={onDiscard}>{mode === "saved" ? "Cancelar" : "Descartar"}</button><button className="primary" disabled={saving || refining || !canConfirm} onClick={() => onConfirm(estimate)}>{saving ? "Guardando..." : mode === "saved" ? "Guardar cambios" : "Agregar alimentos"}</button></div>
       </section>
   );
-  return standalone ? editor : <div className="selected-subpanel ai-estimate-subpanel">{editor}</div>;
+  if (standalone) {
+    return (
+      <ModalShell
+        onClose={onDiscard}
+        closeLabel="Cerrar estimación"
+        hideHeader
+        ariaLabel={mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto"}
+        className="ai-estimate-modal"
+        backdropClassName="modal-backdrop ai-estimate-backdrop"
+      >
+        {editor}
+      </ModalShell>
+    );
+  }
+  return <div className="selected-subpanel ai-estimate-subpanel">{editor}</div>;
 }

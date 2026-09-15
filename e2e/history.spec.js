@@ -60,7 +60,15 @@ async function seedHistoryApp(page) {
 test("navigates the nutrition calendar, opens day detail and exports XLS", async ({ page }) => {
   await seedHistoryApp(page);
   await page.goto("/ingresar");
-  await page.getByRole("button", { name: "Historial", exact: true }).first().click();
+  const moreButton = page.getByRole("button", { name: "Más opciones" });
+  if (await moreButton.isVisible()) {
+    await moreButton.click();
+    const historyButton = page.locator(".mobile-secondary-items").getByRole("button", { name: "Historial", exact: true });
+    await expect(historyButton).toBeVisible();
+    await historyButton.click({ force: true });
+  } else {
+    await page.getByRole("button", { name: "Historial", exact: true }).first().click({ force: true });
+  }
 
   const month = currentMonth();
   await expect(page.getByRole("heading", { name: "Historial", exact: true })).toBeVisible();
@@ -88,7 +96,15 @@ test("keeps the history calendar usable on a narrow viewport", async ({ page }) 
   await page.setViewportSize({ width: 390, height: 430 });
   await seedHistoryApp(page);
   await page.goto("/ingresar");
-  await page.getByRole("button", { name: "Historial", exact: true }).first().click();
+  const moreButton = page.getByRole("button", { name: "Más opciones" });
+  if (await moreButton.isVisible()) {
+    await moreButton.click();
+    const historyButton = page.locator(".mobile-secondary-items").getByRole("button", { name: "Historial", exact: true });
+    await expect(historyButton).toBeVisible();
+    await historyButton.click({ force: true });
+  } else {
+    await page.getByRole("button", { name: "Historial", exact: true }).first().click({ force: true });
+  }
 
   const layout = await page.locator(".history-calendar-surface").evaluate((surface) => {
     const grid = surface.querySelector(".history-calendar-grid");
