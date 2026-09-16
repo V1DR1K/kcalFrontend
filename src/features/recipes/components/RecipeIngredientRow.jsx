@@ -3,18 +3,21 @@ import { Icon } from "../../../components/Icon";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
 import { formatNumber, formatQuantity } from "../../../utils/format";
-import { foodPreparationSuffix, scaleFoodNutrition } from "../recipe.utils";
+import { foodPreparationSuffix, scaleFoodNutrition, scaleRecipeNutrition } from "../recipe.utils";
 import { FoodThumb } from "../../catalog/CatalogComponents";
 
 export function RecipeIngredientRow({ ingredient, index, locked = false, onChange, onRemove }) {
-  const food = ingredient?.food || ingredient || {};
-  const name = ingredient?.name || food.name || "Alimento";
-  const nutrition = scaleFoodNutrition(food, decimalNumber(ingredient?.quantity));
-  const secondaryLabel = foodPreparationSuffix(food) || "Ingrediente de la receta";
+  const referencedItem = ingredient?.food || ingredient?.recipe || ingredient || {};
+  const isRecipe = Boolean(ingredient?.recipe || ingredient?.recipeId || ingredient?.type === "RECIPE");
+  const name = ingredient?.name || referencedItem.name || (isRecipe ? "Receta" : "Alimento");
+  const nutrition = isRecipe
+    ? scaleRecipeNutrition(referencedItem, decimalNumber(ingredient?.quantity))
+    : scaleFoodNutrition(referencedItem, decimalNumber(ingredient?.quantity));
+  const secondaryLabel = isRecipe ? "Receta usada como ingrediente" : foodPreparationSuffix(referencedItem) || "Ingrediente de la receta";
 
   return (
     <div className={`daily-recipe-ingredient ${onRemove ? "recipe-editor-ingredient" : ""}`.trim()}>
-      <FoodThumb item={{ ...food, type: "FOOD" }} compact />
+      <FoodThumb item={{ ...referencedItem, type: isRecipe ? "RECIPE" : "FOOD" }} compact />
       <div className="daily-recipe-ingredient-copy">
         <strong>{name}</strong>
         <small>{secondaryLabel}</small>

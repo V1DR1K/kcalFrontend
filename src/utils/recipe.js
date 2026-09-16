@@ -37,7 +37,11 @@ export function buildRecipePayload({ name, description, ingredients, cookedTotal
   return {
     name: name.trim(),
     description: description.trim(),
-    ingredients: ingredients.map((item) => ({ foodId: item.foodId, quantity: decimalNumber(item.quantity), unit: item.unit })),
+    ingredients: ingredients.map((item) => ({
+      ...(item.recipeId ? { recipeId: item.recipeId } : { foodId: item.foodId }),
+      quantity: decimalNumber(item.quantity),
+      unit: item.unit,
+    })),
     cookedTotalWeightGrams: Number.isFinite(cookedWeight) && cookedWeight > 0 ? cookedWeight : null,
     clearCookedTotalWeight: Boolean(clearCookedTotalWeight),
   };

@@ -6,7 +6,7 @@ import { CatalogStatus, FoodThumb, preparationLabel } from "../catalog/CatalogCo
 import { formatNumber, formatQuantity } from "../../utils/format";
 import { decimalNumber } from "../../utils/decimal";
 import { cookedRecipeWeight, rawRecipeWeight, recipeServingFactor } from "../../utils/recipe";
-import { sortRecipeIngredients } from "../recipes/recipe.utils";
+import { sortRecipeIngredients, scaleFoodNutrition, scaleRecipeNutrition } from "../recipes/recipe.utils";
 import { NutritionSummary } from "../../components/NutritionSummary";
 import { FoodLogDialog } from "./dialogs/FoodDialogs";
 import { RecipeIngredientRow } from "../recipes/components/RecipeIngredientRow";
@@ -246,8 +246,11 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
   const [mealType, setMealType] = useState(log.mealType);
   const [ingredients, setIngredients] = useState(() => sortRecipeIngredients(log.recipe?.ingredients || []).map((ingredient) => ({
     foodId: ingredient.food?.id,
-    name: ingredient.food?.name || "Alimento",
+    recipeId: ingredient.recipe?.id,
+    type: ingredient.recipe ? "RECIPE" : "FOOD",
+    name: ingredient.food?.name || ingredient.recipe?.name || (ingredient.recipe ? "Receta" : "Alimento"),
     food: ingredient.food,
+    recipe: ingredient.recipe,
     quantity: String(ingredient.quantity ?? ""),
     unit: ingredient.unit || "GRAM",
   })));
@@ -291,12 +294,14 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
     }
     if (isRecipe) {
       const nutrition = ingredients.reduce((total, ingredient) => {
-        const food = item?.ingredients?.find((entry) => entry.food?.id === ingredient.foodId)?.food;
-        const factor = decimalNumber(ingredient.quantity) / Number(food?.baseQuantity || 100);
+        const referencedItem = ingredient.recipe || ingredient.food;
+        const scaled = ingredient.recipe
+          ? scaleRecipeNutrition(referencedItem, decimalNumber(ingredient.quantity))
+          : scaleFoodNutrition(referencedItem, decimalNumber(ingredient.quantity));
         return {
-          proteinGrams: total.proteinGrams + Number(food?.proteinGrams || 0) * factor,
-          carbsGrams: total.carbsGrams + Number(food?.carbsGrams || 0) * factor,
-          fatGrams: total.fatGrams + Number(food?.fatGrams || 0) * factor,
+          proteinGrams: total.proteinGrams + scaled.proteinGrams,
+          carbsGrams: total.carbsGrams + scaled.carbsGrams,
+          fatGrams: total.fatGrams + scaled.fatGrams,
         };
       }, { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
       const factor = recipeServingFactor(item, numericQuantity, unit);
@@ -378,7 +383,9 @@ export function EditFoodLog({ api, log, mealTypes, onClose, onDone }) {
                 quantity: numericQuantity,
                 unit,
                 logDate: log.logDate,
-                ...(!recipeUsesCookedGrams ? { recipeIngredients: ingredients.map(({ foodId, quantity: ingredientQuantity, unit: ingredientUnit }) => ({ foodId, quantity: decimalNumber(ingredientQuantity), unit: ingredientUnit })) } : {}),
+                ...(!recipeUsesCookedGrams ? { recipeIngredients: ingredients.map(({ foodId, recipeId, quantity: ingredientQuantity, unit: ingredientUnit }) => ({
+                  ...(recipeId ? { recipeId } : { foodId }), quantity: decimalNumber(ingredientQuantity), unit: ingredientUnit,
+                })) } : {}),
               }
               : body),
           });

@@ -12,7 +12,7 @@ import { decimalNumber } from "../../../utils/decimal";
 import { normalizeSearchText } from "../../../utils/search";
 import { hasCookedRecipeWeight, recipeServingFactor } from "../../../utils/recipe";
 import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, createMealLogs, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, sortMealLogs } from "../dashboard.utils";
-import { sortRecipeIngredients, scaleFoodNutrition } from "../../recipes/recipe.utils";
+import { sortRecipeIngredients, scaleFoodNutrition, scaleRecipeNutrition } from "../../recipes/recipe.utils";
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./MealPhotoDialog";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { compressMealPhoto } from "../../../services/image";
@@ -302,8 +302,11 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         setRecipeDetail(fullRecipe);
         setRecipeIngredients(sortRecipeIngredients(fullRecipe.ingredients || []).map((ing) => ({
           foodId: ing.food?.id,
-          name: ing.food?.name || "Alimento",
+          recipeId: ing.recipe?.id,
+          type: ing.recipe ? "RECIPE" : "FOOD",
+          name: ing.food?.name || ing.recipe?.name || (ing.recipe ? "Receta" : "Alimento"),
           food: ing.food,
+          recipe: ing.recipe,
           quantity: String(ing.quantity ?? ""),
           unit: ing.unit || "GRAM",
         })));
@@ -336,12 +339,14 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         .catch(() => setPreview(null));
     } else if (selected.type === "RECIPE" && recipeIngredients) {
       const nutrition = recipeIngredients.reduce((total, ing) => {
-        const food = recipeDetail?.ingredients?.find((entry) => entry.food?.id === ing.foodId)?.food;
-        const factor = decimalNumber(ing.quantity) / Number(food?.baseQuantity || 100);
+        const item = ing.recipe || ing.food;
+        const scaled = ing.recipe
+          ? scaleRecipeNutrition(item, decimalNumber(ing.quantity))
+          : scaleFoodNutrition(item, decimalNumber(ing.quantity));
         return {
-          proteinGrams: total.proteinGrams + Number(food?.proteinGrams || 0) * factor,
-          carbsGrams: total.carbsGrams + Number(food?.carbsGrams || 0) * factor,
-          fatGrams: total.fatGrams + Number(food?.fatGrams || 0) * factor,
+          proteinGrams: total.proteinGrams + scaled.proteinGrams,
+          carbsGrams: total.carbsGrams + scaled.carbsGrams,
+          fatGrams: total.fatGrams + scaled.fatGrams,
         };
       }, { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
       const factor = recipeServingFactor(recipeDetail || selected, numericQuantity, unit);
@@ -407,12 +412,13 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           if (selected.type === "RECIPE" && unit === "PORTION" && recipeIngredients && recipeDetail) {
             const baseIngredients = (recipeDetail.ingredients || []).map((ing) => ({
               foodId: ing.food?.id,
+              recipeId: ing.recipe?.id,
               quantity: Number(ing.quantity ?? 0),
               unit: ing.unit || "GRAM",
             }));
             const changed = recipeIngredients.some((ing, i) => {
               const base = baseIngredients[i];
-              return !base || decimalNumber(ing.quantity) !== Number(base.quantity);
+              return !base || ing.foodId !== base.foodId || ing.recipeId !== base.recipeId || decimalNumber(ing.quantity) !== Number(base.quantity);
             });
             if (changed) {
               return api.request("/api/nutrition/meal-logs/recipe", {
@@ -423,7 +429,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
                   quantity: logQuantity,
                   unit,
                   logDate: selectedDate,
-                  ingredients: recipeIngredients.map(({ foodId, quantity: ingQty, unit }) => ({ foodId, quantity: decimalNumber(ingQty), unit })),
+                  ingredients: recipeIngredients.map(({ foodId, recipeId, quantity: ingQty, unit }) => ({
+                    ...(recipeId ? { recipeId } : { foodId }), quantity: decimalNumber(ingQty), unit,
+                  })),
                 }),
               });
               }

@@ -48,6 +48,14 @@ test("normalizes comma decimals in recipe payloads", () => {
   });
 });
 
+test("serializes a recipe reference as an ingredient", () => {
+  assert.deepEqual(buildRecipePayload({
+    name: "Bowl con yogurt",
+    description: "",
+    ingredients: [{ recipeId: 12, name: "Yogurt casero", quantity: "150", unit: "GRAM" }],
+  }).ingredients, [{ recipeId: 12, quantity: 150, unit: "GRAM" }]);
+});
+
 test("uses cooked recipe weight for gram servings and formats them explicitly", () => {
   const recipe = { rawTotalWeightGrams: 500, cookedTotalWeightGrams: 400 };
   assert.equal(recipeServingFactor(recipe, 100, "GRAM"), 0.25);

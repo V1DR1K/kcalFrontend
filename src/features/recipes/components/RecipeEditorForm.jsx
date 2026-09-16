@@ -12,11 +12,16 @@ import { formatNumber, formatQuantity } from "../../../utils/format";
 import { RecipeIngredientRow } from "./RecipeIngredientRow";
 
 function recipeIngredientDraft(item) {
-  const food = item?.food || item || {};
+  const isRecipe = item?.type === "RECIPE" || item?.recipeId != null || item?.recipe != null;
+  const food = item?.food || (!isRecipe ? item : {});
+  const recipe = item?.recipe || (isRecipe ? item : null);
   return {
-    food,
-    foodId: item?.food?.id || item?.foodId || food.id,
-    name: item?.food?.name || item?.name || food.name || "Alimento",
+    food: isRecipe ? null : food,
+    recipe: isRecipe ? recipe : null,
+    type: isRecipe ? "RECIPE" : "FOOD",
+    foodId: isRecipe ? null : item?.food?.id || item?.foodId || food.id,
+    recipeId: isRecipe ? item?.recipe?.id || item?.recipeId || recipe.id : null,
+    name: item?.food?.name || item?.recipe?.name || item?.name || (isRecipe ? recipe.name : food.name) || (isRecipe ? "Receta" : "Alimento"),
     quantity: item?.quantity ?? 100,
     unit: item?.unit || "GRAM",
   };
@@ -44,7 +49,24 @@ export function RecipeEditorForm({ api, recipe = null, onDirtyChange, onBusyChan
   const [cookedWeightCleared, setCookedWeightCleared] = useState(false);
   const totalWeight = useMemo(() => ingredients.reduce((total, item) => total + (decimalNumber(item.quantity) || 0), 0), [ingredients]);
   const yieldPercent = recipeYieldPercent({ rawTotalWeightGrams: totalWeight, cookedTotalWeightGrams: cookedWeight });
-  const catalog = usePagedCatalog({ api, endpoint: "/api/foods", query, pageSize: 10, enabled: query.trim().length >= 2 });
+  const searchEnabled = query.trim().length >= 2;
+  const foodCatalog = usePagedCatalog({ api, endpoint: "/api/foods", query, pageSize: 10, enabled: searchEnabled });
+  const recipeCatalog = usePagedCatalog({ api, endpoint: "/api/recipes", query, pageSize: 10, enabled: searchEnabled });
+  const foodItems = groupFoodVariants(foodCatalog.items);
+  const recipeItems = recipeCatalog.items.map((item) => ({ ...item, type: "RECIPE" }));
+  const catalogItems = [...foodItems, ...recipeItems];
+  const catalogLoading = foodCatalog.initialLoading || recipeCatalog.initialLoading;
+  const catalogError = foodCatalog.error || recipeCatalog.error;
+  const catalogHasNext = foodCatalog.hasNext || recipeCatalog.hasNext;
+  const catalogLoadingMore = foodCatalog.loadingMore || recipeCatalog.loadingMore;
+  function loadNextCatalogPage() {
+    if (foodCatalog.hasNext && !foodCatalog.loadingMore) foodCatalog.loadNext();
+    if (recipeCatalog.hasNext && !recipeCatalog.loadingMore) recipeCatalog.loadNext();
+  }
+  function retryCatalog() {
+    foodCatalog.retry();
+    recipeCatalog.retry();
+  }
 
   useEffect(() => {
     if (!ingredients.length || totalWeight <= 0) {
@@ -134,12 +156,12 @@ export function RecipeEditorForm({ api, recipe = null, onDirtyChange, onBusyChan
         {cookedWeightCleared && <p className="recipe-cooked-reset" role="status">Cambiaste los ingredientes: medí el peso cocido final nuevamente.</p>}
       </section>
       <div className="search-wrap"><Icon name="search" /><input className="search" placeholder="Buscar ingredientes..." value={query} onChange={(event) => setQuery(event.target.value)} /></div>
-      {catalog.initialLoading && <CatalogStatus>Buscando ingredientes…</CatalogStatus>}
-      {!catalog.initialLoading && query.trim().length < 2 && <CatalogStatus>Buscá un ingrediente para comenzar.</CatalogStatus>}
-      {query.trim().length >= 2 && <div className="picker-results">{groupFoodVariants(catalog.items).map((food) => <button type="button" className="catalog-row ingredient-pick" key={food.id} onClick={() => addIngredient(food)}><span className="ingredient-pick-copy"><strong>{food.name}</strong><span className="ingredient-pick-meta"><PreparationBadge food={food} showUnknown /><CookedYieldHint food={food} /></span><NutritionSummary nutrition={food} /></span><em><Icon name="add" />Agregar</em></button>)}</div>}
-      {!catalog.initialLoading && catalog.error && <CatalogStatus error>{catalog.error}<button type="button" className="secondary" onClick={catalog.retry}>Reintentar</button></CatalogStatus>}
-      {query.trim().length >= 2 && !catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>No encontramos ingredientes.</CatalogStatus>}
-      <InfiniteSentinel enabled={query.trim().length >= 2 && !catalog.initialLoading && !catalog.error && catalog.hasNext} onLoad={catalog.loadNext} />
+      {catalogLoading && <CatalogStatus>Buscando alimentos y recetas…</CatalogStatus>}
+      {!catalogLoading && query.trim().length < 2 && <CatalogStatus>Buscá un alimento o una receta para comenzar.</CatalogStatus>}
+      {searchEnabled && <div className="picker-results">{catalogItems.map((item) => <button type="button" className={`catalog-row ingredient-pick ${item.type === "RECIPE" ? "ingredient-pick-recipe" : ""}`} key={`${item.type}:${item.id}`} onClick={() => addIngredient(item)}><span className="ingredient-pick-copy"><strong>{item.name}</strong><span className="ingredient-pick-meta"><small className="ingredient-pick-kind">{item.type === "RECIPE" ? "Receta" : "Alimento"}</small><PreparationBadge food={item} showUnknown /><CookedYieldHint food={item} /></span><NutritionSummary nutrition={item} /></span><em><Icon name="add" />Agregar</em></button>)}</div>}
+      {!catalogLoading && catalogError && <CatalogStatus error>{catalogError}<button type="button" className="secondary" onClick={retryCatalog}>Reintentar</button></CatalogStatus>}
+      {searchEnabled && !catalogLoading && !catalogError && !catalogItems.length && <CatalogStatus>No encontramos alimentos ni recetas.</CatalogStatus>}
+      <InfiniteSentinel enabled={searchEnabled && !catalogLoading && !catalogError && catalogHasNext} onLoad={loadNextCatalogPage} />
       <div className="ingredient-list">{ingredients.map((item, index) => <RecipeIngredientRow key={`${item.foodId}:${index}`} ingredient={item} index={index} onChange={(ingredientIndex, value) => updateIngredients(ingredients.map((ingredient, i) => i === ingredientIndex ? { ...ingredient, quantity: value } : ingredient))} onRemove={(ingredientIndex) => updateIngredients(ingredients.filter((_, i) => i !== ingredientIndex))} />)}</div>
       <NutritionSummary nutrition={preview || {}} size="detail" />
       {!hideSubmit && <button className="primary recipe-submit" disabled={!ingredients.length || saving}>{saving ? (editing ? "Guardando…" : "Creando…") : (editing ? "Guardar cambios" : "Crear receta")}</button>}
