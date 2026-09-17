@@ -32,7 +32,7 @@ export function normalizePresetPreviewItem(item, resolvedItem) {
     type: itemType,
     name: item?.displayName || item?.name || item?.food?.name || item?.recipe?.name || "Alimento",
     imageUrl: isSpecificPresetImage(savedImage) ? savedImage : currentImage || savedImage,
-    category: item?.category || item?.food?.category || resolvedItem?.category || "OTHER",
+    category: resolvedItem?.category || item?.category || item?.food?.category || "OTHER",
   };
 }
 

@@ -19,6 +19,13 @@ test("hidrata la foto actual de un alimento cuando el preset solo tiene fallback
   assert.equal(presetItemCacheKey(item), "FOOD:12");
 });
 
+test("prioriza la categoría rehidratada sobre el fallback OTHER", () => {
+  const initial = normalizePresetPreviewItem({ itemType: "FOOD", itemId: 42, displayName: "Banana" });
+  const hydrated = normalizePresetPreviewItem(initial, { id: 42, name: "Banana", imageUrl: null, category: "FRUIT" });
+  assert.equal(initial.category, "OTHER");
+  assert.equal(hydrated.category, "FRUIT");
+});
+
 test("resuelve la foto de una receta desde su primer ingrediente con imagen", () => {
   const item = normalizePresetPreviewItem({ itemType: "RECIPE", itemId: 4, displayName: "Bowl", category: "OTHER" }, { id: 4, name: "Bowl", ingredients: [{ food: { imageUrl: null } }, { food: { imageUrl: "/uploads/avena.webp" } }] });
   assert.equal(item.imageUrl, "/uploads/avena.webp");
