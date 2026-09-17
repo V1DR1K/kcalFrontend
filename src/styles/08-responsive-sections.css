@@ -39,8 +39,10 @@
   .content,
   .auth-page {
     width: min(100% - 24px, 760px);
-    padding-top: max(var(--space-5), env(safe-area-inset-top));
-    padding-bottom: max(var(--space-6), env(safe-area-inset-bottom));
+    padding-top: calc(var(--space-5) + env(safe-area-inset-top, 0px));
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+    padding-left: env(safe-area-inset-left, 0px);
   }
 
   .content {
@@ -423,7 +425,12 @@
 
   .yesterday-suggestion { gap: 7px; }
   .yesterday-suggestion .copy-accept, .yesterday-suggestion .copy-reject { width: 40px; height: 40px; border: none; background: transparent; }
-  .content, .auth-page { width: min(100% - 20px, 760px); padding-top: 14px; }
+  .content, .auth-page {
+    width: min(100% - 20px, 760px);
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+  }
 
   .meal-card header {
     align-items: center;
