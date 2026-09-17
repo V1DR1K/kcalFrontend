@@ -30,6 +30,13 @@ function syncVisualViewport() {
   document.documentElement.style.setProperty("--dialog-keyboard-inset", keyboardInset);
 }
 
+function syncViewportAfterSession() {
+  window.requestAnimationFrame(() => {
+    syncVisualViewport();
+    window.requestAnimationFrame(syncVisualViewport);
+  });
+}
+
 syncVisualViewport();
 migrateStoredSession();
 window.visualViewport?.addEventListener("resize", syncVisualViewport);
@@ -37,6 +44,7 @@ window.visualViewport?.addEventListener("scroll", syncVisualViewport);
 window.addEventListener("resize", syncVisualViewport);
 window.addEventListener("focusin", syncVisualViewport, true);
 window.addEventListener("focusout", syncVisualViewport, true);
+window.addEventListener("scalegrams:session-updated", syncViewportAfterSession);
 
 function Root() {
   const [pathname, setPathname] = React.useState(() => window.location.pathname);
