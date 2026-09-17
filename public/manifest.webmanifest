@@ -1,0 +1,25 @@
+{
+  "name": "ScaleGrams | Tu plan, en contexto",
+  "short_name": "ScaleGrams",
+  "description": "Registro diario de comidas, nutrición, hidratación y entrenamiento.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0e1511",
+  "theme_color": "#0e1511",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/icons/scalegrams-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/scalegrams-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

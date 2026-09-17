@@ -132,6 +132,14 @@ El contenido estático listo para publicar queda en `dist/`. Las credenciales de
 
 Para HTTPS local opcional se puede definir `VITE_DEV_HTTPS=true`; normalmente conviene usar HTTP local y terminar TLS en la infraestructura de producción.
 
+## Instalación como aplicación
+
+La aplicación incluye un `manifest.webmanifest` para que el navegador pueda instalarla como app, con nombre corto, pantalla independiente, colores de ScaleGrams e iconos en `public/icons/`. Si se reemplaza el diseño del icono, conviene publicar nuevos nombres de archivo para que el cache del navegador no conserve el anterior.
+
+La instalación actual no usa service worker: al abrir o recargar la app se consulta la versión desplegada y no se ofrece funcionamiento offline. Después de un deploy, Nginx revalida `index.html` y el manifest cada cinco minutos; los assets generados por Vite mantienen cache inmortal porque llevan hash. En la práctica, la nueva versión aparece al volver a abrir o recargar, como máximo después de esa revalidación.
+
+Si el acceso directo se creó antes de agregar el manifest, hay que eliminarlo de la pantalla de inicio y volver a instalar la app para que el navegador tome el nombre, modo e icono del manifest.
+
 ## Scripts
 
 ```bash
