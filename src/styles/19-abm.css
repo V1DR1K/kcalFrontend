@@ -244,11 +244,10 @@
   .my-foods-page .my-foods-list, .recipes-page .recipe-list { grid-template-columns: 1fr; }
   .my-foods-page .my-food-row, .recipes-page .recipe-swipe-card { min-height: 112px; padding: 12px; }
   .my-foods-page .my-food-row .food-thumb, .recipes-page .recipe-swipe-card > .food-thumb { width: 56px; height: 56px; }
-  .day-presets-datebar { align-items: stretch; flex-wrap: wrap; gap: 10px; padding: 14px; }
-  .day-presets-datebar > div:first-child { flex: 1 1 180px; }
-  .day-presets-datebar label { flex: 1 1 140px; }
+  .day-presets-datebar { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 10px; padding: 14px; }
+  .day-presets-datebar > div:first-child, .day-presets-datebar > label, .day-presets-date-summary { width: 100%; min-width: 0; }
   .day-presets-datebar input { width: 100%; }
-  .day-presets-date-summary { flex: 1 1 100%; margin-left: 0; text-align: left; }
+  .day-presets-date-summary { margin-left: 0; text-align: left; }
   .abm-callout { align-items: start; flex-wrap: wrap; }
   .abm-callout .text-button { width: 100%; margin-left: 0; justify-content: start; }
   .abm-apply-actions { width: 100%; margin-left: 0; }
