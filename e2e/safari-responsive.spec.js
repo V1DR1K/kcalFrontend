@@ -1,5 +1,32 @@
 import { test, expect } from "@playwright/test";
 
+async function seedAuthenticatedApp(page) {
+  await page.addInitScript(() => {
+    history.replaceState({ scalegramsMode: "nutrition", scalegramsPage: "dashboard" }, "");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    let body = {};
+    if (url.pathname === "/api/auth/me") {
+      body = { id: 1, fullName: "Persona Safari", email: "safari@example.com" };
+    } else if (url.pathname === "/api/nutrition/dashboard") {
+      body = {
+        date: "2026-09-18",
+        caloriesConsumed: 0,
+        calorieGoal: 2000,
+        macros: [],
+        meals: [],
+        nutrients: [],
+        waterConsumed: 0,
+        waterGoal: 2,
+        plan: null,
+      };
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+  });
+}
+
 test.describe("Safari responsive contract", () => {
   test.skip(({ browserName }) => browserName !== "webkit", "Safari/WebKit contract");
 
@@ -43,5 +70,29 @@ test.describe("Safari responsive contract", () => {
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.width + 1);
     expect(metrics.innerHeight).toBeLessThanOrEqual(metrics.visualHeight + 1);
     expect(metrics.visualHeight).toBeLessThanOrEqual(430 + 1);
+  });
+
+  test("authenticated mobile navigation stays attached to the viewport bottom", async ({ page }) => {
+    await seedAuthenticatedApp(page);
+    await page.goto("/ingresar");
+
+    const mobileNav = page.locator(".mobile-nav");
+    await expect(mobileNav).toBeVisible();
+    const layout = await mobileNav.evaluate((element) => {
+      const shell = element.closest(".app-shell").getBoundingClientRect();
+      const nav = element.getBoundingClientRect();
+      const button = element.querySelector("button").getBoundingClientRect();
+      const viewportBottom = window.visualViewport?.height || window.innerHeight;
+      return {
+        navBottom: nav.bottom,
+        shellBottom: shell.bottom,
+        viewportBottom,
+        buttonHeight: button.height,
+      };
+    });
+
+    expect(Math.abs(layout.navBottom - layout.shellBottom)).toBeLessThanOrEqual(1);
+    expect(Math.abs(layout.navBottom - layout.viewportBottom)).toBeLessThanOrEqual(1);
+    expect(layout.buttonHeight).toBeGreaterThanOrEqual(44);
   });
 });

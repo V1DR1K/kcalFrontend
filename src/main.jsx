@@ -6,6 +6,10 @@ import { migrateStoredSession } from "./config/app";
 
 let stableDialogHeight = window.visualViewport?.height || window.innerHeight;
 
+function syncAppShellHeight() {
+  document.documentElement.style.setProperty("--app-shell-height", `${window.innerHeight}px`);
+}
+
 function hasTextInputFocus() {
   const activeElement = document.activeElement;
   return activeElement?.matches?.("input, textarea, [contenteditable=\"true\"]") || false;
@@ -18,11 +22,10 @@ function syncVisualViewport() {
   const keyboardInsetValue = Math.max(0, window.innerHeight - visibleHeight - (viewport?.offsetTop || 0));
   const keyboardOpen = keyboardInsetValue > 120 || (hasTextInputFocus() && visibleHeight < stableDialogHeight - 120);
   if (!keyboardOpen) stableDialogHeight = visibleHeight;
-  const appHeight = `${visibleHeight}px`;
   const dialogHeight = `${keyboardOpen ? stableDialogHeight : visibleHeight}px`;
   const keyboardInset = `${keyboardInsetValue}px`;
-  document.documentElement.style.setProperty("--app-viewport-height", appHeight);
   document.documentElement.style.setProperty("--app-viewport-top", top);
+  document.documentElement.style.setProperty("--app-viewport-height", `${visibleHeight}px`);
   document.documentElement.style.setProperty("--dialog-viewport-height", dialogHeight);
   document.documentElement.style.setProperty("--dialog-visible-height", `${visibleHeight}px`);
   document.documentElement.style.setProperty("--dialog-viewport-top", top);
@@ -37,11 +40,15 @@ function syncViewportAfterSession() {
   });
 }
 
+syncAppShellHeight();
 syncVisualViewport();
 migrateStoredSession();
 window.visualViewport?.addEventListener("resize", syncVisualViewport);
 window.visualViewport?.addEventListener("scroll", syncVisualViewport);
-window.addEventListener("resize", syncVisualViewport);
+window.addEventListener("resize", () => {
+  syncAppShellHeight();
+  syncVisualViewport();
+});
 window.addEventListener("focusin", syncVisualViewport, true);
 window.addEventListener("focusout", syncVisualViewport, true);
 window.addEventListener("scalegrams:session-updated", syncViewportAfterSession);
