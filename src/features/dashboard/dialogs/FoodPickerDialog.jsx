@@ -21,7 +21,7 @@ import { MealShareDialog } from "./MealShareDialogs";
 import { AiEstimateEditor } from "./AiEstimateEditor";
 export { FoodPicker, AiEstimateEditor };
 
-function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd, onOptimisticRollback, draftOnly = false, onDraftAdd }) {
+function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd, onOptimisticRollback, draftOnly = false, ingredientOnly = false, onDraftAdd }) {
   const pickerTitleId = `${useId().replace(/:/g, "")}-title`;
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
@@ -61,8 +61,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     enabled: foodSearchReady,
   });
   useEffect(() => {
+    if (ingredientOnly) return undefined;
     api.request("/api/nutrition/ai-estimates/usage").then(setAiUsage).catch(() => setAiUsage(null));
-  }, [api]);
+    return undefined;
+  }, [api, ingredientOnly]);
   useEffect(() => () => {
     audioRecorderRef.current?.stop?.();
     audioStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -283,8 +285,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       setQuantity(Number.isFinite(servingWeightGrams) && servingWeightGrams > 0 ? String(servingWeightGrams) : selected.category === "FAT" ? "10" : "100");
       setUnit("GRAM");
     } else if (selected.type === "RECIPE") {
-      setQuantity("1");
-      setUnit("PORTION");
+      const recipeWeight = Number(selected.cookedTotalWeightGrams || selected.rawTotalWeightGrams || selected.totalWeightGrams);
+      setQuantity(ingredientOnly && Number.isFinite(recipeWeight) && recipeWeight > 0 ? String(recipeWeight) : "1");
+      setUnit(ingredientOnly ? "GRAM" : "PORTION");
     } else {
       setQuantity(selected.category === "FAT" ? "10" : "100");
       setUnit("GRAM");
@@ -382,6 +385,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       onDraftAdd?.({
         itemType: selected.type,
         itemId: selected.id,
+        foodId: selected.type === "FOOD" ? selected.id : null,
+        recipeId: selected.type === "RECIPE" ? selected.id : null,
+        food: selected.type === "FOOD" ? selected : null,
+        recipe: selected.type === "RECIPE" ? { ...selected, ...recipeDetail } : null,
         mealType: mealType.code,
         quantity: logQuantity,
         unit: selected.type === "RECIPE" ? unit : "GRAM",
@@ -463,8 +470,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const selectedUnitOptions =
     selected?.type === "RECIPE"
       ? [
-          { value: "PORTION", label: "Porciones" },
-          ...(hasCookedRecipeWeight(recipeDetail || selected) ? [{ value: "GRAM", label: "Gramos cocidos" }] : []),
+          ...(ingredientOnly ? [{ value: "GRAM", label: "Gramos" }] : [{ value: "PORTION", label: "Porciones" }, ...(hasCookedRecipeWeight(recipeDetail || selected) ? [{ value: "GRAM", label: "Gramos cocidos" }] : [])]),
         ]
       : selected?.type === "FOOD" && selected?.servingWeightGrams
       ? [
@@ -534,7 +540,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   }
   return (
     <ModalShell
-      title="Agregar comida"
+      title={ingredientOnly ? "Agregar ingrediente" : "Agregar comida"}
       onClose={onClose}
       className="picker-modal"
       backdropClassName="modal-backdrop"
@@ -544,8 +550,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     >
         <header>
           <div>
-            <span>{mealType.label}</span>
-            <h2 id={pickerTitleId}>Agregar comida</h2>
+             <span>{ingredientOnly ? "Catálogo" : mealType.label}</span>
+            <h2 id={pickerTitleId}>{ingredientOnly ? "Agregar ingrediente" : "Agregar comida"}</h2>
           </div>
           <button type="button" className="icon-button" aria-label="Cerrar" onClick={onClose}>
             <Icon name="close" />
@@ -572,8 +578,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           >
             Recetas
           </button>
-          <button type="button" role="tab" aria-selected={tab === "MINE"} aria-controls="picker-panel-mine" className={tab === "MINE" ? "selected" : ""} onClick={() => changeTab("MINE")}>Agregados</button>
-          <button type="button" role="tab" aria-selected={tab === "RECENT"} aria-controls="picker-panel-recent" className={tab === "RECENT" ? "selected" : ""} onClick={() => changeTab("RECENT")}>Recientes</button>
+          {!ingredientOnly && <button type="button" role="tab" aria-selected={tab === "MINE"} aria-controls="picker-panel-mine" className={tab === "MINE" ? "selected" : ""} onClick={() => changeTab("MINE")}>Agregados</button>}
+          {!ingredientOnly && <button type="button" role="tab" aria-selected={tab === "RECENT"} aria-controls="picker-panel-recent" className={tab === "RECENT" ? "selected" : ""} onClick={() => changeTab("RECENT")}>Recientes</button>}
         </div>
         <div className="picker-tools">
           <div className="search-wrap">
@@ -629,7 +635,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         {selected && (
           <FoodLogDialog
             item={selected}
-            eyebrow={`Agregar a ${mealType.label}`}
+            eyebrow={ingredientOnly ? "Agregar ingrediente" : `Agregar a ${mealType.label}`}
             description={selected.type === "RECIPE" ? (recipeDetail?.description || selected.description) : null}
             isRecipe={selected.type === "RECIPE"}
             onClose={() => {
@@ -654,7 +660,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
                   Cancelar
                 </button>
                 <button className="primary action-control" data-action-state={adding ? "pending" : "idle"} disabled={adding || decimalNumber(quantity) <= 0}>
-                  {adding ? "Agregando…" : `Agregar a ${mealType.label}`}
+                  {adding ? "Agregando…" : ingredientOnly ? "Agregar ingrediente" : `Agregar a ${mealType.label}`}
                 </button>
               </footer>
             }
@@ -685,7 +691,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         )}
         {pendingMealPhoto && <MealPhotoContextEditorDialog photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
         {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} />}
-        <footer className="picker-photo-actions">
+        {!ingredientOnly && <footer className="picker-photo-actions">
           <label className={`secondary ai-photo-trigger ai-gallery-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
             <Icon name="photo_library" />
             Elegir foto
@@ -718,7 +724,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               hidden
             />
           </label>
-        </footer>
+        </footer>}
     </ModalShell>
   );
 }

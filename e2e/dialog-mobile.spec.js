@@ -230,8 +230,14 @@ test("uses the composition row in recipe creation and editing", async ({ page })
 
   const createDialog = page.locator(".recipe-create-dialog");
   await expect(createDialog.getByLabel("Descripción opcional")).toBeVisible();
-  await createDialog.getByPlaceholder("Buscar ingredientes...").fill("avena");
-  await createDialog.getByRole("button", { name: /Avena/ }).click();
+  await createDialog.getByRole("button", { name: "Agregar alimento o receta", exact: true }).click();
+  const ingredientPicker = page.locator(".picker-modal");
+  await expect(ingredientPicker.getByRole("heading", { name: "Agregar ingrediente" })).toBeVisible();
+  await ingredientPicker.getByPlaceholder("Buscar alimentos...").fill("avena");
+  await ingredientPicker.getByRole("button", { name: /Avena/ }).click();
+  const ingredientDialog = page.locator(".edit-log-modal");
+  await expect(ingredientDialog.getByLabel("Cantidad")).toBeVisible();
+  await ingredientDialog.getByRole("button", { name: "Agregar ingrediente", exact: true }).click();
   const createRow = createDialog.locator(".daily-recipe-ingredient");
   await expect(createRow.locator(".food-thumb")).toHaveCount(1);
   await expect(createDialog.getByLabel("Cantidad de Avena en gramos")).toBeVisible();
