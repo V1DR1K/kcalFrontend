@@ -50,12 +50,13 @@ function PresetEditorDialog({ api, user, editor, mealTypes, onClose, onSaved }) 
     setDraft((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? field === "quantity" ? scalePresetNutrition(item, value) : { ...item, [field]: value } : item) })); setError("");
   }
   async function save(event) {
+    if (event.target !== event.currentTarget) return;
     event.preventDefault(); if (saving) return; const name = draft.name.trim();
     if (!name) return setError("Escribí un nombre para el día."); if (!draft.items.length) return setError("El día debe tener al menos un elemento.");
     if (draft.items.some((item) => !Number.isFinite(decimalNumber(item.quantity)) || decimalNumber(item.quantity) <= 0)) return setError("Revisá las cantidades antes de guardar.");
     setSaving(true);
     try {
-      const payload = { name, description: draft.description.trim() || null, items: draft.items.map(serializablePresetItem) };
+      const payload = { name, description: String(draft.description || "").trim() || null, items: draft.items.map(serializablePresetItem) };
       const result = await api.request(isNew ? "/api/nutrition/day-presets" : `/api/nutrition/day-presets/${draft.id}`, { method: isNew ? "POST" : "PUT", body: JSON.stringify(payload) });
       api.notify(isNew ? "Día guardado para reutilizar." : "Día actualizado."); onSaved(result);
     } catch (requestError) { setError(requestError.message || "No se pudo guardar el día."); } finally { setSaving(false); }

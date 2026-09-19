@@ -35,6 +35,50 @@ async function seedAuthenticatedApp(page) {
 }
 
 test.describe("Reutilizá tu día responsive", () => {
+  test("does not submit the old preset while adding a food during edit", async ({ page }) => {
+    let updatePayload;
+    const preset = {
+      id: 1,
+      name: "Día completo",
+      description: null,
+      itemCount: 1,
+      mealCounts: { BREAKFAST: 1 },
+      items: [{ itemType: "FOOD", itemId: 11, mealType: "BREAKFAST", quantity: 100, unit: "GRAM", displayName: "Avena", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7 }],
+    };
+    await page.addInitScript(() => {
+      history.replaceState({ scalegramsMode: "nutrition", scalegramsPage: "day-presets" }, "");
+    });
+    await page.route("**/api/**", async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      let body = {};
+      if (url.pathname === "/api/auth/me") body = { id: 1, fullName: "Persona E2E", email: "e2e@example.com" };
+      else if (url.pathname === "/api/nutrition/dashboard") body = { date: url.searchParams.get("date"), meals: ["BREAKFAST", "LUNCH", "AFTERNOON_SNACK", "DINNER"].map((mealType) => ({ mealType, items: [] })) };
+      else if (url.pathname === "/api/nutrition/day-presets" && request.method() === "GET") body = [preset];
+      else if (url.pathname === "/api/nutrition/day-presets/1" && request.method() === "PUT") {
+        updatePayload = request.postDataJSON();
+        body = { ...preset, ...updatePayload, itemCount: updatePayload.items.length, mealCounts: { BREAKFAST: updatePayload.items.length } };
+      } else if (url.pathname === "/api/foods" && url.searchParams.get("q") === "huevo") body = [{ id: 99, name: "Huevo", baseQuantity: 100, calories: 143, proteinGrams: 13, carbsGrams: 1, fatGrams: 10, category: "PROTEIN" }];
+      else if (url.pathname === "/api/foods/99/preparations") body = [];
+      else if (url.pathname === "/api/foods/preview") body = { calories: 143, proteinGrams: 13, carbsGrams: 1, fatGrams: 10 };
+      else if (url.pathname === "/api/nutrition/ai-estimates/usage") body = { available: false };
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+    });
+
+    await page.goto("/ingresar");
+    await page.getByRole("button", { name: "Editar", exact: true }).click();
+    const editor = page.locator(".day-preset-editor-modal");
+    await editor.getByRole("button", { name: "Agregar alimento o receta", exact: true }).first().click();
+    await page.locator(".picker-modal input.search").fill("huevo");
+    await page.getByRole("button", { name: /^Huevo/ }).click();
+    await page.getByRole("button", { name: /Agregar a Desayuno/ }).click();
+
+    await expect(editor.getByText("Huevo", { exact: true })).toBeVisible();
+    await expect.poll(() => updatePayload).toBeUndefined();
+    await editor.getByRole("button", { name: "Guardar cambios" }).click();
+    await expect.poll(() => updatePayload?.items?.some((item) => item.displayName === "Huevo")).toBe(true);
+  });
+
   test("stacks the date controls vertically on iPhone WebKit", async ({ page }, testInfo) => {
     test.skip(!testInfo.project.name.includes("webkit-iphone"), "iPhone WebKit contract");
 
