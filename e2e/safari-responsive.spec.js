@@ -2,6 +2,10 @@ import { test, expect } from "@playwright/test";
 
 async function seedAuthenticatedApp(page) {
   await page.addInitScript(() => {
+    const nativeMatchMedia = window.matchMedia.bind(window);
+    window.matchMedia = (query) => query === "(display-mode: standalone)"
+      ? { matches: true, media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } }
+      : nativeMatchMedia(query);
     history.replaceState({ scalegramsMode: "nutrition", scalegramsPage: "dashboard" }, "");
   });
 
@@ -86,6 +90,7 @@ test.describe("Safari responsive contract", () => {
       const nav = element.getBoundingClientRect();
       const button = element.querySelector("button").getBoundingClientRect();
       const navStyle = getComputedStyle(element);
+      const appShellHeight = getComputedStyle(document.documentElement).getPropertyValue("--app-shell-height").trim();
       const viewportBottom = window.visualViewport?.height || window.innerHeight;
       return {
         navBottom: nav.bottom,
@@ -93,6 +98,7 @@ test.describe("Safari responsive contract", () => {
         viewportBottom,
         buttonHeight: button.height,
         navContentHeight: nav.height - parseFloat(navStyle.paddingTop) - parseFloat(navStyle.paddingBottom),
+        appShellHeight,
       };
     });
 
@@ -101,5 +107,6 @@ test.describe("Safari responsive contract", () => {
     expect(layout.buttonHeight).toBeGreaterThanOrEqual(44);
     expect(layout.buttonHeight).toBeLessThanOrEqual(48);
     expect(layout.navContentHeight).toBeLessThanOrEqual(48);
+    expect(layout.appShellHeight).toBe("100vh");
   });
 });

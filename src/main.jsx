@@ -7,7 +7,8 @@ import { migrateStoredSession } from "./config/app";
 let stableDialogHeight = window.visualViewport?.height || window.innerHeight;
 
 function syncAppShellHeight() {
-  document.documentElement.style.setProperty("--app-shell-height", `${window.innerHeight}px`);
+  const shellHeight = isStandaloneApp() ? "100vh" : `${window.innerHeight}px`;
+  document.documentElement.style.setProperty("--app-shell-height", shellHeight);
 }
 
 function hasTextInputFocus() {
