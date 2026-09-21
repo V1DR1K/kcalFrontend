@@ -22,6 +22,8 @@ async function seedAuthenticatedApp(page) {
         waterGoal: 2,
         plan: null,
       };
+    } else if (url.pathname === "/api/nutrition/meal-types") {
+      body = [];
     }
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
@@ -78,21 +80,26 @@ test.describe("Safari responsive contract", () => {
 
     const mobileNav = page.locator(".mobile-nav");
     await expect(mobileNav).toBeVisible();
+    await expect(page.locator(".app-shell")).toBeVisible();
     const layout = await mobileNav.evaluate((element) => {
       const shell = element.closest(".app-shell").getBoundingClientRect();
       const nav = element.getBoundingClientRect();
       const button = element.querySelector("button").getBoundingClientRect();
+      const navStyle = getComputedStyle(element);
       const viewportBottom = window.visualViewport?.height || window.innerHeight;
       return {
         navBottom: nav.bottom,
         shellBottom: shell.bottom,
         viewportBottom,
         buttonHeight: button.height,
+        navContentHeight: nav.height - parseFloat(navStyle.paddingTop) - parseFloat(navStyle.paddingBottom),
       };
     });
 
     expect(Math.abs(layout.navBottom - layout.shellBottom)).toBeLessThanOrEqual(1);
     expect(Math.abs(layout.navBottom - layout.viewportBottom)).toBeLessThanOrEqual(1);
     expect(layout.buttonHeight).toBeGreaterThanOrEqual(44);
+    expect(layout.buttonHeight).toBeLessThanOrEqual(48);
+    expect(layout.navContentHeight).toBeLessThanOrEqual(48);
   });
 });

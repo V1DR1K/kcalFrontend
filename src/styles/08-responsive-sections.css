@@ -94,7 +94,7 @@
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 2px;
-    padding: 6px max(10px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    padding: 4px max(10px, env(safe-area-inset-right)) max(2px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
     border: 0;
     border-top: 1px solid color-mix(in srgb, var(--outline) 78%, transparent);
     border-radius: 0;
@@ -112,7 +112,7 @@
     place-items: center;
     gap: 2px;
     min-width: 0;
-    min-height: 56px;
+    min-height: 44px;
     border: 0;
     border-radius: var(--radius-compact);
     background: transparent;
@@ -130,6 +130,7 @@
   .mobile-nav button.active {
     background: transparent;
     color: var(--primary);
+    transform: none;
   }
 
   .mobile-nav button.active::before {

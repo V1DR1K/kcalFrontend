@@ -120,7 +120,7 @@
 .mobile-secondary-items button[aria-current="page"] { border-color: var(--primary); color: var(--primary); }
 @media (max-width: 900px) {
   .mobile-nav .mobile-primary-items { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); width: 100%; gap: var(--space-0-5); }
-  .mobile-nav .mobile-primary-items button { min-width: 0; min-height: 52px; font-size: var(--type-micro); }
+  .mobile-nav .mobile-primary-items button { min-width: 0; min-height: 44px; font-size: var(--type-micro); }
   .mobile-nav { padding-inline: max(var(--space-2), env(safe-area-inset-left)) max(var(--space-2), env(safe-area-inset-right)); }
   .app-shell input:not([type="checkbox"]):not([type="radio"]), .app-shell select, .app-shell textarea,
   .app-modal-surface input:not([type="checkbox"]):not([type="radio"]), .app-modal-surface select, .app-modal-surface textarea { font-size: var(--type-body); min-width: 0; max-width: 100%; }
