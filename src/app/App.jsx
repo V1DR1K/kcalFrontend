@@ -265,7 +265,7 @@ export function App() {
             {page === "recipes" && <Recipes api={api} setPage={setPage} />}
             {page === "day-presets" && <DayPresetsPage api={api} user={user} seed={dayPresetSeed} onSeedConsumed={() => setDayPresetSeed(null)} />}
             {page === "profile" && <Profile api={api} logout={logout} mode={mode} />}
-            {page === "training-dashboard" && <TrainingDashboard api={api} />}
+            {page === "training-dashboard" && <TrainingDashboard api={api} setPage={setPage} />}
             {page === "training-calendar" && <TrainingCalendar api={api} />}
             {page === "training-cardio" && <CardioPage api={api} />}
             {page === "training-profile" && <TrainingProfile api={api} />}

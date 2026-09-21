@@ -26,16 +26,18 @@ function MobileNavigation({ mode, page, setPage, setMode }) {
 
 function NavigationGroup({ mode, items, activeMode, page, mobile, setPage, setMode }) {
   const active = activeMode === mode;
+  const primaryItems = items.filter((item) => !item.secondary);
+  const secondaryItems = items.filter((item) => item.secondary);
+  const renderItem = (item) => {
+    const itemActive = !item.mode && isNavItemActive(item, page);
+    const label = mobile ? item.mobileLabel || item.label : item.label;
+    return <button type="button" key={item.id} className={itemActive ? "active" : ""} aria-current={itemActive ? "page" : undefined} onClick={() => item.mode ? setMode(item.mode) : setPage(item.id)}><Icon name={item.icon} />{label}</button>;
+  };
   return (
     <div className={`training-nav-group training-${mode}-nav-group`.trim()} aria-hidden={!active} inert={active ? undefined : true}>
       <div className="training-nav-group-content">
-        <div className="training-nav-items">
-          {items.map((item) => {
-            const itemActive = !item.mode && isNavItemActive(item, page);
-            const label = mobile ? item.mobileLabel || item.label : item.label;
-            return <button type="button" key={item.id} className={itemActive ? "active" : ""} aria-current={itemActive ? "page" : undefined} onClick={() => item.mode ? setMode(item.mode) : setPage(item.id)}><Icon name={item.icon} />{label}</button>;
-          })}
-        </div>
+        <div className="training-nav-items">{primaryItems.map(renderItem)}</div>
+        {secondaryItems.length > 0 && <div className="training-nav-secondary"><span>Configurar</span><div className="training-nav-items">{secondaryItems.map(renderItem)}</div></div>}
       </div>
     </div>
   );
