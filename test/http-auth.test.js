@@ -63,3 +63,14 @@ test("emits session-expired when a refresh token is rejected", { concurrency: fa
   await assert.rejects(() => request("/api/foods"), { status: 401 });
   assert.equal(expired, 1);
 });
+
+test("does not emit session-expired when refresh is temporarily unavailable", { concurrency: false }, async () => {
+  let expired = 0;
+  global.window = { dispatchEvent(event) { if (event.type === "scalegrams:session-expired") expired += 1; } };
+  global.fetch = async (url) => url === "/api/auth/refresh"
+    ? response(503, { message: "temporarily unavailable" })
+    : response(401, { message: "expired" });
+
+  await assert.rejects(() => request("/api/foods"), (error) => error.status === 401 && error.retryable === true);
+  assert.equal(expired, 0);
+});

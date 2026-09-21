@@ -1,5 +1,19 @@
 import { test, expect } from "@playwright/test";
 
+async function seedAnonymousSession(page) {
+  await page.route("**/api/auth/me", (route) => route.fulfill({
+    status: 401,
+    contentType: "application/json",
+    body: JSON.stringify({ message: "No hay una sesión activa." }),
+  }));
+  await page.route("**/api/auth/refresh", (route) => route.fulfill({
+    status: 401,
+    contentType: "application/json",
+    body: JSON.stringify({ message: "La sesión de renovación no es válida." }),
+  }));
+  await page.route("**/api/auth/logout", (route) => route.fulfill({ status: 204 }));
+}
+
 test("renders the public landing and links to account access", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveTitle(/ScaleGrams/i);
@@ -23,6 +37,7 @@ test("keeps public access controls touch-safe and allows browser zoom", async ({
 });
 
 test("renders account access with a route-specific title and return path", async ({ page }) => {
+  await seedAnonymousSession(page);
   await page.goto("/ingresar");
   await expect(page).toHaveTitle("Ingresar | ScaleGrams");
   await expect(page.getByText("ScaleGrams", { exact: true })).toBeVisible();
@@ -32,6 +47,7 @@ test("renders account access with a route-specific title and return path", async
 });
 
 test("announces a recoverable authentication error", async ({ page }) => {
+  await seedAnonymousSession(page);
   await page.route("**/api/auth/login", (route) => route.fulfill({
     status: 401,
     contentType: "application/json",
@@ -41,5 +57,35 @@ test("announces a recoverable authentication error", async ({ page }) => {
   await page.getByRole("textbox", { name: "Usuario" }).fill("persona");
   await page.getByLabel("Contraseña").fill("incorrecta");
   await page.getByRole("button", { name: "Ingresar" }).click();
-  await expect(page.getByRole("alert")).toContainText("Email o contraseña incorrectos.");
+  await expect(page.locator(".form-error")).toContainText("Email o contraseña incorrectos.");
+});
+
+test("starts the installed app at the session bootstrap route", async ({ page, request }) => {
+  const manifestResponse = await request.get("/manifest.webmanifest");
+  expect(manifestResponse.ok()).toBeTruthy();
+  expect((await manifestResponse.json()).start_url).toBe("/ingresar");
+
+  await page.route("**/api/**", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({}),
+  }));
+  await page.route("**/api/auth/me", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ id: 1, username: "alex", fullName: "Alex", email: "alex@example.com" }),
+  }));
+
+  await page.goto("/ingresar");
+  await expect(page.locator(".app-shell")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Día", exact: true }).first()).toBeVisible();
+});
+
+test("keeps a recoverable state when session bootstrap loses the network", async ({ page }) => {
+  await page.route("**/api/auth/me", (route) => route.abort());
+  await page.goto("/ingresar");
+
+  await expect(page.getByRole("heading", { name: "No pudimos comprobar tu sesión" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reintentar" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Usuario" })).not.toBeVisible();
 });

@@ -6,6 +6,7 @@ import { AuthScreen } from "../features/auth/AuthScreen";
 import { DashboardSkeleton, SkeletonRows } from "../components/Loading";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
 import { Notification } from "../components/Notification";
+import { Icon } from "../components/Icon";
 import { MealShareAcceptDialog } from "../features/dashboard/dialogs/MealShareDialogs";
 
 function lazyPage(load, name) {
@@ -36,6 +37,15 @@ function navigationState() {
 function PageLoader({ page, mode }) {
   if (page === "dashboard") return <DashboardSkeleton />;
   return <SkeletonRows count={4} className={`page-skeleton page-skeleton-${page} ${mode === "training" ? "training-skeleton" : ""}`.trim()} label="Cargando vista" />;
+}
+
+function SessionRecovery({ onRetry }) {
+  return <main className="auth-page"><section className="auth-card">
+    <div className="brand auth-brand"><Icon name="scale" className="fill" /><div><strong>ScaleGrams</strong><span>Reconectando</span></div></div>
+    <h1>No pudimos comprobar tu sesión</h1>
+    <p className="auth-intro">La conexión con ScaleGrams no respondió. Tus datos de acceso siguen protegidos; probá de nuevo cuando tengas conexión.</p>
+    <button className="primary" onClick={onRetry}>Reintentar</button>
+  </section></main>;
 }
 
 export function App() {
@@ -73,6 +83,7 @@ export function App() {
   }
   const [user, setUser] = useState(null);
   const [sessionState, setSessionState] = useState("checking");
+  const [sessionRetry, setSessionRetry] = useState(0);
   const [selectedFoodId, setSelectedFoodId] = useState(null);
   const [prefillBarcode, setPrefillBarcode] = useState("");
   const [dayPresetSeed, setDayPresetSeed] = useState(null);
@@ -150,6 +161,15 @@ export function App() {
 
   useEffect(() => {
     let active = true;
+    let retryTimer = null;
+
+    function scheduleRetry() {
+      retryTimer = window.setTimeout(() => {
+        if (active) setSessionRetry((current) => current + 1);
+      }, 5000);
+    }
+
+    setSessionState("checking");
     api.request("/api/auth/me").then((sessionUser) => {
       if (!active) return;
       setUser(sessionUser);
@@ -160,14 +180,19 @@ export function App() {
         setPageRaw("dashboard");
         pushNavigation("nutrition", "dashboard", true);
       }
-    }).catch(() => {
+    }).catch((error) => {
       if (!active) return;
-      setUser(null);
-      setSessionState("anonymous");
-      setPageRaw("login");
+      if (error?.status === 401 && !error.retryable) {
+        setUser(null);
+        setSessionState("anonymous");
+        setPageRaw("login");
+        return;
+      }
+      setSessionState("unavailable");
+      scheduleRetry();
     });
-    return () => { active = false; };
-  }, [api]);
+    return () => { active = false; window.clearTimeout(retryTimer); };
+  }, [api, sessionRetry]);
 
   useEffect(() => {
     const expireSession = () => {
@@ -213,7 +238,7 @@ export function App() {
 
   return (
     <>
-      {sessionState === "checking" ? <PageLoader page={page} mode={mode} /> : authenticated ? (
+      {sessionState === "checking" ? <PageLoader page={page} mode={mode} /> : sessionState === "unavailable" ? <SessionRecovery onRetry={() => setSessionRetry((current) => current + 1)} /> : authenticated ? (
         <Shell page={page} mode={mode} setPage={setPage} setMode={setMode} logout={logout}>
           <Suspense fallback={<PageLoader page={page} mode={mode} />}>
             {page === "dashboard" && <Dashboard api={api} user={user} setPage={setPage} onOpenDayPresets={openDayPresets} />}

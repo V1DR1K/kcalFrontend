@@ -32,15 +32,15 @@ async function refreshTokens() {
     headers: { Accept: "application/json" },
     credentials: "include",
   });
-  if (!response.ok) return false;
+  if (!response.ok) return { ok: false, definitive: response.status === 400 || response.status === 401 };
   localStorage.setItem(REFRESH_MARKER_KEY, String(Date.now()));
-  return true;
+  return { ok: true, definitive: true };
 }
 
 function refreshTokensOnce(startedAt) {
   if (!refreshPromise) {
     const action = async () => {
-      if (refreshedAfter(startedAt)) return true;
+      if (refreshedAfter(startedAt)) return { ok: true, definitive: true };
       return refreshTokens();
     };
     const coordinated = typeof navigator !== "undefined" && navigator.locks
@@ -82,23 +82,29 @@ function toError(status, body) {
 export async function request(path, options = {}) {
   const { skipAuthRefresh = false, ...fetchOptions } = options;
   let result = await requestInner(path, fetchOptions);
+  let retryableAuthFailure = false;
   const isAuthBootstrapRequest = path === "/api/auth/me";
   const isAuthSessionRequest = ["/api/auth/login", "/api/auth/refresh", "/api/auth/logout"].includes(path);
   if (!result.ok && result.status === 401 && !skipAuthRefresh && (isAuthBootstrapRequest || !isAuthSessionRequest)) {
-    let fresh = null;
-    let refreshFailed = false;
+    let refreshResult = null;
     try {
-      fresh = await refreshTokensOnce(Date.now());
+      refreshResult = await refreshTokensOnce(Date.now());
     } catch {
       // A network failure is not proof that the session is invalid.
-      refreshFailed = true;
+      retryableAuthFailure = true;
     }
-    if (fresh) {
+    if (refreshResult?.ok) {
       result = await requestInner(path, fetchOptions);
-    } else if (!refreshFailed) {
+    } else if (refreshResult?.definitive) {
       window.dispatchEvent(new Event("scalegrams:session-expired"));
+    } else {
+      retryableAuthFailure = true;
     }
   }
-  if (!result.ok) throw toError(result.status, result.body);
+  if (!result.ok) {
+    const error = toError(result.status, result.body);
+    error.retryable = retryableAuthFailure;
+    throw error;
+  }
   return result.body;
 }
