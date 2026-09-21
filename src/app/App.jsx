@@ -135,6 +135,10 @@ export function App() {
 
   function logout() {
     api.request("/api/auth/logout", { method: "POST" }).catch(() => {});
+    clearSessionLocally();
+  }
+
+  function clearSessionLocally() {
     setUser(null);
     setSessionState("anonymous");
     setPage("login");
@@ -196,7 +200,7 @@ export function App() {
 
   useEffect(() => {
     const expireSession = () => {
-      logout();
+      clearSessionLocally();
       api.notify("Tu sesión venció. Volvé a ingresar.", "error");
     };
     window.addEventListener("scalegrams:session-expired", expireSession);

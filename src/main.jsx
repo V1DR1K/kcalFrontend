@@ -40,6 +40,17 @@ function syncViewportAfterSession() {
   });
 }
 
+function isStandaloneApp() {
+  return window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+function initialPathname() {
+  const pathname = window.location.pathname;
+  if (pathname !== "/" || !isStandaloneApp()) return pathname;
+  window.history.replaceState({ ...(window.history.state || {}) }, "", "/ingresar");
+  return "/ingresar";
+}
+
 syncAppShellHeight();
 syncVisualViewport();
 migrateStoredSession();
@@ -54,7 +65,7 @@ window.addEventListener("focusout", syncVisualViewport, true);
 window.addEventListener("scalegrams:session-updated", syncViewportAfterSession);
 
 function Root() {
-  const [pathname, setPathname] = React.useState(() => window.location.pathname);
+  const [pathname, setPathname] = React.useState(initialPathname);
 
   React.useEffect(() => {
     const syncPathname = () => setPathname(window.location.pathname);

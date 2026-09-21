@@ -81,6 +81,29 @@ test("starts the installed app at the session bootstrap route", async ({ page, r
   await expect(page.getByRole("button", { name: "Día", exact: true }).first()).toBeVisible();
 });
 
+test("redirects an older standalone install from the legacy root start path", async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeMatchMedia = window.matchMedia.bind(window);
+    window.matchMedia = (query) => query === "(display-mode: standalone)"
+      ? { matches: true, media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } }
+      : nativeMatchMedia(query);
+  });
+  await page.route("**/api/**", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({}),
+  }));
+  await page.route("**/api/auth/me", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ id: 1, username: "alex", fullName: "Alex", email: "alex@example.com" }),
+  }));
+
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/ingresar$/);
+  await expect(page.locator(".app-shell")).toBeVisible();
+});
+
 test("keeps a recoverable state when session bootstrap loses the network", async ({ page }) => {
   await page.route("**/api/auth/me", (route) => route.abort());
   await page.goto("/ingresar");
