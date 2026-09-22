@@ -19,7 +19,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --project=chromium
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
