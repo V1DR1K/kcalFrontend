@@ -10,6 +10,13 @@ function planColor(value) {
   return palette[hash % palette.length];
 }
 
+function formatPlanDate(value) {
+  if (!value) return "Sin fecha";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", year: "numeric" }).format(date);
+}
+
 export function NutritionPlanManager({ api, plans, onChanged }) {
   const [dialog, setDialog] = useState(null);
   const [activatingId, setActivatingId] = useState(null);
@@ -76,10 +83,10 @@ export function NutritionPlanManager({ api, plans, onChanged }) {
           <article className="plan-history-card" key={plan.id || `${plan.name}-${plan.startDate}`}>
             <div className="plan-history-heading"><strong>{plan.name}</strong></div>
             <span>
-              {plan.startDate} - {plan.endDate || "actual"}
+              {formatPlanDate(plan.startDate)} – {plan.endDate ? formatPlanDate(plan.endDate) : "Actualidad"}
             </span>
             <small>
-              {plan.dailyCalories} kcal / {plan.proteinPercent}% P / {plan.carbsPercent}% C / {plan.fatPercent}% G
+              {formatNumber(plan.dailyCalories)} kcal · {plan.proteinPercent}% proteína · {plan.carbsPercent}% carbohidratos · {plan.fatPercent}% grasas
             </small>
             <div className="plan-history-actions">
               <button type="button" className="secondary use-plan-button" onClick={() => startEdit(plan)}><Icon name="edit" />Editar</button>

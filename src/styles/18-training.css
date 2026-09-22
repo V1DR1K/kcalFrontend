@@ -300,7 +300,7 @@
 .training-week-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-4); }
 .training-week-values > div { display: grid; gap: var(--space-1); min-width: 0; padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--training-border) 76%, transparent); border-radius: var(--radius-control); background: color-mix(in srgb, var(--training-secondary) 30%, var(--training-surface)); }
 .training-week-values strong { overflow: hidden; color: var(--training-primary-hover); font-family: var(--font-display); font-size: var(--type-value-xs); font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
-.training-week-values span { color: var(--training-muted); font-size: var(--type-micro); }
+.training-week-values span { color: var(--training-muted); font-size: var(--type-meta); }
 
 .training-session-line {
   display: grid;

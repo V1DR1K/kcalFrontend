@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedProfileApp(page) {
+async function seedProfileApp(page, { withPlanHistory = false } = {}) {
   let profile = { id: 1, fullName: "Persona Perfil", email: "perfil@example.com", weightKg: 70, heightCm: 175, dailyCalorieGoal: 2200 };
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
@@ -17,6 +17,7 @@ async function seedProfileApp(page) {
       body = profile;
     } else if (url.pathname === "/api/profile") body = profile;
     if (url.pathname === "/api/profile/weight-entries") body = [];
+    if (url.pathname === "/api/profile/nutrition-plans") body = withPlanHistory ? [{ id: 8, name: "Plan de invierno", dailyCalories: 2140, proteinPercent: 25, carbsPercent: 50, fatPercent: 25, startDate: "2026-08-01", endDate: "2026-08-31", current: false }] : [];
     if (url.pathname === "/api/nutrition/ai-estimates/usage") body = { available: false };
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
@@ -37,4 +38,33 @@ test("permite modificar la altura desde Perfil", async ({ page }) => {
   expect((await request).postDataJSON()).toEqual({ heightCm: 182.5 });
   await expect(height).toHaveValue("182.5");
   await expect(page.getByText("Altura actualizada.", { exact: true })).toBeVisible();
+});
+
+test("muestra fechas y macros legibles, con acciones del plan accesibles en un móvil bajo", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await seedProfileApp(page, { withPlanHistory: true });
+  await page.addInitScript(() => history.replaceState({ scalegramsMode: "nutrition", scalegramsPage: "plans" }, ""));
+  await page.goto("/ingresar");
+
+  const card = page.locator(".plan-history-card");
+  await expect(card).toContainText("Plan de invierno");
+  await expect(card).toContainText("1 de ago de 2026");
+  await expect(card).toContainText("31 de ago de 2026");
+  await expect(card).toContainText("25% proteína · 50% carbohidratos · 25% grasas");
+  await expect(card).not.toContainText("2026-08-01");
+  const cardBounds = await card.evaluate((element) => ({ right: element.getBoundingClientRect().right, width: element.scrollWidth, clientWidth: element.clientWidth }));
+  expect(cardBounds.right).toBeLessThanOrEqual(321);
+  expect(cardBounds.width).toBeLessThanOrEqual(cardBounds.clientWidth + 1);
+  await page.getByRole("button", { name: "Agregar plan", exact: true }).click();
+  const dialog = page.locator(".nutrition-plan-dialog");
+  await expect(dialog).toBeVisible();
+  const layout = await dialog.evaluate((element) => {
+    const body = element.querySelector(".nutrition-plan-dialog-body");
+    const footer = element.querySelector(":scope > .modal-shell-footer");
+    return { bodyHeight: body.clientHeight, bodyScrollHeight: body.scrollHeight, footerBottom: footer.getBoundingClientRect().bottom, viewportHeight: window.visualViewport?.height || window.innerHeight, horizontalOverflow: element.scrollWidth > element.clientWidth };
+  });
+  expect(layout.bodyScrollHeight).toBeGreaterThan(layout.bodyHeight);
+  expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewportHeight + 1);
+  expect(layout.horizontalOverflow).toBe(false);
+  await expect(dialog.getByRole("button", { name: "Crear plan", exact: true })).toBeVisible();
 });

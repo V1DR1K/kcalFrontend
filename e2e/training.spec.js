@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = false, hasPlan = true } = {}) {
+async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = false, hasPlan = true, totalMinutes = 90 } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -11,7 +11,7 @@ async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = f
     const method = route.request().method();
     let body = {};
     if (url.includes("/api/auth/me")) body = { id: 1, fullName: "Persona E2E", email: "e2e@example.com" };
-    if (url.includes("/api/training/dashboard")) body = { date: "2026-08-26", plans: hasPlan ? [{ id: 1, name: "Fuerza base", module: "GYM", frequencyMode: "FIXED", targetSessionsPerWeek: 3, active: true }] : [], recentSession: { id: 1, module: "GYM", date: "2026-08-26", title: "Fuerza base", durationMinutes: 45, exercises: [{ exerciseName: "Sentadilla", sets: [{ repetitions: 5, weightKg: 80 }] }] }, weeklySummary: { sessionCount: 2, totalMinutes: 90, totalSets: 18 }, exercises: [{ id: 1, name: "Sentadilla", module: "GYM", global: true, editable: false, active: true }], plannedPlans: planned ? [{ planId: 1, planDayId: 11, module: "GYM", planDayName: "Fuerza", recommended: true }] : [] };
+    if (url.includes("/api/training/dashboard")) body = { date: "2026-08-26", plans: hasPlan ? [{ id: 1, name: "Fuerza base", module: "GYM", frequencyMode: "FIXED", targetSessionsPerWeek: 3, active: true }] : [], recentSession: { id: 1, module: "GYM", date: "2026-08-26", title: "Fuerza base", durationMinutes: 45, exercises: [{ exerciseName: "Sentadilla", sets: [{ repetitions: 5, weightKg: 80 }] }] }, weeklySummary: { sessionCount: 2, totalMinutes, totalSets: 18 }, exercises: [{ id: 1, name: "Sentadilla", module: "GYM", global: true, editable: false, active: true }], plannedPlans: planned ? [{ planId: 1, planDayId: 11, module: "GYM", planDayName: "Fuerza", recommended: true }] : [] };
     if (url.includes("/api/training/calendar")) body = [];
     if (url.endsWith("/api/training/sessions")) body = { id: 20, version: 1, status: "IN_PROGRESS", module: "GYM", date: "2026-08-26", exercises: [] };
     if (url.includes("/api/training/sessions/20/complete")) body = { id: 20, version: 2, status: "COMPLETED", module: "GYM", date: "2026-08-26", exercises: [] };
@@ -39,6 +39,18 @@ async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = f
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
 }
+
+test("shows a full zero-duration value in the weekly training summary on narrow mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await seedTrainingApp(page, { totalMinutes: 0 });
+  await page.addInitScript(() => history.replaceState({ scalegramsMode: "training", scalegramsPage: "training-dashboard" }, ""));
+  await page.goto("/ingresar");
+  const duration = page.locator(".training-week-values > div:nth-child(2) strong");
+  await expect(duration).toHaveText("0 min");
+  const bounds = await duration.evaluate((element) => ({ width: element.getBoundingClientRect().width, scrollWidth: element.scrollWidth, parentWidth: element.parentElement.clientWidth }));
+  expect(bounds.width).toBeGreaterThan(0);
+  expect(bounds.scrollWidth).toBeLessThanOrEqual(bounds.parentWidth + 1);
+});
 
 test("swaps the nutrition shell for training and restores nutrition with browser history", async ({ page }) => {
   await seedTrainingApp(page);

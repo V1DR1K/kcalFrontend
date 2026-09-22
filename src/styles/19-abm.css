@@ -351,7 +351,15 @@
 .plans-page .plan-history-header p { margin: 4px 0 0; color: var(--muted); font-size: var(--type-small); }
 .plans-page .plan-history-header .primary { min-height: 44px; }
 .plans-page .plan-history > article.plan-history-card { margin-top: 10px; padding: 16px; border: 1px solid var(--outline); border-radius: var(--radius-panel); background: var(--surface-low); }
+.plans-page .plan-history-card { grid-template-columns: minmax(0, 1fr) minmax(200px, auto); gap: 8px 16px; }
 .plans-page .plan-history > article.plan-history-card:first-of-type { border-top: 1px solid var(--outline); }
+.plans-page .plan-history-card > .plan-history-heading { grid-column: 1; grid-row: 1; }
+.plans-page .plan-history-card > span { grid-column: 2; grid-row: 1; text-align: right; }
+.plans-page .plan-history-card > small { grid-column: 1 / -1; grid-row: 2; }
+.plans-page .plan-history-card > span,
+.plans-page .plan-history-card > small { min-width: 0; color: var(--muted); font-size: var(--type-small); line-height: 1.4; }
+.plans-page .plan-history-card > small { overflow-wrap: anywhere; }
+.plans-page .plan-history-card .plan-history-actions { grid-column: 1 / -1; }
 .content { scrollbar-width: thin; scrollbar-color: var(--outline) transparent; scrollbar-gutter: stable; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; padding-bottom: max(96px, env(safe-area-inset-bottom)); }
 .recipe-edit-ingredient-picker { display: grid; gap: 10px; padding: 14px; border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--outline)); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--primary) 6%, var(--surface-low)); }
 .recipe-edit-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -423,6 +431,10 @@
   .app-modal-surface.confirmation-dialog[class] > .modal-shell-footer .confirmation-confirm { order: -1; }
   .day-presets-page { box-sizing: border-box; width: 100%; max-width: none; margin-inline: 0; padding-inline: max(0px, env(safe-area-inset-left)) max(0px, env(safe-area-inset-right)); }
   .plans-page .plan-history > article { display: block; }
+  .plans-page .plan-history > article.plan-history-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .plans-page .plan-history-card > .plan-history-heading,
+  .plans-page .plan-history-card > span,
+  .plans-page .plan-history-card > small { grid-column: 1; grid-row: auto; text-align: left; }
   .plans-page .plan-history-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 12px; }
   .plans-page .plan-history-actions .use-plan-button { min-height: 44px; }
   .plans-page .plan-history-actions .danger-text { grid-column: 1 / -1; }

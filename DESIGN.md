@@ -256,6 +256,11 @@ The palette is a night field with navigational light: neutral layers establish r
 ### Tertiary
 - **Recovery Coral:** errors, destructive actions and irreversible confirmation states.
 
+### Section accents
+- **Nutrition:** measured mint remains the active and forward-moving accent.
+- **Training:** reference blue identifies training navigation and training-specific progress. It stays scoped to that mode; shared controls, text and surfaces continue to use the common tokens.
+- **Brand mark:** the ScaleGrams scale icon and wordmark remain the same in the landing, sign-in and authenticated shell. A section accent may change the navigation state without changing the brand mark.
+
 ### Neutral
 - **Night through Ridge:** the five tonal layers that define page background, surface, raised controls, borders and inactive tracks.
 - **Mist and Sage:** primary reading text and secondary explanation. Sage never carries a primary instruction alone.
@@ -324,6 +329,13 @@ Controls use gently curved corners. Panels are rounded enough to group a task wi
 - **Style:** a raised neutral surface with a compact label and reliable touch target.
 - **Focus:** mint edge plus a soft mint focus field.
 - **Error / Disabled:** coral explains a problem; disabled controls reduce emphasis without reducing legibility.
+- **Readable labels:** interactive field labels, macro names and essential metadata use at least the 12px meta size. Smaller text is limited to decorative marks and nonessential status hints.
+- **Touch:** actionable controls provide at least a 44px target; primary mobile dialog actions provide 48px or more.
+
+### Dialogs
+- **Long tasks:** forms and review flows use one scrollable content region, a visible mobile action footer and safe-area padding. The footer must remain reachable when the viewport is short or the keyboard is open.
+- **Short decisions:** confirmations stay compact. When one dialog opens another, only the top dialog remains available to keyboard focus and assistive technology; closing it restores the previous dialog and focus.
+- **Review:** estimates put editable amounts and the meal summary first. Classification, assumptions and secondary corrections live in clearly named disclosures.
 
 ### Navigation
 - **Style:** muted at rest, mint only for the current location. Desktop uses the rail; mobile uses the bottom bar and preserves accessible labels.
