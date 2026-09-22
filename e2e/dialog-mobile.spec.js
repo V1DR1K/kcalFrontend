@@ -520,14 +520,14 @@ test("keeps a long AI photo description scrollable on mobile", async ({ page, br
     buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
   });
 
-  const dialog = page.locator(".ai-photo-context-editor");
+  const dialog = page.locator(".ai-photo-context-modal");
   const description = dialog.getByLabel("Descripción opcional");
   await expect(dialog).toBeVisible();
   await description.fill("Ensalada completa con pollo grillado, arroz integral, tomate, palta, semillas y aderezo casero. La porción es abundante y está servida en un plato grande. También incluye zanahoria, cebolla morada y hojas verdes frescas.");
 
   const layout = await dialog.evaluate((element) => {
-    const textarea = element.querySelector("textarea");
-    const actions = element.querySelector(".ai-photo-context-actions");
+    const textarea = element.querySelector(".modal-shell-content textarea");
+    const actions = element.querySelector(":scope > .modal-shell-footer");
     return {
       dialog: element.getBoundingClientRect().toJSON(),
       textarea: textarea.getBoundingClientRect().toJSON(),
@@ -587,6 +587,19 @@ test("keeps a long AI photo description scrollable on mobile", async ({ page, br
     }));
     expect(reducedLayout.dialog.bottom).toBeLessThanOrEqual(430 + 1);
     expect(reducedLayout.actions.bottom).toBeLessThanOrEqual(430 + 1);
+  }
+  if (browserName === "chromium") {
+    await page.evaluate(() => {
+      ["--app-viewport-height", "--dialog-viewport-height", "--dialog-visible-height", "--dialog-layout-height"].forEach((property) => document.documentElement.style.removeProperty(property));
+    });
+    await page.setViewportSize({ width: 320, height: 568 });
+    const footerMetrics = await dialog.evaluate((element) => {
+      const footer = element.querySelector(":scope > .modal-shell-footer").getBoundingClientRect();
+      const buttons = [...element.querySelectorAll(":scope > .modal-shell-footer button")].map((button) => { const rect = button.getBoundingClientRect(); return { width: rect.width, height: rect.height, right: rect.right, bottom: rect.bottom }; });
+      return { footerBottom: footer.bottom, viewportHeight: window.visualViewport?.height || window.innerHeight, buttons };
+    });
+    expect(footerMetrics.footerBottom).toBeLessThanOrEqual(footerMetrics.viewportHeight + 1);
+    expect(footerMetrics.buttons.every((button) => button.width >= 44 && button.height >= 44 && button.right <= 321 && button.bottom <= footerMetrics.viewportHeight + 1)).toBe(true);
   }
 });
 
@@ -810,16 +823,106 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   });
   await page.getByRole("button", { name: "Analizar foto", exact: true }).click();
 
-  const editor = page.locator(".ai-estimate-editor");
+  const editor = page.locator(".ai-estimate-modal");
   await expect(editor).toBeVisible();
-  const actions = editor.locator(".ai-estimate-actions");
-  const layout = await actions.evaluate((element) => {
-    const refinement = element.previousElementSibling?.getBoundingClientRect();
-    const rect = element.getBoundingClientRect();
-    return { position: getComputedStyle(element).position, top: rect.top, refinementBottom: refinement?.bottom || 0 };
+  await expect(editor.locator(".ai-estimate-item-details[open]")).toHaveCount(0);
+  const layout = await editor.evaluate((element) => {
+    const footerElement = element.querySelector(":scope > .modal-shell-footer");
+    const footer = footerElement.getBoundingClientRect();
+    const content = element.querySelector(".modal-shell-content");
+    return { footerTop: footer.top, footerBottom: footer.bottom, footerHeight: footer.height, contentPaddingBottom: parseFloat(getComputedStyle(content).paddingBottom), viewportBottom: window.visualViewport?.height || window.innerHeight };
   });
-  expect(layout.position).toBe("static");
-  expect(layout.top).toBeGreaterThanOrEqual(layout.refinementBottom - 1);
+  expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
+  expect(layout.contentPaddingBottom).toBeGreaterThanOrEqual(layout.footerHeight - 1);
+  await expect(editor.getByRole("button", { name: "Agregar alimentos", exact: true })).toBeVisible();
+});
+
+test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await seedAuthenticatedApp(page, { aiAvailable: true });
+  await page.route("**/api/nutrition/ai-estimates", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+      name: "Almuerzo con varios ingredientes",
+      confidence: 82,
+      description: "Una preparación casera con porciones aproximadas.",
+      assumptions: ["Se estimó una porción mediana.", "El aderezo no se distinguía con claridad."],
+      items: [
+        { name: "Pollo grillado", category: "MEAT", preparation: "GRILLED", estimatedGrams: 140, proteinGrams: 31, carbsGrams: 0, fatGrams: 5 },
+        { name: "Arroz integral cocido", category: "CEREAL", preparation: "BOILED", estimatedGrams: 180, proteinGrams: 5, carbsGrams: 42, fatGrams: 2 },
+        { name: "Ensalada de hojas verdes y tomate", category: "VEGETABLE", preparation: "RAW", estimatedGrams: 95, proteinGrams: 2, carbsGrams: 6, fatGrams: 1 },
+      ],
+    }) });
+  });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.locator(".ai-gallery-trigger input").setInputFiles({
+    name: "comida.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+  });
+  await page.getByRole("button", { name: "Analizar foto", exact: true }).click();
+
+  const dialog = page.locator(".ai-estimate-modal");
+  await expect(dialog.locator(".ai-estimate-item")).toHaveCount(3);
+  await expect(dialog.getByRole("button", { name: "Agregar alimentos", exact: true })).toBeVisible();
+  await expect(dialog.getByText("Supuestos de la estimación", { exact: true })).toBeVisible();
+  const layout = await dialog.evaluate((element) => {
+    const footerElement = element.querySelector(":scope > .modal-shell-footer");
+    const footer = footerElement.getBoundingClientRect();
+    const surface = element.getBoundingClientRect();
+    const summary = element.querySelector(".ai-estimate-summary");
+    const fields = element.querySelector(".ai-estimate-item-fields");
+    return {
+      surfaceRight: surface.right,
+      surfaceLeft: surface.left,
+      footerBottom: footer.bottom,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.visualViewport?.height || window.innerHeight,
+      summaryWidth: summary.scrollWidth,
+      summaryClientWidth: summary.clientWidth,
+      fieldsWidth: fields.scrollWidth,
+      fieldsClientWidth: fields.clientWidth,
+      actionButtons: [...footerElement.querySelectorAll("button")].map((button) => ({ width: button.getBoundingClientRect().width, height: button.getBoundingClientRect().height })),
+    };
+  });
+  expect(layout.surfaceLeft).toBeGreaterThanOrEqual(-1);
+  expect(layout.surfaceRight).toBeLessThanOrEqual(layout.viewportWidth + 1);
+  expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewportHeight + 1);
+  expect(layout.summaryWidth).toBeLessThanOrEqual(layout.summaryClientWidth + 1);
+  expect(layout.fieldsWidth).toBeLessThanOrEqual(layout.fieldsClientWidth + 1);
+  expect(layout.actionButtons.every((button) => button.width >= 44 && button.height >= 44)).toBe(true);
+  await page.setViewportSize({ width: 390, height: 430 });
+  await expect(dialog.locator(".ai-estimate-summary small")).toHaveCount(4);
+  const compactSummary = await dialog.locator(".ai-estimate-summary small").evaluateAll((labels) => labels.every((label) => label.scrollWidth <= label.clientWidth + 1));
+  expect(compactSummary).toBe(true);
+  const shortViewportFooter = await dialog.locator(":scope > .modal-shell-footer").evaluate((element) => element.getBoundingClientRect().bottom <= window.innerHeight + 1);
+  expect(shortViewportFooter).toBe(true);
+  await expect(dialog.getByRole("button", { name: "Agregar alimentos", exact: true })).toBeVisible();
+});
+
+test("keeps the food search available behind only the top dialog", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withServingFood: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  const picker = page.locator(".picker-modal");
+  const search = picker.getByPlaceholder("Buscar alimentos...");
+  await search.fill("Avena");
+  await picker.locator(".catalog-row-image").click();
+
+  const roots = page.locator("[data-modal-root]");
+  await expect(page.locator(".edit-log-modal")).toBeVisible();
+  await expect.poll(() => roots.count()).toBe(2);
+  const rootStates = await roots.evaluateAll((elements) => elements.map((element) => ({ inert: element.inert, ariaHidden: element.getAttribute("aria-hidden") })));
+  expect(rootStates).toEqual([{ inert: true, ariaHidden: "true" }, { inert: false, ariaHidden: null }]);
+  await expect(page.locator('[data-modal-root]:not([aria-hidden="true"]) [role="dialog"][aria-modal="true"]')).toHaveCount(1);
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".edit-log-modal")).toHaveCount(0);
+  await expect(picker).toBeVisible();
+  await expect(search).toHaveValue("Avena");
+  await expect.poll(() => page.evaluate(() => document.activeElement?.closest(".picker-modal") != null)).toBe(true);
+  await expect(picker.locator(".catalog-row-image")).toBeVisible();
 });
 
 test("keeps the AI photo context actions visible above the picker footer on desktop", async ({ page }) => {
@@ -833,7 +936,7 @@ test("keeps the AI photo context actions visible above the picker footer on desk
     buffer: Buffer.from("test-image"),
   });
 
-  const editor = page.locator(".ai-photo-context-editor");
+  const editor = page.locator(".ai-photo-context-modal");
   const analyzeButton = editor.getByRole("button", { name: "Analizar foto", exact: true });
   await expect(editor).toBeVisible();
   await expect(analyzeButton).toBeVisible();
@@ -841,17 +944,17 @@ test("keeps the AI photo context actions visible above the picker footer on desk
   const layout = await editor.evaluate((element) => {
     const button = element.querySelector(".ai-photo-context-actions .primary");
     const buttonBounds = button.getBoundingClientRect();
-    const subpanel = element.parentElement;
-    const footer = element.closest(".picker-modal")?.querySelector(":scope > footer");
+    const outerRoot = [...document.querySelectorAll("[data-modal-root]")].find((root) => root.querySelector(".picker-modal"));
     return {
       buttonBottom: buttonBounds.bottom,
       viewportBottom: window.innerHeight,
-      subpanelZIndex: getComputedStyle(subpanel).zIndex,
-      footerZIndex: footer ? getComputedStyle(footer).zIndex : "auto",
+      pickerIsInert: outerRoot?.inert,
+      pickerIsHidden: outerRoot?.getAttribute("aria-hidden"),
     };
   });
   expect(layout.buttonBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
-  expect(Number(layout.subpanelZIndex)).toBeGreaterThan(Number(layout.footerZIndex));
+  expect(layout.pickerIsInert).toBe(true);
+  expect(layout.pickerIsHidden).toBe("true");
 });
 
 test("creates a share link from a recent meal bracket", async ({ page }) => {

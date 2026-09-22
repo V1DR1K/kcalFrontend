@@ -60,7 +60,7 @@ export function ModalShell({
 
   return (
     <ModalRoot className={resolvedBackdropClass} onBackdropPointerDown={handleBackdropPointerDown}>
-      <Element ref={dialogRef} className={resolvedSurfaceClass} data-dialog-surface="true" data-modal-theme={theme} role={role} aria-modal="true" aria-label={ariaLabel} aria-labelledby={ariaLabel ? undefined : (labelledBy || titleId)} aria-describedby={describedBy || descriptionId} onPointerDown={(event) => event.stopPropagation()} {...dialogProps}>
+      <Element ref={dialogRef} className={resolvedSurfaceClass} data-dialog-surface="true" data-modal-theme={theme} role={role} tabIndex={-1} aria-modal="true" aria-label={ariaLabel} aria-labelledby={ariaLabel ? undefined : (labelledBy || titleId)} aria-describedby={describedBy || descriptionId} onPointerDown={(event) => event.stopPropagation()} {...dialogProps}>
         {!hideHeader && (title || onClose) && (
           <header className="modal-shell-header">
             <div>

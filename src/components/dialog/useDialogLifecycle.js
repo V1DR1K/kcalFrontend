@@ -12,6 +12,17 @@ function topDialog() {
   return activeDialogStack[activeDialogStack.length - 1];
 }
 
+function syncDialogRoots() {
+  activeDialogStack.forEach((dialog, index) => {
+    if (!dialog.root) return;
+    const isTop = index === activeDialogStack.length - 1;
+    dialog.root.inert = isTop ? dialog.previousInert : true;
+    const ariaHidden = isTop ? dialog.previousAriaHidden : "true";
+    if (ariaHidden == null) dialog.root.removeAttribute("aria-hidden");
+    else dialog.root.setAttribute("aria-hidden", ariaHidden);
+  });
+}
+
 function scrollOwnersFor(target, dialogRef, scrollOwnerRef) {
   const owners = [];
   let element = target?.nodeType === Node.ELEMENT_NODE ? target : target?.parentElement;
@@ -82,8 +93,17 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
 
   useEffect(() => {
     if (!open) return undefined;
-    const dialogToken = { dialogRef, scrollOwnerRef };
+    const surface = dialogRef.current;
+    const root = surface?.closest?.("[data-modal-root]") || surface;
+    const dialogToken = {
+      dialogRef,
+      scrollOwnerRef,
+      root,
+      previousInert: Boolean(root?.inert),
+      previousAriaHidden: root?.getAttribute("aria-hidden") ?? null,
+    };
     activeDialogStack.push(dialogToken);
+    syncDialogRoots();
     previousFocusRef.current = document.activeElement;
     if (lockScroll) {
       if (scrollLockDepth === 0) previousBodyOverflow = document.body.style.overflow;
@@ -155,6 +175,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
       const wasTopDialog = activeDialogStack[activeDialogStack.length - 1] === dialogToken;
       const tokenIndex = activeDialogStack.indexOf(dialogToken);
       if (tokenIndex >= 0) activeDialogStack.splice(tokenIndex, 1);
+      syncDialogRoots();
       if (lockScroll) {
         scrollLockDepth = Math.max(0, scrollLockDepth - 1);
         if (scrollLockDepth === 0) {
@@ -169,7 +190,21 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
       dialogRef.current?.removeEventListener("focusin", revealFocusedControl);
       window.visualViewport?.removeEventListener("resize", revealFocusedControl);
       window.visualViewport?.removeEventListener("scroll", revealFocusedControl);
-      if (restoreFocus && wasTopDialog && previousFocusRef.current?.isConnected) previousFocusRef.current.focus?.();
+      if (restoreFocus && wasTopDialog && previousFocusRef.current?.isConnected) {
+        const restoreTarget = previousFocusRef.current;
+        window.requestAnimationFrame(() => {
+          const currentTop = topDialog();
+          const isInsideTop = currentTop?.root?.contains(restoreTarget) && !currentTop.root.inert;
+          const fallbackTarget = currentTop && !isInsideTop ? currentTop.dialogRef.current : null;
+          const target = restoreTarget.isConnected && (!currentTop || isInsideTop) ? restoreTarget : fallbackTarget;
+          if (!target?.isConnected) return;
+          try {
+            target.focus({ preventScroll: true });
+          } catch {
+            target.focus?.();
+          }
+        });
+      }
     };
   }, [closeOnEscape, footerRef, initialFocusRef, lockScroll, open, restoreFocus, scrollOwnerRef, trapFocus]);
 

@@ -209,8 +209,8 @@
     grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
-  .app-modal-surface[class]:has(> footer, > .modal-shell-footer) {
-    height: var(--dialog-layout-height, var(--dialog-viewport-height, 100dvh));
+  .app-modal-surface:not(.app-modal-compact)[class]:has(> footer, > .modal-shell-footer) {
+    height: min(var(--dialog-visible-height, var(--dialog-viewport-height, 100dvh)), var(--app-shell-height, 100dvh));
   }
 
   .app-modal-surface.picker-modal[class] { grid-template-rows: auto auto auto minmax(0, 1fr); }
@@ -344,7 +344,7 @@
 }
 
 @keyframes app-modal-backdrop-in { from { opacity: 0; } }
-@keyframes app-modal-surface-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+@keyframes app-modal-surface-in { from { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
   .app-modal-backdrop[class],

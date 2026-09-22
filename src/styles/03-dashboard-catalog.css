@@ -445,6 +445,98 @@
   color: var(--text);
   font-size: 14px;
 }
+
+.ai-photo-context-modal .modal-shell-content { padding: var(--space-5) var(--space-6); }
+.ai-photo-context-editor { display: grid; align-content: start; gap: var(--space-4); min-width: 0; }
+.ai-photo-context-preview { display: block; max-width: 100%; max-height: min(32dvh, 260px); margin-inline: auto; object-fit: contain; }
+.ai-photo-context-modal .ai-context-tools { grid-template-columns: minmax(0, 1fr) minmax(170px, auto); align-items: end; }
+.ai-photo-context-modal .ai-note-record { min-height: 48px; }
+.ai-photo-context-actions,
+.ai-estimate-actions { display: grid; width: 100%; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: var(--space-2); }
+.ai-photo-context-actions button,
+.ai-estimate-actions button { min-width: 0; min-height: 48px; }
+.ai-photo-context-actions button { white-space: normal; }
+
+.ai-estimate-modal .modal-shell-content { min-height: 0; padding: 0; overflow-x: hidden; }
+.ai-estimate-editor { display: grid; gap: var(--space-4); min-width: 0; padding: var(--space-5) var(--space-6); }
+.ai-estimate-editor > .field,
+.ai-estimate-editor .edit-log-fields { min-width: 0; }
+.ai-estimate-editor .edit-log-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.ai-estimate-summary { display: grid; grid-template-columns: 1.1fr repeat(3, minmax(0, 1fr)); gap: 0; min-width: 0; overflow: hidden; border: 1px solid var(--outline); border-radius: var(--radius-panel); background: var(--surface-low); }
+.ai-estimate-summary > span { display: grid; align-content: center; gap: 5px; min-width: 0; min-height: 74px; padding: var(--space-3); border-right: 1px solid var(--outline); }
+.ai-estimate-summary > span:last-child { border-right: 0; }
+.ai-estimate-summary small { color: var(--muted); font-size: var(--type-meta); font-weight: 700; line-height: 1.2; }
+.ai-estimate-label-short { display: none; }
+.ai-estimate-summary strong { color: var(--text); font-size: var(--type-body-emphasis); font-variant-numeric: tabular-nums; line-height: 1.1; white-space: nowrap; }
+.ai-estimate-summary strong b { margin-left: 2px; color: var(--muted); font-size: var(--type-meta); }
+.ai-estimate-summary .ai-summary-calories { background: color-mix(in srgb, var(--primary) 8%, var(--surface-low)); }
+.ai-estimate-summary .ai-summary-calories strong { color: var(--primary); font-family: var(--font-display); font-size: clamp(26px, 3vw, 34px); letter-spacing: -.03em; }
+.ai-estimate-summary .ai-summary-protein strong { color: var(--primary); }
+.ai-estimate-summary .ai-summary-carbs strong { color: var(--tertiary); }
+.ai-estimate-summary .ai-summary-fat strong { color: var(--warning); }
+.ai-estimate-food-section { display: grid; gap: var(--space-2); min-width: 0; }
+.ai-estimate-items-heading { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.ai-estimate-items-heading h3 { margin: 0; font-family: var(--font-display); font-size: var(--type-body-emphasis); }
+.ai-estimate-items-heading > span { color: var(--muted); font-size: var(--type-meta); white-space: nowrap; }
+.ai-estimate-items { display: grid; min-width: 0; }
+.ai-estimate-item { display: grid; gap: var(--space-3); min-width: 0; padding: var(--space-3) 0; border-top: 1px solid var(--outline); }
+.ai-estimate-items > .ai-estimate-item { padding: var(--space-3) 0; border: 0; border-top: 1px solid var(--outline); border-radius: 0; background: transparent; }
+.ai-estimate-item:last-child { border-bottom: 1px solid var(--outline); }
+.ai-estimate-item-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-2); min-width: 0; }
+.ai-estimate-item-heading > span { color: var(--muted); font-size: var(--type-meta); }
+.ai-estimate-item-heading > strong { color: var(--primary); font-size: var(--type-small); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ai-estimate-item-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(92px, .36fr); align-items: end; gap: var(--space-3); min-width: 0; }
+.ai-estimate-item-fields > .field,
+.ai-estimate-grams-field { min-width: 0; }
+.ai-estimate-item-fields .field,
+.ai-estimate-grams-field { display: grid; gap: 5px; color: var(--muted); font-size: var(--type-meta); font-weight: 700; }
+.ai-estimate-item-fields .field input,
+.ai-estimate-grams-input input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 48px; }
+.ai-estimate-grams-input { position: relative; display: block; min-width: 0; }
+.ai-estimate-grams-input input { padding-inline: 10px 26px; font-variant-numeric: tabular-nums; }
+.ai-estimate-grams-input > span { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.ai-estimate-item-details,
+.ai-estimate-assumptions,
+.ai-estimate-refinement { min-width: 0; border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-inset); }
+.ai-estimate-item-details summary,
+.ai-estimate-assumptions summary,
+.ai-estimate-refinement summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-3); color: var(--text); cursor: pointer; font-size: var(--type-meta); font-weight: 700; list-style: none; }
+.ai-estimate-item-details summary::-webkit-details-marker,
+.ai-estimate-assumptions summary::-webkit-details-marker,
+.ai-estimate-refinement summary::-webkit-details-marker { display: none; }
+.ai-estimate-item-details summary::after,
+.ai-estimate-assumptions summary::after,
+.ai-estimate-refinement summary::after { content: ""; flex: 0 0 auto; width: 10px; height: 6px; background: var(--muted); clip-path: polygon(0 0, 100% 0, 50% 100%); transition: transform var(--duration-quick) var(--ease-out); }
+.ai-estimate-item-details[open] summary::after,
+.ai-estimate-assumptions[open] summary::after,
+.ai-estimate-refinement[open] summary::after { transform: rotate(180deg); }
+.ai-estimate-item-detail-content { display: grid; gap: var(--space-3); padding: 0 var(--space-3) var(--space-3); }
+.ai-estimate-meta-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.ai-estimate-meta-values span,
+.ai-estimate-item-nutrition span { display: grid; gap: 4px; min-width: 0; }
+.ai-estimate-meta-values small,
+.ai-estimate-item-nutrition small { color: var(--muted); font-size: var(--type-meta); }
+.ai-estimate-meta-values strong { overflow-wrap: anywhere; color: var(--text); font-size: var(--type-small); }
+.ai-estimate-item-nutrition { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+.ai-estimate-item-nutrition strong { color: var(--text); font-size: var(--type-small); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ai-estimate-item-nutrition span:first-child strong { color: var(--primary); }
+.ai-estimate-remove { width: 44px; min-width: 44px; min-height: 44px; color: var(--error); }
+.ai-estimate-catalog { min-height: 44px; padding-inline: var(--space-3); font-size: var(--type-meta); }
+.ai-estimate-assumptions > p { margin: 0; padding: 0 var(--space-3) var(--space-3); color: var(--muted); font-size: var(--type-small); line-height: 1.45; }
+.ai-estimate-assumptions ul { display: grid; gap: var(--space-2); margin: 0; padding: 0 var(--space-3) var(--space-3) calc(var(--space-3) + 18px); color: var(--muted); font-size: var(--type-small); line-height: 1.45; }
+.ai-estimate-refinement { display: grid; gap: var(--space-2); padding-bottom: var(--space-3); }
+.ai-estimate-refinement > p { margin: 0; padding-inline: var(--space-3); color: var(--muted); font-size: var(--type-small); line-height: 1.4; }
+.ai-estimate-refinement .ai-context-field { margin-inline: var(--space-3); }
+.ai-estimate-refinement .ai-context-field textarea { min-height: 96px; }
+.ai-estimate-refinement > .secondary { justify-self: start; min-height: 44px; margin-inline: var(--space-3); }
+.ai-estimate-actions { gap: var(--space-2); }
+.ai-estimate-catalog-form { display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--tertiary) 42%, transparent); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--tertiary) 7%, transparent); }
+.ai-estimate-catalog-form > p { margin: 0; color: var(--muted); font-size: var(--type-small); line-height: 1.4; }
+.ai-estimate-catalog-form > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.ai-estimate-catalog-form > footer { display: flex; justify-content: flex-end; gap: var(--space-2); }
+.ai-estimate-catalog-form > footer button { min-height: 44px; }
+.ai-estimate-error { overflow-wrap: anywhere; }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .field {

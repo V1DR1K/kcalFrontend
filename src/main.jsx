@@ -18,9 +18,10 @@ function hasTextInputFocus() {
 
 function syncVisualViewport() {
   const viewport = window.visualViewport;
-  const visibleHeight = viewport?.height || window.innerHeight;
-  const top = `${viewport?.offsetTop || 0}px`;
-  const keyboardInsetValue = Math.max(0, window.innerHeight - visibleHeight - (viewport?.offsetTop || 0));
+  const topOffset = viewport?.offsetTop || 0;
+  const visibleHeight = Math.max(0, Math.min(viewport?.height || window.innerHeight, window.innerHeight - topOffset));
+  const top = `${topOffset}px`;
+  const keyboardInsetValue = Math.max(0, window.innerHeight - visibleHeight - topOffset);
   const keyboardOpen = keyboardInsetValue > 120 || (hasTextInputFocus() && visibleHeight < stableDialogHeight - 120);
   if (!keyboardOpen) stableDialogHeight = visibleHeight;
   const dialogHeight = `${keyboardOpen ? stableDialogHeight : visibleHeight}px`;
