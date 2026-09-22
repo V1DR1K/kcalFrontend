@@ -79,6 +79,7 @@ test.describe("Safari responsive contract", () => {
   });
 
   test("authenticated mobile navigation stays attached to the viewport bottom", async ({ page }) => {
+    test.skip((page.viewportSize()?.width || 0) > 900, "Mobile navigation is hidden above the 900px breakpoint");
     await seedAuthenticatedApp(page);
     await page.goto("/ingresar");
 
