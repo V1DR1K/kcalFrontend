@@ -767,6 +767,7 @@
   .training-day-editor-intro { display: none; }
   .training-exercise-picker { gap: var(--space-2); padding-block: var(--space-2); }
   .training-exercise-picker-heading p { display: none; }
+  .training-exercise-picker-results { margin-top: -8px; }
   .training-exercise-option { min-height: 48px; padding-block: var(--space-2); }
 }
 
