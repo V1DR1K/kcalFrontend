@@ -97,14 +97,11 @@ test("keeps the history calendar usable on a narrow viewport", async ({ page }) 
   await seedHistoryApp(page);
   await page.goto("/ingresar");
   const moreButton = page.getByRole("button", { name: "Más opciones" });
-  if (await moreButton.isVisible()) {
-    await moreButton.click();
-    const historyButton = page.locator(".mobile-secondary-items").getByRole("button", { name: "Historial", exact: true });
-    await expect(historyButton).toBeVisible();
-    await historyButton.click({ force: true });
-  } else {
-    await page.getByRole("button", { name: "Historial", exact: true }).first().click({ force: true });
-  }
+  await expect(moreButton).toBeVisible();
+  await moreButton.click();
+  const historyButton = page.locator(".mobile-secondary-items").getByRole("button", { name: "Historial", exact: true });
+  await expect(historyButton).toBeVisible();
+  await historyButton.evaluate((button) => button.click());
 
   const layout = await page.locator(".history-calendar-surface").evaluate((surface) => {
     const grid = surface.querySelector(".history-calendar-grid");
