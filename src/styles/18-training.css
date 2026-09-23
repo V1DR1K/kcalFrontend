@@ -747,7 +747,7 @@
   .training-day-editor-intro, .training-day-identity, .training-exercise-picker { padding: var(--space-3); }
   .training-plan-exercise-row { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
   .training-plan-exercise-row .training-move-controls { grid-column: 2; justify-content: flex-end; }
-  .training-exercise-picker-results { max-height: min(22dvh, 180px); }
+  .training-exercise-picker-results { max-height: min(240px, max(64px, calc(100dvh - 360px))); }
   .training-exercise-option { grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; min-height: 68px; padding: var(--space-3) var(--space-2); }
   .training-exercise-option em { grid-column: auto; align-self: start; }
   .training-category-list { grid-template-columns: 1fr; }
