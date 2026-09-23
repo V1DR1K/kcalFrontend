@@ -16,7 +16,6 @@ export function FoodEditorDialog({ api, food = null, prefillBarcode, clearPrefil
 
   return (
     <ModalShell
-      as="form"
       onClose={requestClose}
       closeLabel={editing ? "Cerrar edición de alimento" : "Cerrar creación de alimento"}
       closeDisabled={busy}
