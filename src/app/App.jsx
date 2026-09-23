@@ -261,7 +261,7 @@ export function App() {
             )}
             {page === "history" && <History api={api} />}
             {page === "plans" && <PlansPage api={api} mode={mode} />}
-            {page === "my-foods" && <MyFoodsPage api={api} setPage={setPage} />}
+            {page === "my-foods" && <MyFoodsPage api={api} setPage={setPage} user={user} />}
             {page === "recipes" && <Recipes api={api} setPage={setPage} />}
             {page === "day-presets" && <DayPresetsPage api={api} user={user} seed={dayPresetSeed} onSeedConsumed={() => setDayPresetSeed(null)} />}
             {page === "profile" && <Profile api={api} logout={logout} mode={mode} />}

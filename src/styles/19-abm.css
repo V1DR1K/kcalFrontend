@@ -41,6 +41,9 @@
 
 .my-foods-page { max-width: 1120px; }
 .my-foods-page .back-button { display: none; }
+.my-foods-page .foods-tabs { margin-top: -4px; max-width: 100%; }
+.my-foods-page .admin-food-catalog-search { margin: 0 0 14px; }
+.my-foods-page .admin-food-row .admin-food-edit { min-height: 44px; white-space: nowrap; }
 .my-foods-page .my-foods-panel { padding: 0; border: 0; background: transparent; box-shadow: none; }
 .my-foods-page .my-foods-toolbar { margin: 0 0 14px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--outline)); border-radius: var(--radius-panel); background: var(--primary-soft); }
 .my-foods-page .my-foods-toolbar > span { color: var(--text); font-size: var(--type-small); font-weight: 700; }
@@ -466,6 +469,11 @@
     min-width: 100px;
   }
   .recipe-editor-ingredient .recipe-ingredient-remove { flex: 0 0 44px; }
+}
+
+@media (max-width: 520px) {
+  .my-foods-page .foods-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .my-foods-page .foods-tabs button { min-width: 0; padding-inline: 8px; font-size: 12px; }
 }
 
 @media (max-width: 390px) {
