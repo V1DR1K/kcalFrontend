@@ -117,26 +117,39 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
       document.body.style.overflow = "hidden";
     }
 
+    let revealTimer = 0;
+    let revealFrame = 0;
+
     function revealFocusedControl() {
-      const target = document.activeElement;
-      const dialog = dialogRef.current;
-      if (!dialog || !target || !dialog.contains(target)) return;
-      window.requestAnimationFrame(() => {
-        if (!dialogRef.current?.contains(target)) return;
-        const owner = target.closest?.(`${SCROLL_OWNER_SELECTOR}, textarea`) || scrollOwnerRef?.current || dialogRef.current;
-        if (!owner) return;
-        const targetRect = target.getBoundingClientRect();
-        const ownerRect = owner.getBoundingClientRect();
-        const footer = footerRef?.current || dialogRef.current?.querySelector(":scope > footer, :scope > .modal-shell-footer");
-        const footerRect = footer?.getBoundingClientRect();
-        const viewport = window.visualViewport;
-        const viewportBottom = viewport ? (viewport.offsetTop || 0) + viewport.height : ownerRect.bottom;
-        const ownerBottom = Math.min(ownerRect.bottom, viewportBottom);
-        const visibleBottom = footerRect && footerRect.top > ownerRect.top && footerRect.top < ownerBottom ? footerRect.top : ownerBottom;
-        const padding = 16;
-        if (targetRect.top < ownerRect.top + padding) owner.scrollTop -= ownerRect.top + padding - targetRect.top;
-        if (targetRect.bottom > visibleBottom - padding) owner.scrollTop += targetRect.bottom - visibleBottom + padding;
-      });
+      window.clearTimeout(revealTimer);
+      window.cancelAnimationFrame(revealFrame);
+      // Wait for the browser to finish resizing the visual viewport for the
+      // software keyboard before measuring the input and the modal footer.
+      revealTimer = window.setTimeout(() => {
+        revealFrame = window.requestAnimationFrame(() => {
+          const target = document.activeElement;
+          const dialog = dialogRef.current;
+          if (!dialog || !target || !dialog.contains(target)) return;
+          const owner = target.closest?.(SCROLL_OWNER_SELECTOR) || scrollOwnerRef?.current || dialog;
+          if (!owner) return;
+          const targetRect = target.getBoundingClientRect();
+          const ownerRect = owner.getBoundingClientRect();
+          const footer = footerRef?.current || dialog.querySelector(":scope > footer, :scope > .modal-shell-footer");
+          const footerRect = footer?.getBoundingClientRect();
+          const viewport = window.visualViewport;
+          const viewportTop = viewport?.offsetTop || 0;
+          const viewportBottom = viewport ? viewportTop + viewport.height : ownerRect.bottom;
+          const visibleTop = Math.max(ownerRect.top, viewportTop);
+          const visibleBottom = Math.min(ownerRect.bottom, viewportBottom);
+          const footerIsVisible = footerRect && footerRect.top > visibleTop && footerRect.top < visibleBottom;
+          const scrollBottom = footerIsVisible ? Math.min(visibleBottom, footerRect.top) : visibleBottom;
+          const padding = 16;
+          let delta = 0;
+          if (targetRect.top < visibleTop + padding) delta = targetRect.top - visibleTop - padding;
+          else if (targetRect.bottom > scrollBottom - padding) delta = targetRect.bottom - scrollBottom + padding;
+          if (delta) owner.scrollTop += delta;
+        });
+      }, 48);
     }
 
     const focusTarget = initialFocusRef?.current || dialogRef.current?.querySelector(FOCUSABLE_SELECTOR);
@@ -187,6 +200,8 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
         }
       }
       window.removeEventListener("keydown", onKeyDown);
+      window.clearTimeout(revealTimer);
+      window.cancelAnimationFrame(revealFrame);
       dialogRef.current?.removeEventListener("focusin", revealFocusedControl);
       window.visualViewport?.removeEventListener("resize", revealFocusedControl);
       window.visualViewport?.removeEventListener("scroll", revealFocusedControl);

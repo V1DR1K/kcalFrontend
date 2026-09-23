@@ -98,9 +98,34 @@ test("opens the consumed quantity editor at the top on mobile", async ({ page })
   await quantity.focus();
   await quantity.fill("42,5");
   await expect(quantity).toHaveValue("42.5");
+  const backgroundScrollBeforeKeyboard = await page.locator('[data-app-scroll-root="true"]').evaluate((element) => element.scrollTop);
+  const appShellHeightBeforeKeyboard = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--app-shell-height"));
   await page.setViewportSize({ width: 390, height: 430 });
-  const quantityBottom = await quantity.evaluate((element) => element.getBoundingClientRect().bottom);
-  expect(quantityBottom).toBeLessThanOrEqual(430 + 1);
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
+  await expect.poll(() => quantity.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+    const footerTop = element.closest(".edit-log-modal")?.querySelector(":scope > footer")?.getBoundingClientRect().top ?? viewportHeight;
+    return rect.top >= 0 && rect.bottom <= Math.min(viewportHeight, footerTop) + 1;
+  })).toBe(true);
+  const compactBounds = await dialog.evaluate((element) => ({
+    top: element.getBoundingClientRect().top,
+    bottom: element.getBoundingClientRect().bottom,
+    footerBottom: element.querySelector(":scope > footer").getBoundingClientRect().bottom,
+    viewport: window.visualViewport?.height || window.innerHeight,
+  }));
+  expect(compactBounds.top).toBeGreaterThanOrEqual(-1);
+  expect(compactBounds.bottom).toBeLessThanOrEqual(compactBounds.viewport + 1);
+  expect(compactBounds.footerBottom).toBeLessThanOrEqual(compactBounds.viewport + 1);
+  expect(await page.locator('[data-app-scroll-root="true"]').evaluate((element) => element.scrollTop)).toBe(backgroundScrollBeforeKeyboard);
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--app-shell-height"))).toBe(appShellHeightBeforeKeyboard);
+  const modalBody = dialog.locator(".edit-log-body");
+  expect(await modalBody.evaluate((element) => getComputedStyle(element).overflowY)).toBe("auto");
+  const modalBodyScrollBeforeRestore = await modalBody.evaluate((element) => element.scrollTop);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "false");
+  await expect(dialog).toBeVisible();
+  expect(await modalBody.evaluate((element) => element.scrollTop)).toBe(modalBodyScrollBeforeRestore);
 });
 
 test("expands a meal item with a brief desktop click", async ({ page }) => {
@@ -835,6 +860,22 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
   expect(layout.contentPaddingBottom).toBeGreaterThanOrEqual(layout.footerHeight - 1);
   await expect(editor.getByRole("button", { name: "Agregar alimentos", exact: true })).toBeVisible();
+  const grams = editor.getByLabel("Gramos");
+  await grams.focus();
+  await page.setViewportSize({ width: 390, height: 430 });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
+  await expect.poll(() => grams.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const surface = element.closest(".ai-estimate-modal").getBoundingClientRect();
+    const footerTop = element.closest(".ai-estimate-modal").querySelector(":scope > .modal-shell-footer").getBoundingClientRect().top;
+    return rect.top >= surface.top - 1 && rect.bottom <= footerTop + 1 && rect.bottom <= (window.visualViewport?.height || window.innerHeight) + 1;
+  })).toBe(true);
+  const aiFooterBottom = await editor.locator(":scope > .modal-shell-footer").evaluate((element) => element.getBoundingClientRect().bottom);
+  expect(aiFooterBottom).toBeLessThanOrEqual(430 + 1);
+  const editorScrollBeforeRestore = await editor.locator(".modal-shell-content").evaluate((element) => element.scrollTop);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "false");
+  expect(await editor.locator(".modal-shell-content").evaluate((element) => element.scrollTop)).toBe(editorScrollBeforeRestore);
 });
 
 test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => {

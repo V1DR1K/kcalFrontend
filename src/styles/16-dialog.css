@@ -343,6 +343,45 @@
   }
 }
 
+/* A virtual keyboard reduces the visible viewport. Keep dialog chrome inside
+   that area so the focused field and fixed actions remain reachable. */
+@media (max-width: 900px) {
+  html[data-keyboard-open="true"] .app-modal-backdrop[class] {
+    top: var(--dialog-viewport-top, 0px);
+    height: var(--dialog-visible-height, 100dvh);
+    padding-top: 0;
+  }
+
+  html[data-keyboard-open="true"] .app-modal-surface.app-modal-compact[class] {
+    margin-top: 0;
+    max-height: var(--dialog-visible-height, 100dvh);
+  }
+
+  html[data-keyboard-open="true"] .edit-log-modal.app-modal-surface.app-modal-compact[class] {
+    height: min(640px, var(--dialog-visible-height, 100dvh));
+    max-height: var(--dialog-visible-height, 100dvh);
+    border-radius: var(--radius-sheet);
+  }
+
+  html[data-keyboard-open="true"] .app-modal-surface[class] > footer,
+  html[data-keyboard-open="true"] .app-modal-surface[class] > .modal-shell-footer {
+    padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  }
+
+  html[data-keyboard-open="true"] .edit-log-modal .edit-log-preview,
+  html[data-keyboard-open="true"] .ai-estimate-modal .modal-shell-header p {
+    display: none;
+  }
+
+  html[data-keyboard-open="true"] .ai-estimate-modal .modal-shell-header {
+    padding-block: 8px;
+  }
+
+  html[data-keyboard-open="true"] .ai-estimate-modal .modal-shell-content {
+    scroll-padding-block: 8px var(--dialog-footer-space, 72px);
+  }
+}
+
 @keyframes app-modal-backdrop-in { from { opacity: 0; } }
 @keyframes app-modal-surface-in { from { opacity: 0; } }
 

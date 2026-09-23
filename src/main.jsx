@@ -5,41 +5,46 @@ import { Landing } from "./features/landing/Landing";
 import { migrateStoredSession } from "./config/app";
 
 let stableDialogHeight = window.visualViewport?.height || window.innerHeight;
-
-function syncAppShellHeight() {
-  const shellHeight = isStandaloneApp() ? "100vh" : `${window.innerHeight}px`;
-  document.documentElement.style.setProperty("--app-shell-height", shellHeight);
-}
+let viewportSyncFrame = 0;
 
 function hasTextInputFocus() {
   const activeElement = document.activeElement;
   return activeElement?.matches?.("input, textarea, [contenteditable=\"true\"]") || false;
 }
 
-function syncVisualViewport() {
+function syncViewport() {
+  viewportSyncFrame = 0;
   const viewport = window.visualViewport;
   const topOffset = viewport?.offsetTop || 0;
   const visibleHeight = Math.max(0, Math.min(viewport?.height || window.innerHeight, window.innerHeight - topOffset));
   const top = `${topOffset}px`;
   const keyboardInsetValue = Math.max(0, window.innerHeight - visibleHeight - topOffset);
-  const keyboardOpen = keyboardInsetValue > 120 || (hasTextInputFocus() && visibleHeight < stableDialogHeight - 120);
+  const keyboardOpen = hasTextInputFocus() && (keyboardInsetValue > 80 || visibleHeight < stableDialogHeight - 80);
   if (!keyboardOpen) stableDialogHeight = visibleHeight;
-  const dialogHeight = `${keyboardOpen ? stableDialogHeight : visibleHeight}px`;
+  const dialogHeight = `${visibleHeight}px`;
+  const root = document.documentElement;
   const keyboardInset = `${keyboardInsetValue}px`;
-  document.documentElement.style.setProperty("--app-viewport-top", top);
-  document.documentElement.style.setProperty("--app-viewport-height", `${visibleHeight}px`);
-  document.documentElement.style.setProperty("--dialog-viewport-height", dialogHeight);
-  document.documentElement.style.setProperty("--dialog-visible-height", `${visibleHeight}px`);
-  document.documentElement.style.setProperty("--dialog-viewport-top", top);
-  document.documentElement.style.setProperty("--dialog-layout-height", dialogHeight);
-  document.documentElement.style.setProperty("--dialog-keyboard-inset", keyboardInset);
+  root.style.setProperty("--app-viewport-top", top);
+  root.style.setProperty("--app-viewport-height", dialogHeight);
+  root.style.setProperty("--dialog-viewport-height", dialogHeight);
+  root.style.setProperty("--dialog-visible-height", dialogHeight);
+  root.style.setProperty("--dialog-viewport-top", top);
+  root.style.setProperty("--dialog-layout-height", dialogHeight);
+  root.style.setProperty("--dialog-keyboard-inset", keyboardInset);
+  root.dataset.keyboardOpen = String(keyboardOpen);
+  if (!keyboardOpen) {
+    const shellHeight = isStandaloneApp() ? "100vh" : `${window.innerHeight}px`;
+    root.style.setProperty("--app-shell-height", shellHeight);
+  }
+}
+
+function scheduleViewportSync() {
+  if (viewportSyncFrame) return;
+  viewportSyncFrame = window.requestAnimationFrame(syncViewport);
 }
 
 function syncViewportAfterSession() {
-  window.requestAnimationFrame(() => {
-    syncVisualViewport();
-    window.requestAnimationFrame(syncVisualViewport);
-  });
+  scheduleViewportSync();
 }
 
 function isStandaloneApp() {
@@ -53,17 +58,15 @@ function initialPathname() {
   return "/ingresar";
 }
 
-syncAppShellHeight();
-syncVisualViewport();
+scheduleViewportSync();
 migrateStoredSession();
-window.visualViewport?.addEventListener("resize", syncVisualViewport);
-window.visualViewport?.addEventListener("scroll", syncVisualViewport);
+window.visualViewport?.addEventListener("resize", scheduleViewportSync);
+window.visualViewport?.addEventListener("scroll", scheduleViewportSync);
 window.addEventListener("resize", () => {
-  syncAppShellHeight();
-  syncVisualViewport();
+  scheduleViewportSync();
 });
-window.addEventListener("focusin", syncVisualViewport, true);
-window.addEventListener("focusout", syncVisualViewport, true);
+window.addEventListener("focusin", scheduleViewportSync, true);
+window.addEventListener("focusout", scheduleViewportSync, true);
 window.addEventListener("scalegrams:session-updated", syncViewportAfterSession);
 
 function Root() {

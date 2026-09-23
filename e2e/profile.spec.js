@@ -67,4 +67,14 @@ test("muestra fechas y macros legibles, con acciones del plan accesibles en un m
   expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewportHeight + 1);
   expect(layout.horizontalOverflow).toBe(false);
   await expect(dialog.getByRole("button", { name: "Crear plan", exact: true })).toBeVisible();
+  const editable = dialog.locator(".nutrition-plan-dialog-body input").first();
+  await editable.focus();
+  await page.setViewportSize({ width: 320, height: 430 });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
+  await expect.poll(() => editable.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const footer = element.closest(".nutrition-plan-dialog").querySelector(":scope > .modal-shell-footer").getBoundingClientRect();
+    return rect.top >= 0 && rect.bottom <= footer.top + 1 && footer.bottom <= (window.visualViewport?.height || window.innerHeight) + 1;
+  })).toBe(true);
+  await expect(dialog.getByRole("button", { name: "Crear plan", exact: true })).toBeVisible();
 });
