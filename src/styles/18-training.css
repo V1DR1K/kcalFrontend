@@ -763,6 +763,7 @@
 }
 
 @media (max-width: 900px) and (max-height: 500px) {
+  .training-day-editor { gap: var(--space-2); }
   .training-day-editor-intro { display: none; }
   .training-exercise-option { min-height: 48px; padding-block: var(--space-2); }
 }
