@@ -25,9 +25,8 @@ export function FoodEditorDialog({ api, food = null, prefillBarcode, clearPrefil
       className="catalog-dialog food-editor-dialog"
       backdropClassName="catalog-dialog-backdrop"
       wrapContent={false}
-      footer={<div className="catalog-dialog-actions"><button type="button" className="secondary" onClick={requestClose} disabled={busy}>Cancelar</button><button type="submit" form="food-editor-form" className="primary" disabled={busy}>{busy ? (editing ? "Guardando…" : "Creando…") : (editing ? "Guardar cambios" : "Crear alimento")}</button></div>}
     >
-      <div className="catalog-dialog-content" data-dialog-scroll-owner="true"><FoodEditorForm id="food-editor-form" hideSubmit title={null} api={api} food={food} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={setDirty} onBusyChange={setBusy} onDone={() => { onClose?.(); onDone?.(); }} /></div>
+      <div className="catalog-dialog-content" data-dialog-scroll-owner="true"><FoodEditorForm hideSubmit title={null} dialogActions={<div className="catalog-dialog-actions food-editor-dialog-actions"><button type="button" className="secondary" onClick={requestClose} disabled={busy}>Cancelar</button><button type="submit" className="primary" disabled={busy}>{busy ? (editing ? "Guardando…" : "Creando…") : (editing ? "Guardar cambios" : "Crear alimento")}</button></div>} api={api} food={food} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={setDirty} onBusyChange={setBusy} onDone={() => { onClose?.(); onDone?.(); }} /></div>
     </ModalShell>
   );
 }

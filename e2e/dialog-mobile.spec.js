@@ -644,7 +644,7 @@ test("preselects grams when adding a food with a serving definition", async ({ p
   await expect(dialog.getByLabel("Cantidad")).toHaveValue("30");
 });
 
-test("keeps the create food form scrollable above its fixed actions", async ({ page }) => {
+test("keeps the create food form scrollable above its integrated actions", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 430 });
   await seedAuthenticatedApp(page);
   await page.goto("/ingresar");
@@ -655,16 +655,16 @@ test("keeps the create food form scrollable above its fixed actions", async ({ p
   await expect(dialog).toBeVisible();
   const layout = await dialog.evaluate((element) => {
     const content = element.querySelector(".catalog-dialog-content");
-    const footer = element.querySelector(":scope > footer");
     content.scrollTop = content.scrollHeight;
     const lastField = content.querySelector('input[name="tags"]');
+    const actions = content.querySelector(".food-editor-dialog-actions");
     return {
       contentOverflowY: getComputedStyle(content).overflowY,
       contentHeight: content.clientHeight,
       contentScrollHeight: content.scrollHeight,
       ownerCount: element.querySelectorAll('[data-dialog-scroll-owner="true"]').length,
-      footerPosition: getComputedStyle(footer).position,
-      footerTop: footer.getBoundingClientRect().top,
+      actionsPosition: getComputedStyle(actions).position,
+      actionsTop: actions.getBoundingClientRect().top,
       lastFieldBottom: lastField.getBoundingClientRect().bottom,
     };
   });
@@ -672,8 +672,8 @@ test("keeps the create food form scrollable above its fixed actions", async ({ p
   expect(layout.contentOverflowY).toBe("auto");
   expect(layout.contentScrollHeight).toBeGreaterThan(layout.contentHeight);
   expect(layout.ownerCount).toBe(1);
-  expect(layout.footerPosition).toBe("absolute");
-  expect(layout.lastFieldBottom).toBeLessThanOrEqual(layout.footerTop + 1);
+  expect(layout.actionsPosition).toBe("sticky");
+  expect(layout.lastFieldBottom).toBeLessThanOrEqual(layout.actionsTop + 1);
 });
 
 test("keeps desktop food picker controls above long results", async ({ page }) => {

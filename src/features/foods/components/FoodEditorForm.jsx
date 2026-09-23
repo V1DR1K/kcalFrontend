@@ -7,7 +7,7 @@ import { DerivedCaloriesHint, OcrNutritionPreview } from "../../catalog/componen
 import { OCR_MACRO_FIELDS } from "../../catalog/utils/catalog.utils";
 import { decimalNumber } from "../../../utils/decimal";
 
-export function FoodEditorForm({ api, food = null, prefillBarcode, clearPrefillBarcode, onDirtyChange, onBusyChange, onDone, id, hideSubmit = false, title = "Nuevo alimento" }) {
+export function FoodEditorForm({ api, food = null, prefillBarcode, clearPrefillBarcode, onDirtyChange, onBusyChange, onDone, id, hideSubmit = false, dialogActions, title = "Nuevo alimento" }) {
   const editing = Boolean(food?.id);
   const formRef = useRef(null);
   const [saving, setSaving] = useState(false);
@@ -117,7 +117,8 @@ export function FoodEditorForm({ api, food = null, prefillBarcode, clearPrefillB
       <div className="split"><Input decimal numericOnly name="proteinGrams" label="Proteínas g" value={form.proteinGrams} onChange={(event) => setField("proteinGrams", event.target.value)} step="0.01" min="0" required /><Input decimal numericOnly name="carbsGrams" label="Carbohidratos g" value={form.carbsGrams} onChange={(event) => setField("carbsGrams", event.target.value)} step="0.01" min="0" required /></div>
       <div className="split"><Input decimal numericOnly name="fatGrams" label="Grasas g" value={form.fatGrams} onChange={(event) => setField("fatGrams", event.target.value)} step="0.01" min="0" required /><DerivedCaloriesHint values={form} /></div>
       <Input name="tags" label="Tags separados por coma" value={form.tags} onChange={(event) => setField("tags", event.target.value)} />
-      {!hideSubmit && <button className="primary" disabled={saving || scanning}>{saving ? (editing ? "Guardando…" : "Creando…") : (editing ? "Guardar cambios" : "Crear alimento")}</button>}
+      {dialogActions}
+      {!hideSubmit && <button type="submit" className="primary" disabled={saving || scanning}>{saving ? (editing ? "Guardando…" : "Creando…") : (editing ? "Guardar cambios" : "Crear alimento")}</button>}
     </form>
   );
   return title == null ? formElement : <div className="panel food-editor-panel"><h2>{title}</h2>{formElement}</div>;

@@ -56,15 +56,9 @@ export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClos
       className="catalog-dialog"
       backdropClassName="catalog-dialog-backdrop"
       wrapContent={false}
-      footer={(
-        <div className="catalog-dialog-actions">
-          <button type="button" className="secondary" onClick={requestClose} disabled={busy}>Cancelar</button>
-          <button type="submit" form="create-food-form" className="primary" disabled={busy}>{busy ? "Creando…" : "Crear alimento"}</button>
-        </div>
-      )}
     >
         <div id="catalog-panel-food" className="catalog-dialog-content" data-dialog-scroll-owner="true">
-          <CreateFoodForm id="create-food-form" hideSubmit title={null} api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, food: value }))} />
+          <CreateFoodForm hideSubmit title={null} dialogActions={<div className="catalog-dialog-actions food-editor-dialog-actions"><button type="button" className="secondary" onClick={requestClose} disabled={busy}>Cancelar</button><button type="submit" className="primary" disabled={busy}>{busy ? "Creando…" : "Crear alimento"}</button></div>} api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, food: value }))} />
         </div>
     </ModalShell>
   );
