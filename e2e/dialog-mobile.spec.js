@@ -276,8 +276,10 @@ test("uses the composition row in recipe creation and editing", async ({ page })
   await createDialog.getByRole("button", { name: "Cancelar" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Descartar cambios" }).click();
 
-  const editButton = page.getByRole("button", { name: "Editar", exact: true }).first();
-  await editButton.click();
+  await page.locator(".collection-library-select").first().click();
+  const recipeDetail = page.getByRole("dialog", { name: "Tostada proteica" });
+  await expect(recipeDetail).toBeVisible();
+  await recipeDetail.getByRole("button", { name: "Editar receta", exact: true }).click();
   const editDialog = page.locator(".recipe-editor-modal");
   await expect(editDialog.getByLabel("Descripción opcional")).toHaveValue("Una preparación simple para el desayuno.");
   await expect(editDialog.locator(".daily-recipe-ingredient .food-thumb")).toHaveCount(2);
@@ -820,14 +822,8 @@ test("shows only nutrition plans in nutrition mode", async ({ page }) => {
   const requests = [];
   page.on("request", (request) => requests.push(request.url()));
   await seedAuthenticatedApp(page);
+  await page.addInitScript(() => history.replaceState({ scalegramsMode: "nutrition", scalegramsPage: "plans" }, ""));
   await page.goto("/ingresar");
-  const moreButton = page.getByRole("button", { name: "Más opciones" });
-  if (await moreButton.isVisible()) {
-    await moreButton.click();
-    await page.locator(".mobile-secondary-items").getByRole("button", { name: "Planes", exact: true }).click();
-  } else {
-    await page.getByRole("button", { name: "Planes", exact: true }).first().click({ force: true });
-  }
   await expect(page.getByRole("heading", { name: "Plan alimenticio", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Planes de entrenamiento", exact: true })).toHaveCount(0);
   expect(requests.some((url) => url.includes("/api/training/plans"))).toBe(false);
