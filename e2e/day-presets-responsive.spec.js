@@ -36,7 +36,7 @@ async function seedAuthenticatedApp(page, { presets = [], currentItems = [] } = 
 
 test.describe("Reutilizá tu día responsive", () => {
   test("opens any saved day in a mobile dialog and returns to its card", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "webkit-iphone", "Mobile detail contract");
+    test.skip(!["webkit-iphone", "webkit-ipad"].includes(testInfo.project.name), "Compact detail contract");
     const presets = Array.from({ length: 20 }, (_, index) => ({
       id: index + 1, name: `Día guardado ${index + 1}`, description: `Comidas del día ${index + 1}`,
       itemCount: 1, mealCounts: { BREAKFAST: 1 },
@@ -112,7 +112,7 @@ test.describe("Reutilizá tu día responsive", () => {
     });
 
     await page.goto("/ingresar");
-    if ((page.viewportSize()?.width || 0) <= 900) {
+    if ((page.viewportSize()?.width || 0) <= 1200) {
       await page.locator(".day-preset-card-select").click();
       await page.getByRole("dialog", { name: "Día completo" }).getByRole("button", { name: "Editar", exact: true }).click();
     } else {

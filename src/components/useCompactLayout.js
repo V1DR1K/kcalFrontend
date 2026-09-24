@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
-const COMPACT_LAYOUT_QUERY = "(max-width: 900px)";
+// The desktop sidebar leaves too little room for a readable two-column
+// collection workspace until the viewport exceeds 1200px.
+const COMPACT_LAYOUT_QUERY = "(max-width: 1200px)";
 
 export function useCompactLayout() {
   const [compact, setCompact] = useState(() => window.matchMedia(COMPACT_LAYOUT_QUERY).matches);
