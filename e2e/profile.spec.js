@@ -25,9 +25,9 @@ async function seedProfileApp(page, { withPlanHistory = false } = {}) {
 
 test("permite modificar la altura desde Perfil", async ({ page }) => {
   await seedProfileApp(page);
+  await page.addInitScript(() => history.replaceState({ scalegramsMode: "nutrition", scalegramsPage: "profile" }, ""));
   await page.goto("/ingresar");
-  await expect(page.getByRole("button", { name: "Salir", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Perfil", exact: true }).first().click();
+  await expect(page.getByLabel("Altura (cm)")).toBeVisible();
 
   const height = page.getByLabel("Altura (cm)");
   await expect(height).toHaveValue("175");
