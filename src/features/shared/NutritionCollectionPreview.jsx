@@ -37,7 +37,7 @@ export function NutritionCollectionPreview({
   empty = false,
   showTitle = true,
 }) {
-  if (empty) return <div className="collection-preview-empty"><Icon name="visibility" /><strong>Elegí una card para verla acá</strong><span>Vas a revisar su contenido y sus totales antes de usarla.</span></div>;
+  if (empty) return <div className="collection-preview-empty"><Icon name="visibility" /><strong>Elegí un elemento para ver sus detalles acá</strong><span>Vas a revisar su contenido y sus totales antes de usarlo.</span></div>;
   return <div className="collection-preview">
     {onBack && <button type="button" className="collection-preview-back" onClick={onBack}><Icon name="arrow_back" />{backLabel}</button>}
     <div className="collection-preview-hero">
