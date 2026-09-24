@@ -18,6 +18,7 @@ export function ModalShell({
   backdropClassName,
   footer,
   initialFocusRef,
+  returnFocusRef,
   as: Element = "section",
   hideHeader = false,
   labelledBy,
@@ -35,6 +36,7 @@ export function ModalShell({
   const { dialogRef, onBackdropPointerDown } = useDialogLifecycle({
     onClose: closeDisabled ? undefined : onClose,
     initialFocusRef,
+    returnFocusRef,
     scrollOwnerRef,
     footerRef,
   });

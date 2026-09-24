@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function seedAuthenticatedApp(page) {
+async function seedAuthenticatedApp(page, { presets = [], currentItems = [] } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -20,14 +20,14 @@ async function seedAuthenticatedApp(page) {
         caloriesConsumed: 0,
         calorieGoal: 2000,
         macros: [],
-        meals: ["BREAKFAST", "LUNCH", "AFTERNOON_SNACK", "DINNER"].map((mealType) => ({ mealType, items: [] })),
+        meals: ["BREAKFAST", "LUNCH", "AFTERNOON_SNACK", "DINNER"].map((mealType) => ({ mealType, items: mealType === "BREAKFAST" ? currentItems : [] })),
         nutrients: [],
         waterConsumed: 0,
         waterGoal: 2,
         plan: null,
       };
     } else if (requestUrl.pathname === "/api/nutrition/day-presets") {
-      body = [];
+      body = presets;
     }
 
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
@@ -35,6 +35,52 @@ async function seedAuthenticatedApp(page) {
 }
 
 test.describe("Reutilizá tu día responsive", () => {
+  test("opens any saved day in a mobile dialog and returns to its card", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "webkit-iphone", "Mobile detail contract");
+    const presets = Array.from({ length: 20 }, (_, index) => ({
+      id: index + 1, name: `Día guardado ${index + 1}`, description: `Comidas del día ${index + 1}`,
+      itemCount: 1, mealCounts: { BREAKFAST: 1 },
+      items: [{ itemType: "AI_ESTIMATE", displayName: `Desayuno ${index + 1}`, mealType: "BREAKFAST", quantity: 1, unit: "PORTION", calories: 300, proteinGrams: 12, carbsGrams: 24, fatGrams: 10 }],
+    }));
+    await seedAuthenticatedApp(page, { presets });
+    await page.goto("/ingresar");
+    const cards = page.locator(".day-preset-card-select");
+    await expect(cards).toHaveCount(20);
+    await expect(page.getByRole("dialog", { name: /Día guardado/ })).toHaveCount(0);
+    await expect(page.locator(".abm-preview-panel")).toBeHidden();
+
+    for (const index of [0, 19]) {
+      const card = cards.nth(index);
+      await card.scrollIntoViewIfNeeded();
+      const before = await page.locator(".content").evaluate((element) => element.scrollTop);
+      await card.click();
+      const dialog = page.getByRole("dialog", { name: `Día guardado ${index + 1}` });
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByText(`Desayuno ${index + 1}`)).toBeVisible();
+      const position = await dialog.evaluate((element) => element.getBoundingClientRect().toJSON());
+      expect(position.top).toBeGreaterThanOrEqual(-1);
+      expect(position.bottom).toBeLessThanOrEqual(page.viewportSize().height + 1);
+      await dialog.getByRole("button", { name: "Cerrar" }).click();
+      await expect(dialog).toHaveCount(0);
+      await expect(card).toBeFocused();
+      await expect.poll(() => page.locator(".content").evaluate((element) => element.scrollTop)).toBeCloseTo(before, 0);
+    }
+  });
+
+  test("asks before replacing meals from the mobile day detail", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "webkit-iphone", "Mobile detail contract");
+    const preset = { id: 1, name: "Día de entrenamiento", itemCount: 1, mealCounts: { BREAKFAST: 1 }, items: [{ itemType: "AI_ESTIMATE", displayName: "Desayuno", mealType: "BREAKFAST", quantity: 1, unit: "PORTION", calories: 300 }] };
+    await seedAuthenticatedApp(page, { presets: [preset], currentItems: [{ itemType: "AI_ESTIMATE", displayName: "Comida actual", quantity: 1, calories: 200 }] });
+    await page.goto("/ingresar");
+    await page.locator(".day-preset-card-select").click();
+    await page.getByRole("dialog", { name: "Día de entrenamiento" }).getByRole("button", { name: "Aplicar día" }).click();
+    const choice = page.getByRole("dialog", { name: "Aplicar día guardado" });
+    await expect(choice).toBeVisible();
+    await expect(choice.getByRole("button", { name: "Sumar" })).toBeVisible();
+    await expect(choice.getByRole("button", { name: "Reemplazar" })).toBeVisible();
+    await choice.getByRole("button", { name: "Cancelar" }).click();
+    await expect(page.getByRole("dialog", { name: "Día de entrenamiento" })).toBeVisible();
+  });
   test("does not submit the old preset while adding a food during edit", async ({ page }) => {
     let updatePayload;
     const preset = {
@@ -66,7 +112,12 @@ test.describe("Reutilizá tu día responsive", () => {
     });
 
     await page.goto("/ingresar");
-    await page.getByRole("button", { name: "Editar", exact: true }).click();
+    if ((page.viewportSize()?.width || 0) <= 900) {
+      await page.locator(".day-preset-card-select").click();
+      await page.getByRole("dialog", { name: "Día completo" }).getByRole("button", { name: "Editar", exact: true }).click();
+    } else {
+      await page.getByRole("button", { name: "Editar", exact: true }).click();
+    }
     const editor = page.locator(".day-preset-editor-modal");
     await editor.getByRole("button", { name: "Agregar alimento o receta", exact: true }).first().click();
     await page.locator(".picker-modal input.search").fill("huevo");

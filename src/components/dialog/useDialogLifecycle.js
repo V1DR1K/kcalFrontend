@@ -85,7 +85,7 @@ const FOCUSABLE_SELECTOR = [
   "[tabindex]:not([tabindex=\"-1\"])",
 ].join(",");
 
-export function useDialogLifecycle({ open = true, onClose, initialFocusRef, closeOnEscape = true, trapFocus = true, restoreFocus = true, lockScroll = true, scrollOwnerRef, footerRef }) {
+export function useDialogLifecycle({ open = true, onClose, initialFocusRef, returnFocusRef, closeOnEscape = true, trapFocus = true, restoreFocus = true, lockScroll = true, scrollOwnerRef, footerRef }) {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
   const onCloseRef = useRef(onClose);
@@ -205,8 +205,8 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
       dialogRef.current?.removeEventListener("focusin", revealFocusedControl);
       window.visualViewport?.removeEventListener("resize", revealFocusedControl);
       window.visualViewport?.removeEventListener("scroll", revealFocusedControl);
-      if (restoreFocus && wasTopDialog && previousFocusRef.current?.isConnected) {
-        const restoreTarget = previousFocusRef.current;
+      if (restoreFocus && wasTopDialog && (returnFocusRef?.current?.isConnected || previousFocusRef.current?.isConnected)) {
+        const restoreTarget = returnFocusRef?.current?.isConnected ? returnFocusRef.current : previousFocusRef.current;
         window.requestAnimationFrame(() => {
           const currentTop = topDialog();
           const isInsideTop = currentTop?.root?.contains(restoreTarget) && !currentTop.root.inert;
@@ -221,7 +221,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, clos
         });
       }
     };
-  }, [closeOnEscape, footerRef, initialFocusRef, lockScroll, open, restoreFocus, scrollOwnerRef, trapFocus]);
+  }, [closeOnEscape, footerRef, initialFocusRef, lockScroll, open, restoreFocus, returnFocusRef, scrollOwnerRef, trapFocus]);
 
   function onBackdropPointerDown(event) {
     if (event.target === event.currentTarget) onCloseRef.current?.();

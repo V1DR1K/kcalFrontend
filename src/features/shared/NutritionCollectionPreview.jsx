@@ -35,6 +35,7 @@ export function NutritionCollectionPreview({
   onBack,
   backLabel = "Volver a la biblioteca",
   empty = false,
+  showTitle = true,
 }) {
   if (empty) return <div className="collection-preview-empty"><Icon name="visibility" /><strong>Elegí una card para verla acá</strong><span>Vas a revisar su contenido y sus totales antes de usarla.</span></div>;
   return <div className="collection-preview">
@@ -43,7 +44,7 @@ export function NutritionCollectionPreview({
       <div className={`collection-preview-image-stack count-${Math.min(heroItems.length, 4)}`}>
         {(heroItems.length ? heroItems : [{ type: "RECIPE", name: title }]).slice(0, 4).map((item, index) => <FoodThumb key={`${item.id || item.itemId || item.name}-${index}`} item={itemImage(item)} />)}
       </div>
-      <div className="collection-preview-heading"><h2 tabIndex="-1">{title}</h2>{status && <small>{status}</small>}</div>
+      <div className="collection-preview-heading">{showTitle && <h2 tabIndex="-1">{title}</h2>}{status && <small>{status}</small>}</div>
     </div>
     {description && <p className="collection-preview-description">{description}</p>}
     <NutritionMetrics totals={totals} />

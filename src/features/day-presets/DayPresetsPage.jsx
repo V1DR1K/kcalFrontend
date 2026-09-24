@@ -2,11 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_MEALS } from "../../config/app";
 import { Icon } from "../../components/Icon";
 import { ModalShell } from "../../components/dialog/ModalShell";
+import { useCompactLayout } from "../../components/useCompactLayout";
 import { SkeletonRows } from "../../components/Loading";
 import { CatalogStatus } from "../catalog/CatalogComponents";
 import { FoodPicker } from "../dashboard/dialogs/FoodPickerDialog";
 import { mealTotals } from "../dashboard/dashboard.utils";
 import { NutritionCollectionPreview } from "../shared/NutritionCollectionPreview";
+import { CollectionDetailDialog } from "../shared/CollectionDetailDialog";
 import { normalizePresetPreviewItem, presetItemCacheKey, presetItemNeedsImageHydration, scalePresetNutrition, serializablePresetItem } from "./day-preset.utils";
 import { decimalNumber, normalizeDecimalInput } from "../../utils/decimal";
 import { formatNumber, readableDate, today } from "../../utils/format";
@@ -86,16 +88,33 @@ function PresetEditorDialog({ api, user, editor, mealTypes, onClose, onSaved }) 
 }
 
 export function DayPresetsPage({ api, user, seed, onSeedConsumed }) {
-  const seedRef = useRef(seed); const presetItemCache = useRef(new Map()); const [selectedDate, setSelectedDate] = useState(seed?.date || today()); const [dayData, setDayData] = useState(seed?.data || null); const [presets, setPresets] = useState([]); const [selectedPreset, setSelectedPreset] = useState(null); const [previewPreset, setPreviewPreset] = useState(null); const [applyTarget, setApplyTarget] = useState(null); const [editor, setEditor] = useState(seed?.autoOpenCreate ? { name: "", description: "", items: itemsFromDay(seed.data) } : null); const [loading, setLoading] = useState(true); const [dayLoading, setDayLoading] = useState(!seed?.data); const [error, setError] = useState("");
+  const compact = useCompactLayout();
+  const seedRef = useRef(seed);
+  const presetItemCache = useRef(new Map());
+  const mobileTriggerRef = useRef(null);
+  const [selectedDate, setSelectedDate] = useState(seed?.date || today());
+  const [dayData, setDayData] = useState(seed?.data || null);
+  const [presets, setPresets] = useState([]);
+  const [selectedPreset, setSelectedPreset] = useState(null);
+  const [mobilePreviewId, setMobilePreviewId] = useState(null);
+  const [previewPreset, setPreviewPreset] = useState(null);
+  const [applyTarget, setApplyTarget] = useState(null);
+  const [editor, setEditor] = useState(seed?.autoOpenCreate ? { name: "", description: "", items: itemsFromDay(seed.data) } : null);
+  const [loading, setLoading] = useState(true);
+  const [dayLoading, setDayLoading] = useState(!seed?.data);
+  const [error, setError] = useState("");
   const currentItems = useMemo(() => itemsFromDay(dayData), [dayData]); const currentTotals = useMemo(() => mealTotals(currentItems), [currentItems]);
+  const mobilePreset = presets.find((preset) => preset.id === mobilePreviewId) || null;
+  const activePreset = compact ? mobilePreset : selectedPreset;
+  useEffect(() => { if (!compact) setMobilePreviewId(null); }, [compact]);
   useEffect(() => {
     let active = true;
-    if (!selectedPreset) {
+    if (!activePreset) {
       setPreviewPreset(null);
       return undefined;
     }
-    const normalizedItems = (selectedPreset.items || []).map((item) => normalizePresetPreviewItem(item));
-    setPreviewPreset({ ...selectedPreset, items: normalizedItems });
+    const normalizedItems = (activePreset.items || []).map((item) => normalizePresetPreviewItem(item));
+    setPreviewPreset({ ...activePreset, items: normalizedItems });
     const itemsToHydrate = normalizedItems.filter(presetItemNeedsImageHydration);
     if (!itemsToHydrate.length) return undefined;
     Promise.all(itemsToHydrate.map(async (item) => {
@@ -109,29 +128,48 @@ export function DayPresetsPage({ api, user, seed, onSeedConsumed }) {
     })).then((resolvedEntries) => {
       if (!active) return;
       const resolvedItems = new Map(resolvedEntries);
-      setPreviewPreset((current) => current?.id === selectedPreset.id
+      setPreviewPreset((current) => current?.id === activePreset.id
         ? { ...current, items: current.items.map((item) => normalizePresetPreviewItem(item, resolvedItems.get(presetItemCacheKey(item)))) }
         : current);
     });
     return () => { active = false; };
-  }, [api, selectedPreset]);
-  async function loadPresets() { setLoading(true); try { const result = await api.request("/api/nutrition/day-presets", { cache: "no-store" }); const next = Array.isArray(result) ? result : []; setPresets(next); setSelectedPreset((current) => current ? next.find((item) => item.id === current.id) || null : next[0] || null); setError(""); } catch (requestError) { setError(requestError.message || "No se pudieron cargar tus días guardados."); } finally { setLoading(false); } }
+  }, [api, activePreset]);
+  async function loadPresets() { setLoading(true); try { const result = await api.request("/api/nutrition/day-presets", { cache: "no-store" }); const next = Array.isArray(result) ? result : []; setPresets(next); setSelectedPreset((current) => current ? next.find((item) => item.id === current.id) || null : next[0] || null); setMobilePreviewId((current) => current && next.some((item) => item.id === current) ? current : null); setError(""); } catch (requestError) { setError(requestError.message || "No se pudieron cargar tus días guardados."); } finally { setLoading(false); } }
   async function loadDay(date) { setDayLoading(true); try { setDayData(await api.request(`/api/nutrition/dashboard?date=${date}`)); } catch (requestError) { api.notify(requestError.message || "No se pudo cargar la vista del día.", "error"); } finally { setDayLoading(false); } }
   useEffect(() => { loadPresets(); if (seedRef.current && onSeedConsumed) onSeedConsumed(); }, []);
   useEffect(() => { if (seedRef.current?.data && selectedDate === seedRef.current.date) return; loadDay(selectedDate); }, [selectedDate]);
   function openCreate() { setEditor({ name: "", description: "", items: currentItems.map((item) => ({ ...item })) }); }
-  function openEdit(preset) { setEditor({ ...preset, items: (preset.items || []).map((item) => ({ ...item })) }); }
-  async function deletePreset(preset) { if (!(await api.confirm({ title: "¿Borrar día guardado?", description: `${preset.name} se quitará de tu lista.`, confirmLabel: "Borrar día" }))) return; try { await api.request(`/api/nutrition/day-presets/${preset.id}`, { method: "DELETE" }); if (selectedPreset?.id === preset.id) setSelectedPreset(null); await loadPresets(); api.notify("Día guardado borrado."); } catch (requestError) { api.notify(requestError.message || "No se pudo borrar el día.", "error"); } }
-  async function applyPreset(preset, replace) { try { await api.request(`/api/nutrition/day-presets/${preset.id}/apply`, { method: "POST", body: JSON.stringify({ logDate: selectedDate, replace }) }); await loadDay(selectedDate); setApplyTarget(null); api.notify(`${preset.name} aplicado al ${readableDate(selectedDate)}.`); } catch (requestError) { api.notify(requestError.message || "No se pudo aplicar el día.", "error"); } }
-  function requestApply(preset) { if (currentItems.length) setApplyTarget(preset); else applyPreset(preset, false); }
+  function openEdit(preset) { setMobilePreviewId(null); setEditor({ ...preset, items: (preset.items || []).map((item) => ({ ...item })) }); }
+  async function deletePreset(preset) { if (!(await api.confirm({ title: "¿Borrar día guardado?", description: `${preset.name} se quitará de tu lista.`, confirmLabel: "Borrar día" }))) return; try { await api.request(`/api/nutrition/day-presets/${preset.id}`, { method: "DELETE" }); if (selectedPreset?.id === preset.id) setSelectedPreset(null); if (mobilePreviewId === preset.id) setMobilePreviewId(null); await loadPresets(); api.notify("Día guardado borrado."); } catch (requestError) { api.notify(requestError.message || "No se pudo borrar el día.", "error"); } }
+  async function applyPreset(preset, replace) { try { await api.request(`/api/nutrition/day-presets/${preset.id}/apply`, { method: "POST", body: JSON.stringify({ logDate: selectedDate, replace }) }); await loadDay(selectedDate); setApplyTarget(null); setMobilePreviewId(null); api.notify(`${preset.name} aplicado al ${readableDate(selectedDate)}.`); } catch (requestError) { api.notify(requestError.message || "No se pudo aplicar el día.", "error"); } }
+  function requestApply(preset) { if (currentItems.length) { setApplyTarget(preset); } else { applyPreset(preset, false); } }
   const hasCurrentItems = currentItems.length > 0;
-  const visiblePreset = previewPreset?.id === selectedPreset?.id ? previewPreset : selectedPreset;
+  const visiblePreset = previewPreset?.id === activePreset?.id ? previewPreset : activePreset;
+  const preview = { title: visiblePreset?.name, description: visiblePreset?.description, status: visiblePreset ? `${visiblePreset.itemCount || visiblePreset.items?.length || 0} elementos · actualizado ${visiblePreset.updatedAt ? new Date(visiblePreset.updatedAt).toLocaleDateString("es-AR") : "recientemente"}` : null, heroItems: presetHeroItems(visiblePreset), totals: visiblePreset ? mealTotals(visiblePreset.items || []) : null, groups: presetGroups(visiblePreset), empty: !visiblePreset };
   return <section className="page abm-page day-presets-page">
     <header className="abm-page-header"><div><h1>Reutilizá tu día</h1><p>Guardá combinaciones completas y aplicalas cuando tu rutina se repita.</p></div><button type="button" className="primary" onClick={openCreate} disabled={!hasCurrentItems}><Icon name="bookmark_add" />Guardar día actual</button></header>
     <div className="day-presets-datebar"><div><span>Fecha de trabajo</span><strong>{readableDate(selectedDate)}</strong></div><label><span className="sr-only">Elegir fecha</span><input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} /></label><div className="day-presets-date-summary"><strong>{dayLoading ? "Cargando…" : `${currentItems.length} elementos`}</strong><small>{formatNumber(currentTotals.calories)} kcal cargadas</small></div></div>
     {seed?.autoOpenCreate && <div className="abm-callout"><Icon name="check_circle" /><div><strong>Tu día actual está listo para guardar</strong><span>Completá un nombre y una descripción para volver a encontrarlo rápido.</span></div><button type="button" className="text-button" onClick={openCreate}>Abrir formulario</button></div>}
     {error && <CatalogStatus error>{error}<button className="secondary" onClick={loadPresets}>Reintentar</button></CatalogStatus>}
-    <div className="day-presets-workspace"><section className="abm-list-panel" aria-labelledby="saved-days-title"><div className="abm-section-heading"><div><h2 id="saved-days-title">Tus días guardados</h2><p>{presets.length ? "Elegí una card para revisar su contenido." : "Todavía no guardaste una combinación."}</p></div><span className="abm-count">{presets.length}</span></div>{loading ? <SkeletonRows count={3} /> : !presets.length ? <div className="abm-empty-state"><Icon name="bookmark_border" /><strong>Tu biblioteca empieza acá</strong><span>Guardá el día actual cuando encuentres una combinación que quieras repetir.</span><button type="button" className="secondary" onClick={openCreate} disabled={!hasCurrentItems}>Guardar día actual</button></div> : <div className="day-presets-card-list">{presets.map((preset) => { const active = selectedPreset?.id === preset.id; const totals = mealTotals(preset.items || []); return <article key={preset.id} className={`day-preset-library-card ${active ? "selected" : ""}`}><button type="button" className="day-preset-card-select" onClick={() => { setSelectedPreset(preset); setApplyTarget(null); }} aria-pressed={active}><span className="day-preset-card-image"><img src={presetHeroItems(preset)[0]?.imageUrl || "/category-assets/other.webp"} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/category-assets/other.webp"; }} /></span><span className="day-preset-card-copy"><strong>{preset.name}</strong><small>{preset.description || "Sin descripción"}</small><em>{preset.itemCount || preset.items?.length || 0} elementos · {Object.values(preset.mealCounts || {}).reduce((sum, count) => sum + count, 0)} comidas</em></span><Icon name="chevron_right" /></button><div className="day-preset-card-meta"><span>{formatNumber(totals.calories)} kcal</span><span>{formatNumber(totals.proteinGrams, 1)} g proteína</span><small>Actualizado {preset.updatedAt ? new Date(preset.updatedAt).toLocaleDateString("es-AR") : "recientemente"}</small></div><div className="day-preset-card-actions"><button type="button" className="primary" onClick={() => requestApply(preset)}><Icon name="play_arrow" />Aplicar</button><button type="button" className="secondary" onClick={() => openEdit(preset)}><Icon name="edit" />Editar</button><button type="button" className="icon-button danger-text" aria-label={`Borrar ${preset.name}`} onClick={() => deletePreset(preset)}><Icon name="delete" /></button></div></article>; })}</div>}</section><aside className="abm-preview-panel" aria-live="polite"><NutritionCollectionPreview title={visiblePreset?.name} description={visiblePreset?.description} status={visiblePreset ? `${visiblePreset.itemCount || visiblePreset.items?.length || 0} elementos · actualizado ${visiblePreset.updatedAt ? new Date(visiblePreset.updatedAt).toLocaleDateString("es-AR") : "recientemente"}` : null} heroItems={presetHeroItems(visiblePreset)} totals={visiblePreset ? mealTotals(visiblePreset.items || []) : null} groups={presetGroups(visiblePreset)} empty={!visiblePreset} onBack={visiblePreset ? () => setSelectedPreset(null) : undefined} backLabel="Volver a días guardados" /></aside></div>
+    <div className="day-presets-workspace">
+      <section className="abm-list-panel" aria-labelledby="saved-days-title">
+        <div className="abm-section-heading"><div><h2 id="saved-days-title">Tus días guardados</h2><p>{presets.length ? "Elegí un día para revisar sus comidas." : "Todavía no guardaste una combinación."}</p></div><span className="abm-count">{presets.length}</span></div>
+        {loading ? <SkeletonRows count={3} /> : !presets.length ? <div className="abm-empty-state"><Icon name="bookmark_border" /><strong>Tu biblioteca empieza acá</strong><span>Guardá el día actual cuando encuentres una combinación que quieras repetir.</span><button type="button" className="secondary" onClick={openCreate} disabled={!hasCurrentItems}>Guardar día actual</button></div> : <div className="day-presets-card-list">{presets.map((preset) => {
+          const active = !compact && selectedPreset?.id === preset.id;
+          const totals = mealTotals(preset.items || []);
+          return <article key={preset.id} className={`day-preset-library-card ${active ? "selected" : ""}`}>
+            <button type="button" className="day-preset-card-select" onClick={(event) => { if (compact) { mobileTriggerRef.current = event.currentTarget; setMobilePreviewId(preset.id); } else setSelectedPreset(preset); }} aria-haspopup={compact ? "dialog" : undefined} aria-pressed={compact ? undefined : active}>
+              <span className="day-preset-card-image"><img src={presetHeroItems(preset)[0]?.imageUrl || "/category-assets/other.webp"} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/category-assets/other.webp"; }} /></span>
+              <span className="day-preset-card-copy"><strong>{preset.name}</strong><small>{preset.description || "Sin descripción"}</small><em>{preset.itemCount || preset.items?.length || 0} elementos · {Object.values(preset.mealCounts || {}).reduce((sum, count) => sum + count, 0)} comidas</em></span><Icon name="chevron_right" />
+            </button>
+            <div className="day-preset-card-meta"><span>{formatNumber(totals.calories)} kcal</span><span>{formatNumber(totals.proteinGrams, 1)} g proteína</span><small>Actualizado {preset.updatedAt ? new Date(preset.updatedAt).toLocaleDateString("es-AR") : "recientemente"}</small></div>
+            <div className="day-preset-card-actions"><button type="button" className="primary" onClick={() => requestApply(preset)}><Icon name="play_arrow" />Aplicar</button><button type="button" className="secondary" onClick={() => openEdit(preset)}><Icon name="edit" />Editar</button><button type="button" className="icon-button danger-text" aria-label={`Borrar ${preset.name}`} onClick={() => deletePreset(preset)}><Icon name="delete" /></button></div>
+          </article>;
+        })}</div>}
+      </section>
+      {!compact && <aside className="abm-preview-panel" aria-live="polite"><NutritionCollectionPreview {...preview} /></aside>}
+    </div>
+    {compact && mobilePreset && <CollectionDetailDialog title={mobilePreset.name} preview={preview} onClose={() => setMobilePreviewId(null)} returnFocusRef={mobileTriggerRef} footer={<><button type="button" className="secondary" onClick={() => openEdit(mobilePreset)}>Editar</button><button type="button" className="primary" onClick={() => requestApply(mobilePreset)}>Aplicar día</button></>} actions={<button type="button" className="secondary danger-text" onClick={() => deletePreset(mobilePreset)}><Icon name="delete" />Borrar día</button>} />}
     {applyTarget && <DayPresetApplyDialog preset={applyTarget} currentItems={currentItems} selectedDate={selectedDate} onClose={() => setApplyTarget(null)} onApply={(replace) => applyPreset(applyTarget, replace)} />}
     {editor && <PresetEditorDialog api={api} user={user} editor={editor} mealTypes={DEFAULT_MEALS} onClose={() => setEditor(null)} onSaved={async (saved) => { setEditor(null); setSelectedPreset(saved); await loadPresets(); }} />}
   </section>;
