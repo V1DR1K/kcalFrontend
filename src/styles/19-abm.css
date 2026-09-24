@@ -281,7 +281,6 @@
 .collection-browser { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr); gap: 16px; align-items: start; }
 .collection-browser-list, .collection-browser-preview { min-width: 0; }
 .collection-browser-preview { position: sticky; top: 18px; min-height: 420px; padding: 20px; border: 1px solid var(--outline); border-radius: var(--radius-panel); background: var(--surface-low); }
-.collection-browser-inline-preview { display: none; }
 .collection-detail-dialog .modal-shell-content { padding: 18px 20px 24px; }
 .collection-detail-dialog .collection-preview-heading small { margin-top: 0; }
 .collection-detail-dialog .collection-preview-actions { justify-content: flex-start; }
@@ -407,25 +406,6 @@
 .picker-recent-meals .recent-bracket-actions { align-self: stretch; }
 
 @media (max-width: 760px) {
-  .collection-browser { grid-template-columns: 1fr; gap: 12px; }
-  .collection-browser-preview { display: none; }
-  .collection-browser-inline-preview { display: block; min-width: 0; margin-top: -2px; padding: 14px; border: 1px solid color-mix(in srgb, var(--primary) 38%, var(--outline)); border-radius: var(--radius-panel); background: var(--surface-low); scroll-margin-top: 16px; }
-  .collection-preview-back { display: inline-flex; }
-  .collection-library-select { grid-template-columns: 52px minmax(0, 1fr) auto; padding: 12px; }
-  .collection-library-select > .nutrition-summary { display: none; }
-  .collection-library-card .food-thumb { width: 52px; height: 52px; }
-  .collection-library-actions { padding-inline: 12px; }
-  .collection-library-actions .secondary { flex: 1; }
-  .collection-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .collection-preview-hero { align-items: flex-start; }
-  .collection-preview-image-stack { width: 70px; height: 54px; flex-basis: 70px; }
-  .collection-preview-image-stack .food-thumb { width: 54px; height: 54px; }
-  .collection-preview-image-stack .food-thumb:nth-child(1) { left: 0; }
-  .collection-preview-image-stack .food-thumb:nth-child(2) { left: 5px; }
-  .collection-preview-image-stack .food-thumb:nth-child(3) { left: 10px; }
-  .collection-preview-image-stack .food-thumb:nth-child(4) { left: 16px; }
-  .collection-preview-heading h2 { font-size: var(--type-heading); }
-  .day-preset-card-meta { padding-left: 76px; }
   .day-editor-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .day-editor-controls .icon-button { grid-column: 2; justify-self: end; }
   .day-editor-move { grid-column: 1 / -1; }
@@ -476,6 +456,22 @@
 }
 
 @media (max-width: 900px) {
+  .collection-browser { grid-template-columns: 1fr; gap: 12px; }
+  .collection-browser-preview { display: none; }
+  .collection-library-select { grid-template-columns: 52px minmax(0, 1fr) auto; padding: 12px; }
+  .collection-library-select > .nutrition-summary { display: none; }
+  .collection-library-card .food-thumb { width: 52px; height: 52px; }
+  .collection-library-actions { display: none; }
+  .collection-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .collection-preview-hero { align-items: flex-start; }
+  .collection-preview-image-stack { width: 70px; height: 54px; flex-basis: 70px; }
+  .collection-preview-image-stack .food-thumb { width: 54px; height: 54px; }
+  .collection-preview-image-stack .food-thumb:nth-child(1) { left: 0; }
+  .collection-preview-image-stack .food-thumb:nth-child(2) { left: 5px; }
+  .collection-preview-image-stack .food-thumb:nth-child(3) { left: 10px; }
+  .collection-preview-image-stack .food-thumb:nth-child(4) { left: 16px; }
+  .collection-preview-heading h2 { font-size: var(--type-heading); }
+  .day-preset-card-meta { padding-left: 76px; }
   .day-presets-page .abm-preview-panel { display: none; }
   .day-preset-card-actions { display: none; }
   .app-modal-backdrop.collection-detail-backdrop[class] { place-items: center; padding: 16px; }

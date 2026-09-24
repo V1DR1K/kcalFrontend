@@ -10,6 +10,8 @@ import { NutritionSummary } from "../../components/NutritionSummary";
 import { SkeletonBlock, SkeletonRows } from "../../components/Loading";
 import { cookedRecipeWeight, rawRecipeWeight, recipeYieldPercent } from "../../utils/recipe";
 import { RecipeEditorDialog } from "./dialogs/RecipeCreateDialog";
+import { useCompactLayout } from "../../components/useCompactLayout";
+import { CollectionDetailDialog } from "../shared/CollectionDetailDialog";
 
 function recipeGroups(recipe) {
   return [{
@@ -32,9 +34,9 @@ function recipeStatus(recipe) {
   return `${recipe?.ingredients?.length || 0} ingredientes · ${formatQuantity(raw)} g crudos${cooked > 0 ? ` · ${formatQuantity(cooked)} g cocidos` : ""}`;
 }
 
-function RecipeCard({ recipe, selected, canEdit, loading, onSelect, onEdit, onDelete, onCopy }) {
+function RecipeCard({ recipe, selected, compact, canEdit, loading, onSelect, onEdit, onDelete, onCopy }) {
   return <article className={`collection-library-card ${selected ? "selected" : ""}`}>
-    <button type="button" className="collection-library-select" onClick={onSelect} aria-pressed={selected} disabled={loading}>
+    <button type="button" className="collection-library-select" onClick={onSelect} aria-haspopup={compact ? "dialog" : undefined} aria-pressed={compact ? undefined : selected} disabled={loading}>
       <FoodThumb item={{ ...recipe, type: "RECIPE" }} compact />
       <span><strong>{recipe.name}</strong><small>{recipe.description || "Sin descripción"}</small><em>{recipeStatus(recipe)}</em></span>
       <NutritionSummary nutrition={recipe} />
@@ -47,26 +49,60 @@ function RecipeCard({ recipe, selected, canEdit, loading, onSelect, onEdit, onDe
 }
 
 function RecipeLibrary({ api, endpoint, canEdit, ownerName, onBack, refreshSignal = 0 }) {
-  const [selectedRecipe, setSelectedRecipe] = useState(null); const [editing, setEditing] = useState(null); const [loadingRecipeId, setLoadingRecipeId] = useState(null); const [deletingId, setDeletingId] = useState(null);
-  const mobilePreviewRef = useRef(null);
+  const compact = useCompactLayout();
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [mobileRecipe, setMobileRecipe] = useState(null);
+  const [detailError, setDetailError] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [loadingRecipeId, setLoadingRecipeId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const mobileTriggerRef = useRef(null);
+  const requestIdRef = useRef(0);
   const catalog = usePagedCatalog({ api, endpoint });
   useEffect(() => { if (refreshSignal > 0) catalog.refresh(); }, [catalog.refresh, refreshSignal]);
-  useEffect(() => {
-    if (!selectedRecipe) return;
-    const frame = window.requestAnimationFrame(() => {
-      const previewElement = mobilePreviewRef.current;
-      if (!previewElement || window.matchMedia?.("(min-width: 761px)").matches) return;
-      previewElement.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
-      previewElement.querySelector("h2")?.focus({ preventScroll: true });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [selectedRecipe]);
-  async function openRecipe(recipe) { setLoadingRecipeId(recipe.id); try { setSelectedRecipe(await api.request(`/api/recipes/${recipe.id}`)); } catch (error) { api.notify(error.message || "No se pudo cargar la receta.", "error"); } finally { setLoadingRecipeId(null); } }
-  async function edit(recipe) { setLoadingRecipeId(recipe.id); try { setEditing({ ...(await api.request(`/api/recipes/${recipe.id}`)), type: "RECIPE" }); } catch (error) { api.notify(error.message || "No se pudo cargar la receta.", "error"); } finally { setLoadingRecipeId(null); } }
-  async function remove(recipe) { if (deletingId) return; if (!(await api.confirm({ title: "¿Borrar receta?", description: `${recipe.name} se eliminará de tus recetas.`, confirmLabel: "Borrar receta" }))) return; setDeletingId(recipe.id); try { await api.request(`/api/recipes/${recipe.id}`, { method: "DELETE" }); if (selectedRecipe?.id === recipe.id) setSelectedRecipe(null); catalog.removeItem(recipe.id); api.notify("Receta borrada."); } catch (error) { api.notify(error.message || "No se pudo borrar la receta.", "error"); } finally { setDeletingId(null); } }
+  useEffect(() => { if (!compact) setMobileRecipe(null); }, [compact]);
+  useEffect(() => () => { requestIdRef.current += 1; }, []);
+  function closeMobileRecipe() { requestIdRef.current += 1; setMobileRecipe(null); setSelectedRecipe(null); setDetailError(""); setLoadingRecipeId(null); }
+  async function openRecipe(recipe, event) {
+    const requestId = ++requestIdRef.current;
+    if (compact) {
+      if (event) mobileTriggerRef.current = event.currentTarget;
+      setMobileRecipe(recipe);
+    }
+    setSelectedRecipe(null);
+    setDetailError("");
+    setLoadingRecipeId(recipe.id);
+    try {
+      const detail = await api.request(`/api/recipes/${recipe.id}`);
+      if (requestId === requestIdRef.current) setSelectedRecipe(detail);
+    } catch (error) {
+      if (requestId !== requestIdRef.current) return;
+      const message = error.message || "No se pudo cargar la receta.";
+      if (compact) setDetailError(message);
+      else api.notify(message, "error");
+    } finally {
+      if (requestId === requestIdRef.current) setLoadingRecipeId(null);
+    }
+  }
+  async function edit(recipe) { setLoadingRecipeId(recipe.id); try { const detail = selectedRecipe?.id === recipe.id ? selectedRecipe : await api.request(`/api/recipes/${recipe.id}`); if (mobileRecipe) closeMobileRecipe(); setEditing({ ...detail, type: "RECIPE" }); } catch (error) { api.notify(error.message || "No se pudo cargar la receta.", "error"); } finally { setLoadingRecipeId(null); } }
+  async function remove(recipe) { if (deletingId) return; if (!(await api.confirm({ title: "¿Borrar receta?", description: `${recipe.name} se eliminará de tus recetas.`, confirmLabel: "Borrar receta" }))) return; setDeletingId(recipe.id); try { await api.request(`/api/recipes/${recipe.id}`, { method: "DELETE" }); if (mobileRecipe?.id === recipe.id) closeMobileRecipe(); if (selectedRecipe?.id === recipe.id) setSelectedRecipe(null); catalog.removeItem(recipe.id); api.notify("Receta borrada."); } catch (error) { api.notify(error.message || "No se pudo borrar la receta.", "error"); } finally { setDeletingId(null); } }
   async function copy(recipe) { try { await api.request(`/api/recipes/${recipe.id}/copy`, { method: "POST" }); api.notify("Receta guardada en Mis recetas."); catalog.refresh(); } catch (error) { api.notify(error.message || "No se pudo guardar la receta.", "error"); } }
-  const preview = selectedRecipe && <NutritionCollectionPreview title={selectedRecipe.name} description={selectedRecipe.description} status={recipeStatus(selectedRecipe)} heroItems={(selectedRecipe.ingredients || []).map((item) => ({ ...(item.food || item.recipe || {}), type: item.recipe ? "RECIPE" : "FOOD" }))} totals={selectedRecipe} groups={recipeGroups(selectedRecipe)} actions={!canEdit && <button type="button" className="primary" onClick={() => copy(selectedRecipe)}><Icon name="content_copy" />Guardar en mis recetas</button>} onBack={() => setSelectedRecipe(null)} backLabel="Volver a recetas" />;
-  return <div className="collection-browser">{onBack && <button type="button" className="back-button" onClick={onBack}><Icon name="arrow_back" />{ownerName ? "Usuarios" : "Recetas"}</button>}<div className="collection-browser-list"><div className="collection-browser-heading"><div><h2>{ownerName ? `Recetas de ${ownerName}` : canEdit ? "Mis recetas" : "Recetas compartidas"}</h2><p>{catalog.items.length ? "Seleccioná una card para revisar la preparación." : "Todavía no hay recetas disponibles."}</p></div><span className="abm-count">{catalog.items.length}</span></div>{catalog.initialLoading && !catalog.items.length && <div className="recipe-list"><SkeletonBlock className="skeleton-recipe-card" /><SkeletonBlock className="skeleton-recipe-card" /></div>}{!catalog.initialLoading && catalog.error && <CatalogStatus error>{catalog.error}<button className="secondary" onClick={catalog.retry}>Reintentar</button></CatalogStatus>}{!catalog.initialLoading && !catalog.error && !catalog.items.length && <Panel className="recipe-empty-panel"><Icon name="restaurant" /><h2>No hay recetas para mostrar</h2><p>{canEdit ? "Creá una receta desde Registrar para tenerla disponible cada vez que cargues una comida." : "Este usuario todavía no tiene recetas disponibles."}</p></Panel>}{catalog.items.length > 0 && <div className="collection-library-list">{catalog.items.map((recipe) => <React.Fragment key={recipe.id}><RecipeCard recipe={recipe} selected={selectedRecipe?.id === recipe.id} canEdit={canEdit} loading={loadingRecipeId === recipe.id || deletingId === recipe.id} onSelect={() => openRecipe(recipe)} onEdit={() => edit(recipe)} onDelete={() => remove(recipe)} onCopy={() => copy(recipe)} />{selectedRecipe?.id === recipe.id && <div className="collection-browser-inline-preview" ref={mobilePreviewRef} aria-live="polite">{preview}</div>}</React.Fragment>)}</div>}<InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} /></div><aside className="collection-browser-preview" aria-live="polite">{preview || <NutritionCollectionPreview empty />}</aside>{editing && <RecipeEditorDialog api={api} recipe={editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); catalog.refresh(); }} />}</div>;
+  const detailReady = selectedRecipe && (!mobileRecipe || selectedRecipe.id === mobileRecipe.id);
+  const previewProps = detailReady ? { title: selectedRecipe.name, description: selectedRecipe.description, status: recipeStatus(selectedRecipe), heroItems: (selectedRecipe.ingredients || []).map((item) => ({ ...(item.food || item.recipe || {}), type: item.recipe ? "RECIPE" : "FOOD" })), totals: selectedRecipe, groups: recipeGroups(selectedRecipe) } : null;
+  return <div className="collection-browser">
+    {onBack && <button type="button" className="back-button" onClick={onBack}><Icon name="arrow_back" />{ownerName ? "Usuarios" : "Recetas"}</button>}
+    <div className="collection-browser-list">
+      <div className="collection-browser-heading"><div><h2>{ownerName ? `Recetas de ${ownerName}` : canEdit ? "Mis recetas" : "Recetas compartidas"}</h2><p>{catalog.items.length ? "Elegí una receta para revisar sus ingredientes." : "Todavía no hay recetas disponibles."}</p></div><span className="abm-count">{catalog.items.length}</span></div>
+      {catalog.initialLoading && !catalog.items.length && <div className="recipe-list"><SkeletonBlock className="skeleton-recipe-card" /><SkeletonBlock className="skeleton-recipe-card" /></div>}
+      {!catalog.initialLoading && catalog.error && <CatalogStatus error>{catalog.error}<button className="secondary" onClick={catalog.retry}>Reintentar</button></CatalogStatus>}
+      {!catalog.initialLoading && !catalog.error && !catalog.items.length && <Panel className="recipe-empty-panel"><Icon name="restaurant" /><h2>No hay recetas para mostrar</h2><p>{canEdit ? "Creá una receta desde Registrar para tenerla disponible cada vez que cargues una comida." : "Este usuario todavía no tiene recetas disponibles."}</p></Panel>}
+      {catalog.items.length > 0 && <div className="collection-library-list">{catalog.items.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} compact={compact} selected={!compact && selectedRecipe?.id === recipe.id} canEdit={canEdit} loading={loadingRecipeId === recipe.id || deletingId === recipe.id} onSelect={(event) => openRecipe(recipe, event)} onEdit={() => edit(recipe)} onDelete={() => remove(recipe)} onCopy={() => copy(recipe)} />)}</div>}
+      <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
+    </div>
+    {!compact && <aside className="collection-browser-preview" aria-live="polite">{previewProps ? <NutritionCollectionPreview {...previewProps} actions={!canEdit && <button type="button" className="primary" onClick={() => copy(selectedRecipe)}><Icon name="content_copy" />Guardar en mis recetas</button>} /> : <NutritionCollectionPreview empty />}</aside>}
+    {compact && mobileRecipe && <CollectionDetailDialog title={mobileRecipe.name} preview={previewProps || {}} loading={loadingRecipeId === mobileRecipe.id && !detailError} error={detailError} onRetry={() => openRecipe(mobileRecipe)} onClose={closeMobileRecipe} returnFocusRef={mobileTriggerRef} footer={detailReady && (canEdit ? <button type="button" className="primary" onClick={() => edit(selectedRecipe)}>Editar receta</button> : <button type="button" className="primary" onClick={() => copy(selectedRecipe)}><Icon name="content_copy" />Guardar en mis recetas</button>)} actions={detailReady && canEdit && <button type="button" className="secondary danger-text" onClick={() => remove(selectedRecipe)}><Icon name="delete" />Borrar receta</button>} />}
+    {editing && <RecipeEditorDialog api={api} recipe={editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); catalog.refresh(); }} />}
+  </div>;
 }
 
 function ExploreRecipes({ api }) {
