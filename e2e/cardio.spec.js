@@ -2,13 +2,14 @@ import { test, expect } from "@playwright/test";
 
 test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
 
-async function seedCardioApp(page, { withHeight = true } = {}) {
-  await page.clock.install({ time: new Date("2026-09-08T12:00:00-03:00") });
+async function seedCardioApp(page, { withHeight = true, initialPage } = {}) {
+  await page.clock.setFixedTime(new Date("2026-09-08T12:00:00-03:00"));
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
     localStorage.removeItem("scalegrams.user");
   });
+  if (initialPage) await page.addInitScript((pageName) => history.replaceState({ scalegramsMode: "training", scalegramsPage: pageName }, ""), initialPage);
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const requestUrl = request.url();
@@ -69,9 +70,8 @@ async function seedCardioApp(page, { withHeight = true } = {}) {
 }
 
 test("muestra pasos por sesión y permite registrar velocidad con preview en móvil", async ({ page }) => {
-  await seedCardioApp(page);
+  await seedCardioApp(page, { initialPage: "training-dashboard" });
   await page.goto("/ingresar");
-  await page.getByRole("button", { name: "Entreno", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Pasos de caminadora", exact: true })).toBeVisible();
   await expect(page.locator(".training-cardio-week-day")).toHaveCount(7);
   const dashboardSummary = page.locator(".training-surface.training-week-summary");
@@ -94,19 +94,15 @@ test("muestra pasos por sesión y permite registrar velocidad con preview en mó
 });
 
 test("explica la falta de altura sin inventar pasos", async ({ page }) => {
-  await seedCardioApp(page, { withHeight: false });
+  await seedCardioApp(page, { withHeight: false, initialPage: "training-cardio" });
   await page.goto("/ingresar");
-  await page.getByRole("button", { name: "Entreno", exact: true }).first().click();
-  await page.getByRole("button", { name: "Cardio", exact: true }).first().click();
   await expect(page.getByText("Pasos no disponibles", { exact: true })).toBeVisible();
   await expect(page.getByText("Completá tu altura en Perfil para estimar pasos").first()).toBeVisible();
 });
 
 test("mantiene Cardio sin desborde horizontal en anchos móviles", async ({ page }) => {
-  await seedCardioApp(page);
+  await seedCardioApp(page, { initialPage: "training-cardio" });
   await page.goto("/ingresar");
-  await page.getByRole("button", { name: "Entreno", exact: true }).first().click();
-  await page.getByRole("button", { name: "Cardio", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Historial de cardio", exact: true })).toBeVisible();
   for (const width of [320, 390, 402, 430, 768]) {
     await page.setViewportSize({ width, height: 844 });

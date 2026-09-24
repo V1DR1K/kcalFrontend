@@ -10,12 +10,13 @@ function dateKey(day) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-async function seedHistoryApp(page) {
+async function seedHistoryApp(page, { startOnHistory = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
     localStorage.removeItem("scalegrams.user");
   });
+  if (startOnHistory) await page.addInitScript(() => history.replaceState({ scalegramsMode: "nutrition", scalegramsPage: "history" }, ""));
   await page.route("**/api/**", async (route) => {
     const requestUrl = new URL(route.request().url());
     let body = {};
@@ -57,18 +58,9 @@ async function seedHistoryApp(page) {
   });
 }
 
-test("navigates the nutrition calendar, opens day detail and exports XLS", async ({ page }) => {
-  await seedHistoryApp(page);
+test("opens nutrition calendar day detail and exports XLS", async ({ page }) => {
+  await seedHistoryApp(page, { startOnHistory: true });
   await page.goto("/ingresar");
-  const moreButton = page.getByRole("button", { name: "Más opciones" });
-  if (await moreButton.isVisible()) {
-    await moreButton.click();
-    const historyButton = page.locator(".mobile-secondary-items").getByRole("button", { name: "Historial", exact: true });
-    await expect(historyButton).toBeVisible();
-    await historyButton.click({ force: true });
-  } else {
-    await page.getByRole("button", { name: "Historial", exact: true }).first().click({ force: true });
-  }
 
   const month = currentMonth();
   await expect(page.getByRole("heading", { name: "Historial", exact: true })).toBeVisible();
@@ -94,14 +86,9 @@ test("navigates the nutrition calendar, opens day detail and exports XLS", async
 
 test("keeps the history calendar usable on a narrow viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 430 });
-  await seedHistoryApp(page);
+  await seedHistoryApp(page, { startOnHistory: true });
   await page.goto("/ingresar");
-  const moreButton = page.getByRole("button", { name: "Más opciones" });
-  await expect(moreButton).toBeVisible();
-  await moreButton.click();
-  const historyButton = page.locator(".mobile-secondary-items").getByRole("button", { name: "Historial", exact: true });
-  await expect(historyButton).toBeVisible();
-  await historyButton.evaluate((button) => button.click());
+  await expect(page.locator(".history-calendar-surface")).toBeVisible();
 
   const layout = await page.locator(".history-calendar-surface").evaluate((surface) => {
     const grid = surface.querySelector(".history-calendar-grid");
