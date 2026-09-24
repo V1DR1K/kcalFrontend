@@ -1,7 +1,7 @@
 # Roadmap de UX/UI móvil de ScaleGrams
 
-**Fecha:** 2026-09-24  
-**Alcance:** frontend React de Nutrición y Entrenamiento. Documento de implementación; esta revisión no modifica la aplicación.  
+**Fecha:** 2026-09-24
+**Alcance:** frontend React de Nutrición y Entrenamiento. Plan y seguimiento de implementación.
 **Autoridad visual:** `PRODUCT.md` y `DESIGN.md` de este repositorio. Conservar la identidad, los datos nutricionales y los flujos funcionales actuales.
 
 ## Objetivo
@@ -29,7 +29,7 @@ En una pantalla táctil, abrir un día guardado o una receta debe mostrar el det
 | Confirmar una operación destructiva o reemplazar datos | Diálogo compacto con consecuencias explícitas y acciones diferenciadas. | El mismo contrato semántico, con tamaño de escritorio. |
 | Mostrar una aclaración breve dentro de una tarjeta | Expansión local solo si aparece junto al elemento activado y no desplaza al usuario a otra sección. | Igual, cuando resulte útil. |
 
-**Punto de corte inicial:** usar hasta 900 px para los detalles modales de ambas bibliotecas, porque allí cambia el shell a navegación móvil. Validar el espacio disponible entre 901 y 1200 px con el sidebar abierto; si las dos columnas se comprimen, elegir un corte según el ancho real del contenedor, sin forzar un número de dispositivo. Al cambiar el tamaño mientras un detalle está abierto, mantener una sola representación accesible y un estado coherente.
+**Punto de corte aplicado:** hasta 1200 px ambas bibliotecas usan un detalle modal. La prueba a 1024 px mostró que, con el sidebar abierto, el título de la receta quedaba sin ancho en la disposición de dos columnas. A partir de 1201 px se conserva el preview lateral. Al cambiar el tamaño mientras un detalle está abierto, queda una sola representación accesible y un estado coherente.
 
 El diálogo de lectura debe mostrar contenido relevante desde el primer viewport: nombre, contexto, totales y primera sección. Si excede el alto, desplazar **solo el cuerpo**; cabecera y cierre permanecen visibles. Respetar safe areas, `visualViewport`, orientación horizontal, `prefers-reduced-motion` y objetivos táctiles de 44 px o más. Cerrar con botón, Escape y backdrop; al cerrar, devolver el foco a la tarjeta que lo abrió y conservar la posición de la lista. Evitar montar dos copias accesibles del mismo preview.
 
@@ -104,3 +104,18 @@ No asumir que toda expansión inline es un defecto. Corregir las que alejan el r
 ## Límites de esta revisión
 
 Las causas P0 están verificadas por estructura JSX y reglas responsive. Los puntos transversales de fases 0 y 4 requieren observación visual fresca de una sesión autenticada; las imágenes históricas del repositorio no representan necesariamente la versión actual. Este plan no requiere cambios de backend ni de datos para resolver el patrón de detalle descrito.
+
+## Estado de implementación al 24-09-2026
+
+| Fase | Estado | Evidencia |
+| --- | --- | --- |
+| 0 | Parcial | Se revisó la estructura de las secciones, las pruebas responsive existentes y capturas actuales con datos simulados de los diálogos de Día y Recetas en iPhone y iPad emulados. Falta la matriz visual exhaustiva de todas las secciones y anchos indicada arriba. |
+| 1 | Implementada | `CollectionDetailDialog` usa `ModalShell`; el detalle restaura foco y posición de la lista, muestra cabecera, contenido desplazable y cierre. |
+| 2 | Implementada | Día 1 y día 20 abren el mismo diálogo; aplicar mantiene la elección Sumar/Reemplazar y editar conserva sus datos. |
+| 3 | Implementada | Recetas propias y exploradas abren detalle modal sin salto de página, con carga inmediata, error recuperable y acciones en el propio diálogo. |
+| 4 | Parcial | Se corrigió el ancho de tarjeta entre 901 y 1200 px y el texto de estado vacío. Pasan las pruebas de Historial, Cardio, Perfil, Entrenamiento y formularios móviles con datos simulados; queda la inspección visual completa de cada pantalla y sus casos densos. |
+| 5 | Parcial | Pasan las pruebas nuevas de Día/Recetas en Chromium, iPhone y iPad emulados, 71 pruebas unitarias, la compilación, el chequeo de referencias y el detector de interfaz sin hallazgos. Se verificaron visualmente cuatro capturas actuales. Falta validar en dispositivos físicos y completar la matriz visual de todos los anchos. |
+
+**Commits de implementación:** `3211cc9` (Día), `1e95224` (Recetas), `9ed0549` (ancho intermedio), `5cb9afa` (texto de preview), `13cc435`, `d9dc14e` y `57e1031` (pruebas transversales).
+
+**Para continuar:** ejecutar la matriz visual pendiente de las fases 0 y 4 con datos simulados representativos y registrar por pantalla el defecto observado, el cambio, la captura posterior y el resultado. Las pruebas en WebKit/Playwright son emulación; no equivalen a una verificación en un iPhone o Android físico.
