@@ -245,7 +245,7 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
             aiOnly
             aiTarget={aiRegistrationTarget}
             onClose={() => setAiRegistrationTarget(null)}
-            onDone={() => { setAiRegistrationTarget(null); setPage("dashboard"); }}
+            onDone={(savedLog) => { setAiRegistrationTarget(null); if (savedLog) setPage("dashboard"); }}
           />
         )}
       </section>

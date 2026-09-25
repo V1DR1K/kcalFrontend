@@ -10,7 +10,7 @@ import { scaleFoodNutrition } from "../../recipes/recipe.utils";
 import { decimalNumber } from "../../../utils/decimal";
 import { resizeAiEstimateItem } from "../aiEstimateAmounts";
 
-export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, onDiscard, onConfirm, mode = "create", mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem }) {
+export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, onDiscard, onConfirm, mode = "create", mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem, targetType = "RECIPE", addToDiary = false, setAddToDiary, registrationMealType, setRegistrationMealType, registrationDate, setRegistrationDate }) {
   const [catalogItemIndex, setCatalogItemIndex] = useState(null);
   const [catalogCategory, setCatalogCategory] = useState("OTHER");
   const [catalogPreparation, setCatalogPreparation] = useState("UNSPECIFIED");
@@ -33,6 +33,10 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
 
   function updateItemName(index, value) {
     setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, name: value, catalogFoodId: null, catalogMatchType: null, catalogMatchConfidence: null } : item) }));
+  }
+
+  function updateItemMacro(index, field, value) {
+    setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: decimalNumber(value), catalogFoodId: null, catalogMatchType: null, catalogMatchConfidence: null } : item) }));
   }
 
   function removeItem(index) {
@@ -60,7 +64,11 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
   }
 
   const canConfirm = estimate.name.trim() && estimate.items.length && estimate.items.every((item) => item.name?.trim()
-    && decimalNumber(item.estimatedGrams) > 0 && decimalNumber(item.estimatedGrams) <= 3000);
+    && decimalNumber(item.estimatedGrams) > 0 && decimalNumber(item.estimatedGrams) <= 3000
+    && decimalNumber(item.proteinGrams) >= 0 && decimalNumber(item.proteinGrams) <= 500
+    && decimalNumber(item.carbsGrams) >= 0 && decimalNumber(item.carbsGrams) <= 1000
+    && decimalNumber(item.fatGrams) >= 0 && decimalNumber(item.fatGrams) <= 500)
+    && (targetType !== "FOOD" || !addToDiary || Boolean(registrationMealType && registrationDate));
   const title = mode === "saved" ? "Revisar estimación guardada" : estimate.name || "Revisar estimación";
   const ariaLabel = mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto";
 
@@ -76,7 +84,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
       footer={
         <div className="ai-estimate-actions">
           <button type="button" className="secondary" disabled={refining || saving} onClick={onDiscard}>{mode === "saved" ? "Cancelar" : "Descartar"}</button>
-          <button type="button" className="primary" disabled={saving || refining || !canConfirm} onClick={() => onConfirm(estimate)}>{saving ? "Guardando..." : mode === "saved" ? "Guardar cambios" : "Agregar alimentos"}</button>
+          <button type="button" className="primary" disabled={saving || refining || !canConfirm} onClick={() => onConfirm(estimate)}>{saving ? "Guardando..." : mode === "saved" ? "Guardar cambios" : targetType === "FOOD" ? "Guardar alimento" : "Crear receta y agregar una porción"}</button>
         </div>
       }
     >
@@ -96,6 +104,14 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
           <span className="ai-summary-carbs"><small aria-label="Carbohidratos"><span className="ai-estimate-label-full">Carbohidratos</span><span className="ai-estimate-label-short" aria-hidden="true">Carbos</span></small><strong>{formatNumber(totals.carbsGrams, 1)}<b>g</b></strong></span>
           <span className="ai-summary-fat"><small>Grasas</small><strong>{formatNumber(totals.fatGrams, 1)}<b>g</b></strong></span>
         </section>
+
+        {mode === "create" && targetType === "FOOD" && <section className="ai-registration-diary-options">
+          <label className="ai-registration-diary-toggle"><input type="checkbox" checked={addToDiary} onChange={(event) => setAddToDiary?.(event.target.checked)} /><span>Agregar también a mi día</span></label>
+          {addToDiary && <div className="edit-log-fields">
+            <Select label="Comida" value={registrationMealType} options={(mealTypes || []).map((item) => ({ value: item.code, label: item.label }))} onChange={(event) => setRegistrationMealType?.(event.target.value)} />
+            <Input label="Fecha" type="date" value={registrationDate || ""} onChange={(event) => setRegistrationDate?.(event.target.value)} />
+          </div>}
+        </section>}
 
         <section className="ai-estimate-food-section" aria-labelledby="ai-estimate-food-heading">
           <div className="ai-estimate-items-heading">
@@ -118,16 +134,23 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                 <details className="ai-estimate-item-details">
                   <summary>Ver detalle nutricional</summary>
                   <div className="ai-estimate-item-detail-content">
+                    {mode === "create" && <p className="ai-estimate-detail-hint">Macros para los {formatNumber(item.estimatedGrams)} g estimados. Podés corregirlos antes de guardar.</p>}
                     <div className="ai-estimate-meta-values">
                       <span><small>Categoría</small><strong>{categoryLabel(item.category || "OTHER")}</strong></span>
                       <span><small>Preparación</small><strong>{preparationLabel(item.preparation || "UNSPECIFIED")}</strong></span>
                     </div>
                     {item.catalogFoodId && <small className="ai-estimate-catalog-match">Se usará el alimento del catálogo ({item.catalogMatchConfidence || 0}% de coincidencia).</small>}
-                    <div className="ai-estimate-item-nutrition" aria-label={`Aporte nutricional de ${item.name || `alimento ${index + 1}`}`}>
+                    <div className={`ai-estimate-item-nutrition ${mode === "create" ? "editable" : ""}`} aria-label={`Aporte nutricional de ${item.name || `alimento ${index + 1}`}`}>
                       <span><small>Kcal</small><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))}</strong></span>
-                      <span><small>Proteínas</small><strong>{formatNumber(itemNutrition[index]?.proteinGrams ?? item.proteinGrams, 1)}g</strong></span>
-                      <span><small>Carbohidratos</small><strong>{formatNumber(itemNutrition[index]?.carbsGrams ?? item.carbsGrams, 1)}g</strong></span>
-                      <span><small>Grasas</small><strong>{formatNumber(itemNutrition[index]?.fatGrams ?? item.fatGrams, 1)}g</strong></span>
+                      {[
+                        ["Proteínas (g)", "proteinGrams", "proteinQuality"],
+                        ["Carbohidratos (g)", "carbsGrams", "carbohydrateQuality"],
+                        ["Grasas (g)", "fatGrams", "fatQuality"],
+                      ].map(([label, field, decisionField]) => {
+                        const decision = estimate.decision?.[decisionField];
+                        const reviewLabel = decision?.classification === "CONSISTENT" ? "JEV: plausible" : decision?.classification === "REVIEW" ? "JEV: revisar" : decision?.classification === "INSUFFICIENT" ? "JEV: sin evidencia" : null;
+                        return <label className="ai-estimate-macro-edit" key={field}><small>{label}</small>{mode === "create" ? <input type="number" min="0" step="0.1" value={item[field] ?? 0} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)}g</strong>}{reviewLabel && <em>{reviewLabel}</em>}</label>;
+                      })}
                     </div>
                   </div>
                 </details>

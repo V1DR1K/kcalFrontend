@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from "react";
-import { CATEGORY_OPTIONS, PREPARATION_OPTIONS } from "../../../config/app";
+import { CATEGORY_OPTIONS, DEFAULT_MEALS, PREPARATION_OPTIONS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
 import { InfiniteSentinel } from "../../../components/InfiniteSentinel";
 import { Input, Select } from "../../../components/FormControls";
@@ -7,7 +7,7 @@ import { CatalogRowWithImage, CatalogStatus, FoodThumb, PreparationBadge, catego
 import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodComponents";
 import { usePagedCatalog } from "../../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../../services/recents";
-import { formatNumber, readableDate } from "../../../utils/format";
+import { formatNumber, readableDate, today } from "../../../utils/format";
 import { decimalNumber } from "../../../utils/decimal";
 import { normalizeSearchText } from "../../../utils/search";
 import { hasCookedRecipeWeight, recipeServingFactor } from "../../../utils/recipe";
@@ -21,7 +21,7 @@ import { MealShareDialog } from "./MealShareDialogs";
 import { AiEstimateEditor } from "./AiEstimateEditor";
 export { FoodPicker, AiEstimateEditor };
 
-function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd = () => [], onOptimisticRollback = () => {}, draftOnly = false, ingredientOnly = false, onDraftAdd, aiOnly = false, aiTarget = "RECIPE" }) {
+function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd = () => [], onOptimisticRollback = () => {}, draftOnly = false, ingredientOnly = false, onDraftAdd, aiOnly = false, aiTarget = "RECIPE", mealTypes = DEFAULT_MEALS }) {
   const pickerTitleId = `${useId().replace(/:/g, "")}-title`;
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
@@ -36,6 +36,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const [aiUsage, setAiUsage] = useState(null);
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiEstimate, setAiEstimate] = useState(null);
+  const [aiAddToDiary, setAiAddToDiary] = useState(false);
+  const [aiRegistrationMealType, setAiRegistrationMealType] = useState(mealType?.code || DEFAULT_MEALS[0].code);
+  const [aiRegistrationDate, setAiRegistrationDate] = useState(selectedDate || today());
   const [aiError, setAiError] = useState("");
   const [aiContext, setAiContext] = useState("");
   const [aiEstimatePhoto, setAiEstimatePhoto] = useState(null);
@@ -241,17 +244,22 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             name: estimate.name,
             description: estimate.description || "",
             confidence: Number(estimate.confidence) || 0,
-            mealType: mealType.code,
-            logDate: selectedDate,
+            mealType: aiTarget === "FOOD" ? (aiAddToDiary ? aiRegistrationMealType : null) : mealType.code,
+            logDate: aiTarget === "FOOD" ? aiRegistrationDate : selectedDate,
+            addToDiary: aiTarget === "FOOD" ? aiAddToDiary : true,
             items: aiEstimateDraft(estimate).items,
           }),
         }),
       );
       const savedLog = saved?.log;
-      if (savedLog) rememberMeal(user, mealType.code, savedLog);
-      api.notify(saved?.targetType === "FOOD" ? "Alimento registrado y agregado." : "Receta registrada y agregada como una porción.");
+      if (saved?.food) rememberItem(user, { ...saved.food, type: "FOOD" });
+      if (saved?.recipe) rememberItem(user, { ...saved.recipe, type: "RECIPE" });
+      if (savedLog) rememberMeal(user, aiTarget === "FOOD" ? aiRegistrationMealType : mealType.code, savedLog);
+      api.notify(saved?.targetType === "FOOD"
+        ? savedLog ? "Alimento guardado y agregado a tu día." : `${saved.food?.name || "Alimento"} guardado en tu catálogo.`
+        : "Receta registrada y agregada como una porción.");
       discardAiEstimate();
-      await onDone?.(savedLog);
+      await onDone?.(savedLog, saved);
     } catch (error) {
       api.notify(error.message || "No se pudo guardar la estimación.", "error");
     } finally {
@@ -688,7 +696,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           </FoodLogDialog>
         )}
         {pendingMealPhoto && <MealPhotoContextEditorDialog photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
-        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} />}
+        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} targetType={aiTarget} addToDiary={aiAddToDiary} setAddToDiary={setAiAddToDiary} registrationMealType={aiRegistrationMealType} setRegistrationMealType={setAiRegistrationMealType} registrationDate={aiRegistrationDate} setRegistrationDate={setAiRegistrationDate} mealTypes={mealTypes} />}
         {!ingredientOnly && <footer className="picker-photo-actions">
           <label className={`secondary ai-photo-trigger ai-gallery-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
             <Icon name="photo_library" />

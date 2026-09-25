@@ -855,7 +855,7 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   });
   expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
   expect(layout.contentPaddingBottom).toBeGreaterThanOrEqual(layout.footerHeight - 1);
-  await expect(editor.getByRole("button", { name: "Agregar alimentos", exact: true })).toBeVisible();
+  await expect(editor.getByRole("button", { name: "Crear receta y agregar una porción", exact: true })).toBeVisible();
   const grams = editor.getByLabel("Gramos");
   await grams.focus();
   await page.setViewportSize({ width: 390, height: 430 });
@@ -901,7 +901,7 @@ test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => 
 
   const dialog = page.locator(".ai-estimate-modal");
   await expect(dialog.locator(".ai-estimate-item")).toHaveCount(3);
-  await expect(dialog.getByRole("button", { name: "Agregar alimentos", exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Crear receta y agregar una porción", exact: true })).toBeVisible();
   await expect(dialog.getByText("Supuestos de la estimación", { exact: true })).toBeVisible();
   const layout = await dialog.evaluate((element) => {
     const footerElement = element.querySelector(":scope > .modal-shell-footer");
@@ -934,7 +934,7 @@ test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => 
   expect(compactSummary).toBe(true);
   const shortViewportFooter = await dialog.locator(":scope > .modal-shell-footer").evaluate((element) => element.getBoundingClientRect().bottom <= window.innerHeight + 1);
   expect(shortViewportFooter).toBe(true);
-  await expect(dialog.getByRole("button", { name: "Agregar alimentos", exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Crear receta y agregar una porción", exact: true })).toBeVisible();
 });
 
 test("keeps the food search available behind only the top dialog", async ({ page }) => {
