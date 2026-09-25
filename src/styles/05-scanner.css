@@ -330,3 +330,7 @@
   .scanner-dialog .scanner-stage p { top: calc(8px + min(70vw, 180px, 18dvh) + 4px); font-size: 12px; line-height: 1.25; }
   .scanner-dialog .scan-frame { width: min(70vw, 180px, 18dvh); }
 }
+.ai-registration-intro { display: flex; align-items: flex-start; gap: 16px; min-height: 220px; padding: 28px; color: var(--muted); }
+.ai-registration-intro > .material-symbols-outlined { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 14px; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); font-size: 25px; }
+.ai-registration-intro strong { display: block; margin-bottom: 7px; color: var(--text); font-size: var(--type-action); }
+.ai-registration-intro p { max-width: 48ch; margin: 0; line-height: 1.55; }

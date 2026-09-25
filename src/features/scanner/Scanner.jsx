@@ -2,7 +2,16 @@ import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
 import { ModalShell } from "../../components/dialog/ModalShell";
 import { NutritionSummary } from "../../components/NutritionSummary";
+import { DEFAULT_MEALS } from "../../config/app";
+import { today } from "../../utils/format";
+import { FoodPicker } from "../dashboard/dialogs/FoodPickerDialog";
 import "../../styles/05-scanner.css";
+
+function currentMealType() {
+  const hour = new Date().getHours();
+  const code = hour < 11 ? "BREAKFAST" : hour < 16 ? "LUNCH" : hour < 20 ? "AFTERNOON_SNACK" : "DINNER";
+  return DEFAULT_MEALS.find((meal) => meal.code === code) || DEFAULT_MEALS[0];
+}
 
 export function Scanner({ api, initialDialog = null, user, setPage, setSelectedFoodId, setPrefillBarcode, CatalogComponent, RecipesComponent, MyFoodsComponent }) {
   const [barcode, setBarcode] = useState("");
@@ -14,6 +23,7 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
   const [mode, setMode] = useState("choices");
   const [activeDialog, setActiveDialog] = useState(initialDialog);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [aiRegistrationTarget, setAiRegistrationTarget] = useState(null);
   const videoRef = useRef(null);
   const scannerControlsRef = useRef(null);
   const mountedRef = useRef(true);
@@ -186,6 +196,16 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
           <Icon name="qr_code_scanner" />
         </header>
         <div className="register-options">
+          <button className="register-option register-option-primary" type="button" onClick={() => setAiRegistrationTarget("FOOD")}>
+            <span className="register-option-icon"><Icon name="photo_camera" /></span>
+            <span><strong>Registrar alimento con foto</strong><small>Ideal para envases y etiquetas nutricionales. La IA crea un alimento.</small></span>
+            <Icon name="arrow_forward" />
+          </button>
+          <button className="register-option register-option-primary" type="button" onClick={() => setAiRegistrationTarget("RECIPE")}>
+            <span className="register-option-icon"><Icon name="restaurant" /></span>
+            <span><strong>Registrar comida con foto</strong><small>Reconoce el plato, crea una receta y registra una porción.</small></span>
+            <Icon name="arrow_forward" />
+          </button>
           <button className="register-option register-option-primary" type="button" onClick={openScanner}>
             <span className="register-option-icon"><Icon name="barcode_scanner" /></span>
             <span><strong>Escanear código de barras</strong><small>Usá la cámara para buscar un alimento en el catálogo.</small></span>
@@ -216,6 +236,18 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
           />
         )}
         {renderCollectionDialog()}
+        {aiRegistrationTarget && (
+          <FoodPicker
+            api={api}
+            user={user}
+            mealType={currentMealType()}
+            selectedDate={today()}
+            aiOnly
+            aiTarget={aiRegistrationTarget}
+            onClose={() => setAiRegistrationTarget(null)}
+            onDone={() => { setAiRegistrationTarget(null); setPage("dashboard"); }}
+          />
+        )}
       </section>
     );
   }

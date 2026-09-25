@@ -21,7 +21,7 @@ import { MealShareDialog } from "./MealShareDialogs";
 import { AiEstimateEditor } from "./AiEstimateEditor";
 export { FoodPicker, AiEstimateEditor };
 
-function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd, onOptimisticRollback, draftOnly = false, ingredientOnly = false, onDraftAdd }) {
+function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd = () => [], onOptimisticRollback = () => {}, draftOnly = false, ingredientOnly = false, onDraftAdd, aiOnly = false, aiTarget = "RECIPE" }) {
   const pickerTitleId = `${useId().replace(/:/g, "")}-title`;
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
@@ -151,6 +151,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       const image = await compressMealPhoto(file);
       const form = new FormData();
       form.append("image", image);
+      form.append("targetType", aiTarget);
       if (aiContext.trim()) form.append("context", aiContext.trim());
       const result = await api.runAction(
         { title: "Analizando tu comida", description: "Estamos estimando los alimentos y las porciones visibles..." },
@@ -179,6 +180,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       const form = new FormData();
       form.append("image", aiEstimatePhoto);
       if (aiContext.trim()) form.append("context", aiContext.trim());
+      form.append("targetType", aiTarget);
       form.append("request", new Blob([JSON.stringify({
         currentEstimate: aiEstimateDraft(aiEstimate),
         correction: aiCorrection.trim(),
@@ -230,37 +232,26 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     }
     setAdding(true);
     try {
-      const savedLogs = await api.runAction(
+      const saved = await api.runAction(
         { title: "Agregando estimación", description: "Estamos sumando los macros revisados a tu comida..." },
-        () => api.request("/api/nutrition/ai-estimates/confirm", {
+        () => api.request("/api/nutrition/ai-registrations/confirm", {
           method: "POST",
           body: JSON.stringify({
+            captureId: estimate.captureId,
+            name: estimate.name,
+            description: estimate.description || "",
+            confidence: Number(estimate.confidence) || 0,
             mealType: mealType.code,
             logDate: selectedDate,
-            items: estimate.items.map((item) => {
-              const servedGrams = decimalNumber(item.estimatedGrams);
-              const proposal = aiProposalFood(item);
-              if (item.catalogFoodId) return { servedGrams, foodId: Number(item.catalogFoodId) };
-              return {
-                servedGrams,
-                proposal: {
-                  name: proposal.name,
-                  category: proposal.category,
-                  preparation: proposal.preparation,
-                  proteinGrams: proposal.proteinGrams,
-                  carbsGrams: proposal.carbsGrams,
-                  fatGrams: proposal.fatGrams,
-                  nutrients: proposal.nutrients,
-                },
-              };
-            }),
+            items: aiEstimateDraft(estimate).items,
           }),
         }),
       );
-      (savedLogs || []).forEach((log) => rememberMeal(user, mealType.code, log));
-      api.notify("Alimentos agregados. Revisá siempre las porciones y salsas.");
+      const savedLog = saved?.log;
+      if (savedLog) rememberMeal(user, mealType.code, savedLog);
+      api.notify(saved?.targetType === "FOOD" ? "Alimento registrado y agregado." : "Receta registrada y agregada como una porción.");
       discardAiEstimate();
-      onDone();
+      await onDone?.(savedLog);
     } catch (error) {
       api.notify(error.message || "No se pudo guardar la estimación.", "error");
     } finally {
@@ -540,7 +531,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   }
   return (
     <ModalShell
-      title={ingredientOnly ? "Agregar ingrediente" : "Agregar comida"}
+      title={aiOnly ? (aiTarget === "FOOD" ? "Registrar alimento con IA" : "Registrar comida con IA") : ingredientOnly ? "Agregar ingrediente" : "Agregar comida"}
       onClose={onClose}
       className="picker-modal"
       backdropClassName="modal-backdrop"
@@ -551,13 +542,13 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         <header>
           <div>
              <span>{ingredientOnly ? "Catálogo" : mealType.label}</span>
-            <h2 id={pickerTitleId}>{ingredientOnly ? "Agregar ingrediente" : "Agregar comida"}</h2>
+            <h2 id={pickerTitleId}>{aiOnly ? (aiTarget === "FOOD" ? "Registrar alimento" : "Registrar comida") : ingredientOnly ? "Agregar ingrediente" : "Agregar comida"}</h2>
           </div>
           <button type="button" className="icon-button" aria-label="Cerrar" onClick={onClose}>
             <Icon name="close" />
           </button>
         </header>
-        <div className="tabs picker-tabs" role="tablist" aria-label="Opciones para agregar comida">
+        {!aiOnly && <div className="tabs picker-tabs" role="tablist" aria-label="Opciones para agregar comida">
           <button
             type="button"
             role="tab"
@@ -580,14 +571,14 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           </button>
           {!ingredientOnly && <button type="button" role="tab" aria-selected={tab === "MINE"} aria-controls="picker-panel-mine" className={tab === "MINE" ? "selected" : ""} onClick={() => changeTab("MINE")}>Agregados</button>}
           {!ingredientOnly && <button type="button" role="tab" aria-selected={tab === "RECENT"} aria-controls="picker-panel-recent" className={tab === "RECENT" ? "selected" : ""} onClick={() => changeTab("RECENT")}>Recientes</button>}
-        </div>
-        <div className="picker-tools">
+        </div>}
+        {!aiOnly && <div className="picker-tools">
           <div className="search-wrap">
             <Icon name="search" />
             <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} />
           </div>
-        </div>
-        <div className="picker-scroll" data-dialog-scroll-owner="true" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
+        </div>}
+        {!aiOnly && <div className="picker-scroll" data-dialog-scroll-owner="true" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
           {tab === "FOOD" && !normalizedQuery && <div className="picker-results">
             {groupFoodVariants(recentFoods).map((item) => (
               <CatalogRowWithImage key={`RECENT_FOOD:${item.id}`} item={item} onPick={setSelected} />
@@ -630,7 +621,14 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             </button>
           )}
           {tab !== "FOOD" && <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />}
-        </div>
+        </div>}
+        {aiOnly && !pendingMealPhoto && !aiEstimate && <div className="ai-registration-intro" data-dialog-scroll-owner="true">
+          <Icon name={aiTarget === "FOOD" ? "nutrition" : "restaurant"} />
+          <div>
+            <strong>{aiTarget === "FOOD" ? "Fotografiá el envase o la etiqueta" : "Fotografiá el plato completo"}</strong>
+            <p>{aiTarget === "FOOD" ? "La IA propondrá un único alimento. Revisá la porción y los macronutrientes antes de guardarlo." : "La IA separará los alimentos visibles, creará una receta y registrará una porción."}</p>
+          </div>
+        </div>}
         {shareBracket && <MealShareDialog api={api} bracket={shareBracket} onClose={() => setShareBracket(null)} />}
         {selected && (
           <FoodLogDialog
@@ -710,7 +708,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           </label>
           <label className={`primary ai-photo-trigger ai-camera-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
             <Icon name="photo_camera" />
-            {aiAnalyzing ? "Analizando comida..." : aiQuotaBlocked ? `Vuelve ${aiQuotaReset(aiUsage)}` : "Tomar foto"}
+            {aiAnalyzing ? "Analizando..." : aiQuotaBlocked ? `Vuelve ${aiQuotaReset(aiUsage)}` : "Tomar foto"}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
