@@ -1,10 +1,11 @@
 import React from "react";
 import { Icon } from "../../components/Icon";
+import { SkeletonRows } from "../../components/Loading";
 import { formatCardioDistance, formatCardioSteps } from "./cardio-utils";
 import { formatDuration, formatTrainingDate, moduleLabel, sessionStatusLabel } from "./training-utils";
 
 export function TrainingStatus({ loading, error, onRetry, empty, action }) {
-  if (loading) return <div className="training-loading" aria-busy="true" aria-label="Cargando entrenamiento"><span /><span /><span /></div>;
+  if (loading) return <SkeletonRows count={3} className="training-loading" label="Cargando entrenamiento" />;
   if (error) return <section className="training-status" role="alert"><Icon name="error" /><div><strong>No se pudo cargar entrenamiento</strong><p>{error}</p></div>{onRetry && <button type="button" className="training-secondary" onClick={onRetry}>Reintentar</button>}</section>;
   if (empty) return <section className="training-status"><Icon name="fitness_center" /><div><strong>{empty.title}</strong><p>{empty.description}</p></div>{action}</section>;
   return null;

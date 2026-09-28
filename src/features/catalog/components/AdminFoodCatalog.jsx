@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 import { Icon } from "../../../components/Icon";
+import { SkeletonRows } from "../../../components/Loading";
 import { FoodEditorDialog } from "../../foods/components/FoodEditorDialog";
 import { usePagedCatalog } from "../usePagedCatalog";
 import { CatalogStatus, categoryLabel, CookedYieldHint, FoodThumb, PreparationBadge } from "../CatalogComponents";
@@ -30,7 +31,7 @@ export function AdminFoodCatalog({ api }) {
       <input className="search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej.: cebolla" autoComplete="off" />
     </label>
 
-    {catalog.initialLoading && !catalog.items.length && <div className="my-foods-loading" aria-busy="true" />}
+    {catalog.initialLoading && !catalog.items.length && <SkeletonRows count={4} className="my-foods-loading" label="Cargando catálogo de alimentos" />}
     {!catalog.initialLoading && catalog.error && <CatalogStatus error>{catalog.error} <button type="button" className="secondary" onClick={catalog.retry}>Reintentar</button></CatalogStatus>}
     {!catalog.initialLoading && !catalog.error && !catalog.items.length && <CatalogStatus>{query.trim().length === 1 ? "Escribí al menos 2 caracteres para buscar." : query.trim() ? "No encontramos alimentos con esa búsqueda." : "No hay alimentos disponibles en el catálogo."}</CatalogStatus>}
 
@@ -48,7 +49,7 @@ export function AdminFoodCatalog({ api }) {
       </article>)}
     </div>}
 
-    {catalog.loadingMore && <CatalogStatus>Cargando más alimentos…</CatalogStatus>}
+    {catalog.loadingMore && <SkeletonRows count={2} className="my-foods-loading" label="Cargando más alimentos" />}
     {!catalog.initialLoading && catalog.hasNext && <button type="button" className="secondary catalog-load-more" disabled={catalog.loadingMore} onClick={catalog.loadNext}>{catalog.loadingMore ? "Cargando…" : "Cargar más"}</button>}
     {editing && <FoodEditorDialog api={api} food={editing} onClose={() => setEditing(null)} onDone={catalog.refresh} />}
   </section>;

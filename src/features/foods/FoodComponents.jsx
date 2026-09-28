@@ -8,6 +8,7 @@ import { decimalNumber } from "../../utils/decimal";
 import { cookedRecipeWeight, rawRecipeWeight, recipeServingFactor } from "../../utils/recipe";
 import { sortRecipeIngredients, scaleFoodNutrition, scaleRecipeNutrition } from "../recipes/recipe.utils";
 import { NutritionSummary } from "../../components/NutritionSummary";
+import { SkeletonRows } from "../../components/Loading";
 import { FoodLogDialog } from "./dialogs/FoodDialogs";
 import { RecipeIngredientRow } from "../recipes/components/RecipeIngredientRow";
 
@@ -218,7 +219,7 @@ export function FoodLogForm({
           <div><span>Resultado</span><strong>Resumen nutricional</strong></div>
           <Icon name="monitoring" />
         </div>
-        <div className="nutrition-preview edit-log-preview">
+          {!preview ? <SkeletonRows count={2} className="edit-log-preview-loading" label="Calculando nutrientes" /> : <div className="nutrition-preview edit-log-preview">
         <span className="edit-log-calories">
           <small>Kcal</small>
           <strong>{formatNumber(preview?.calories)}</strong>
@@ -235,7 +236,7 @@ export function FoodLogForm({
           <small>G</small>
           <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
         </span>
-        </div>
+          </div>}
       </section>
     </>
   );

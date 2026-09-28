@@ -4,6 +4,7 @@ import { shiftDate, today } from "../../../utils/format";
 
 export function useDashboardData(api) {
   const [data, setData] = useState(null);
+  const [dataDate, setDataDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mealTypes, setMealTypes] = useState(DEFAULT_MEALS);
@@ -11,15 +12,22 @@ export function useDashboardData(api) {
   const [dateChanging, setDateChanging] = useState(false);
   const [yesterdayData, setYesterdayData] = useState(null);
   const requestSequence = useRef(0);
+  const currentDate = useRef(selectedDate);
+  currentDate.current = selectedDate;
+  const invalidateLoads = useCallback(() => { requestSequence.current += 1; }, []);
 
   const load = useCallback((date = selectedDate) => {
+    if (date !== currentDate.current) return Promise.resolve(null);
     const sequence = requestSequence.current + 1;
     requestSequence.current = sequence;
-    if (!data) setLoading(true);
+    if (dataDate !== date) setLoading(true);
     setError("");
     return api.request(`/api/nutrition/dashboard?date=${date}`)
       .then((result) => {
-        if (sequence === requestSequence.current) setData(result);
+        if (sequence === requestSequence.current && date === currentDate.current) {
+          setData(result);
+          setDataDate(date);
+        }
         return result;
       })
       .catch(() => {
@@ -33,7 +41,7 @@ export function useDashboardData(api) {
           setDateChanging(false);
         }
       });
-  }, [api, data, selectedDate]);
+  }, [api, dataDate, selectedDate]);
 
   const changeDate = useCallback((nextDate) => {
     if (nextDate === selectedDate) return;
@@ -73,7 +81,7 @@ export function useDashboardData(api) {
   }, [api, selectedDate]);
 
   return {
-    data,
+    data: dataDate === selectedDate ? data : null,
     setData,
     loading,
     error,
@@ -82,6 +90,7 @@ export function useDashboardData(api) {
     dateChanging,
     yesterdayData,
     load,
+    invalidateLoads,
     changeDate,
   };
 }

@@ -35,6 +35,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
     dateChanging,
     yesterdayData,
     load,
+    invalidateLoads,
     changeDate,
   } = useDashboardData(api);
   const [pickerMeal, setPickerMeal] = useState(null);
@@ -97,6 +98,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
     resetMealSwipes();
   }, [data, resetMealSwipes, selectedDate]);
   function addOptimisticLogs(logs, mealType) {
+    invalidateLoads();
     const optimisticItems = logs.map((log, index) => {
       const itemType = log.itemType || log.type;
       const optimisticId = `optimistic:${Date.now()}:${optimisticSequence + index}`;
@@ -129,39 +131,53 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
     return optimisticItems;
   }
   function rollbackOptimisticLogs(logs) {
+    invalidateLoads();
     const ids = new Set(logs.map((log) => log.id));
-    const totals = mealTotals(logs);
-    setData((current) => ({
-      ...current,
-      caloriesConsumed: Math.max(0, Number(current?.caloriesConsumed || 0) - totals.calories),
-      macros: (current?.macros || []).map((macro) => ({
-        ...macro,
-        consumed: Math.max(0, Number(macro.consumed || 0) - logs.reduce((sum, log) => sum + macroValue(log, String(macro.key).toUpperCase()), 0)),
-      })),
-      meals: (current?.meals || []).map((meal) => {
+    setData((current) => {
+      const present = (current?.meals || []).flatMap((meal) => meal.items || []).filter((item) => ids.has(item.id));
+      const totals = mealTotals(present);
+      return {
+        ...current,
+        caloriesConsumed: Math.max(0, Number(current?.caloriesConsumed || 0) - totals.calories),
+        macros: (current?.macros || []).map((macro) => ({
+          ...macro,
+          consumed: Math.max(0, Number(macro.consumed || 0) - present.reduce((sum, log) => sum + macroValue(log, String(macro.key).toUpperCase()), 0)),
+        })),
+        meals: (current?.meals || []).map((meal) => {
         const items = (meal.items || []).filter((item) => !ids.has(item.id));
         return items.length === (meal.items || []).length ? meal : { ...meal, ...mealTotals(items), items };
-      }),
-    }));
+        }),
+      };
+    });
+  }
+  function confirmOptimisticLog(optimisticLog, savedLog) {
+    if (!optimisticLog || !savedLog) return;
+    invalidateLoads();
+    setData((current) => {
+      const pending = (current?.meals || []).flatMap((meal) => meal.items || []).find((item) => item.id === optimisticLog.id);
+      if (!pending) return current;
+      const replacement = { ...pending, ...savedLog, optimistic: false };
+      return {
+        ...current,
+        caloriesConsumed: Number(current.caloriesConsumed || 0) + Number(replacement.calories || 0) - Number(pending.calories || 0),
+        macros: (current.macros || []).map((macro) => ({
+          ...macro,
+          consumed: Number(macro.consumed || 0) + macroValue(replacement, String(macro.key).toUpperCase()) - macroValue(pending, String(macro.key).toUpperCase()),
+        })),
+        meals: (current.meals || []).map((meal) => {
+          if (!meal.items?.some((item) => item.id === pending.id)) return meal;
+          const items = meal.items.map((item) => item.id === pending.id ? replacement : item);
+          return { ...meal, ...mealTotals(items), items };
+        }),
+      };
+    });
   }
   function removeLogsOptimistic(logs) {
-    const ids = new Set(logs.map((log) => log.id));
-    const totals = mealTotals(logs);
-    setData((current) => ({
-      ...current,
-      caloriesConsumed: Math.max(0, Number(current?.caloriesConsumed || 0) - totals.calories),
-      macros: (current?.macros || []).map((macro) => ({
-        ...macro,
-        consumed: Math.max(0, Number(macro.consumed || 0) - logs.reduce((sum, log) => sum + macroValue(log, String(macro.key).toUpperCase()), 0)),
-      })),
-      meals: (current?.meals || []).map((meal) => {
-        const items = (meal.items || []).filter((item) => !ids.has(item.id));
-        return items.length === (meal.items || []).length ? meal : { ...meal, ...mealTotals(items), items };
-      }),
-    }));
+    rollbackOptimisticLogs(logs);
     return () => load();
   }
   function moveLogOptimistic(log, targetMealType) {
+    invalidateLoads();
     setData((current) => ({
       ...current,
       meals: (current?.meals || []).map((meal) => {
@@ -176,6 +192,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
     return () => load();
   }
   function adjustWaterOptimistic(deltaLiters) {
+    invalidateLoads();
     setData((current) => ({ ...current, waterConsumedLiters: Math.max(0, Math.round((Number(current?.waterConsumedLiters || 0) + deltaLiters) * 100) / 100) }));
     return () => load();
   }
@@ -297,7 +314,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
             deletingLogId={deletingLogId}
             movingLogId={movingLogId}
             resetSignal={swipeResetSignal}
-            onAdd={() => setPickerMeal(mealType)}
+            onAdd={() => setPickerMeal({ ...mealType, pickerInstance: crypto.randomUUID() })}
             onEdit={(log) => {
               if (log.itemType === "AI_ESTIMATE") {
                 resetMealSwipes();
@@ -466,11 +483,12 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
           user={user}
           mealType={pickerMeal}
             selectedDate={selectedDate}
-            onClose={() => setPickerMeal(null)}
+            onClose={() => setPickerMeal((current) => current?.pickerInstance === pickerMeal.pickerInstance ? null : current)}
             onOptimisticAdd={addOptimisticLogs}
             onOptimisticRollback={rollbackOptimisticLogs}
+            onOptimisticConfirm={confirmOptimisticLog}
           onDone={async () => {
-            setPickerMeal(null);
+            setPickerMeal((current) => current?.pickerInstance === pickerMeal.pickerInstance ? null : current);
             await load();
           }}
         />

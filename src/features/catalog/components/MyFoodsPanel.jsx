@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "../../../components/Icon";
+import { SkeletonRows } from "../../../components/Loading";
 import { Panel } from "../../../components/Layout";
 import { CatalogStatus, categoryLabel, CookedYieldHint, FoodThumb, PreparationBadge } from "../CatalogComponents";
 import { NutritionSummary } from "../../../components/NutritionSummary";
@@ -95,7 +96,7 @@ export function MyFoods({ api, onDirtyChange, onCreateFood, embedded = false }) 
   if (loading)
     return (
       <Panel title={embedded ? null : "Alimentos"} className={`my-foods-panel ${embedded ? "my-foods-embedded" : ""}`}>
-        <div className="my-foods-loading" aria-busy="true" />
+        <SkeletonRows count={4} className="my-foods-loading" label="Cargando tus alimentos" />
       </Panel>
     );
   return (

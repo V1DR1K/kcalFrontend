@@ -628,6 +628,8 @@
 @media (max-width: 720px) {
   .ai-photo-context-modal .modal-shell-content { padding: var(--space-4); }
   .ai-photo-context-editor { gap: var(--space-3); }
+  .ai-photo-target-options { grid-template-columns: minmax(0, 1fr); }
+  .ai-photo-target-option { min-height: 72px; }
   .ai-photo-context-modal .ai-context-tools { grid-template-columns: minmax(0, 1fr); }
   .ai-photo-context-preview { max-height: min(25dvh, 190px); }
   .ai-estimate-editor { gap: var(--space-3); padding: var(--space-4); }

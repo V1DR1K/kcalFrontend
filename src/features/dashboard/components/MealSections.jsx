@@ -14,6 +14,7 @@ export { MealCard, MealLogDetails, RecipeIngredientDetail, SwipeableMealItem };
 
 function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, onConvertToRecipe, onShare, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove, entryDelay = 0 }) {
   const items = sortMealLogs(meal?.items || []);
+  const hasPendingItems = items.some((log) => log.optimistic);
   const cardRef = useRef(null);
   const menuRef = useRef(null);
   const [expandedLogId, setExpandedLogId] = useState(null);
@@ -145,8 +146,8 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
           <div><span>{mealType.label}</span><strong>{meal?.calories || 0} kcal</strong></div>
         </div>
         <div className="meal-header-actions">
-          <details className="meal-menu" ref={menuRef}><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button className="action-control" disabled={!items.length || bulkActionLoading} onClick={copyAll}>Copiar todo</button><button className="action-control" disabled={!clipboard?.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); addLogs(clipboard); }}>Pegar</button><button className="action-control" disabled={!items.some(isCopyableMealLog) || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); onConvertToRecipe?.(); }}>Convertir en receta</button><button className="danger-text action-control" disabled={!items.length || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); deleteAll(); }}>Borrar todo</button></div></details>
-          <button type="button" className="icon-button action-control meal-share-trigger" aria-label={`Compartir ${mealType.label}`} disabled={!items.length || bulkActionLoading} onClick={onShare}><Icon name="share" /></button>
+          <details className="meal-menu" ref={menuRef}><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button className="action-control" disabled={!items.length || hasPendingItems || bulkActionLoading} onClick={copyAll}>Copiar todo</button><button className="action-control" disabled={!clipboard?.length || hasPendingItems || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); addLogs(clipboard); }}>Pegar</button><button className="action-control" disabled={!items.some(isCopyableMealLog) || hasPendingItems || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); onConvertToRecipe?.(); }}>Convertir en receta</button><button className="danger-text action-control" disabled={!items.length || hasPendingItems || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); deleteAll(); }}>Borrar todo</button></div></details>
+          <button type="button" className="icon-button action-control meal-share-trigger" aria-label={`Compartir ${mealType.label}`} disabled={!items.length || hasPendingItems || bulkActionLoading} onClick={onShare}><Icon name="share" /></button>
           <button className="icon-button action-control" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><Icon name="add" /></button>
         </div>
       </header>
@@ -188,12 +189,12 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
               onEdit={() => onEdit(log)} onDelete={() => onDelete(log)}
               onMove={onMove}
               mealTypes={mealTypes}
-              disabled={Boolean(deletingLogId) || Boolean(movingLogId) || bulkActionLoading}
+              disabled={Boolean(log.optimistic) || Boolean(deletingLogId) || Boolean(movingLogId) || bulkActionLoading}
               dragData={log.optimistic ? null : { ...log, mealType: mealType.code }}
               details={<MealLogDetails log={log} item={item} />}
             >
               <FoodThumb item={item} compact />
-              <span className="meal-item-copy"><span>{item.name}</span><small>{formatMealLogAmount(log)}{log.itemType === "FOOD" ? foodPreparationSuffix(log.food) : ""}</small></span>
+              <span className="meal-item-copy"><span>{item.name}</span><small>{formatMealLogAmount(log)}{log.itemType === "FOOD" ? foodPreparationSuffix(log.food) : ""}{log.optimistic ? " · Guardando…" : ""}</small></span>
               <strong>{log.calories} kcal</strong>
             </SwipeableMealItem>
           );
@@ -316,6 +317,7 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
         <button
           type="button"
           className="meal-item"
+          disabled={disabled}
           draggable={false}
           aria-expanded={expanded}
           aria-grabbed={gesture.interactionMode === "dragging"}
@@ -347,8 +349,8 @@ function SwipeableMealItem({ children, className = "", resetSignal, expanded = f
                   </select>
                 </label>
               )}
-              <button type="button" className="secondary" onClick={() => { gesture.close(); onEdit(); }}><Icon name="edit" />Editar</button>
-              <button type="button" className="secondary danger-text" onClick={() => { gesture.close(); onDelete(); }}><Icon name="delete" />Eliminar</button>
+              <button type="button" className="secondary" disabled={disabled} onClick={() => { gesture.close(); onEdit(); }}><Icon name="edit" />Editar</button>
+              <button type="button" className="secondary danger-text" disabled={disabled} onClick={() => { gesture.close(); onDelete(); }}><Icon name="delete" />Eliminar</button>
             </div>
           </>
         )}

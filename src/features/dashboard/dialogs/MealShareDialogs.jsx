@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { DEFAULT_MEALS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
+import { SkeletonRows } from "../../../components/Loading";
 import { Input, Select } from "../../../components/FormControls";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { formatNumber, formatQuantity, readableDate, today } from "../../../utils/format";
@@ -143,7 +144,7 @@ export function MealShareAcceptDialog({ api, token, onClose, onDone }) {
       className="meal-share-accept-dialog"
       footer={<div className="modal-actions"><button type="button" className="secondary" onClick={onClose}>Cancelar</button><button type="button" className="primary" disabled={!preview || saving || preview.alreadyAccepted} onClick={accept}>{saving ? "Agregando…" : preview?.alreadyAccepted ? "Ya agregada" : "Agregar a mi día"}</button></div>}
     >
-      {loading && <div className="catalog-status">Cargando comida…</div>}
+      {loading && <SkeletonRows count={3} label="Cargando comida compartida" />}
       {error && <div className="form-error" role="alert">{error}</div>}
       {preview && <><ShareSummary preview={preview} />{preview.alreadyAccepted ? <p className="meal-share-notice" role="status">Ya agregaste esta comida a tu cuenta.</p> : <div className="meal-share-destination"><Input label="Fecha de destino" type="date" value={targetDate} onChange={(event) => setTargetDate(event.target.value)} /><Select label="Comida de destino" value={targetMealType} options={DEFAULT_MEALS} onChange={(event) => setTargetMealType(event.target.value)} /></div>}</>}
     </ModalShell>

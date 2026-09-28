@@ -832,7 +832,11 @@ test("shows only nutrition plans in nutrition mode", async ({ page }) => {
 test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedAuthenticatedApp(page, { aiAvailable: true });
+  let analyzeMethod = "";
+  let analyzeTarget = "";
   await page.route("**/api/nutrition/ai-estimates", async (route) => {
+    analyzeMethod = route.request().method();
+    analyzeTarget = (route.request().postData() || "").includes("RECIPE") ? "RECIPE" : "";
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ name: "Comida estimada", confidence: 86, description: "Una comida simple", assumptions: [], items: [{ name: "Avena", category: "OTHER", preparation: "UNSPECIFIED", estimatedGrams: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7 }] }) });
   });
   await page.goto("/ingresar");
@@ -842,7 +846,17 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
     mimeType: "image/png",
     buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
   });
-  await page.getByRole("button", { name: "Analizar foto", exact: true }).click();
+  const photoDialog = page.locator(".ai-photo-context-modal");
+  const analyzeButton = photoDialog.getByRole("button", { name: "Analizar foto", exact: true });
+  await expect(photoDialog.getByRole("button", { name: "Analizar como Alimento" })).toBeVisible();
+  await expect(photoDialog.getByRole("button", { name: "Analizar como Receta" })).toBeVisible();
+  await expect(analyzeButton).toBeDisabled();
+  await photoDialog.getByRole("button", { name: "Analizar como Receta" }).click();
+  await expect(photoDialog.getByRole("button", { name: "Analizar como Receta" })).toHaveAttribute("aria-pressed", "true");
+  await expect(analyzeButton).toBeEnabled();
+  await analyzeButton.click();
+  await expect.poll(() => analyzeMethod).toBe("POST");
+  expect(analyzeTarget).toBe("RECIPE");
 
   const editor = page.locator(".ai-estimate-modal");
   await expect(editor).toBeVisible();
@@ -874,6 +888,76 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   expect(await editor.locator(".modal-shell-content").evaluate((element) => element.scrollTop)).toBe(editorScrollBeforeRestore);
 });
 
+test("registers an AI food from the diary and keeps its meal destination", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { aiAvailable: true });
+  let analyzeTarget = "";
+  let confirmation = null;
+  await page.route("**/api/nutrition/ai-estimates", async (route) => {
+    const request = route.request();
+    expect(request.method()).toBe("POST");
+    analyzeTarget = (request.postData() || "").includes("FOOD") ? "FOOD" : "";
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+      captureId: "capture-food-test",
+      targetType: "FOOD",
+      name: "Fideos secos",
+      confidence: 91,
+      description: "Paquete de fideos secos.",
+      assumptions: [],
+      items: [{ name: "Fideos secos", category: "CEREAL", preparation: "AS_SOLD", estimatedGrams: 100, proteinGrams: 12, carbsGrams: 72, fatGrams: 2 }],
+    }) });
+  });
+  await page.route("**/api/nutrition/ai-registrations/confirm", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    confirmation = JSON.parse(route.request().postData() || "{}");
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+      targetType: "FOOD", food: { id: 301, name: "Fideos secos" },
+      log: { id: 401, itemType: "FOOD", mealType: "BREAKFAST", quantity: 100, unit: "GRAM" },
+    }) });
+  });
+
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.locator(".ai-gallery-trigger input").setInputFiles({
+    name: "fideos.png", mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+  });
+  const photoDialog = page.locator(".ai-photo-context-modal");
+  await photoDialog.getByRole("button", { name: "Analizar como Alimento" }).click();
+  await photoDialog.getByRole("button", { name: "Analizar foto", exact: true }).click();
+
+  const estimateDialog = page.locator(".ai-estimate-modal");
+  await expect(estimateDialog).toBeVisible();
+  await expect(estimateDialog.getByLabel("Agregar también a mi día")).toBeChecked();
+  await estimateDialog.getByRole("button", { name: "Guardar alimento", exact: true }).click();
+  await expect.poll(() => confirmation).not.toBeNull();
+  expect(analyzeTarget).toBe("FOOD");
+  expect(confirmation).toMatchObject({ addToDiary: true, mealType: "BREAKFAST", captureId: "capture-food-test" });
+  expect(confirmation.items[0].name).toBe("Fideos secos");
+});
+
+test("preselects Registrar intent but allows changing it before analysis", async ({ page }) => {
+  await seedAuthenticatedApp(page, { aiAvailable: true });
+  let analyzeTarget = "";
+  await page.route("**/api/nutrition/ai-estimates", async (route) => {
+    const request = route.request();
+    expect(request.method()).toBe("POST");
+    analyzeTarget = (request.postData() || "").includes("RECIPE") ? "RECIPE" : "";
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ name: "Plato", confidence: 85, assumptions: [], items: [{ name: "Arroz", category: "CEREAL", preparation: "COOKED", estimatedGrams: 150, proteinGrams: 4, carbsGrams: 42, fatGrams: 1 }] }) });
+  });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Registrar", exact: true }).first().click();
+  await page.getByRole("button", { name: /Registrar alimento con foto/i }).click();
+  await page.locator(".ai-gallery-trigger input").setInputFiles({ name: "envase.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64") });
+  const photoDialog = page.locator(".ai-photo-context-modal");
+  const foodOption = photoDialog.getByRole("button", { name: "Analizar como Alimento" });
+  const recipeOption = photoDialog.getByRole("button", { name: "Analizar como Receta" });
+  await expect(foodOption).toHaveAttribute("aria-pressed", "true");
+  await recipeOption.click();
+  await photoDialog.getByRole("button", { name: "Analizar foto", exact: true }).click();
+  await expect.poll(() => analyzeTarget).toBe("RECIPE");
+});
+
 test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await seedAuthenticatedApp(page, { aiAvailable: true });
@@ -897,6 +981,7 @@ test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => 
     mimeType: "image/png",
     buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
   });
+  await page.locator(".ai-photo-context-modal").getByRole("button", { name: "Analizar como Receta" }).click();
   await page.getByRole("button", { name: "Analizar foto", exact: true }).click();
 
   const dialog = page.locator(".ai-estimate-modal");
@@ -977,6 +1062,9 @@ test("keeps the AI photo context actions visible above the picker footer on desk
   const analyzeButton = editor.getByRole("button", { name: "Analizar foto", exact: true });
   await expect(editor).toBeVisible();
   await expect(analyzeButton).toBeVisible();
+  await expect(analyzeButton).toBeDisabled();
+  await editor.getByRole("button", { name: "Analizar como Receta" }).click();
+  await expect(analyzeButton).toBeEnabled();
   await analyzeButton.click({ trial: true });
   const layout = await editor.evaluate((element) => {
     const button = element.querySelector(".ai-photo-context-actions .primary");
@@ -1059,4 +1147,31 @@ test("accepts a shared meal link after authentication", async ({ page }) => {
   await page.getByRole("button", { name: "Agregar a mi día" }).click();
   const request = await acceptShare;
   expect(request.postDataJSON()).toMatchObject({ mealType: "LUNCH" });
+});
+
+test("shows a new meal immediately and rolls it back when saving fails", async ({ page }) => {
+  await seedAuthenticatedApp(page, { withServingFood: true });
+  await page.route("**/api/foods/preview", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ calories: 120, proteinGrams: 4, carbsGrams: 20, fatGrams: 2 }),
+  }));
+  let releaseSave;
+  const saveGate = new Promise((resolve) => { releaseSave = resolve; });
+  await page.route("**/api/nutrition/meal-logs", async (route) => {
+    await saveGate;
+    await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "No se pudo guardar" }) });
+  });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.getByPlaceholder("Buscar alimentos...").fill("Avena");
+  await page.locator(".catalog-row-image").first().click();
+  await page.locator(".edit-log-modal").getByRole("button", { name: "Agregar a Desayuno" }).click();
+
+  await expect(page.locator(".edit-log-modal")).toBeHidden();
+  await expect(page.locator(".meal-item-shell.optimistic")).toContainText("Avena");
+  await expect(page.locator(".meal-item-shell.optimistic")).toContainText("Guardando");
+  releaseSave();
+  await expect(page.locator(".meal-item-shell.optimistic")).toHaveCount(0);
+  await expect(page.locator(".meal-card").filter({ hasText: "Desayuno" }).first()).toContainText("Sin alimentos registrados");
 });
