@@ -346,8 +346,15 @@
 /* A virtual keyboard reduces the visible viewport. Keep dialog chrome inside
    that area so the focused field and fixed actions remain reachable. */
 @media (max-width: 900px) {
-  html[data-keyboard-open="true"] .app-modal-surface.picker-modal[class]:has(.search:focus) > .picker-photo-actions {
-    display: none;
+  html[data-keyboard-open="true"] .app-modal-surface.picker-modal[class] > .picker-photo-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--surface, #fff);
+    padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
+  }
+  html[data-keyboard-open="true"] .app-modal-surface.picker-modal[class] > .picker-photo-actions .ai-photo-trigger {
+    min-height: 44px;
   }
 
   html[data-keyboard-open="true"] .app-modal-backdrop[class] {

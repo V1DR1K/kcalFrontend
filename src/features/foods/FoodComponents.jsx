@@ -177,8 +177,8 @@ export function FoodLogForm({
         )}
         <div className="edit-log-fields">
           <div className={`edit-log-quantity ${isRecipe && unit === "PORTION" ? "portions" : ""}`}>
-            <Input decimal selectOnFocus numericOnly label="Cantidad" inputMode="decimal" min="0.1" step="0.01" value={quantity} onChange={(event) => onQuantityChange(event.target.value)} />
-            <small>{isRecipe && unit === "GRAM" ? "g cocidos" : isRecipe ? "porciones" : unit === "GRAM" ? "g" : "porciones"}</small>
+            <Input decimal numericOnly label="Cantidad" inputMode="decimal" min="0.1" step="0.01" value={quantity} onChange={(event) => onQuantityChange(event.target.value)} />
+            <small>{isRecipe && unit === "GRAM" ? "g cocidos" : isRecipe ? "porciones" : unit === "MILLILITER" ? "ml" : unit === "UNIT" ? "unidades" : unit === "GRAM" ? "g" : "porciones"}</small>
           </div>
           {mode === "add" ? (
             <Select label="Unidad" value={unit} onChange={(event) => onUnitChange(event.target.value)} options={unitOptions} />

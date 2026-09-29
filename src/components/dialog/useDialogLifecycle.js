@@ -85,6 +85,14 @@ const FOCUSABLE_SELECTOR = [
   "[tabindex]:not([tabindex=\"-1\"])",
 ].join(",");
 
+function visibleFocusableElements(dialog) {
+  if (!dialog) return [];
+  return [...dialog.querySelectorAll(FOCUSABLE_SELECTOR)].filter((element) =>
+    !element.closest("[hidden], details:not([open]), [aria-hidden=\"true\"], [inert]")
+    && element.getClientRects().length > 0
+    && getComputedStyle(element).visibility !== "hidden");
+}
+
 export function useDialogLifecycle({ open = true, onClose, initialFocusRef, returnFocusRef, closeOnEscape = true, trapFocus = true, restoreFocus = true, lockScroll = true, scrollOwnerRef, footerRef }) {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -152,7 +160,9 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
       }, 48);
     }
 
-    const focusTarget = initialFocusRef?.current || dialogRef.current?.querySelector(FOCUSABLE_SELECTOR);
+    const explicitFocus = initialFocusRef?.current;
+    const focusTarget = explicitFocus && visibleFocusableElements(dialogRef.current).includes(explicitFocus)
+      ? explicitFocus : visibleFocusableElements(dialogRef.current)[0];
     try {
       focusTarget?.focus?.({ preventScroll: true });
     } catch {
@@ -170,7 +180,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
         return;
       }
       if (!trapFocus || event.key !== "Tab" || !dialogRef.current) return;
-      const focusable = [...dialogRef.current.querySelectorAll(FOCUSABLE_SELECTOR)].filter((element) => !element.closest("[hidden]"));
+      const focusable = visibleFocusableElements(dialogRef.current);
       if (!focusable.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -211,7 +221,10 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
           const currentTop = topDialog();
           const isInsideTop = currentTop?.root?.contains(restoreTarget) && !currentTop.root.inert;
           const fallbackTarget = currentTop && !isInsideTop ? currentTop.dialogRef.current : null;
-          const target = restoreTarget.isConnected && (!currentTop || isInsideTop) ? restoreTarget : fallbackTarget;
+          const target = restoreTarget.isConnected && (!currentTop || isInsideTop)
+            && (!restoreTarget.matches?.(FOCUSABLE_SELECTOR) || visibleFocusableElements(restoreTarget.closest("[role=dialog]" )).includes(restoreTarget))
+            ? restoreTarget
+            : fallbackTarget || visibleFocusableElements(currentTop?.dialogRef.current)[0];
           if (!target?.isConnected) return;
           try {
             target.focus({ preventScroll: true });

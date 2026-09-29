@@ -3,7 +3,7 @@ import { Icon } from "../../../components/Icon";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { FoodThumb } from "../../catalog/CatalogComponents";
 
-export function FoodLogDialog({ item, eyebrow, title = item?.name, description, isRecipe = false, closing = false, onClose, onSubmit, children, footer, titleId = "food-log-title" }) {
+export function FoodLogDialog({ item, eyebrow, title = item?.name, description, isRecipe = false, closing = false, closeDisabled = false, onClose, onSubmit, children, footer, titleId = "food-log-title" }) {
   const generatedTitleId = `${useId().replace(/:/g, "")}-title`;
   const resolvedTitleId = titleId === "food-log-title" ? generatedTitleId : titleId;
   function handleSubmit(event) {
@@ -11,7 +11,7 @@ export function FoodLogDialog({ item, eyebrow, title = item?.name, description, 
     onSubmit?.(event);
   }
   return (
-    <ModalShell as="form" onClose={onClose} hideHeader labelledBy={resolvedTitleId} className={`app-modal-compact edit-log-modal ${isRecipe ? "recipe-log-modal" : ""} ${closing ? "closing" : ""}`} backdropClassName="modal-backdrop compact-modal" wrapContent={false} dialogProps={{ onSubmit: handleSubmit }}>
+    <ModalShell as="form" onClose={onClose} closeDisabled={closeDisabled} hideHeader labelledBy={resolvedTitleId} className={`app-modal-compact edit-log-modal ${isRecipe ? "recipe-log-modal" : ""} ${closing ? "closing" : ""}`} backdropClassName="modal-backdrop compact-modal" wrapContent={false} dialogProps={{ onSubmit: handleSubmit }}>
         <header className="edit-log-header">
           <div className="edit-log-header-main">
             <FoodThumb item={isRecipe ? { ...item, type: "RECIPE" } : item} compact />

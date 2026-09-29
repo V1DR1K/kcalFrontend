@@ -288,21 +288,26 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   }
   useEffect(() => {
     if (!selected || selected.type !== "FOOD") return setSelectedPreparations([]);
+    let active = true;
+    setSelectedPreparations([]);
     api
       .runAction(
         { title: "Cargando opciones", description: "Estamos buscando las presentaciones disponibles..." },
         () => api.request(`/api/foods/${selected.id}/preparations`),
         { quiet: true },
       )
-      .then(setSelectedPreparations)
-      .catch(() => setSelectedPreparations([]));
+      .then((items) => { if (active) setSelectedPreparations(items); })
+      .catch(() => { if (active) setSelectedPreparations([]); });
+    return () => { active = false; };
   }, [api, selected?.id, selected?.type]);
   useEffect(() => {
     if (!selected) return;
     if (selected.type === "FOOD") {
+      const baseUnit = selected.baseUnit || "GRAM";
       const servingWeightGrams = Number(selected.servingWeightGrams);
-      setQuantity(Number.isFinite(servingWeightGrams) && servingWeightGrams > 0 ? String(servingWeightGrams) : selected.category === "FAT" ? "10" : "100");
-      setUnit("GRAM");
+      setQuantity(baseUnit === "GRAM" && Number.isFinite(servingWeightGrams) && servingWeightGrams > 0
+        ? String(servingWeightGrams) : selected.category === "FAT" && baseUnit === "GRAM" ? "10" : String(selected.baseQuantity || 100));
+      setUnit(baseUnit);
     } else if (selected.type === "RECIPE") {
       const recipeWeight = Number(selected.cookedTotalWeightGrams || selected.rawTotalWeightGrams || selected.totalWeightGrams);
       setQuantity(ingredientOnly && Number.isFinite(recipeWeight) && recipeWeight > 0 ? String(recipeWeight) : "1");
@@ -318,9 +323,13 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       setRecipeIngredients(null);
       return;
     }
+    let active = true;
+    setRecipeDetail(null);
+    setRecipeIngredients(null);
     api
       .request(`/api/recipes/${selected.id}`)
       .then((fullRecipe) => {
+        if (!active) return;
         setRecipeDetail(fullRecipe);
         setRecipeIngredients(sortRecipeIngredients(fullRecipe.ingredients || []).map((ing) => ({
           foodId: ing.food?.id,
@@ -334,9 +343,11 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         })));
       })
       .catch(() => {
+        if (!active) return;
         setRecipeDetail(null);
         setRecipeIngredients(null);
       });
+    return () => { active = false; };
   }, [api, selected?.id, selected?.type]);
   useEffect(() => {
     if (selected?.type === "RECIPE" && unit === "GRAM" && !hasCookedRecipeWeight(recipeDetail || selected)) setUnit("PORTION");
@@ -349,15 +360,16 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     setPreviewError("");
     if (!selected || !Number.isFinite(numericQuantity) || numericQuantity <= 0) return undefined;
     if (selected.type === "FOOD") {
-      const quantityInGrams = unit === "SERVING" ? numericQuantity * Number(selected.servingWeightGrams || 0) : numericQuantity;
-      if (quantityInGrams <= 0) return undefined;
+      const previewQuantity = unit === "SERVING" ? numericQuantity * Number(selected.servingWeightGrams || 0) : numericQuantity;
+      const previewUnit = unit === "SERVING" ? "GRAM" : unit;
+      if (previewQuantity <= 0) return undefined;
       api
         .request("/api/foods/preview", {
           method: "POST",
           body: JSON.stringify({
             foodId: selected.id,
-            quantity: quantityInGrams,
-            unit: "GRAM",
+            quantity: previewQuantity,
+            unit: previewUnit,
           }),
         })
         .then((result) => { if (active) { setPreview(result); if (!result) setPreviewError("No pudimos calcular los nutrientes."); } })
@@ -403,6 +415,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     const numericQuantity = decimalNumber(quantity);
     if (!selected || !preview || !Number.isFinite(numericQuantity) || numericQuantity <= 0 || addInFlightRef.current) return;
     const logQuantity = selected.type === "FOOD" && unit === "SERVING" ? numericQuantity * Number(selected.servingWeightGrams || 0) : numericQuantity;
+    const logUnit = selected.type === "FOOD" ? unit === "SERVING" ? "GRAM" : unit : unit;
     if (logQuantity <= 0) return;
     if (draftOnly) {
       onDraftAdd?.({
@@ -414,7 +427,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         recipe: selected.type === "RECIPE" ? { ...selected, ...recipeDetail } : null,
         mealType: mealType.code,
         quantity: logQuantity,
-        unit: selected.type === "RECIPE" ? unit : "GRAM",
+        unit: logUnit,
         displayName: selected.name,
         imageUrl: selected.imageUrl || null,
         category: selected.category || "OTHER",
@@ -433,10 +446,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       food: selected.type === "FOOD" ? selected : null,
       recipe: selected.type === "RECIPE" ? { ...selected, ...recipeDetail } : null,
       quantity: logQuantity,
-      unit: selected.type === "RECIPE" ? unit : "GRAM",
+      unit: logUnit,
       ...preview,
     }], mealType.code);
-    onClose();
     try {
       const log = await api.runAction(
         { title: "Agregando alimento", description: `Estamos sumando ${selected.name} a ${mealType.label.toLowerCase()}...` },
@@ -448,10 +460,11 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               quantity: Number(ing.quantity ?? 0),
               unit: ing.unit || "GRAM",
             }));
-            const changed = recipeIngredients.some((ing, i) => {
-              const base = baseIngredients[i];
-              return !base || ing.foodId !== base.foodId || ing.recipeId !== base.recipeId || decimalNumber(ing.quantity) !== Number(base.quantity);
-            });
+            const signature = (ingredient) => [ingredient.foodId || "", ingredient.recipeId || "", ingredient.unit || "GRAM", decimalNumber(ingredient.quantity)].join(":");
+            const currentIngredients = recipeIngredients.map(signature).sort();
+            const originalIngredients = baseIngredients.map(signature).sort();
+            const changed = currentIngredients.length !== originalIngredients.length
+              || currentIngredients.some((value, index) => value !== originalIngredients[index]);
             if (changed) {
               return api.request("/api/nutrition/meal-logs/recipe", {
                 method: "POST",
@@ -475,7 +488,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               itemId: selected.id,
               mealType: mealType.code,
               quantity: logQuantity,
-              unit: selected.type === "RECIPE" ? unit : "GRAM",
+              unit: logUnit,
               logDate: selectedDate,
             }),
           });
@@ -486,6 +499,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       rememberMeal(user, mealType.code, log);
       const confirmed = onOptimisticConfirm(optimisticLogs, [log]);
       api.notify(`${selected.name} agregado a ${mealType.label}.`);
+      onClose();
       if (!confirmed) onDone();
     } catch {
       onOptimisticRollback(optimisticLogs);
@@ -500,7 +514,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       ? [
           ...(ingredientOnly ? [{ value: "GRAM", label: "Gramos" }] : [{ value: "PORTION", label: "Porciones" }, ...(hasCookedRecipeWeight(recipeDetail || selected) ? [{ value: "GRAM", label: "Gramos cocidos" }] : [])]),
         ]
-      : selected?.type === "FOOD" && selected?.servingWeightGrams
+      : selected?.type === "FOOD" && selected?.baseUnit === "MILLILITER"
+      ? [{ value: "MILLILITER", label: "Mililitros" }]
+      : selected?.type === "FOOD" && selected?.servingWeightGrams && (selected?.baseUnit || "GRAM") === "GRAM"
       ? [
           { value: "GRAM", label: "Gramos" },
           {
@@ -508,7 +524,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             label: `${selected.servingName || "Porción"} (${formatNumber(selected.servingWeightGrams, 1)} g)`,
           },
         ]
-      : [{ value: "GRAM", label: "Gramos" }];
+      : [{ value: selected?.baseUnit || "GRAM", label: selected?.baseUnit === "MILLILITER" ? "Mililitros" : selected?.baseUnit === "UNIT" ? "Unidades" : "Gramos" }];
   function changeSelectedUnit(nextUnit) {
     if (nextUnit === unit) return;
     if (selected?.type === "RECIPE") {
@@ -575,6 +591,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     <ModalShell
       title={aiOnly ? "Registrar con IA" : ingredientOnly ? "Agregar ingrediente" : "Agregar comida"}
       onClose={onClose}
+      closeDisabled={adding}
       className="picker-modal"
       backdropClassName="modal-backdrop"
       hideHeader
@@ -586,7 +603,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
              <span>{ingredientOnly ? "Catálogo" : mealType.label}</span>
             <h2 id={pickerTitleId}>{aiOnly ? "Registrar con IA" : ingredientOnly ? "Agregar ingrediente" : "Agregar comida"}</h2>
           </div>
-          <button type="button" className="icon-button" aria-label="Cerrar" onClick={onClose}>
+          <button type="button" className="icon-button" aria-label="Cerrar" disabled={adding} onClick={onClose}>
             <Icon name="close" />
           </button>
         </header>
@@ -617,7 +634,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         {!aiOnly && <div className="picker-tools">
           <div className="search-wrap">
             <Icon name="search" />
-            <input className="search" type="search" enterKeyHint="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
+            <input className="search" type="search" enterKeyHint="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
           </div>
         </div>}
         {!aiOnly && <div className="picker-scroll" data-dialog-scroll-owner="true" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
@@ -679,6 +696,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             eyebrow={ingredientOnly ? "Agregar ingrediente" : `Agregar a ${mealType.label}`}
             description={selected.type === "RECIPE" ? (recipeDetail?.description || selected.description) : null}
             isRecipe={selected.type === "RECIPE"}
+            closeDisabled={adding}
             onClose={() => {
               setSelected(null);
               setPreview(null);
@@ -720,7 +738,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
                   const option = selectedPreparations.find((item) => item.id === id);
                   if (option) {
                     setSelected({ ...option, type: "FOOD" });
-                    setUnit("GRAM");
+      setUnit(option.baseUnit || "GRAM");
                   }
                 }}
                 recipeIngredients={selected.type === "RECIPE" ? recipeIngredients : null}

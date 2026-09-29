@@ -1,7 +1,7 @@
 import React from "react";
 import { normalizeDecimalInput } from "../utils/decimal";
 
-export function Input({ label, selectOnFocus = true, numericOnly = false, decimal = false, error, onFocus, ...props }) {
+export function Input({ label, selectOnFocus = false, numericOnly = false, decimal = false, error, onFocus, ...props }) {
   const isNumeric = numericOnly || decimal || props.type === "number";
   const effectiveType = decimal ? "text" : props.type;
   const inputMode = props.inputMode || (props.name === "barcode" ? "numeric" : isNumeric ? "decimal" : undefined);

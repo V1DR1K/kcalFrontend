@@ -141,7 +141,7 @@ export function RecipeEditorForm({ api, recipe = null, onDirtyChange, onBusyChan
       <section className="recipe-cooked-weight" aria-describedby={`recipe-cooked-weight-help-${id || "editor"}`}>
         <label className="recipe-cooked-toggle"><input type="checkbox" checked={trackCookedWeight} onChange={(event) => { setTrackCookedWeight(event.target.checked); if (!event.target.checked && cookedWeight) setCookedWeightCleared(true); onDirtyChange?.(true); }} /><span>Registrar peso cocido final</span></label>
         <p id={`recipe-cooked-weight-help-${id || "editor"}`}>Es una medición después de cocinar; usala para registrar la receta en gramos cocidos.</p>
-        {trackCookedWeight && <Input decimal selectOnFocus numericOnly name="cookedTotalWeightGrams" label="Peso cocido final (g)" inputMode="decimal" min="0.1" step="0.01" value={cookedWeight} onChange={(event) => { setCookedWeight(event.target.value); setCookedWeightCleared(false); onDirtyChange?.(true); }} required />}
+        {trackCookedWeight && <Input decimal numericOnly name="cookedTotalWeightGrams" label="Peso cocido final (g)" inputMode="decimal" min="0.1" step="0.01" value={cookedWeight} onChange={(event) => { setCookedWeight(event.target.value); setCookedWeightCleared(false); onDirtyChange?.(true); }} required />}
         {yieldPercent != null && <small className="recipe-yield">Rendimiento cocido: {formatNumber(yieldPercent, 1)}%</small>}
         {cookedWeightCleared && <p className="recipe-cooked-reset" role="status">Cambiaste los ingredientes: medí el peso cocido final nuevamente.</p>}
       </section>

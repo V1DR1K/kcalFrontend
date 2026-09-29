@@ -37,8 +37,6 @@ export function RecipeIngredientRow({ ingredient, index, locked = false, onChang
               min="0.1"
               step="0.01"
               value={ingredient?.quantity ?? ""}
-              onFocus={(event) => event.currentTarget.select()}
-              onPointerUp={(event) => { event.preventDefault(); event.currentTarget.select(); }}
               onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }}
               onChange={(event) => onChange?.(index, normalizeDecimalInput(event.target.value))}
             />

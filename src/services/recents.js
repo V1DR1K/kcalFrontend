@@ -38,6 +38,7 @@ export function rememberMeal(user, mealType, log) {
     mealType,
     label: item?.name || "Comida",
     itemType: log.itemType,
+    sourceLogId: Number(log.id) || null,
     itemId: isAiEstimate ? null : item?.id ?? log.itemId,
     quantity: log.quantity,
     unit: log.unit,

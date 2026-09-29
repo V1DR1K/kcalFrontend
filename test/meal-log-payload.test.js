@@ -23,6 +23,18 @@ test("falls back to the catalog item id for copied backend logs", () => {
   assert.equal(buildMealLogPayload({ itemType: "RECIPE", recipe: { id: 9 }, quantity: 2, unit: "PORTION" }, "LUNCH", "2026-08-12").itemId, 9);
 });
 
+test("preserves the owned source log id when copying an adjusted recipe", () => {
+  assert.deepEqual(buildMealLogPayload({ id: 734, itemType: "RECIPE", recipe: { id: 9 }, quantity: 2, unit: "PORTION" }, "LUNCH", "2026-08-12"), {
+    itemType: "RECIPE",
+    itemId: 9,
+    mealType: "LUNCH",
+    quantity: 2,
+    unit: "PORTION",
+    logDate: "2026-08-12",
+    sourceLogId: 734,
+  });
+});
+
 test("preserves cooked recipe grams when copying a meal", () => {
   assert.deepEqual(buildMealLogPayload({ itemType: "RECIPE", recipe: { id: 9 }, quantity: 180, unit: "GRAM" }, "LUNCH", "2026-08-12"), {
     itemType: "RECIPE",

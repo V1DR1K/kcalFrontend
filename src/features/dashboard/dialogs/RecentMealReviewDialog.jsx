@@ -6,6 +6,7 @@ import { formatNumber } from "../../../utils/format";
 import { formatMealLogAmount, mealLogName } from "../dashboard.utils";
 
 function quantityLabel(item) {
+  if (item.itemType === "AI_ESTIMATE") return "Porciones estimadas";
   if (item.unit === "PORTION") return "Porciones";
   if (item.unit === "MILLILITER") return "Mililitros";
   if (item.unit === "UNIT") return "Unidades";
@@ -14,13 +15,12 @@ function quantityLabel(item) {
 
 export function RecentMealReviewDialog({ title, destination, items, saving, onClose, onConfirm }) {
   const [quantities, setQuantities] = useState(() => items.map((item) => String(item.quantity ?? "")));
-  const ready = items.length > 0 && items.every((item, index) => item.itemType === "AI_ESTIMATE"
-    || (Number.isFinite(decimalNumber(quantities[index])) && decimalNumber(quantities[index]) > 0));
+  const ready = items.length > 0 && items.every((_item, index) =>
+    Number.isFinite(decimalNumber(quantities[index])) && decimalNumber(quantities[index]) > 0);
 
   function confirm() {
     if (!ready || saving) return;
     onConfirm(items.map((item, index) => {
-      if (item.itemType === "AI_ESTIMATE") return item;
       const quantity = decimalNumber(quantities[index]);
       const factor = quantity / Number(item.quantity || 1);
       return {
@@ -47,9 +47,7 @@ export function RecentMealReviewDialog({ title, destination, items, saving, onCl
         {items.map((item, index) => (
           <div className="recent-review-item" key={`${item.itemType}:${item.id || item.itemId || index}:${index}`}>
             <div><strong>{mealLogName(item) || item.label || "Comida estimada"}</strong><small>{formatNumber(item.calories || 0)} kcal registrados</small></div>
-            {item.itemType === "AI_ESTIMATE"
-              ? <span className="recent-review-fixed">{formatMealLogAmount(item)}</span>
-              : <Input label={quantityLabel(item)} type="text" inputMode="decimal" value={quantities[index]} onChange={(event) => setQuantities((current) => current.map((value, itemIndex) => itemIndex === index ? event.target.value : value))} onFocus={(event) => event.currentTarget.select()} />}
+            <div><Input label={quantityLabel(item)} type="text" inputMode="decimal" value={quantities[index]} onChange={(event) => setQuantities((current) => current.map((value, itemIndex) => itemIndex === index ? event.target.value : value))} /><small>{formatMealLogAmount(item)}</small></div>
           </div>
         ))}
       </div>

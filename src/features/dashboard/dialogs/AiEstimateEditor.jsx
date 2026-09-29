@@ -9,6 +9,7 @@ import { aiProposalFood, macroCalories } from "../dashboard.utils";
 import { scaleFoodNutrition } from "../../recipes/recipe.utils";
 import { decimalNumber } from "../../../utils/decimal";
 import { resizeAiEstimateItem } from "../aiEstimateAmounts";
+import { normalizeDecimalInput } from "../../../utils/decimal";
 
 export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, onDiscard, onConfirm, mode = "create", mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem, targetType = "RECIPE", addToDiary = false, setAddToDiary, registrationMealType, setRegistrationMealType, registrationDate, setRegistrationDate }) {
   const [catalogItemIndex, setCatalogItemIndex] = useState(null);
@@ -36,7 +37,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
   }
 
   function updateItemMacro(index, field, value) {
-    setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: decimalNumber(value), catalogFoodId: null, catalogMatchType: null, catalogMatchConfidence: null } : item) }));
+    setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: normalizeDecimalInput(value), catalogFoodId: null, catalogMatchType: null, catalogMatchConfidence: null } : item) }));
   }
 
   function removeItem(index) {
@@ -79,6 +80,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
       ariaLabel={ariaLabel}
       closeLabel="Cerrar estimación"
       onClose={onDiscard}
+      closeDisabled={saving || refining}
       className="ai-estimate-modal"
       backdropClassName="modal-backdrop ai-estimate-backdrop"
       footer={
@@ -120,7 +122,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
           </div>
           {estimate.items.length > 0 ? <div className="ai-estimate-items">
             {estimate.items.map((item, index) => (
-              <article className="ai-estimate-item" key={`${item.name}:${index}`}>
+              <article className="ai-estimate-item" key={index}>
                 <div className="ai-estimate-item-heading">
                   <span>Alimento {index + 1}</span>
                   <strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))} kcal</strong>
@@ -129,7 +131,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                 </div>
                 <div className="ai-estimate-item-fields">
                   <Input label="Alimento" value={item.name} disabled={refining || saving} onChange={(event) => updateItemName(index, event.target.value)} />
-                  <label className="ai-estimate-grams-field"><span>Gramos</span><span className="ai-estimate-grams-input"><input type="text" disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => updateItem(index, event.target.value)} /><span>g</span></span></label>
+                  <label className="ai-estimate-grams-field"><span>Gramos</span><span className="ai-estimate-grams-input"><input type="text" disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onChange={(event) => updateItem(index, event.target.value)} /><span>g</span></span></label>
                 </div>
                 <details className="ai-estimate-item-details">
                   <summary>Ver detalle nutricional</summary>
@@ -149,7 +151,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                       ].map(([label, field, decisionField]) => {
                         const decision = estimate.decision?.[decisionField];
                         const reviewLabel = decision?.classification === "CONSISTENT" ? "JEV: plausible" : decision?.classification === "REVIEW" ? "JEV: revisar" : decision?.classification === "INSUFFICIENT" ? "JEV: sin evidencia" : null;
-                        return <label className="ai-estimate-macro-edit" key={field}><small>{label}</small>{mode === "create" ? <input type="number" min="0" step="0.1" value={item[field] ?? 0} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)}g</strong>}{reviewLabel && <em>{reviewLabel}</em>}</label>;
+                        return <label className="ai-estimate-macro-edit" key={field}><small>{label}</small>{mode === "create" ? <input type="text" inputMode="decimal" value={item[field] ?? "0"} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)}g</strong>}{reviewLabel && <em>{reviewLabel}</em>}</label>;
                       })}
                     </div>
                   </div>

@@ -1316,6 +1316,7 @@ button:disabled {
 .recent-review-item strong { overflow-wrap: anywhere; }
 .recent-review-item small, .recent-review-fixed { color: var(--muted); font-size: var(--type-meta); }
 .recent-review-item .field { min-width: 0; }
+.recent-review-item > div:last-child { display: grid; gap: 3px; min-width: 0; }
 
 .picker-tabs {
   min-width: 0;

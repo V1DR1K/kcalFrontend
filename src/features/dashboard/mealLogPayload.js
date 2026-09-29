@@ -25,6 +25,9 @@ export function normalizeMealLogReference(log, mealType, logDate) {
     quantity,
     unit,
     logDate,
+    ...(Number.isInteger(Number(log?.sourceLogId ?? log?.id)) && Number(log?.sourceLogId ?? log?.id) > 0
+      ? { sourceLogId: Number(log.sourceLogId ?? log.id) }
+      : {}),
     ...(isAiEstimate ? {
       displayName: log?.displayName || "Comida estimada",
       aiEstimateConfidence: Number(log?.aiEstimateConfidence || 0),

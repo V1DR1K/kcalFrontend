@@ -22,6 +22,13 @@ export function NutritionPlanManager({ api, plans, onChanged }) {
   const [activatingId, setActivatingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const currentPlan = plans.find((plan) => plan.current) || plans.find((plan) => plan.startDate <= today() && (!plan.endDate || plan.endDate >= today()));
+  const overlaps = [];
+  const orderedPlans = [...plans].sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)) || Number(a.id) - Number(b.id));
+  orderedPlans.forEach((plan, index) => {
+    for (const other of orderedPlans.slice(index + 1)) {
+      if (!plan.endDate || other.startDate <= plan.endDate) overlaps.push([plan, other]);
+    }
+  });
   function startCreate() {
     setDialog({ plan: null });
   }
@@ -77,6 +84,7 @@ export function NutritionPlanManager({ api, plans, onChanged }) {
         <div><small>PLAN ACTUAL</small><strong>{currentPlan?.name || "Sin plan activo"}</strong>{currentPlan && <span>Desde {readableDate(currentPlan.startDate)} · {currentPlan.dailyCalories} kcal</span>}{currentPlan && <em className="active-plan-badge">En uso hoy</em>}</div>
         {currentPlan && <div className="current-plan-actions"><div className="current-plan-macros"><span>{currentPlan.proteinPercent}% P</span><span>{currentPlan.carbsPercent}% C</span><span>{currentPlan.fatPercent}% G</span></div><button type="button" className="secondary use-plan-button" onClick={() => startEdit(currentPlan)}><Icon name="edit" />Editar</button></div>}
       </div>
+      {overlaps.length > 0 && <div className="plan-overlap-notice" role="status"><strong>Hay períodos de planes superpuestos</strong><p>El historial mantiene esas fechas, pero para cada día solo se aplica el plan más reciente. Editá los planes para dejar una sola opción activa.</p>{overlaps.map(([first, second]) => <div key={`${first.id}:${second.id}`}><span>{first.name} · {formatPlanDate(first.startDate)}–{first.endDate ? formatPlanDate(first.endDate) : "Actualidad"} / {second.name} · {formatPlanDate(second.startDate)}–{second.endDate ? formatPlanDate(second.endDate) : "Actualidad"}</span><button type="button" className="secondary" onClick={() => startEdit(second)}>Revisar {second.name}</button></div>)}</div>}
       <div className="plan-history">
         <div className="plan-history-header"><div><h3>Otros planes</h3><p>Conservá alternativas listas para volver a usarlas.</p></div><button type="button" className="primary" onClick={startCreate}><Icon name="add" />Agregar plan</button></div>
         {plans.filter((plan) => !plan.current && plan.id !== currentPlan?.id).map((plan) => (

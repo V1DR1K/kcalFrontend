@@ -185,7 +185,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
           />
         )}
         <div className="split configure-fields">
-          <Input decimal selectOnFocus label="Cantidad" value={quantity} onChange={(event) => setQuantity(event.target.value)} inputMode="decimal" min="0.1" step="0.01" />
+          <Input decimal label="Cantidad" value={quantity} onChange={(event) => setQuantity(event.target.value)} inputMode="decimal" min="0.1" step="0.01" />
           <Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={configureUnitOptions} />
         </div>
         <label className="field">

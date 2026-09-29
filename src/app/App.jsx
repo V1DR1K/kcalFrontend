@@ -134,8 +134,10 @@ export function App() {
   }
 
   function logout() {
-    api.request("/api/auth/logout", { method: "POST" }).catch(() => {});
     clearSessionLocally();
+    api.request("/api/auth/logout", { method: "POST" }).catch(() => {
+      api.notify("La sesión se cerró en este dispositivo, pero no se pudo confirmar su revocación central.", "error");
+    });
   }
 
   function clearSessionLocally() {

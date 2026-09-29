@@ -8,7 +8,8 @@ export { mealTotals } from "./nutritionTotals.js";
 export function isCopyableMealLog(log) { return ["FOOD", "RECIPE", "AI_ESTIMATE"].includes(log?.itemType || log?.type); }
 
 export function aiProposalFood(item) {
-  const estimatedGrams = Math.max(1, decimalNumber(item?.estimatedGrams) || 100);
+  const parsedGrams = decimalNumber(item?.estimatedGrams);
+  const estimatedGrams = Number.isFinite(parsedGrams) && parsedGrams > 0 ? parsedGrams : 100;
   const factor = 100 / estimatedGrams;
   const nutrients = Object.fromEntries(Object.entries(item?.nutrients || {}).map(([code, value]) => [code, Number(value || 0) * factor]));
   return { name: item?.name?.trim() || "Alimento estimado", category: item?.category || "OTHER", preparation: item?.preparation || "UNSPECIFIED", baseQuantity: 100, proteinGrams: Number(item?.proteinGrams || 0) * factor, carbsGrams: Number(item?.carbsGrams || 0) * factor, fatGrams: Number(item?.fatGrams || 0) * factor, nutrients };

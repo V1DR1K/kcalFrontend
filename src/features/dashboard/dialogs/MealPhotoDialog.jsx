@@ -10,6 +10,7 @@ export function MealPhotoContextEditor({ photoUrl, context, setContext, error, r
       ariaLabel="Preparar análisis de foto"
       closeLabel="Descartar foto"
       onClose={onDiscard}
+      closeDisabled={analyzing || transcribing || recording}
       className="ai-photo-context-modal"
       backdropClassName="modal-backdrop ai-photo-context-backdrop"
       footer={
