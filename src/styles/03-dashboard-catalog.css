@@ -1309,6 +1309,14 @@ button:disabled {
 
 .picker-scroll { overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
 
+.recent-review-modal .modal-shell-content { padding: var(--space-4) var(--space-5); }
+.recent-review-items { display: grid; gap: var(--space-3); }
+.recent-review-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, 160px); align-items: center; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-control); background: var(--surface-low); }
+.recent-review-item > div:first-child { display: grid; gap: 3px; min-width: 0; }
+.recent-review-item strong { overflow-wrap: anywhere; }
+.recent-review-item small, .recent-review-fixed { color: var(--muted); font-size: var(--type-meta); }
+.recent-review-item .field { min-width: 0; }
+
 .picker-tabs {
   min-width: 0;
   max-width: 100%;

@@ -20,6 +20,7 @@ import { compressMealPhoto } from "../../../services/image";
 import { MealShareDialog } from "./MealShareDialogs";
 
 import { AiEstimateEditor } from "./AiEstimateEditor";
+import { RecentMealReviewDialog } from "./RecentMealReviewDialog";
 export { FoodPicker, AiEstimateEditor };
 
 function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOptimisticAdd = () => [], onOptimisticRollback = () => {}, onOptimisticConfirm = () => {}, draftOnly = false, ingredientOnly = false, onDraftAdd, aiOnly = false, mealTypes = DEFAULT_MEALS }) {
@@ -43,6 +44,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const [aiRegistrationMealType, setAiRegistrationMealType] = useState(mealType?.code || DEFAULT_MEALS[0].code);
   const [aiRegistrationDate, setAiRegistrationDate] = useState(selectedDate || today());
   const [aiError, setAiError] = useState("");
+  const [aiSaveError, setAiSaveError] = useState("");
   const [aiContext, setAiContext] = useState("");
   const [aiEstimatePhoto, setAiEstimatePhoto] = useState(null);
   const [aiCorrection, setAiCorrection] = useState("");
@@ -51,6 +53,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const [pendingMealPhoto, setPendingMealPhoto] = useState(null);
   const [pendingMealPhotoUrl, setPendingMealPhotoUrl] = useState("");
   const [shareBracket, setShareBracket] = useState(null);
+  const [reviewingBracket, setReviewingBracket] = useState(null);
   const [audioRecording, setAudioRecording] = useState(false);
   const [audioTranscribing, setAudioTranscribing] = useState(false);
   const galleryInputRef = useRef(null);
@@ -88,6 +91,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   function selectMealPhoto(file) {
     if (!file || aiAnalyzing) return;
     setAiError("");
+    setAiSaveError("");
     setAiContext("");
     setAiEstimatePhoto(null);
     setAiCorrection("");
@@ -167,7 +171,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       if (!result?.items?.length) throw new Error("La IA no pudo identificar alimentos en esta foto. Probá con mejor luz.");
       const estimate = aiEstimateWithServings(result);
       const target = estimate.items.length > 1 ? "RECIPE" : "FOOD";
-      setAiAddToDiary(target === "FOOD" && !aiOnly && !draftOnly && Boolean(mealType));
+      setAiAddToDiary(target === "FOOD" && !draftOnly && Boolean(mealType));
       setAiEstimate(estimate);
       setAiUsage(result.usage);
       setAiEstimatePhoto(image);
@@ -202,7 +206,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       if (!result?.items?.length) throw new Error("La IA no pudo corregir esta estimación. Probá con una indicación más precisa.");
       const estimate = aiEstimateWithServings(result);
       const target = estimate.items.length > 1 ? "RECIPE" : "FOOD";
-      setAiAddToDiary(target === "FOOD" && !aiOnly && !draftOnly && Boolean(mealType));
+      const previousTarget = aiEstimate.items.length > 1 ? "RECIPE" : "FOOD";
+      setAiAddToDiary((current) => target === "FOOD" && (previousTarget === "FOOD" ? current : !draftOnly && Boolean(mealType)));
       setAiEstimate(estimate);
       setAiUsage(result.usage);
       setAiCorrection("");
@@ -216,6 +221,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   }
   function discardAiEstimate() {
     setAiEstimate(null);
+    setAiSaveError("");
     setAiEstimatePhoto(null);
     setAiContext("");
     setAiCorrection("");
@@ -244,6 +250,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       return;
     }
     const target = estimate.items.length > 1 ? "RECIPE" : "FOOD";
+    setAiSaveError("");
     setAdding(true);
     try {
       const saved = await api.runAction(
@@ -272,7 +279,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       discardAiEstimate();
       await onDone?.(savedLog, saved);
     } catch (error) {
-      api.notify(error.message || "No se pudo guardar la estimación.", "error");
+      const message = error.message || "No se pudo guardar la estimación.";
+      setAiSaveError(message);
+      api.notify(message, "error");
     } finally {
       setAdding(false);
     }
@@ -528,6 +537,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     setRecipeDetail(null);
     setRecipeIngredients(null);
   }
+  function reviewFood(item) {
+    document.activeElement?.blur?.();
+    setSelected(item);
+  }
   const localQuery = normalizedQuery;
   const addedFoods = catalog.items.filter((item) => !localQuery || normalizeSearchText(`${item.name || ""} ${item.brand || ""}`).includes(localQuery));
   const recentBrackets = catalog.items.filter((meal) => {
@@ -535,22 +548,22 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     if (!items.length) return false;
     return !localQuery || normalizeSearchText(`${meal.label || ""} ${items.map((item) => mealLogName(item)).join(" ")}`).includes(localQuery);
   });
-  async function addRecentMeal(bracket) {
-    if (adding || !bracket?.items?.length) return;
+  async function addRecentMeal(bracket, reviewedItems) {
+    if (adding || !reviewedItems?.length) return;
     setAdding(true);
-    const optimisticLogs = onOptimisticAdd(bracket.items, mealType.code);
-    onClose();
+    const optimisticLogs = onOptimisticAdd(reviewedItems, mealType.code);
     try {
       await api.runAction(
         { title: "Agregando comida reciente", description: `Estamos sumando ${bracket.label.toLowerCase()} a ${mealType.label.toLowerCase()}...` },
         async () => {
-          const savedLogs = await createMealLogs(api, bracket.items, mealType.code, selectedDate);
+          const savedLogs = await createMealLogs(api, reviewedItems, mealType.code, selectedDate);
           const confirmed = onOptimisticConfirm(optimisticLogs, savedLogs);
           api.notify(`${bracket.label} agregado a ${mealType.label}.`);
           if (!confirmed) await onDone();
         },
         { quiet: true },
       );
+      onClose();
     } catch {
       onOptimisticRollback(optimisticLogs);
       api.notify("No se pudo agregar la comida reciente.", "error");
@@ -604,31 +617,31 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         {!aiOnly && <div className="picker-tools">
           <div className="search-wrap">
             <Icon name="search" />
-            <input className="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} />
+            <input className="search" type="search" enterKeyHint="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
           </div>
         </div>}
         {!aiOnly && <div className="picker-scroll" data-dialog-scroll-owner="true" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
           {tab === "FOOD" && !normalizedQuery && <div className="picker-results">
             {groupFoodVariants(recentFoods).map((item) => (
-              <CatalogRowWithImage key={`RECENT_FOOD:${item.id}`} item={item} onPick={setSelected} />
+              <CatalogRowWithImage key={`RECENT_FOOD:${item.id}`} item={item} onPick={reviewFood} />
             ))}
           </div>}
           {(tab === "FOOD" && normalizedQuery.length >= 2 || tab === "RECIPE") && <div className="picker-results">
             {groupFoodVariants(catalog.items).map((item) => (
-              <CatalogRowWithImage key={`${tab}:${item.id}`} item={{ ...item, type: tab }} onPick={setSelected} />
+              <CatalogRowWithImage key={`${tab}:${item.id}`} item={{ ...item, type: tab }} onPick={reviewFood} />
             ))}
           </div>}
           {tab === "MINE" && <div className="picker-results">
-            {groupFoodVariants(addedFoods).map((item) => <CatalogRowWithImage key={`MINE:${item.id}`} item={{ ...item, type: "FOOD" }} onPick={setSelected} />)}
+            {groupFoodVariants(addedFoods).map((item) => <CatalogRowWithImage key={`MINE:${item.id}`} item={{ ...item, type: "FOOD" }} onPick={reviewFood} />)}
           </div>}
            {tab === "RECENT" && <div className="recent-meals picker-recent-meals">
              {recentBrackets.map((bracket) => <article className={`catalog-row recent-meal-card recent-bracket-card ${adding ? "adding" : ""}`} key={`${bracket.sourceDate}:${bracket.mealType}`}>
-               <button type="button" className="recent-bracket-main" disabled={adding} aria-label={`Agregar ${bracket.label} completo`} onClick={() => addRecentMeal(bracket)}>
+               <button type="button" className="recent-bracket-main" disabled={adding} aria-label={`Revisar ${bracket.label} completo`} onClick={() => setReviewingBracket(bracket)}>
                  <div className="recent-bracket-heading"><div><strong>{bracket.label}</strong><small>{readableDate(bracket.sourceDate)}</small></div><span className="recent-bracket-total"><strong>{formatNumber(bracket.calories)} kcal</strong><small>P {formatNumber(bracket.proteinGrams, 1)}g · C {formatNumber(bracket.carbsGrams, 1)}g · G {formatNumber(bracket.fatGrams, 1)}g</small></span></div>
                   <div className="recent-bracket-items">{sortMealLogs(Array.isArray(bracket.items) ? bracket.items : []).map((item) => <span className="recent-bracket-item" key={item.id}><strong>{mealLogName(item)}</strong><small>{formatMealLogAmount(item)} · {formatNumber(item.calories)} kcal · P {formatNumber(item.proteinGrams, 1)}g · C {formatNumber(item.carbsGrams, 1)}g · G {formatNumber(item.fatGrams, 1)}g</small></span>)}</div>
                  <Icon name="chevron_right" className="row-action recent-bracket-action" />
                </button>
-               <div className="recent-bracket-actions"><button type="button" className="secondary recent-bracket-share" aria-label={`Compartir ${bracket.label}`} onClick={() => setShareBracket(bracket)}><Icon name="share" /><span>Compartir</span></button><button type="button" className="primary recent-bracket-add" disabled={adding} onClick={() => addRecentMeal(bracket)}><Icon name="add" /><span>Agregar</span></button></div>
+               <div className="recent-bracket-actions"><button type="button" className="secondary recent-bracket-share" aria-label={`Compartir ${bracket.label}`} onClick={() => setShareBracket(bracket)}><Icon name="share" /><span>Compartir</span></button><button type="button" className="primary recent-bracket-add" disabled={adding} onClick={() => setReviewingBracket(bracket)}><Icon name="tune" /><span>Revisar</span></button></div>
              </article>)}
            </div>}
           {tab === "FOOD" && normalizedQuery.length === 1 && <CatalogStatus>Escribí al menos 2 caracteres para buscar.</CatalogStatus>}
@@ -659,6 +672,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           </div>
         </div>}
         {shareBracket && <MealShareDialog api={api} bracket={shareBracket} onClose={() => setShareBracket(null)} />}
+        {reviewingBracket && <RecentMealReviewDialog title={reviewingBracket.label} destination={mealType.label} items={reviewingBracket.items} saving={adding} onClose={() => setReviewingBracket(null)} onConfirm={(reviewedItems) => addRecentMeal(reviewingBracket, reviewedItems)} />}
         {selected && (
           <FoodLogDialog
             item={selected}
@@ -718,7 +732,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           </FoodLogDialog>
         )}
         {pendingMealPhoto && <MealPhotoContextEditorDialog photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
-        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} targetType={aiEstimate.items.length > 1 ? "RECIPE" : "FOOD"} addToDiary={aiAddToDiary} setAddToDiary={setAiAddToDiary} registrationMealType={aiRegistrationMealType} setRegistrationMealType={setAiRegistrationMealType} registrationDate={aiRegistrationDate} setRegistrationDate={setAiRegistrationDate} mealTypes={mealTypes} />}
+        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} saveError={aiSaveError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} targetType={aiEstimate.items.length > 1 ? "RECIPE" : "FOOD"} addToDiary={aiAddToDiary} setAddToDiary={setAiAddToDiary} registrationMealType={aiRegistrationMealType} setRegistrationMealType={setAiRegistrationMealType} registrationDate={aiRegistrationDate} setRegistrationDate={setAiRegistrationDate} mealTypes={mealTypes} />}
         {!ingredientOnly && <footer className="picker-photo-actions">
           <label className={`secondary ai-photo-trigger ai-gallery-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
             <Icon name="photo_library" />

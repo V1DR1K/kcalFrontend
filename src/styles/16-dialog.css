@@ -346,6 +346,10 @@
 /* A virtual keyboard reduces the visible viewport. Keep dialog chrome inside
    that area so the focused field and fixed actions remain reachable. */
 @media (max-width: 900px) {
+  html[data-keyboard-open="true"] .app-modal-surface.picker-modal[class]:has(.search:focus) > .picker-photo-actions {
+    display: none;
+  }
+
   html[data-keyboard-open="true"] .app-modal-backdrop[class] {
     top: var(--dialog-viewport-top, 0px);
     height: var(--dialog-visible-height, 100dvh);

@@ -4,6 +4,7 @@ import { FoodThumb } from "../../catalog/CatalogComponents";
 import { readRecents } from "../../../services/recents";
 import { createMealLogs, formatMealLogAmount } from "../dashboard.utils";
 import { formatNumber } from "../../../utils/format";
+import { RecentMealReviewDialog } from "../dialogs/RecentMealReviewDialog";
 
 export function QuickItems({ title, items, onPick }) {
   if (!items.length) return null;
@@ -31,15 +32,14 @@ export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAd
     return { ...meal, imageUrl: meal.imageUrl || savedItem?.imageUrl, category: meal.category || savedItem?.category, calories: meal.calories ?? estimatedCalories };
   });
   const [states, setStates] = useState({});
-  async function addRecent(meal) {
+  const [reviewing, setReviewing] = useState(null);
+  async function addRecent(meal, reviewedItems) {
     if (states[meal.id] === "adding") return;
+    const reviewed = reviewedItems[0];
     const optimisticLogs = onOptimisticAdd([{
-      itemType: meal.itemType,
+      ...reviewed,
       food: meal.itemType === "FOOD" ? { id: meal.itemId, name: meal.label, imageUrl: meal.imageUrl, category: meal.category } : null,
       recipe: meal.itemType === "RECIPE" ? { id: meal.itemId, name: meal.label, imageUrl: meal.imageUrl } : null,
-      quantity: meal.quantity,
-      unit: meal.unit,
-      calories: meal.calories,
     }], meal.mealType);
     const startedAt = performance.now();
     setStates((current) => ({ ...current, [meal.id]: "adding" }));
@@ -47,13 +47,14 @@ export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAd
       await api.runAction(
         { title: "Agregando comida reciente", description: `Estamos sumando ${meal.label} a tu día...` },
         async () => {
-          const savedLogs = await createMealLogs(api, [meal], meal.mealType, date);
+          const savedLogs = await createMealLogs(api, reviewedItems, meal.mealType, date);
           const confirmed = onOptimisticConfirm?.(optimisticLogs, savedLogs);
           api.notify(`${meal.label} agregado.`);
           if (!confirmed) await onDone();
         },
         { quiet: true },
       );
+      setReviewing(null);
       const elapsed = performance.now() - startedAt;
       if (elapsed < 520) await new Promise((resolve) => window.setTimeout(resolve, 520 - elapsed));
       setStates((current) => ({ ...current, [meal.id]: "added" }));
@@ -68,6 +69,7 @@ export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAd
   if (!meals.length) return <p className="empty-state">Tus comidas recientes aparecerán acá.</p>;
   return (
     <div className="recent-meals">
+      {reviewing && <RecentMealReviewDialog title={reviewing.label} destination={mealTypes.find((type) => type.code === reviewing.mealType)?.label || reviewing.mealType} items={[reviewing]} saving={states[reviewing.id] === "adding"} onClose={() => setReviewing(null)} onConfirm={(reviewedItems) => addRecent(reviewing, reviewedItems)} />}
       {meals.map((meal) => {
         const state = states[meal.id] || "idle";
         const mealLabel = mealTypes.find((type) => type.code === meal.mealType)?.label || meal.mealType;
@@ -80,8 +82,8 @@ export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAd
               <small>{mealLabel} · {formatMealLogAmount(meal)}</small>
             </span>
             <strong className="recent-meal-calories">{formatNumber(meal.calories || 0)}<small> kcal</small></strong>
-            <button type="button" disabled={state === "adding" || state === "added"} aria-label={`Agregar ${meal.label} a ${mealLabel}`} onClick={() => addRecent(meal)}>
-              <Icon name={state === "added" ? "check" : state === "error" ? "refresh" : "add"} />
+            <button type="button" disabled={state === "adding" || state === "added"} aria-label={`Revisar ${meal.label} para ${mealLabel}`} onClick={() => setReviewing(meal)}>
+              <Icon name={state === "added" ? "check" : state === "error" ? "refresh" : "tune"} />
             </button>
           </article>
         );
