@@ -23,7 +23,7 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
   const [mode, setMode] = useState("choices");
   const [activeDialog, setActiveDialog] = useState(initialDialog);
   const [catalogOpen, setCatalogOpen] = useState(false);
-  const [aiRegistrationTarget, setAiRegistrationTarget] = useState(null);
+  const [aiRegistrationOpen, setAiRegistrationOpen] = useState(false);
   const videoRef = useRef(null);
   const scannerControlsRef = useRef(null);
   const mountedRef = useRef(true);
@@ -196,14 +196,9 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
           <Icon name="qr_code_scanner" />
         </header>
         <div className="register-options">
-          <button className="register-option register-option-primary" type="button" onClick={() => setAiRegistrationTarget("FOOD")}>
+          <button className="register-option register-option-primary" type="button" onClick={() => setAiRegistrationOpen(true)}>
             <span className="register-option-icon"><Icon name="photo_camera" /></span>
-            <span><strong>Registrar alimento con foto</strong><small>Ideal para envases y etiquetas nutricionales. La IA crea un alimento.</small></span>
-            <Icon name="arrow_forward" />
-          </button>
-          <button className="register-option register-option-primary" type="button" onClick={() => setAiRegistrationTarget("RECIPE")}>
-            <span className="register-option-icon"><Icon name="restaurant" /></span>
-            <span><strong>Registrar comida con foto</strong><small>Reconoce el plato, crea una receta y registra una porción.</small></span>
+            <span><strong>Registrar comida con foto</strong><small>La IA la guarda como alimento si detecta uno; si detecta varios, crea una receta.</small></span>
             <Icon name="arrow_forward" />
           </button>
           <button className="register-option register-option-primary" type="button" onClick={openScanner}>
@@ -236,16 +231,15 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
           />
         )}
         {renderCollectionDialog()}
-        {aiRegistrationTarget && (
+        {aiRegistrationOpen && (
           <FoodPicker
             api={api}
             user={user}
             mealType={currentMealType()}
             selectedDate={today()}
             aiOnly
-            aiTarget={aiRegistrationTarget}
-            onClose={() => setAiRegistrationTarget(null)}
-            onDone={(savedLog) => { setAiRegistrationTarget(null); if (savedLog) setPage("dashboard"); }}
+            onClose={() => setAiRegistrationOpen(false)}
+            onDone={(savedLog) => { setAiRegistrationOpen(false); if (savedLog) setPage("dashboard"); }}
           />
         )}
       </section>
