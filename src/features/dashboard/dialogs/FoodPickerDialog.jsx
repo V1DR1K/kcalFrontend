@@ -482,9 +482,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       );
       rememberItem(user, selected);
       rememberMeal(user, mealType.code, log);
-      onOptimisticConfirm(optimisticLogs[0], log);
+      const confirmed = onOptimisticConfirm(optimisticLogs, [log]);
       api.notify(`${selected.name} agregado a ${mealType.label}.`);
-      onDone();
+      if (!confirmed) onDone();
     } catch {
       onOptimisticRollback(optimisticLogs);
       api.notify("No se pudo agregar el alimento. Se revirtieron los cambios.", "error");
@@ -546,14 +546,15 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     if (adding || !bracket?.items?.length) return;
     setAdding(true);
     const optimisticLogs = onOptimisticAdd(bracket.items, mealType.code);
+    onClose();
     try {
       await api.runAction(
         { title: "Agregando comida reciente", description: `Estamos sumando ${bracket.label.toLowerCase()} a ${mealType.label.toLowerCase()}...` },
         async () => {
-          await createMealLogs(api, bracket.items, mealType.code, selectedDate);
+          const savedLogs = await createMealLogs(api, bracket.items, mealType.code, selectedDate);
+          const confirmed = onOptimisticConfirm(optimisticLogs, savedLogs);
           api.notify(`${bracket.label} agregado a ${mealType.label}.`);
-          await onDone();
-          onClose();
+          if (!confirmed) await onDone();
         },
         { quiet: true },
       );

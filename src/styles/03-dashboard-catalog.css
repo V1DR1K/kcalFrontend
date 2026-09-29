@@ -1596,7 +1596,9 @@ button:disabled {
 .recent-meal-card.error { border-color: var(--error); animation: recent-error 380ms ease; }
 .recent-meal-card.error > button { background: var(--error); }
 .meal-item-shell.optimistic .meal-item { animation: optimistic-in 360ms cubic-bezier(.2,.8,.2,1); }
-.meal-item-shell.optimistic .meal-item::after { content: ""; width: 14px; height: 14px; flex: 0 0 auto; border: 2px solid color-mix(in srgb, var(--primary) 28%, transparent); border-top-color: var(--primary); border-radius: 50%; animation: spin 650ms linear infinite; }
+.meal-item-shell.optimistic .meal-item::after { display: block; width: 14px; height: 14px; flex: 0 0 auto; border: 2px solid color-mix(in srgb, var(--primary) 28%, transparent); border-top-color: var(--primary); border-radius: 50%; content: ""; transform-origin: center; animation: spin 650ms linear infinite; will-change: transform; }
+.meal-item-shell.celebrating::after { position: absolute; z-index: 4; top: 50%; left: 50%; width: 6px; height: 9px; border-radius: 2px; background: var(--primary); content: ""; pointer-events: none; animation: meal-confirm-burst 760ms cubic-bezier(.16,.9,.24,1) both; box-shadow: -25px -18px 0 -1px var(--warning), 22px -24px 0 -1px var(--tertiary), -34px 8px 0 -1px var(--color-confetti-rose), 31px 12px 0 -1px var(--color-confetti-lilac), -10px -31px 0 -1px var(--color-confetti-gold), 11px 29px 0 -1px var(--color-confetti-green); }
+@keyframes meal-confirm-burst { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(0); } 18% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -105%) scale(1.2) rotate(110deg); box-shadow: -40px -34px 0 -1px var(--warning), 42px -42px 0 -1px var(--tertiary), -52px 26px 0 -1px var(--color-confetti-rose), 48px 34px 0 -1px var(--color-confetti-lilac), -18px -53px 0 -1px var(--color-confetti-gold), 18px 51px 0 -1px var(--color-confetti-green); } }
 
 @keyframes recent-card-in { from { opacity: 0; transform: translateY(8px) scale(.985); } }
 @keyframes recent-fill-pending {

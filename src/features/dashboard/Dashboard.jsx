@@ -150,27 +150,37 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
       };
     });
   }
-  function confirmOptimisticLog(optimisticLog, savedLog) {
-    if (!optimisticLog || !savedLog) return;
+  function confirmOptimisticLogs(optimisticLogs, savedLogs) {
+    if (!optimisticLogs?.length || !Array.isArray(savedLogs) || savedLogs.length !== optimisticLogs.length) return false;
     invalidateLoads();
     setData((current) => {
-      const pending = (current?.meals || []).flatMap((meal) => meal.items || []).find((item) => item.id === optimisticLog.id);
-      if (!pending) return current;
-      const replacement = { ...pending, ...savedLog, optimistic: false };
+      const pendingById = new Map((current?.meals || []).flatMap((meal) => meal.items || []).map((item) => [item.id, item]));
+      const replacements = optimisticLogs.map((optimisticLog, index) => {
+        const pending = pendingById.get(optimisticLog.id);
+        return pending ? { pending, saved: { ...pending, ...savedLogs[index], optimistic: false, celebrating: true } } : null;
+      }).filter(Boolean);
+      if (!replacements.length) return current;
+      const replacementsById = new Map(replacements.map(({ pending, saved }) => [pending.id, saved]));
       return {
         ...current,
-        caloriesConsumed: Number(current.caloriesConsumed || 0) + Number(replacement.calories || 0) - Number(pending.calories || 0),
+        caloriesConsumed: Number(current.caloriesConsumed || 0) + replacements.reduce((sum, { pending, saved }) => sum + Number(saved.calories || 0) - Number(pending.calories || 0), 0),
         macros: (current.macros || []).map((macro) => ({
           ...macro,
-          consumed: Number(macro.consumed || 0) + macroValue(replacement, String(macro.key).toUpperCase()) - macroValue(pending, String(macro.key).toUpperCase()),
+          consumed: Number(macro.consumed || 0) + replacements.reduce((sum, { pending, saved }) => sum + macroValue(saved, String(macro.key).toUpperCase()) - macroValue(pending, String(macro.key).toUpperCase()), 0),
         })),
         meals: (current.meals || []).map((meal) => {
-          if (!meal.items?.some((item) => item.id === pending.id)) return meal;
-          const items = meal.items.map((item) => item.id === pending.id ? replacement : item);
+          if (!meal.items?.some((item) => replacementsById.has(item.id))) return meal;
+          const items = meal.items.map((item) => replacementsById.get(item.id) || item);
           return { ...meal, ...mealTotals(items), items };
         }),
       };
     });
+    const ids = new Set(optimisticLogs.map((log, index) => savedLogs[index]?.id ?? log.id));
+    window.setTimeout(() => setData((current) => ({
+      ...current,
+      meals: (current?.meals || []).map((meal) => ({ ...meal, items: (meal.items || []).map((item) => ids.has(item.id) ? { ...item, celebrating: false } : item) })),
+    })), 900);
+    return true;
   }
   function removeLogsOptimistic(logs) {
     rollbackOptimisticLogs(logs);
@@ -299,6 +309,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
             onOptimisticAdd={addOptimisticLogs}
             onOptimisticRemove={removeLogsOptimistic}
             onOptimisticRollback={rollbackOptimisticLogs}
+            onOptimisticConfirm={confirmOptimisticLogs}
             clipboard={mealClipboard}
             bulkActionLoading={mealBulkActionLoading}
             setBulkActionLoading={setMealBulkActionLoading}
@@ -467,10 +478,10 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
            </div>
          </div>
         {Boolean(recentMeals.length) && <Panel title="Comidas recientes">
-          <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
+          <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} onOptimisticConfirm={confirmOptimisticLogs} />
         </Panel>}
       </div>
-       <PastMealsPreview api={api} targetDate={selectedDate} targetMeals={data?.meals || []} mealTypes={mealTypes} onCopied={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} />
+       <PastMealsPreview api={api} targetDate={selectedDate} targetMeals={data?.meals || []} mealTypes={mealTypes} onCopied={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} onOptimisticConfirm={confirmOptimisticLogs} />
        <section className="day-presets-actions" aria-label="Presets de alimentación">
          <button type="button" className="day-presets-trigger" onClick={() => onOpenDayPresets?.({ data, date: selectedDate, autoOpenCreate: true })}>
            <span><strong>Guardar este día</strong><small>Guardá la combinación actual y reutilizala cuando la necesites.</small></span>
@@ -486,7 +497,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
             onClose={() => setPickerMeal((current) => current?.pickerInstance === pickerMeal.pickerInstance ? null : current)}
             onOptimisticAdd={addOptimisticLogs}
             onOptimisticRollback={rollbackOptimisticLogs}
-            onOptimisticConfirm={confirmOptimisticLog}
+            onOptimisticConfirm={confirmOptimisticLogs}
           onDone={async () => {
             setPickerMeal((current) => current?.pickerInstance === pickerMeal.pickerInstance ? null : current);
             await load();

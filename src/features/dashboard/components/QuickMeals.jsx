@@ -22,7 +22,7 @@ export function QuickItems({ title, items, onPick }) {
   );
 }
 
-export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAdd, onOptimisticRollback }) {
+export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAdd, onOptimisticRollback, onOptimisticConfirm }) {
   const recents = readRecents(user);
   const meals = (recents.meals || []).map((meal) => {
     const savedItem = (recents.items || []).find((item) => item.id === meal.itemId && item.type === meal.itemType);
@@ -47,9 +47,10 @@ export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAd
       await api.runAction(
         { title: "Agregando comida reciente", description: `Estamos sumando ${meal.label} a tu día...` },
         async () => {
-          await createMealLogs(api, [meal], meal.mealType, date);
+          const savedLogs = await createMealLogs(api, [meal], meal.mealType, date);
+          const confirmed = onOptimisticConfirm?.(optimisticLogs, savedLogs);
           api.notify(`${meal.label} agregado.`);
-          await onDone();
+          if (!confirmed) await onDone();
         },
         { quiet: true },
       );

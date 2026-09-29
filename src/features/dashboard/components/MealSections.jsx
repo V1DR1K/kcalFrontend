@@ -12,7 +12,7 @@ import { useMealGesture } from "../hooks/useMealGesture";
 
 export { MealCard, MealLogDetails, RecipeIngredientDetail, SwipeableMealItem };
 
-function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, onConvertToRecipe, onShare, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove, entryDelay = 0 }) {
+function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, onOptimisticConfirm, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, onConvertToRecipe, onShare, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove, entryDelay = 0 }) {
   const items = sortMealLogs(meal?.items || []);
   const hasPendingItems = items.some((log) => log.optimistic);
   const cardRef = useRef(null);
@@ -48,11 +48,11 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
       await api.runAction(
         { title: "Copiando comida", description: "Estamos guardando los alimentos de ayer..." },
         async () => {
-          await createMealLogs(api, yesterdayItems, mealType.code, targetDate);
+          const savedLogs = await createMealLogs(api, yesterdayItems, mealType.code, targetDate);
+          const confirmed = onOptimisticConfirm?.(optimisticLogs, savedLogs);
           setSuggestionState("copied");
           api.notify(`${mealType.label} copiado de ayer.`);
-          await new Promise((resolve) => window.setTimeout(resolve, 650));
-          await onCopied();
+          if (!confirmed) await onCopied();
         },
         { quiet: true },
       );
@@ -73,9 +73,10 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
       await api.runAction(
         { title: "Pegando comida", description: "Estamos guardando los alimentos..." },
         async () => {
-          await createMealLogs(api, copyableLogs, mealType.code, targetDate);
+          const savedLogs = await createMealLogs(api, copyableLogs, mealType.code, targetDate);
+          const confirmed = onOptimisticConfirm?.(optimisticLogs, savedLogs);
           api.notify(`Comida pegada en ${mealType.label}.`);
-          await onCopied();
+          if (!confirmed) await onCopied();
           setBulkActionState("success");
           window.setTimeout(() => setBulkActionState("idle"), 700);
         },
@@ -181,7 +182,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
             const item = mealLogItem(log);
           return (
             <SwipeableMealItem
-              className={`${movingLogId === log.id ? "moving" : ""} ${deletingLogId === log.id ? "deleting" : ""} ${log.optimistic ? "optimistic" : ""}`}
+              className={`${movingLogId === log.id ? "moving" : ""} ${deletingLogId === log.id ? "deleting" : ""} ${log.optimistic ? "optimistic" : ""} ${log.celebrating ? "celebrating" : ""}`}
               key={log.id}
               resetSignal={resetSignal}
               expanded={expandedLogId === log.id}

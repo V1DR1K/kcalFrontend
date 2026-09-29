@@ -60,7 +60,7 @@ function DateNavigator({ date, setDate, changing = false }) {
   );
 }
 
-function PastMealsPreview({ api, targetDate, targetMeals = [], mealTypes, onCopied, onOptimisticAdd, onOptimisticRollback }) {
+function PastMealsPreview({ api, targetDate, targetMeals = [], mealTypes, onCopied, onOptimisticAdd, onOptimisticRollback, onOptimisticConfirm }) {
   const [sourceDate, setSourceDate] = useState(() => shiftDate(targetDate, -1));
   const [source, setSource] = useState(null);
   const [status, setStatus] = useState({});
@@ -105,10 +105,11 @@ function PastMealsPreview({ api, targetDate, targetMeals = [], mealTypes, onCopi
       await api.runAction(
         { title: "Copiando comida", description: "Estamos guardando los alimentos en tu día..." },
         async () => {
-          await createMealLogs(api, items, mealType, targetDate);
+          const savedLogs = await createMealLogs(api, items, mealType, targetDate);
+          const confirmed = onOptimisticConfirm?.(optimisticLogs, savedLogs);
           setStatus((current) => ({ ...current, [mealType]: "copied" }));
           api.notify("Comida copiada respetando su horario.");
-          await onCopied();
+          if (!confirmed) await onCopied();
         },
         { quiet: true },
       );
