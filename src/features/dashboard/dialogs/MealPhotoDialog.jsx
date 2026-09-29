@@ -15,7 +15,7 @@ export function MealPhotoContextEditor({ photoUrl, context, setContext, error, r
       footer={
         <div className="ai-photo-context-actions">
           <button type="button" className="secondary" disabled={analyzing} onClick={onChangePhoto}>Cambiar foto</button>
-          <button type="button" className="primary" disabled={analyzing || recording || transcribing || (showTargetTypeOptions && !targetType)} onClick={onAnalyze}>{analyzing ? "Analizando..." : "Analizar foto"}</button>
+          <button type="button" className="primary" disabled={analyzing || recording || transcribing} onClick={onAnalyze}>{analyzing ? "Analizando..." : "Analizar foto"}</button>
         </div>
       }
     >
