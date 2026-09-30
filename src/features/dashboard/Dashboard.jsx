@@ -41,12 +41,11 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
   const [pickerMeal, setPickerMeal] = useState(null);
   const [editingLog, setEditingLog] = useState(null);
   const [editingAiEstimate, setEditingAiEstimate] = useState(null);
-  const [deletingLogId, setDeletingLogId] = useState(null);
-  const [movingLogId, setMovingLogId] = useState(null);
+  const [deletingLogIds, setDeletingLogIds] = useState(() => new Set());
+  const [movingLogIds, setMovingLogIds] = useState(() => new Set());
   const [waterSaving, setWaterSaving] = useState(false);
   const [waterActionState, setWaterActionState] = useState("idle");
   const [mealClipboard, setMealClipboard] = useState(null);
-  const [mealBulkActionLoading, setMealBulkActionLoading] = useState(false);
   const [convertingMeal, setConvertingMeal] = useState(null);
   const [sharingMeal, setSharingMeal] = useState(null);
   const [swipeResetSignal, setSwipeResetSignal] = useState(0);
@@ -311,8 +310,6 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
             onOptimisticRollback={rollbackOptimisticLogs}
             onOptimisticConfirm={confirmOptimisticLogs}
             clipboard={mealClipboard}
-            bulkActionLoading={mealBulkActionLoading}
-            setBulkActionLoading={setMealBulkActionLoading}
             onCopyMeal={(items) => { setMealClipboard(items); api.notify("Comida copiada."); }}
             onConvertToRecipe={() => {
               resetMealSwipes();
@@ -322,8 +319,8 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
               resetMealSwipes();
               setSharingMeal({ sourceDate: selectedDate, mealType: mealType.code });
             }}
-            deletingLogId={deletingLogId}
-            movingLogId={movingLogId}
+            deletingLogIds={deletingLogIds}
+            movingLogIds={movingLogIds}
             resetSignal={swipeResetSignal}
             onAdd={() => setPickerMeal({ ...mealType, pickerInstance: crypto.randomUUID() })}
             onEdit={(log) => {
@@ -336,9 +333,9 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
               setEditingLog(log);
             }}
             onMove={async (log, targetMealType) => {
-              if (!targetMealType || movingLogId || log.mealType === targetMealType) return;
+              if (!targetMealType || log.mealType === targetMealType) return;
               resetMealSwipes();
-              setMovingLogId(log.id);
+              setMovingLogIds((current) => new Set(current).add(log.id));
               const restore = moveLogOptimistic(log, targetMealType);
               try {
                 await api.runAction(
@@ -362,11 +359,14 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
                 restore();
                 api.notify(error.message || "No se pudo mover el alimento.", "error");
               } finally {
-                setMovingLogId(null);
+                setMovingLogIds((current) => {
+                  const next = new Set(current);
+                  next.delete(log.id);
+                  return next;
+                });
               }
             }}
             onDelete={async (log) => {
-              if (deletingLogId) return;
               const itemName = mealLogName(log);
               const confirmed = await api.confirm({
                 title: "¿Eliminar alimento?",
@@ -378,7 +378,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
                 return;
               }
               resetMealSwipes();
-              setDeletingLogId(log.id);
+              setDeletingLogIds((current) => new Set(current).add(log.id));
               const restore = removeLogsOptimistic([log]);
               try {
                 await api.runAction(
@@ -394,7 +394,11 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
                 restore();
                 api.notify(error.message || "No se pudo eliminar el registro.", "error");
               } finally {
-                setDeletingLogId(null);
+                setDeletingLogIds((current) => {
+                  const next = new Set(current);
+                  next.delete(log.id);
+                  return next;
+                });
               }
             }}
           />

@@ -12,7 +12,7 @@ import { useMealGesture } from "../hooks/useMealGesture";
 
 export { MealCard, MealLogDetails, RecipeIngredientDetail, SwipeableMealItem };
 
-function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, onOptimisticConfirm, clipboard, bulkActionLoading, setBulkActionLoading, onCopyMeal, onConvertToRecipe, onShare, deletingLogId, movingLogId, resetSignal, onAdd, onEdit, onDelete, onMove, entryDelay = 0 }) {
+function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, api, onCopied, onOptimisticAdd, onOptimisticRemove, onOptimisticRollback, onOptimisticConfirm, clipboard, onCopyMeal, onConvertToRecipe, onShare, deletingLogIds, movingLogIds, resetSignal, onAdd, onEdit, onDelete, onMove, entryDelay = 0 }) {
   const items = sortMealLogs(meal?.items || []);
   const hasPendingItems = items.some((log) => log.optimistic);
   const cardRef = useRef(null);
@@ -63,10 +63,8 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
     }
   }
   async function addLogs(logs) {
-    if (bulkActionLoading) return;
     const copyableLogs = logs.filter(isCopyableMealLog);
     if (!copyableLogs.length) return;
-    setBulkActionLoading(true);
     setBulkActionState("pasting");
     const optimisticLogs = onOptimisticAdd(copyableLogs, mealType.code);
     try {
@@ -88,17 +86,15 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
       api.notify(mealCopyErrorMessage(error, "No se pudo pegar la comida. Se revirtieron los cambios."), "error");
       window.setTimeout(() => setBulkActionState("idle"), 700);
     }
-    finally { setBulkActionLoading(false); }
   }
   async function deleteAll() {
-    if (!items.length || bulkActionLoading) return;
+    if (!items.length) return;
     const confirmed = await api.confirm({
       title: `¿Borrar ${mealType.label.toLowerCase()}?`,
       description: "Se eliminarán todos los alimentos de esta comida.",
       confirmLabel: "Borrar todo",
     });
     if (!confirmed) return;
-    setBulkActionLoading(true);
     setBulkActionState("deleting");
     const restore = onOptimisticRemove(items);
     try {
@@ -120,11 +116,10 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
       api.notify("No se pudo borrar toda la comida. Se revirtieron los cambios.", "error");
       window.setTimeout(() => setBulkActionState("idle"), 700);
     }
-    finally { setBulkActionLoading(false); }
   }
   function copyAll() {
     const copyableItems = items.filter(isCopyableMealLog);
-    if (!copyableItems.length || bulkActionLoading) return;
+    if (!copyableItems.length) return;
     menuRef.current?.removeAttribute("open");
     onCopyMeal(copyableItems);
     setBulkActionState("success");
@@ -147,8 +142,8 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
           <div><span>{mealType.label}</span><strong>{meal?.calories || 0} kcal</strong></div>
         </div>
         <div className="meal-header-actions">
-          <details className="meal-menu" ref={menuRef}><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button className="action-control" disabled={!items.length || hasPendingItems || bulkActionLoading} onClick={copyAll}>Copiar todo</button><button className="action-control" disabled={!clipboard?.length || hasPendingItems || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); addLogs(clipboard); }}>Pegar</button><button className="action-control" disabled={!items.some(isCopyableMealLog) || hasPendingItems || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); onConvertToRecipe?.(); }}>Convertir en receta</button><button className="danger-text action-control" disabled={!items.length || hasPendingItems || bulkActionLoading} onClick={() => { menuRef.current?.removeAttribute("open"); deleteAll(); }}>Borrar todo</button></div></details>
-          <button type="button" className="icon-button action-control meal-share-trigger" aria-label={`Compartir ${mealType.label}`} disabled={!items.length || hasPendingItems || bulkActionLoading} onClick={onShare}><Icon name="share" /></button>
+          <details className="meal-menu" ref={menuRef}><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button className="action-control" disabled={!items.length || hasPendingItems} onClick={copyAll}>Copiar todo</button><button className="action-control" disabled={!clipboard?.length || hasPendingItems} onClick={() => { menuRef.current?.removeAttribute("open"); addLogs(clipboard); }}>Pegar</button><button className="action-control" disabled={!items.some(isCopyableMealLog) || hasPendingItems} onClick={() => { menuRef.current?.removeAttribute("open"); onConvertToRecipe?.(); }}>Convertir en receta</button><button className="danger-text action-control" disabled={!items.length || hasPendingItems} onClick={() => { menuRef.current?.removeAttribute("open"); deleteAll(); }}>Borrar todo</button></div></details>
+          <button type="button" className="icon-button action-control meal-share-trigger" aria-label={`Compartir ${mealType.label}`} disabled={!items.length || hasPendingItems} onClick={onShare}><Icon name="share" /></button>
           <button className="icon-button action-control" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><Icon name="add" /></button>
         </div>
       </header>
@@ -182,7 +177,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
             const item = mealLogItem(log);
           return (
             <SwipeableMealItem
-              className={`${movingLogId === log.id ? "moving" : ""} ${deletingLogId === log.id ? "deleting" : ""} ${log.optimistic ? "optimistic" : ""} ${log.celebrating ? "celebrating" : ""}`}
+              className={`${movingLogIds.has(log.id) ? "moving" : ""} ${deletingLogIds.has(log.id) ? "deleting" : ""} ${log.optimistic ? "optimistic" : ""} ${log.celebrating ? "celebrating" : ""}`}
               key={log.id}
               resetSignal={resetSignal}
               expanded={expandedLogId === log.id}
@@ -190,7 +185,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
               onEdit={() => onEdit(log)} onDelete={() => onDelete(log)}
               onMove={onMove}
               mealTypes={mealTypes}
-              disabled={Boolean(log.optimistic) || Boolean(deletingLogId) || Boolean(movingLogId) || bulkActionLoading}
+              disabled={Boolean(log.optimistic)}
               dragData={log.optimistic ? null : { ...log, mealType: mealType.code }}
               details={<MealLogDetails log={log} item={item} />}
             >
