@@ -563,7 +563,7 @@ test("keeps a long AI photo description scrollable on mobile", async ({ page, br
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
 
-  await page.locator(".ai-gallery-trigger input").setInputFiles({
+  await page.locator('input[data-photo-source="gallery"]').setInputFiles({
     name: "comida.png",
     mimeType: "image/png",
     buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
@@ -811,7 +811,7 @@ test("keeps the AI description textarea at a non-zooming size on mobile", async 
   await seedAuthenticatedApp(page, { aiAvailable: true });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
-  await page.locator(".ai-gallery-trigger input").setInputFiles({
+  await page.locator('input[data-photo-source="gallery"]').setInputFiles({
     name: "comida.jpg",
     mimeType: "image/jpeg",
     buffer: Buffer.from("test-image"),
@@ -863,7 +863,7 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
-  await page.locator(".ai-gallery-trigger input").setInputFiles({
+  await page.locator('input[data-photo-source="gallery"]').setInputFiles({
     name: "comida.png",
     mimeType: "image/png",
     buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
@@ -935,7 +935,7 @@ test("registers an AI food from the diary and keeps its meal destination", async
 
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
-  await page.locator(".ai-gallery-trigger input").setInputFiles({
+  await page.locator('input[data-photo-source="gallery"]').setInputFiles({
     name: "fideos.png", mimeType: "image/png",
     buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
   });
@@ -963,7 +963,7 @@ test("automatically registers a single detected food as a food", async ({ page }
   });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
-  await page.locator(".ai-gallery-trigger input").setInputFiles({ name: "envase.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64") });
+  await page.locator('input[data-photo-source="gallery"]').setInputFiles({ name: "envase.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64") });
   const photoDialog = page.locator(".ai-photo-context-modal");
   await photoDialog.getByRole("button", { name: "Analizar foto", exact: true }).click();
   await expect.poll(() => analyzeTarget).toBe("LEGACY_RECIPE_FALLBACK");
@@ -988,7 +988,7 @@ test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => 
   });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
-  await page.locator(".ai-gallery-trigger input").setInputFiles({
+  await page.locator('input[data-photo-source="gallery"]').setInputFiles({
     name: "comida.png",
     mimeType: "image/png",
     buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
@@ -1063,7 +1063,7 @@ test("keeps the AI photo context actions visible above the picker footer on desk
   await seedAuthenticatedApp(page, { aiAvailable: true });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
-  await page.locator(".ai-gallery-trigger input").setInputFiles({
+  await page.locator('input[data-photo-source="gallery"]').setInputFiles({
     name: "comida.jpg",
     mimeType: "image/jpeg",
     buffer: Buffer.from("test-image"),

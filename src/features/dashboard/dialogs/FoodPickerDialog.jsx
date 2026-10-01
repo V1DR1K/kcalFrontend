@@ -57,6 +57,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const [audioRecording, setAudioRecording] = useState(false);
   const [audioTranscribing, setAudioTranscribing] = useState(false);
   const galleryInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const addInFlightRef = useRef(false);
   const audioRecorderRef = useRef(null);
   const audioStreamRef = useRef(null);
@@ -752,10 +753,11 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         {pendingMealPhoto && <MealPhotoContextEditorDialog photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
         {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} saveError={aiSaveError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} targetType={aiEstimate.items.length > 1 ? "RECIPE" : "FOOD"} addToDiary={aiAddToDiary} setAddToDiary={setAiAddToDiary} registrationMealType={aiRegistrationMealType} setRegistrationMealType={setAiRegistrationMealType} registrationDate={aiRegistrationDate} setRegistrationDate={setAiRegistrationDate} mealTypes={mealTypes} />}
         {!ingredientOnly && <footer className="picker-photo-actions">
-          <label className={`secondary ai-photo-trigger ai-gallery-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
+          <button type="button" className="secondary ai-photo-trigger ai-gallery-trigger" disabled={aiAnalyzing || !aiUsage?.available || aiQuotaBlocked} onClick={() => galleryInputRef.current?.click()}>
             <Icon name="photo_library" />
             Elegir foto
-            <input
+          </button>
+            <input data-photo-source="gallery"
               ref={galleryInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -767,11 +769,11 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               }}
               hidden
             />
-          </label>
-          <label className={`primary ai-photo-trigger ai-camera-trigger ${aiAnalyzing || !aiUsage?.available || aiQuotaBlocked ? "disabled" : ""}`}>
+          <button type="button" className="primary ai-photo-trigger ai-camera-trigger" disabled={aiAnalyzing || !aiUsage?.available || aiQuotaBlocked} onClick={() => cameraInputRef.current?.click()}>
             <Icon name="photo_camera" />
             {aiAnalyzing ? "Analizando..." : aiQuotaBlocked ? `Vuelve ${aiQuotaReset(aiUsage)}` : "Tomar foto"}
-            <input
+          </button>
+            <input ref={cameraInputRef} data-photo-source="camera"
               type="file"
               accept="image/jpeg,image/png,image/webp"
               capture="environment"
@@ -783,7 +785,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               }}
               hidden
             />
-          </label>
         </footer>}
     </ModalShell>
   );

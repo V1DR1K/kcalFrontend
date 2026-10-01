@@ -347,7 +347,7 @@
    that area so the focused field and fixed actions remain reachable. */
 @media (max-width: 900px) {
   html[data-keyboard-open="true"] .app-modal-surface.picker-modal[class] > .picker-photo-actions {
-    position: sticky;
+    position: absolute;
     bottom: 0;
     z-index: 2;
     background: var(--surface, #fff);
