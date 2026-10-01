@@ -31,7 +31,7 @@ test("incluye peso en sesiones de gimnasio", () => {
 test("serializa un plan canónico y limpia el día en modo dinámico", () => {
   const payload = planPayload({ name: "Fuerza", description: "", module: "CALISTHENICS", frequencyMode: "DYNAMIC", targetSessionsPerWeek: "3", startDate: "2026-08-26", endDate: "", active: true, days: [{ name: "Tirón", dayOfWeek: "MONDAY", exercises: [{ exerciseId: "12", targetSets: "4", targetRepetitions: "8", targetWeightKg: "20", notes: "", }] }] });
   assert.equal(payload.days[0].dayOfWeek, undefined);
-  assert.deepEqual(payload.days[0].exercises[0], { exerciseId: 12, position: 0 });
+  assert.deepEqual(payload.days[0].exercises[0], { exerciseId: 12, position: 0, targetSets: 4, targetRepetitions: 8, targetWeightKg: null, targetSeconds: null, targetDistanceMeters: null, registrationType: null, notes: null });
 });
 
 test("serializa la ejecución por tiempo y no mezcla objetivos del plan", () => {
@@ -85,4 +85,12 @@ test("normaliza músculos de arrays, cadenas y nulos al editar", () => {
   const payload = exercisePayload({ name: "Dominadas", module: "CALISTHENICS", primaryMuscles: ["dorsal", "bíceps"], secondaryMuscles: null });
   assert.equal(payload.primaryMuscles, "dorsal, bíceps");
   assert.equal(payload.secondaryMuscles, null);
+});
+
+
+test("conserva IDs y objetivos existentes al editar la estructura de un plan", () => {
+  const payload = planPayload({ name: "Fuerza", module: "GYM", frequencyMode: "FIXED", targetSessionsPerWeek: 1, active: true, days: [{ id: 10, name: "Lunes", dayOfWeek: "MONDAY", exercises: [{ id: 20, exerciseId: 30, targetSets: 3, targetWeightKg: 50 }] }] });
+  assert.equal(payload.days[0].id, 10);
+  assert.equal(payload.days[0].exercises[0].id, 20);
+  assert.equal(payload.days[0].exercises[0].targetWeightKg, 50);
 });

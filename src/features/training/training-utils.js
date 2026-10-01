@@ -201,11 +201,18 @@ export function planPayload(plan) {
     endDate: plan.endDate || null,
     active: Boolean(plan.active),
     days: (plan.days || []).map((day, position) => ({
+      ...(Number.isInteger(Number(day.id)) && Number(day.id) > 0 ? { id: Number(day.id) } : {}),
+      description: day.description || null,
       name: day.name.trim() || `Día ${position + 1}`,
       ...(plan.frequencyMode === "FIXED" ? { dayOfWeek: day.dayOfWeek } : {}),
       position,
       exercises: (day.exercises || []).map((exercise, exercisePosition) => ({
         exerciseId: Number(exercise.exerciseId),
+        ...(Number.isInteger(Number(exercise.id)) && Number(exercise.id) > 0 ? { id: Number(exercise.id) } : {}),
+        targetSets: exercise.targetSets == null || exercise.targetSets === "" ? null : Number(exercise.targetSets), targetRepetitions: exercise.targetRepetitions == null || exercise.targetRepetitions === "" ? null : Number(exercise.targetRepetitions),
+        targetWeightKg: plan.module === "CALISTHENICS" || exercise.targetWeightKg == null || exercise.targetWeightKg === "" ? null : Number(exercise.targetWeightKg), targetSeconds: exercise.targetSeconds == null || exercise.targetSeconds === "" ? null : Number(exercise.targetSeconds),
+        targetDistanceMeters: exercise.targetDistanceMeters == null || exercise.targetDistanceMeters === "" ? null : Number(exercise.targetDistanceMeters), registrationType: exercise.registrationType || null,
+        notes: exercise.notes || null,
         position: exercisePosition,
       })),
     })),

@@ -24,9 +24,9 @@ function draftFromPlan(plan) {
     name: plan?.name || "", module: plan?.module || "GYM", frequencyMode: plan?.frequencyMode || "FIXED",
     targetSessionsPerWeek: plan?.targetSessionsPerWeek || 3, startDate: plan?.startDate || today(), endDate: plan?.endDate || "", active: plan?.active !== false,
     days: (plan?.days || []).map((day, dayIndex) => ({
-      id: day.id || key(), name: day.name || `Día ${dayIndex + 1}`, dayOfWeek: day.dayOfWeek || "",
+      id: day.id || key(), description: day.description || "", name: day.name || `Día ${dayIndex + 1}`, dayOfWeek: day.dayOfWeek || "",
       exercises: (day.exercises || []).map((exercise) => ({
-        id: exercise.id || key(), exerciseId: String(exercise.exerciseId || ""), name: exercise.exerciseName || exercise.name || exercise.exercise?.name || "",
+        ...exercise, id: exercise.id || key(), exerciseId: String(exercise.exerciseId || ""), name: exercise.exerciseName || exercise.name || exercise.exercise?.name || "",
         module: exercise.module || exercise.exercise?.module || plan?.module, category: exercise.category || exercise.exercise?.category || "",
         registrationType: exerciseRegistration(exercise, plan?.module), unilateral: Boolean(exercise.unilateral || exercise.exercise?.unilateral),
       })),
@@ -73,7 +73,7 @@ function TrainingPlanDaySummary({ day, dayIndex, totalDays, onOpen, onMove, onRe
   );
 }
 
-export function TrainingPlanDialog({ api, plan, exercises = [], onClose, onChanged }) {
+export function TrainingPlanDialog({ api, plan, plans = [], exercises = [], onClose, onChanged }) {
   const editing = Boolean(plan?.id);
   const [form, setForm] = useState(() => draftFromPlan(plan));
   const [loading, setLoading] = useState(editing && !plan.days);
@@ -119,14 +119,18 @@ export function TrainingPlanDialog({ api, plan, exercises = [], onClose, onChang
       if (form.frequencyMode === "FIXED" && (!day.dayOfWeek || seenWeekdays.has(day.dayOfWeek))) return setError("Los días fijos deben tener días de semana únicos.");
       if (form.frequencyMode === "FIXED") seenWeekdays.add(day.dayOfWeek);
     }
+    if (form.active) {
+      const replaced = plans.filter((item) => item.active && item.module === form.module && item.id !== plan?.id);
+      if (replaced.length && !await api.confirm({ title: "¿Activar este plan?", description: `Al guardar, reemplazará a ${replaced.map((item) => item.name).join(", ")}. Sus sesiones se conservarán.`, confirmLabel: "Guardar y activar" })) return;
+    }
     setSaving(true); setError("");
     try { const saved = await api.runAction({ title: editing ? "Actualizando plan" : "Guardando plan", description: "Estamos organizando tus días y ejercicios..." }, () => trainingApi.savePlan(api, plan || {}, planPayload(form)), { quiet: true }); api.notify(editing ? "Plan de entrenamiento actualizado." : "Plan de entrenamiento creado."); await onChanged?.(saved); onClose(); }
     catch (saveError) { setError(saveError?.message || "No se pudo guardar el plan."); } finally { setSaving(false); }
   }
 
   const title = activeDay ? activeDay.name || `Día ${activeDayIndex + 1}` : editing ? "Editar plan" : "Nuevo plan";
-  const description = activeDay ? "Completá la secuencia y revisá qué información verá tu próxima sesión." : "Definí la estructura que vas a repetir. Las métricas se registran al iniciar una sesión.";
-  const footer = activeDay ? <><button type="button" className="training-secondary" onClick={() => setActiveDayId(null)} disabled={saving}>Volver al plan</button><button type="submit" form="training-plan-form" className="training-primary" disabled={saving || loading}>{saving ? "Guardando…" : "Guardar plan"}</button></> : <><button type="button" className="training-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" form="training-plan-form" className="training-primary" disabled={saving || loading}>{saving ? "Guardando…" : editing ? "Guardar cambios" : "Crear plan"}</button></>;
+  const description = activeDay ? "Los cambios de este día quedan en el borrador. Al volver, guardá el plan completo." : "Definí la estructura que vas a repetir. Las métricas se registran al iniciar una sesión.";
+  const footer = activeDay ? <><button type="button" className="training-secondary" onClick={() => setActiveDayId(null)} disabled={saving}>Volver al plan</button><button type="button" className="training-primary" disabled={saving || loading} onClick={() => setActiveDayId(null)}>Listo</button></> : <><button type="button" className="training-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" form="training-plan-form" className="training-primary" disabled={saving || loading}>{saving ? "Guardando…" : editing ? "Guardar cambios" : "Crear plan"}</button></>;
 
   return <ModalShell title={title} description={description} eyebrow={activeDay ? "Editar plan · Día" : undefined} onClose={activeDay ? () => setActiveDayId(null) : onClose} closeDisabled={saving} theme="training" className={`training-plan-dialog ${activeDay ? "training-plan-day-dialog" : ""}`.trim()} backdropClassName="training-session-backdrop" footer={footer}>
     {loading ? <SkeletonRows count={5} className="training-loading" label="Cargando plan" /> : <form id="training-plan-form" className="training-editor-form" onSubmit={submit}>

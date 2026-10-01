@@ -42,12 +42,14 @@ export function TrainingDashboard({ api, setPage }) {
     const dashboard = await trainingApi.dashboard(api, dateKey(), localTimeZone());
     const ids = [...new Set((dashboard.plannedPlans || []).map((item) => item.planId).filter(Boolean))];
     const details = await Promise.all(ids.map(async (id) => { try { return await trainingApi.plan(api, id); } catch { return null; } }));
-    return { dashboard, planDetails: details.filter(Boolean) };
+    const openSessions = await api.request(`/api/training/sessions?date=${dateKey()}&status=IN_PROGRESS&size=50`);
+    return { dashboard: { ...dashboard, inProgressSessions: (openSessions?.items || []).filter((item) => !item.planId) }, planDetails: details.filter(Boolean) };
   }, [api]);
   const resource = useTrainingData(load, [load]);
   const dashboard = resource.data?.dashboard || {};
   const planDetails = useMemo(() => new Map((resource.data?.planDetails || []).map((plan) => [String(plan.id), plan])), [resource.data]);
   const exercises = dashboard.exercises || [];
+  const freeSessions = dashboard.inProgressSessions || [];
   const plannedPlans = dashboard.plannedPlans || [];
   const availablePlans = dashboard.plans || [];
   const hasActivePlan = availablePlans.some((plan) => plan.active !== false);
@@ -66,7 +68,8 @@ export function TrainingDashboard({ api, setPage }) {
     setModulePickerOpen(false);
     setStarting(`free-${type}`);
     try {
-      const created = await trainingApi.createSession(api, { date, module: type });
+      const existing = freeSessions.find((item) => item.module === type);
+      const created = existing ? await trainingApi.session(api, existing.id) : await trainingApi.createSession(api, { date, module: type });
       setEditor(normalizeSession({ ...created, module: type, date: created?.date || date }));
     } catch (error) { api.notify(error?.message || "No se pudo iniciar la sesión.", "error"); }
     finally { setStarting(""); }
@@ -111,6 +114,7 @@ export function TrainingDashboard({ api, setPage }) {
   function startPrimary() {
     if (actionablePlans.length === 1) return startPlan(actionablePlans[0]);
     if (actionablePlans.length > 1) return setPlanPickerOpen(true);
+    if (freeSessions.length) return startFree(freeSessions[0].module);
     if (!hasActivePlan) return openPlans();
     return openFreeSession();
   }
@@ -150,6 +154,7 @@ export function TrainingDashboard({ api, setPage }) {
         {completedToday && <button type="button" className="training-secondary training-day-focus-secondary" onClick={openFreeSession} disabled={Boolean(starting)}><Icon name="add" />Registrar otra sesión</button>}
       </div>
     </section>
+    {freeSessions.length > 0 && <section className="training-surface"><h2>Sesiones libres en curso</h2>{freeSessions.map((item) => <button type="button" className="training-secondary" key={item.id} disabled={Boolean(starting)} onClick={() => startFree(item.module)}><Icon name="play_arrow" />Continuar {item.title || (item.module === "GYM" ? "gimnasio" : "calistenia")}</button>)}</section>}
     <div className="training-day-overview"><section className="training-surface training-week-summary"><div className="training-section-heading"><div><h2>Últimos 7 días</h2><span>Tu ritmo reciente, sin comparaciones</span></div><Icon name="trending_up" /></div><div className="training-week-values"><div><strong>{Number(week.sessionCount || 0)}</strong><span>sesiones</span></div><div><strong>{Number(week.totalMinutes || 0) > 0 ? formatDuration(week.totalMinutes) : "0 min"}</strong><span>entrenado</span></div><div><strong>{Number(week.totalSets || 0)}</strong><span>series</span></div></div>{week.cardio && <CardioWeekSummary summary={week.cardio} embedded today={date} />}</section><section className="training-surface training-recent-surface"><div className="training-section-heading"><div><h2>Última sesión</h2><span>Tu registro completado más reciente</span></div><Icon name="history" /></div>{recent ? <TrainingSessionLine session={recent} /> : <div className="training-empty-inline"><Icon name="today" /><span>Aún no registraste sesiones.</span></div>}</section></div>
     {plannedPlans.length > 1 && <section className="training-surface training-planned-surface training-planned-secondary"><div className="training-section-heading"><div><h2>Otras sesiones de hoy</h2><span>Elegí otra opción solo si la necesitás</span></div><Icon name="event_available" /></div><div className="training-planned-list">{plannedPlans.filter((schedule) => schedule !== primarySchedule).map((schedule) => { const info = scheduleLabel(schedule, planDetails); const currentStatus = schedule.sessionStatus ? sessionStatus(schedule.sessionStatus) : null; const finished = ["COMPLETED", "SKIPPED"].includes(currentStatus); return <article className="training-planned-card" key={`${schedule.planId}-${schedule.planDayId}`}><div><TrainingModuleBadge module={schedule.module} /><strong>{info.name}</strong><span>{info.plan?.name || "Plan de entrenamiento"}{currentStatus ? ` · ${sessionStatusLabel(currentStatus)}` : ""}</span></div><div className="training-planned-actions">{finished ? <span className={`training-status-inline training-status-inline-${String(currentStatus).toLowerCase()}`}>{sessionStatusLabel(currentStatus)}</span> : <button type="button" className="training-secondary" disabled={!info.day || Boolean(starting)} onClick={() => startPlan(schedule)}><Icon name="play_arrow" />{currentStatus === "IN_PROGRESS" ? "Continuar" : "Comenzar"}</button>}{info.plan?.frequencyMode === "DYNAMIC" && schedule.recommended && !finished && <button type="button" className="training-text-button" onClick={() => skip(schedule)}>Omitir</button>}</div></article>; })}</div></section>}
   </>}{editor?.type === "GYM" && <GymSessionEditor api={api} session={editor} plans={[]} exercises={exercises} onClose={() => setEditor(null)} onSaved={resource.reload} />}{editor?.type === "CALISTHENICS" && <CalisthenicsSessionEditor api={api} session={editor} plans={[]} exercises={exercises} onClose={() => setEditor(null)} onSaved={resource.reload} />}{modulePickerOpen && <ModulePicker onClose={() => setModulePickerOpen(false)} onSelect={startFree} />}{planPickerOpen && <PlanPicker schedules={actionablePlans} planDetails={planDetails} onClose={() => setPlanPickerOpen(false)} onSelect={startPlan} />}</section>;

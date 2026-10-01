@@ -4,7 +4,8 @@ import { Panel } from "../../../components/Layout";
 import { readableDate, today } from "../../../utils/format";
 import { trainingApi } from "../../training/training-api";
 import { TrainingModuleBadge } from "../../training/TrainingComponents";
-import { planPayload } from "../../training/training-utils";
+import { Input } from "../../../components/FormControls";
+import { ModalShell } from "../../../components/dialog/ModalShell";
 import { TrainingPlanDialog } from "./TrainingPlanDialog";
 
 function currentPlans(plans) {
@@ -14,13 +15,19 @@ function currentPlans(plans) {
 export function TrainingPlanManager({ api, plans, exercises, onChanged }) {
   const [dialog, setDialog] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const [copy, setCopy] = useState(null);
+  const [copyError, setCopyError] = useState("");
   const activePlans = currentPlans(plans);
 
   async function toggle(plan) {
+    if (!plan.active) {
+      const replaced = plans.filter((item) => item.active && item.module === plan.module && item.id !== plan.id);
+      if (replaced.length && !await api.confirm({ title: `¿Activar ${plan.name}?`, description: `Reemplazará a ${replaced.map((item) => item.name).join(", ")}. El historial se conserva.`, confirmLabel: "Activar plan" })) return;
+    }
     setBusyId(plan.id);
     try {
       const detail = await trainingApi.plan(api, plan.id);
-      await api.runAction({ title: "Actualizando plan", description: "Estamos cambiando su disponibilidad..." }, () => trainingApi.savePlan(api, detail, planPayload({ ...detail, active: !plan.active })), { quiet: true });
+      await api.runAction({ title: "Actualizando plan", description: "Estamos cambiando su disponibilidad..." }, () => trainingApi.changePlanAvailability(api, plan.id, !plan.active, detail.version), { quiet: true });
       api.notify(plan.active ? "Plan desactivado." : "Plan activado.");
       await onChanged?.();
     } catch (error) {
@@ -30,16 +37,16 @@ export function TrainingPlanManager({ api, plans, exercises, onChanged }) {
     }
   }
 
-  async function duplicate(plan) {
-    const name = window.prompt("Nombre de la copia", `${plan.name} · copia`);
-    if (!name?.trim()) return;
+  async function duplicate(event) {
+    event.preventDefault();
+    if (busyId || !copy?.name.trim()) return;
+    setBusyId(copy.plan.id); setCopyError("");
     try {
-      await api.runAction({ title: "Duplicando plan", description: "Estamos creando una copia editable..." }, () => trainingApi.duplicatePlan(api, plan.id, name.trim()), { quiet: true });
-      api.notify("Plan duplicado.");
-      await onChanged?.();
-    } catch (error) {
-      api.notify(error?.message || "No se pudo duplicar el plan.", "error");
-    }
+      await trainingApi.duplicatePlan(api, copy.plan.id, copy.name.trim());
+      api.notify("Copia creada como inactiva. Podés editarla antes de activarla.");
+      setCopy(null); await onChanged?.();
+    } catch (error) { setCopyError(error?.message || "No se pudo duplicar el plan."); }
+    finally { setBusyId(null); }
   }
 
   async function remove(plan) {
@@ -90,13 +97,16 @@ export function TrainingPlanManager({ api, plans, exercises, onChanged }) {
             <div className="training-plan-history-actions">
               <button type="button" className="training-secondary" onClick={() => setDialog({ plan })}>Editar</button>
               <button type="button" className="training-icon-action" disabled={busyId === plan.id} aria-label={plan.active ? `Desactivar ${plan.name}` : `Activar ${plan.name}`} onClick={() => toggle(plan)}><Icon name={plan.active ? "pause" : "play_arrow"} /></button>
-              <button type="button" className="training-icon-action" aria-label={`Duplicar ${plan.name}`} onClick={() => duplicate(plan)}><Icon name="content_copy" /></button>
+              <button type="button" className="training-icon-action" aria-label={`Duplicar ${plan.name}`} onClick={() => { setCopyError(""); setCopy({ plan, name: `${plan.name} · copia` }); }}><Icon name="content_copy" /></button>
               <button type="button" className="training-icon-action training-delete-control" disabled={Boolean(busyId)} aria-label={`Eliminar ${plan.name}`} onClick={() => remove(plan)}><Icon name="delete" /></button>
             </div>
           </article>
         )) : <div className="training-empty-inline"><Icon name="fitness_center" /><span>Todavía no hay planes. El primero puede ser simple: un día y una meta clara.</span></div>}
       </div>
-      {dialog && <TrainingPlanDialog key={dialog.plan?.id || "new"} api={api} plan={dialog.plan} exercises={exercises} onClose={() => setDialog(null)} onChanged={onChanged} />}
+      {dialog && <TrainingPlanDialog key={dialog.plan?.id || "new"} api={api} plan={dialog.plan} plans={plans} exercises={exercises} onClose={() => setDialog(null)} onChanged={onChanged} />}
+      {copy && <ModalShell title="Duplicar plan" description="La copia quedará inactiva. Tu plan actual seguirá vigente." onClose={() => setCopy(null)} closeDisabled={Boolean(busyId)} theme="training" footer={<><button type="button" className="training-secondary" disabled={Boolean(busyId)} onClick={() => setCopy(null)}>Cancelar</button><button type="submit" form="training-copy-plan" className="training-primary" disabled={Boolean(busyId) || !copy.name.trim()}>Crear copia</button></>}>
+        <form id="training-copy-plan" className="training-editor-form" onSubmit={duplicate}><Input label="Nombre de la copia" value={copy.name} maxLength="120" required onChange={(event) => setCopy((current) => ({ ...current, name: event.target.value }))} />{copyError && <p role="alert">{copyError}</p>}</form>
+      </ModalShell>}
     </Panel>
   );
 }

@@ -24,6 +24,7 @@ export const trainingApi = {
   deleteSession: (api, id) => api.request(`/api/training/sessions/${encoded(id)}`, { method: "DELETE" }),
   plans: (api, { module, includeInactive = false, page = 0, size = 50 } = {}) => api.request(`/api/training/plans?${query({ module: module === "ALL" ? undefined : module, includeInactive, page, size })}`),
   plan: (api, id) => api.request(`/api/training/plans/${encoded(id)}`),
+  changePlanAvailability: (api, id, active, version) => api.request(`/api/training/plans/${encoded(id)}/availability`, { method: "PATCH", body: JSON.stringify({ active, version }) }),
   savePlan: (api, plan, payload) => api.request(plan?.id ? `/api/training/plans/${encoded(plan.id)}` : "/api/training/plans", { method: plan?.id ? "PUT" : "POST", body: JSON.stringify(payload) }),
   duplicatePlan: (api, id, name) => api.request(`/api/training/plans/${encoded(id)}/duplicate`, { method: "POST", body: JSON.stringify({ name }) }),
   deletePlan: (api, id) => api.request(`/api/training/plans/${encoded(id)}`, { method: "DELETE" }),
