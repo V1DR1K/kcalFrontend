@@ -1,3 +1,4 @@
+import { requestWithArchivedAcknowledgement } from "../services/archived-foods";
 import { clearSessionDrafts } from "../features/training/session-draft";
 import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "../styles.css";
@@ -94,21 +95,17 @@ export function App() {
   const [notification, setNotification] = useState(null);
   const [sharedMealToken, setSharedMealToken] = useState(() => new URLSearchParams(window.location.search).get("compartir") || "");
   const confirmationResolver = useRef(null);
+  const confirmationQueue = useRef([]);
   const notify = React.useCallback((message, tone = "success") => {
     if (message) setNotification({ message, tone });
   }, []);
 
   const api = useMemo(
     () => ({
-      request: apiRequest,
+      request: (path, options) => requestWithArchivedAcknowledgement(apiRequest, queueConfirmation, () => userRef.current?.id, path, options),
       getUserId: () => userRef.current?.id,
       async runAction(_loading, operation) { return operation(); },
-      confirm(options) {
-        return new Promise((resolve) => {
-          confirmationResolver.current = resolve;
-          setConfirmation(options);
-        });
-      },
+      confirm: queueConfirmation,
       notify,
     }),
     [notify],
@@ -146,6 +143,11 @@ export function App() {
 
   function clearSessionLocally() {
     clearSessionDrafts();
+    userRef.current = null;
+    confirmationQueue.current.splice(0).forEach(entry => entry.resolve(false));
+    confirmationResolver.current?.(false);
+    confirmationResolver.current = null;
+    setConfirmation(null);
     setUser(null);
     setSessionState("anonymous");
     setPage("login");
@@ -156,11 +158,24 @@ export function App() {
     setPage("day-presets");
   }
 
+  function queueConfirmation(options) {
+    return new Promise(resolve => {
+      confirmationQueue.current.push({ options, resolve });
+      showNextConfirmation();
+    });
+  }
+  function showNextConfirmation() {
+    if (confirmationResolver.current) return;
+    const next = confirmationQueue.current.shift();
+    confirmationResolver.current = next?.resolve || null;
+    setConfirmation(next?.options || null);
+  }
   function resolveConfirmation(confirmed) {
     const resolve = confirmationResolver.current;
     confirmationResolver.current = null;
     setConfirmation(null);
     resolve?.(confirmed);
+    showNextConfirmation();
   }
 
   function clearSharedMeal() {

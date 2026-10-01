@@ -11,6 +11,7 @@ export function FoodEditorForm({ api, food = null, prefillBarcode, clearPrefillB
   const editing = Boolean(food?.id);
   const formRef = useRef(null);
   const [saving, setSaving] = useState(false);
+  const [validationError, setValidationError] = useState("");
   const [scanning, setScanning] = useState(false);
   const [ocrStatus, setOcrStatus] = useState("");
   const [ocrData, setOcrData] = useState(null);
@@ -34,6 +35,12 @@ export function FoodEditorForm({ api, food = null, prefillBarcode, clearPrefillB
   async function submit(event) {
     event.preventDefault();
     if (saving) return;
+    const valid = ["baseQuantity", "proteinGrams", "carbsGrams", "fatGrams"].every(field => {
+      const value = decimalNumber(form[field]);
+      return form[field].trim() !== "" && Number.isFinite(value) && (field === "baseQuantity" ? value > 0 : value >= 0);
+    });
+    if (!valid) { setValidationError("Revisá las cantidades: la base debe ser mayor que cero y los nutrientes no pueden ser negativos. Usá hasta 2 decimales."); return; }
+    setValidationError("");
     setSaving(true);
     onBusyChange?.(true);
     const payload = {
@@ -52,14 +59,15 @@ export function FoodEditorForm({ api, food = null, prefillBarcode, clearPrefillB
       tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
     };
     try {
-      await api.runAction(
+      const saved = await api.runAction(
         { title: editing ? "Guardando alimento" : "Creando alimento", description: "Estamos actualizando los datos del catálogo..." },
         () => api.request(editing ? `/api/foods/${food.id}` : "/api/foods", { method: editing ? "PUT" : "POST", body: JSON.stringify(payload) }, { quiet: true }),
       );
       api.notify(editing ? "Alimento actualizado." : "Alimento creado.");
       clearPrefillBarcode?.();
       onDirtyChange?.(false);
-      onDone?.();
+      window.dispatchEvent(new Event("scalegrams:catalog-updated"));
+      onDone?.(saved);
     } catch (error) {
       const details = Object.values(error.fields || {}).join(" · ");
       api.notify(details || error.message || "No se pudo guardar el alimento. Revisá los datos.", "error");
@@ -106,6 +114,7 @@ export function FoodEditorForm({ api, food = null, prefillBarcode, clearPrefillB
   const ocrStatusClass = scanning ? "loading" : ocrData || ocrStatus.startsWith("Valores aplicados") ? "ok" : "bad";
   const formElement = (
     <form id={id} className="form-grid food-editor-form" ref={formRef} onInput={() => onDirtyChange?.(true)} onSubmit={submit}>
+      {validationError && <p className="form-error" role="alert">{validationError}</p>}
       {ocrStatus && <div className={`ocr-status ${ocrStatusClass}`} role="status" aria-live="polite" aria-busy={scanning}>{scanning ? <span className="ocr-loading" /> : null}<span>{ocrStatus}</span></div>}
       {ocrData && <OcrNutritionPreview data={ocrData} setData={setOcrData} onAccept={acceptOcrData} onDiscard={() => { setOcrData(null); setOcrStatus(""); }} />}
       <div className="ocr-actions"><label className="secondary ocr-label"><Icon name="document_scanner" />Escanear tabla nutricional<input type="file" accept="image/*" capture="environment" onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; setOcrStatus(""); setOcrData(null); handleOcrImage(file); }} hidden disabled={scanning} /></label></div>

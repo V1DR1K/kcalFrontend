@@ -66,7 +66,7 @@ test("admin updates an original food through a JSON PUT without changing the URL
   await expect(page.getByRole("dialog")).toBeHidden();
   await expect(page.getByText("Alimento actualizado.")).toBeVisible();
   await expect(page.locator(".admin-food-row .nutrition-summary")).toContainText("38");
-  await expect(page.locator(".admin-food-row .nutrition-summary")).toContainText("8,4g");
+  await expect(page.locator(".admin-food-row .nutrition-summary")).toContainText("8,4 g");
 });
 
 test("keeps the editor open and reports a failed PUT", async ({ page }) => {
@@ -89,4 +89,20 @@ test("keeps the editor open and reports a failed PUT", async ({ page }) => {
 test("does not show the original catalog tab to a regular user", async ({ page }) => {
   await openFoodsPage(page, "USER");
   await expect(page.getByRole("tab", { name: "Catálogo original" })).toHaveCount(0);
+});
+
+test("SG037 confirms catalog creation and starts a clean second form", async ({ page }) => {
+  await openFoodsPage(page, "USER");
+  let writes = 0;
+  await page.route("**/api/foods", async route => { writes++; await route.fulfill({ json: { ...food, ...route.request().postDataJSON() } }); });
+  await page.getByRole("button", { name: "Crear alimento", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Nombre", { exact: true }).fill("Prueba catálogo");
+  for (const label of ["Proteínas g", "Carbohidratos g", "Grasas g"]) await dialog.getByLabel(label, { exact: true }).fill("1");
+  await dialog.getByRole("button", { name: "Crear alimento", exact: true }).click();
+  await expect(dialog).toContainText("Todavía no está registrado como consumo"); expect(writes).toBe(1);
+  await dialog.getByRole("button", { name: "Crear otro", exact: true }).click();
+  await expect(dialog.getByLabel("Nombre", { exact: true })).toHaveValue("");
+  await dialog.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
 });

@@ -1,9 +1,13 @@
+import { rememberItem } from "../../services/recents";
+import { NutritionSummary } from "../../components/NutritionSummary";
 import React, { useEffect, useRef, useState } from "react";
 import { ModalShell } from "../../components/dialog/ModalShell";
 import { CreateFoodForm } from "./components/CatalogForms";
 export { MyFoods } from "./components/MyFoodsPanel";
 
 export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClose }) {
+  const [savedFood, setSavedFood] = useState(null);
+  const [formKey, setFormKey] = useState(0);
   const [dirtyState, setDirtyState] = useState({ food: false });
   const [busyState, setBusyState] = useState({ food: false });
   const dirty = Object.values(dirtyState).some(Boolean);
@@ -48,7 +52,7 @@ export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClos
 
   return (
     <ModalShell
-      title="Crear alimento"
+      title={savedFood ? "Alimento guardado" : "Crear alimento"}
       eyebrow="Catálogo"
       onClose={requestClose}
       closeLabel="Cerrar registro"
@@ -58,7 +62,7 @@ export function CreateCatalog({ api, prefillBarcode, clearPrefillBarcode, onClos
       wrapContent={false}
     >
         <div id="catalog-panel-food" className="catalog-dialog-content" data-dialog-scroll-owner="true">
-          <CreateFoodForm hideSubmit title={null} dialogActions={<div className="catalog-dialog-actions food-editor-dialog-actions"><button type="button" className="secondary" onClick={requestClose} disabled={busy}>Cancelar</button><button type="submit" className="primary" disabled={busy}>{busy ? "Creando…" : "Crear alimento"}</button></div>} api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, food: value }))} />
+          {savedFood ? <div className="catalog-saved-state" role="status"><h3>{savedFood.name}</h3><p>Guardado en el catálogo. Todavía no está registrado como consumo.</p><NutritionSummary nutrition={savedFood} /><div className="catalog-dialog-actions"><button className="secondary" onClick={requestClose}>Cerrar</button><button className="primary" onClick={() => { setSavedFood(null); setFormKey(key => key + 1); }}>Crear otro</button></div></div> : <CreateFoodForm key={formKey} onDone={food => { setSavedFood(food); rememberItem({ id: api.getUserId() }, { ...food, type: "FOOD" }); }} hideSubmit title={null} dialogActions={<div className="catalog-dialog-actions food-editor-dialog-actions"><button type="button" className="secondary" onClick={requestClose} disabled={busy}>Cancelar</button><button type="submit" className="primary" disabled={busy}>{busy ? "Creando…" : "Crear alimento"}</button></div>} api={api} prefillBarcode={prefillBarcode} clearPrefillBarcode={clearPrefillBarcode} onDirtyChange={(value) => setDirtyState((current) => ({ ...current, food: value }))} onBusyChange={(value) => setBusyState((current) => ({ ...current, food: value }))} />}
         </div>
     </ModalShell>
   );

@@ -145,7 +145,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           );
           if (!result?.transcript) throw new Error("No pudimos transcribir la nota. Intentá nuevamente.");
           setAiContext(result.transcript);
-        } catch (error) {
+        } catch (error) { if (error.cancelled) return;
           const message = error.message || "No pudimos transcribir la nota. Intentá nuevamente.";
           setAiError(message);
           api.notify(message, "error");
@@ -183,7 +183,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       setAiCorrection("");
       setAiRefinementError("");
       setPendingMealPhoto(null);
-    } catch (error) {
+    } catch (error) { if (error.cancelled) return;
       const message = error.message || "No se pudo analizar la foto.";
       setAiError(message);
       api.notify(message, "error");
@@ -216,7 +216,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       setAiEstimate(estimate);
       setAiUsage(result.usage);
       setAiCorrection("");
-    } catch (error) {
+    } catch (error) { if (error.cancelled) return;
       const message = error.message || "No se pudo corregir la estimación.";
       setAiRefinementError(message);
       api.notify(message, "error");
@@ -283,7 +283,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         : "Receta registrada y agregada como una porción.");
       discardAiEstimate();
       await onDone?.(savedLog, saved);
-    } catch (error) {
+    } catch (error) { if (error.cancelled) return;
       const message = error.message || "No se pudo guardar la estimación.";
       setAiSaveError(message);
       api.notify(message, "error");
@@ -495,8 +495,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       api.notify(`${selected.name} agregado a ${mealType.label}.`);
       onClose();
       if (!confirmed) onDone();
-    } catch {
+    } catch (error) {
       onOptimisticRollback(optimisticLogs);
+      if (error.cancelled) return;
       api.notify("No se pudo agregar el alimento. Se revirtieron los cambios.", "error");
     } finally {
       addInFlightRef.current = false;
@@ -576,8 +577,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         { quiet: true },
       );
       onClose();
-    } catch {
+    } catch (error) {
       onOptimisticRollback(optimisticLogs);
+      if (error.cancelled) return;
       api.notify("No se pudo agregar la comida reciente.", "error");
     } finally {
       setAdding(false);

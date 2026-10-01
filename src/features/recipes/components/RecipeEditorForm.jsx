@@ -121,7 +121,7 @@ export function RecipeEditorForm({ api, recipe = null, onDirtyChange, onBusyChan
       api.notify(editing ? "Receta actualizada." : "Receta creada.");
       onDirtyChange?.(false);
       onDone?.();
-    } catch (error) {
+    } catch (error) { if (error.cancelled) return;
       const fieldDetails = Object.entries(error.fields || {}).map(([field, message]) => `${recipeFieldLabel(field)}: ${message}`).join(" ");
       const message = fieldDetails || error.message || `No se pudo ${editing ? "actualizar" : "crear"} la receta. Revisá los datos.`;
       setFormError(message);

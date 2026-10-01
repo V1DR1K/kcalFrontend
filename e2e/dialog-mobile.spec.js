@@ -1261,3 +1261,28 @@ test("SG005/007/011 valida cantidad y conserva datos ausentes con aviso cancelab
   await page.getByRole("button", { name: "Registrar con aviso", exact: true }).click();
   await expect(dialog).not.toBeVisible(); expect(writes).toBe(1);
 });
+
+test("SG038 cancels archived reuse without saving and acknowledges on acceptance", async ({ page }) => {
+  await seedAuthenticatedApp(page);
+  const food = { id: 903, type: "FOOD", name: "Avena archivada", baseUnit: "GRAM", baseQuantity: 100, calories: 100, proteinGrams: 10, carbsGrams: 10, fatGrams: 2, category: "CARB", archived: true };
+  await page.route("**/api/foods**", async route => { const path = new URL(route.request().url()).pathname; await route.fulfill({ json: path.endsWith("/preview") ? food : path.endsWith("/preparations") ? [] : path.endsWith("/903") ? food : { items: [food], page: 0, hasNext: false } }); });
+  let saved = 0;
+  await page.route("**/api/nutrition/meal-logs", async route => {
+    const body = route.request().postDataJSON();
+    if (!body.acknowledgedArchivedFoodIds?.includes(903)) return route.fulfill({ status: 409, json: { code: "ARCHIVED_FOOD_ACKNOWLEDGEMENT_REQUIRED", fields: { archivedFoodIds: "903", archivedFoodNames: food.name } } });
+    saved++; await route.fulfill({ json: { id: 904, ...body, food, calories: 100, proteinGrams: 10, carbsGrams: 10, fatGrams: 2 } });
+  });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.getByPlaceholder("Buscar alimentos...").fill("Avena");
+  await page.locator(".catalog-row-image").filter({ hasText: food.name }).first().click();
+  const dialog = page.locator(".edit-log-modal");
+  await dialog.getByRole("button", { name: "Agregar a Desayuno", exact: true }).click();
+  const confirmation = page.getByRole("alertdialog");
+  await expect(confirmation).toContainText("Seguirán archivados");
+  await confirmation.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Agregar a Desayuno", exact: true })).toBeEnabled(); expect(saved).toBe(0);
+  await dialog.getByRole("button", { name: "Agregar a Desayuno", exact: true }).click();
+  await confirmation.getByRole("button", { name: "Reutilizar con aviso", exact: true }).click();
+  await expect(dialog).not.toBeVisible(); expect(saved).toBe(1);
+});

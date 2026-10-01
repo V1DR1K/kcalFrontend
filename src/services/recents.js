@@ -55,3 +55,10 @@ export function rememberMeal(user, mealType, log) {
   };
   value.meals = [entry, ...value.meals.filter((saved) => saved.itemType !== entry.itemType || (isAiEstimate ? saved.id !== entry.id : saved.itemId !== entry.itemId))].slice(0, 10); return write(user, value);
 }
+
+export function updateRecentItem(user, item) {
+  const value = readRecents(user);
+  value.items = value.items.map(saved => saved.type === (item.type || "FOOD") && saved.id === item.id ? { ...saved, ...item } : saved);
+  value.meals = value.meals.map(saved => saved.itemType === (item.type || "FOOD") && saved.itemId === item.id ? { ...saved, label: item.name || saved.label, archived: Boolean(item.archived) } : saved);
+  return write(user, value);
+}

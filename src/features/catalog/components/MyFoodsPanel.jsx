@@ -1,3 +1,4 @@
+import { updateRecentItem } from "../../../services/recents";
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "../../../components/Icon";
 import { SkeletonRows } from "../../../components/Loading";
@@ -43,6 +44,7 @@ export function MyFoods({ api, onDirtyChange, onCreateFood, embedded = false }) 
         },
       )
       .then(({ active, deleted }) => {
+        [...active, ...deleted.map(item => ({ ...item, archived: true }))].forEach(item => updateRecentItem({ id: api.getUserId() }, item));
         setItems(active);
         setDeletedItems(deleted);
       })
@@ -51,27 +53,29 @@ export function MyFoods({ api, onDirtyChange, onCreateFood, embedded = false }) 
   }, [api]);
   useEffect(() => {
     load();
+    window.addEventListener("scalegrams:catalog-updated", load);
+    return () => window.removeEventListener("scalegrams:catalog-updated", load);
   }, [load]);
   async function remove(item) {
     if (deletingId) return;
     const confirmed = await api.confirm({
-      title: "¿Borrar alimento?",
-      description: `${item.name} dejará de aparecer en tus búsquedas y selecciones nuevas.`,
-      confirmLabel: "Borrar alimento",
+      title: "¿Archivar alimento?",
+      description: `${item.name} dejará de aparecer en las búsquedas. Su historial se conserva y podrás reutilizarlo desde recientes, recetas y plantillas con un aviso.`,
+      confirmLabel: "Archivar alimento",
     });
     if (!confirmed) return;
     setDeletingId(item.id);
     setMenuId(null);
     try {
       await api.runAction(
-        { title: "Borrando alimento", description: "Estamos ocultando el alimento de tu catálogo..." },
+        { title: "Archivando alimento", description: "Estamos ocultando el alimento de tu catálogo..." },
         () => api.request(`/api/foods/${item.id}`, { method: "DELETE" }),
         { quiet: true },
       );
       await load();
-      api.notify("Alimento borrado.");
+      api.notify("Alimento archivado.");
     } catch (error) {
-      api.notify(error.message || "No se pudo borrar el alimento.", "error");
+      api.notify(error.message || "No se pudo archivar el alimento.", "error");
     } finally {
       setDeletingId(null);
     }
@@ -128,7 +132,7 @@ export function MyFoods({ api, onDirtyChange, onCreateFood, embedded = false }) 
                 {menuId === item.id && (
                   <div className="food-card-menu-popover" role="menu">
                     <button type="button" role="menuitem" onClick={() => { setMenuId(null); setEditing(item); }}><Icon name="edit" />Editar alimento</button>
-                    <button type="button" role="menuitem" className="danger" onClick={() => remove(item)}><Icon name="delete" />Borrar alimento</button>
+                    <button type="button" role="menuitem" className="danger" onClick={() => remove(item)}><Icon name="delete" />Archivar alimento</button>
                   </div>
                 )}
               </div>
