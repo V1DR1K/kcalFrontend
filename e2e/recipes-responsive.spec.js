@@ -116,3 +116,15 @@ test("keeps recipe cards readable when the desktop sidebar narrows the content",
   expect(bounds.cardRight).toBeLessThanOrEqual(bounds.viewportWidth + 1);
   expect(bounds.copyWidth).toBeGreaterThanOrEqual(120);
 });
+
+test("SG006 uses summary ingredient counts and SG023 creates from the empty state", async ({ page }) => {
+  await seedRecipes(page);
+  await page.route("**/api/recipes/mine**", route => route.fulfill({ json: [{ ...recipes[0], ingredientCount: 3, ingredients: [] }, { ...recipes[1], ingredients: [] }] }));
+  await page.reload();
+  await expect(page.locator(".collection-library-select").first()).toContainText("3 ingredientes");
+  await expect(page.locator(".collection-library-select").nth(1)).toContainText("Ver ingredientes");
+  await page.route("**/api/recipes/mine**", route => route.fulfill({ json: [] }));
+  await page.reload();
+  await page.locator(".recipe-empty-panel").getByRole("button", { name: "Crear receta" }).click();
+  await expect(page.getByRole("dialog", { name: "Crear receta" })).toBeVisible();
+});

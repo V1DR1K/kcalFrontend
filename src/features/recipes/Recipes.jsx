@@ -1,3 +1,5 @@
+import { recipeIngredientLabel } from "../../utils/recipe-summary";
+import { scaleNutrition } from "../../utils/nutrition";
 import React, { useEffect, useRef, useState } from "react";
 import { InfiniteSentinel } from "../../components/InfiniteSentinel";
 import { Icon } from "../../components/Icon";
@@ -24,14 +26,14 @@ function recipeGroups(recipe) {
         ? item.cookedTotalWeightGrams || item.rawTotalWeightGrams
         : item.baseQuantity || 100);
       const factor = base > 0 ? quantity / base : 1;
-      return { ...item, type: isRecipe ? "RECIPE" : "FOOD", name: item.name || (isRecipe ? "Receta" : "Alimento"), quantity, unit: ingredient.unit, calories: Math.round(Number(item.calories || 0) * factor), proteinGrams: Number(item.proteinGrams || 0) * factor, carbsGrams: Number(item.carbsGrams || 0) * factor, fatGrams: Number(item.fatGrams || 0) * factor };
+      return { ...item, type: isRecipe ? "RECIPE" : "FOOD", name: item.name || (isRecipe ? "Receta" : "Alimento"), quantity, unit: ingredient.unit, ...scaleNutrition(item, factor) };
     }),
   }];
 }
 
 function recipeStatus(recipe) {
   const raw = rawRecipeWeight(recipe); const cooked = cookedRecipeWeight(recipe);
-  return `${recipe?.ingredients?.length || 0} ingredientes · ${formatQuantity(raw)} g crudos${cooked > 0 ? ` · ${formatQuantity(cooked)} g cocidos` : ""}`;
+  return `${recipeIngredientLabel(recipe)} · ${formatQuantity(raw)} g crudos${cooked > 0 ? ` · ${formatQuantity(cooked)} g cocidos` : ""}`;
 }
 
 function RecipeCard({ recipe, selected, compact, canEdit, loading, onSelect, onEdit, onDelete, onCopy }) {
@@ -48,7 +50,7 @@ function RecipeCard({ recipe, selected, compact, canEdit, loading, onSelect, onE
   </article>;
 }
 
-function RecipeLibrary({ api, endpoint, canEdit, ownerName, onBack, refreshSignal = 0 }) {
+function RecipeLibrary({ api, endpoint, canEdit, ownerName, onBack, refreshSignal = 0, onCreate }) {
   const compact = useCompactLayout();
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [mobileRecipe, setMobileRecipe] = useState(null);
@@ -86,7 +88,7 @@ function RecipeLibrary({ api, endpoint, canEdit, ownerName, onBack, refreshSigna
   }
   async function edit(recipe) { setLoadingRecipeId(recipe.id); try { const detail = selectedRecipe?.id === recipe.id ? selectedRecipe : await api.request(`/api/recipes/${recipe.id}`); if (mobileRecipe) closeMobileRecipe(); setEditing({ ...detail, type: "RECIPE" }); } catch (error) { api.notify(error.message || "No se pudo cargar la receta.", "error"); } finally { setLoadingRecipeId(null); } }
   async function remove(recipe) { if (deletingId) return; if (!(await api.confirm({ title: "¿Borrar receta?", description: `${recipe.name} se eliminará de tus recetas.`, confirmLabel: "Borrar receta" }))) return; setDeletingId(recipe.id); try { await api.request(`/api/recipes/${recipe.id}`, { method: "DELETE" }); if (mobileRecipe?.id === recipe.id) closeMobileRecipe(); if (selectedRecipe?.id === recipe.id) setSelectedRecipe(null); catalog.removeItem(recipe.id); api.notify("Receta borrada."); } catch (error) { api.notify(error.message || "No se pudo borrar la receta.", "error"); } finally { setDeletingId(null); } }
-  async function copy(recipe) { try { await api.request(`/api/recipes/${recipe.id}/copy`, { method: "POST" }); api.notify("Receta guardada en Mis recetas."); catalog.refresh(); } catch (error) { api.notify(error.message || "No se pudo guardar la receta.", "error"); } }
+  async function copy(recipe) { try { await api.request(`/api/recipes/${recipe.id}/copy`, { method: "POST" }); api.notify("Receta guardada en Mis recetas."); catalog.refresh(); } catch (error) { if (error.cancelled) return; api.notify(error.message || "No se pudo guardar la receta.", "error"); } }
   const detailReady = selectedRecipe && (!mobileRecipe || selectedRecipe.id === mobileRecipe.id);
   const previewProps = detailReady ? { title: selectedRecipe.name, description: selectedRecipe.description, status: recipeStatus(selectedRecipe), heroItems: (selectedRecipe.ingredients || []).map((item) => ({ ...(item.food || item.recipe || {}), type: item.recipe ? "RECIPE" : "FOOD" })), totals: selectedRecipe, groups: recipeGroups(selectedRecipe) } : null;
   return <div className="collection-browser">
@@ -95,7 +97,7 @@ function RecipeLibrary({ api, endpoint, canEdit, ownerName, onBack, refreshSigna
       <div className="collection-browser-heading"><div><h2>{ownerName ? `Recetas de ${ownerName}` : canEdit ? "Mis recetas" : "Recetas compartidas"}</h2><p>{catalog.items.length ? "Elegí una receta para revisar sus ingredientes." : "Todavía no hay recetas disponibles."}</p></div><span className="abm-count">{catalog.items.length}</span></div>
       {catalog.initialLoading && !catalog.items.length && <div className="recipe-list"><SkeletonBlock className="skeleton-recipe-card" /><SkeletonBlock className="skeleton-recipe-card" /></div>}
       {!catalog.initialLoading && catalog.error && <CatalogStatus error>{catalog.error}<button className="secondary" onClick={catalog.retry}>Reintentar</button></CatalogStatus>}
-      {!catalog.initialLoading && !catalog.error && !catalog.items.length && <Panel className="recipe-empty-panel"><Icon name="restaurant" /><h2>No hay recetas para mostrar</h2><p>{canEdit ? "Creá una receta desde Registrar para tenerla disponible cada vez que cargues una comida." : "Este usuario todavía no tiene recetas disponibles."}</p></Panel>}
+      {!catalog.initialLoading && !catalog.error && !catalog.items.length && <Panel className="recipe-empty-panel"><Icon name="restaurant" /><h2>No hay recetas para mostrar</h2><p>{canEdit ? "Creá una receta para tenerla disponible cada vez que registres una comida." : "Este usuario todavía no tiene recetas disponibles."}</p>{canEdit && onCreate && <button className="primary" onClick={onCreate}><Icon name="add" />Crear receta</button>}</Panel>}
       {catalog.items.length > 0 && <div className="collection-library-list">{catalog.items.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} compact={compact} selected={!compact && selectedRecipe?.id === recipe.id} canEdit={canEdit} loading={loadingRecipeId === recipe.id || deletingId === recipe.id} onSelect={(event) => openRecipe(recipe, event)} onEdit={() => edit(recipe)} onDelete={() => remove(recipe)} onCopy={() => copy(recipe)} />)}</div>}
       <InfiniteSentinel enabled={catalog.hasNext && !catalog.initialLoading && !catalog.loadingMore && !catalog.error} onLoad={catalog.loadNext} />
     </div>
@@ -117,5 +119,5 @@ function ExploreRecipes({ api }) {
 
 export function Recipes({ api, embedded = false }) {
   const [tab, setTab] = useState("mine"); const [creating, setCreating] = useState(false); const [refreshSignal, setRefreshSignal] = useState(0);
-  return <section className={`page abm-page recipes-page ${embedded ? "register-embedded-page" : ""}`.trim()}><header className="abm-page-header"><div><h1>Recetas</h1><p>Creá preparaciones propias, revisá sus nutrientes y reutilizalas al registrar una comida.</p></div><button className="primary" type="button" onClick={() => setCreating(true)}><Icon name="add" />Crear receta</button></header><div className="tabs recipes-tabs" role="tablist" aria-label="Secciones de recetas"><button type="button" role="tab" aria-selected={tab === "mine"} className={tab === "mine" ? "selected" : ""} onClick={() => setTab("mine")}>Mis recetas</button><button type="button" role="tab" aria-selected={tab === "explore"} className={tab === "explore" ? "selected" : ""} onClick={() => setTab("explore")}>Explorar recetas</button></div>{tab === "mine" ? <RecipeLibrary api={api} endpoint="/api/recipes/mine" canEdit refreshSignal={refreshSignal} /> : <ExploreRecipes api={api} />}{creating && <RecipeEditorDialog api={api} onClose={() => setCreating(false)} onDone={() => setRefreshSignal((value) => value + 1)} />}</section>;
+  return <section className={`page abm-page recipes-page ${embedded ? "register-embedded-page" : ""}`.trim()}><header className="abm-page-header"><div><h1>Recetas</h1><p>Creá preparaciones propias, revisá sus nutrientes y reutilizalas al registrar una comida.</p></div><button className="primary" type="button" onClick={() => setCreating(true)}><Icon name="add" />Crear receta</button></header><div className="tabs recipes-tabs" role="tablist" aria-label="Secciones de recetas"><button type="button" role="tab" aria-selected={tab === "mine"} className={tab === "mine" ? "selected" : ""} onClick={() => setTab("mine")}>Mis recetas</button><button type="button" role="tab" aria-selected={tab === "explore"} className={tab === "explore" ? "selected" : ""} onClick={() => setTab("explore")}>Explorar recetas</button></div>{tab === "mine" ? <RecipeLibrary api={api} endpoint="/api/recipes/mine" canEdit onCreate={() => setCreating(true)} refreshSignal={refreshSignal} /> : <ExploreRecipes api={api} />}{creating && <RecipeEditorDialog api={api} onClose={() => setCreating(false)} onDone={() => setRefreshSignal((value) => value + 1)} />}</section>;
 }
