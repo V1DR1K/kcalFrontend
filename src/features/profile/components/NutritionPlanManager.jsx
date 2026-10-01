@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Icon } from "../../../components/Icon";
 import { Panel } from "../../../components/Layout";
 import { formatNumber, readableDate, today } from "../../../utils/format";
+import { NutritionPlanScheduleDialog } from "./NutritionPlanScheduleDialog";
 import { NutritionPlanDialog } from "./NutritionPlanDialog";
 
 function planColor(value) {
@@ -19,92 +20,37 @@ function formatPlanDate(value) {
 
 export function NutritionPlanManager({ api, plans, onChanged }) {
   const [dialog, setDialog] = useState(null);
-  const [activatingId, setActivatingId] = useState(null);
+  const [review, setReview] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const currentPlan = plans.find((plan) => plan.current) || plans.find((plan) => plan.startDate <= today() && (!plan.endDate || plan.endDate >= today()));
-  const overlaps = [];
-  const orderedPlans = [...plans].sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)) || Number(a.id) - Number(b.id));
-  orderedPlans.forEach((plan, index) => {
-    for (const other of orderedPlans.slice(index + 1)) {
-      if (!plan.endDate || other.startDate <= plan.endDate) overlaps.push([plan, other]);
-    }
-  });
-  function startCreate() {
-    setDialog({ plan: null });
-  }
+  const currentPlan = plans.find(plan => plan.current && (!plan.status || plan.status === "SCHEDULED"));
   function startEdit(plan) {
-    setDialog({ plan });
+    if (plan.status === "ALTERNATIVE") setDialog({ plan });
+    else {
+      let name = `${plan.name} · alternativa`; let suffix = 2;
+      while (plans.some(item => item.status !== "ARCHIVED" && item.name.toLowerCase() === name.toLowerCase())) name = `${plan.name} · alternativa ${suffix++}`;
+      setDialog({ plan: { ...plan, id: null, version: undefined, name, startDate: today(), endDate: "", status: "ALTERNATIVE" } });
+    }
   }
-  async function activatePlan(plan) {
-    if (activatingId || plan.id === currentPlan?.id) return;
-    setActivatingId(plan.id);
-    try {
-      const payload = { name: plan.name, dailyCalories: plan.dailyCalories, proteinPercent: Number(plan.proteinPercent), carbsPercent: Number(plan.carbsPercent), fatPercent: Number(plan.fatPercent), startDate: today(), endDate: null };
-      await api.runAction(
-        { title: "Cambiando plan", description: "Estamos activando tu plan alimenticio..." },
-        async () => {
-          await api.request("/api/profile/nutrition-plans", { method: "POST", body: JSON.stringify(payload) });
-          api.notify(`${plan.name} es ahora tu plan actual.`);
-          await onChanged();
-        },
-        { quiet: true },
-      );
-    } catch { api.notify("No se pudo cambiar el plan.", "error"); }
-    finally { setActivatingId(null); }
-  }
-  async function deletePlan(plan) {
-    if (deletingId || activatingId) return;
-    const confirmed = await api.confirm({
-      title: "¿Borrar plan?",
-      description: `${plan.name} dejará de estar disponible en tu historial, pero sus datos se conservarán.`,
-      confirmLabel: "Borrar plan",
-    });
+  async function archive(plan) {
+    if (deletingId) return;
+    const confirmed = await api.confirm({ title: "¿Archivar alternativa?", description: `${plan.name} se conservará en el historial.`, confirmLabel: "Archivar" });
     if (!confirmed) return;
     setDeletingId(plan.id);
-    try {
-      await api.runAction(
-        { title: "Borrando plan", description: "Estamos desactivando el plan de tu historial..." },
-        async () => {
-          await api.request(`/api/profile/nutrition-plans/${plan.id}`, { method: "DELETE" });
-          api.notify("Plan borrado.");
-          await onChanged();
-        },
-        { quiet: true },
-      );
-    } catch (error) {
-      api.notify(error.message || "No se pudo borrar el plan.", "error");
-    } finally {
-      setDeletingId(null);
-    }
+    try { await api.request(`/api/profile/nutrition-plans/${plan.id}`, { method: "DELETE" }); await onChanged(); api.notify("Alternativa archivada."); }
+    catch (error) { api.notify(error.message || "No se pudo archivar.", "error"); }
+    finally { setDeletingId(null); }
   }
-  return (
-    <Panel title="Plan alimenticio">
-      <div className="current-plan-panel">
-        <span className="current-plan-dot" style={{ background: planColor(currentPlan?.id || currentPlan?.name) }} />
-        <div><small>PLAN ACTUAL</small><strong>{currentPlan?.name || "Sin plan activo"}</strong>{currentPlan && <span>Desde {readableDate(currentPlan.startDate)} · {currentPlan.dailyCalories} kcal</span>}{currentPlan && <em className="active-plan-badge">En uso hoy</em>}</div>
-        {currentPlan && <div className="current-plan-actions"><div className="current-plan-macros"><span>{currentPlan.proteinPercent}% P</span><span>{currentPlan.carbsPercent}% C</span><span>{currentPlan.fatPercent}% G</span></div><button type="button" className="secondary use-plan-button" onClick={() => startEdit(currentPlan)}><Icon name="edit" />Editar</button></div>}
-      </div>
-      {overlaps.length > 0 && <div className="plan-overlap-notice" role="status"><strong>Hay períodos de planes superpuestos</strong><p>El historial mantiene esas fechas, pero para cada día solo se aplica el plan más reciente. Editá los planes para dejar una sola opción activa.</p>{overlaps.map(([first, second]) => <div key={`${first.id}:${second.id}`}><span>{first.name} · {formatPlanDate(first.startDate)}–{first.endDate ? formatPlanDate(first.endDate) : "Actualidad"} / {second.name} · {formatPlanDate(second.startDate)}–{second.endDate ? formatPlanDate(second.endDate) : "Actualidad"}</span><button type="button" className="secondary" onClick={() => startEdit(second)}>Revisar {second.name}</button></div>)}</div>}
-      <div className="plan-history">
-        <div className="plan-history-header"><div><h3>Otros planes</h3><p>Conservá alternativas listas para volver a usarlas.</p></div><button type="button" className="primary" onClick={startCreate}><Icon name="add" />Agregar plan</button></div>
-        {plans.filter((plan) => !plan.current && plan.id !== currentPlan?.id).map((plan) => (
-          <article className="plan-history-card" key={plan.id || `${plan.name}-${plan.startDate}`}>
-            <div className="plan-history-heading"><strong>{plan.name}</strong></div>
-            <span>
-              {formatPlanDate(plan.startDate)} – {plan.endDate ? formatPlanDate(plan.endDate) : "Actualidad"}
-            </span>
-            <small>
-              {formatNumber(plan.dailyCalories)} kcal · {plan.proteinPercent}% proteína · {plan.carbsPercent}% carbohidratos · {plan.fatPercent}% grasas
-            </small>
-            <div className="plan-history-actions">
-              <button type="button" className="secondary use-plan-button" onClick={() => startEdit(plan)}><Icon name="edit" />Editar</button>
-              <button type="button" className="secondary use-plan-button" disabled={Boolean(activatingId) || Boolean(deletingId)} onClick={() => activatePlan(plan)}>{activatingId === plan.id ? "Cambiando..." : "Usar este plan"}</button>
-              <button type="button" className="secondary use-plan-button danger-text" disabled={Boolean(activatingId) || Boolean(deletingId)} onClick={() => deletePlan(plan)}><Icon name="delete" />{deletingId === plan.id ? "Borrando..." : "Borrar"}</button>
-            </div>
-          </article>
-        ))}
-      </div>
-      {dialog && <NutritionPlanDialog key={dialog.plan?.id || "new"} api={api} plan={dialog.plan} plans={plans} onClose={() => setDialog(null)} onChanged={onChanged} />}
-    </Panel>
-  );
+  function actions(plan) {
+    const alternative = plan.status === "ALTERNATIVE";
+    const scheduled = !plan.status || plan.status === "SCHEDULED";
+    return <div className="plan-history-actions"><button type="button" className="secondary" onClick={() => startEdit(plan)}>{alternative ? "Editar alternativa" : "Crear alternativa"}</button>{alternative && <button type="button" className="secondary" onClick={() => setReview({ plan })}>Programar</button>}{scheduled && <button type="button" className="secondary" onClick={() => setReview({ plan, cancel: true })}>Cancelar programación</button>}{alternative && <button type="button" className="secondary danger-text" disabled={Boolean(deletingId)} onClick={() => archive(plan)}>{deletingId === plan.id ? "Archivando…" : "Archivar"}</button>}</div>;
+  }
+  return <Panel title="Plan alimenticio">
+    <div className="current-plan-panel"><span className="current-plan-dot" style={{ background: planColor(currentPlan?.id) }} /><div><small>META DE HOY</small><strong>{currentPlan?.name || "Meta manual"}</strong>{currentPlan && <span>Desde {readableDate(currentPlan.startDate)} · {formatNumber(currentPlan.dailyCalories)} kcal</span>}<em className="active-plan-badge">{currentPlan ? "Plan programado" : "Sin programación para hoy"}</em></div>{currentPlan && <div className="current-plan-actions">{actions(currentPlan)}</div>}</div>
+    <div className="plan-history"><div className="plan-history-header"><div><h3>Alternativas e historial</h3><p>Una alternativa no cambia tu meta. Revisá el impacto antes de programarla.</p></div><button type="button" className="primary" onClick={() => setDialog({ plan: null })}><Icon name="add" />Agregar plan</button></div>
+    {plans.filter(plan => plan.id !== currentPlan?.id).map(plan => <article className="plan-history-card" key={plan.id}><div className="plan-history-heading"><strong>{plan.name}</strong><span>{plan.status === "ARCHIVED" ? "Archivado" : plan.status === "ALTERNATIVE" ? "Alternativa" : "Programado"}</span></div><span>{formatPlanDate(plan.startDate)} – {plan.endDate ? formatPlanDate(plan.endDate) : "Sin fin declarado"}</span>{plan.status === "SCHEDULED" && plan.effectiveEndDate !== plan.endDate && <span>Vigencia efectiva hasta {formatPlanDate(plan.effectiveEndDate)}</span>}<small>{formatNumber(plan.dailyCalories)} kcal · {plan.proteinPercent}% proteína · {plan.carbsPercent}% carbohidratos · {plan.fatPercent}% grasas</small>{actions(plan)}</article>)}
+    </div>
+    {dialog && <NutritionPlanDialog key={dialog.plan?.id || "new"} api={api} plan={dialog.plan} plans={plans} onClose={() => setDialog(null)} onChanged={onChanged} />}
+    {review && <NutritionPlanScheduleDialog api={api} {...review} onClose={() => setReview(null)} onChanged={onChanged} />}
+  </Panel>;
 }

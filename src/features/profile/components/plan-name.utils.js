@@ -7,7 +7,7 @@ export function normalizedPlanName(value) {
 export function hasDuplicatePlanName(plans, name, editingId = null) {
   const normalized = normalizedPlanName(name);
   if (!normalized) return false;
-  return (plans || []).some((plan) => plan.id !== editingId && normalizedPlanName(plan.name) === normalized);
+  return (plans || []).some((plan) => plan.status !== "ARCHIVED" && plan.id !== editingId && normalizedPlanName(plan.name) === normalized);
 }
 
 export function isDuplicatePlanNameError(error) {

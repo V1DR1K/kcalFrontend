@@ -118,3 +118,21 @@
 @media (min-width: 901px) {
   .plans-page-grid { grid-template-columns: minmax(0, 1fr); align-items: start; }
 }
+
+/* Plans: independent inputs and an explicit review before changing goals. */
+.macro-percentage { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.macro-control .macro-percentage input { width: 76px; min-width: 0; min-height: 44px; font-size: 16px; text-align: right; }
+.plan-save-intent { display: grid; gap: 12px; min-width: 0; border: 0; margin: 0; padding: 16px 0; }
+.plan-save-intent label { display: flex; gap: 10px; align-items: center; min-height: 44px; }
+.plan-save-intent p { margin: 0; color: var(--muted); }
+.plan-timeline-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.plan-timeline ul { list-style: none; padding: 0; display: grid; gap: 12px; }
+.plan-timeline li { display: grid; gap: 4px; padding-block: 10px; border-bottom: 1px solid var(--outline); overflow-wrap: anywhere; }
+.plan-history-heading { flex-wrap: wrap; gap: 8px; }
+.plan-history-actions { flex-wrap: wrap; }
+@media (max-width: 600px) {
+ .nutrition-plan-dialog .plan-calorie-step { grid-template-columns: auto minmax(0, 1fr); }
+ .nutrition-plan-dialog .plan-calorie-step .field { grid-column: 1 / -1; }
+ .plan-timeline-comparison { grid-template-columns: minmax(0, 1fr); }
+ .current-plan-actions { width: 100%; }
+}

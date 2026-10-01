@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Input } from "../../../components/FormControls";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { formatNumber, macroGrams, today } from "../../../utils/format";
+import { NutritionPlanScheduleDialog } from "./NutritionPlanScheduleDialog";
 import { MacroControl } from "./ProfilePanels";
 import { DUPLICATE_PLAN_NAME_ERROR, hasDuplicatePlanName, isDuplicatePlanNameError } from "./plan-name.utils";
 
@@ -28,16 +29,18 @@ function formFromPlan(plan) {
 }
 
 export function NutritionPlanDialog({ api, plan, plans = [], onClose, onChanged }) {
-  const editing = Boolean(plan);
+  const editing = Boolean(plan?.id);
+  const [intent, setIntent] = useState("alternative");
+  const [savedAlternative, setSavedAlternative] = useState(null);
   const [form, setForm] = useState(() => formFromPlan(plan));
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [nameError, setNameError] = useState("");
-  const total = Number(form.proteinPercent) + Number(form.carbsPercent) + Number(form.fatPercent);
+  const total = Number(String(form.proteinPercent).replace(",", ".")) + Number(String(form.carbsPercent).replace(",", ".")) + Number(String(form.fatPercent).replace(",", "."));
   const grams = {
-    protein: macroGrams(form.dailyCalories, form.proteinPercent, 4),
-    carbs: macroGrams(form.dailyCalories, form.carbsPercent, 4),
-    fat: macroGrams(form.dailyCalories, form.fatPercent, 9),
+    protein: macroGrams(form.dailyCalories, Number(String(form.proteinPercent).replace(",", ".")), 4),
+    carbs: macroGrams(form.dailyCalories, Number(String(form.carbsPercent).replace(",", ".")), 4),
+    fat: macroGrams(form.dailyCalories, Number(String(form.fatPercent).replace(",", ".")), 9),
   };
 
   function setField(field, value) {
@@ -48,17 +51,13 @@ export function NutritionPlanDialog({ api, plan, plans = [], onClose, onChanged 
 
   function setMacro(field, value) {
     setFormError("");
-    setForm((current) => {
-      const otherFields = ["proteinPercent", "carbsPercent", "fatPercent"].filter((key) => key !== field);
-      const remaining = Math.max(0, 100 - otherFields.reduce((sum, key) => sum + Number(current[key] || 0), 0));
-      return { ...current, [field]: Math.min(remaining, Math.max(0, Number(value))) };
-    });
+    setForm((current) => ({ ...current, [field]: value }));
   }
 
   async function submit(event) {
     event.preventDefault();
     if (saving) return;
-    if (Math.round(total * 10) / 10 !== 100) {
+    if ([form.proteinPercent, form.carbsPercent, form.fatPercent].some(value => value === "" || !Number.isFinite(Number(String(value).replace(",", "."))) || Number(String(value).replace(",", ".")) < 0 || Number(String(value).replace(",", ".")) > 100) || Math.round(total * 10) / 10 !== 100) {
       setFormError("La suma de proteínas, carbohidratos y grasas debe dar 100%.");
       return;
     }
@@ -75,16 +74,18 @@ export function NutritionPlanDialog({ api, plan, plans = [], onClose, onChanged 
     const payload = {
       ...form,
       dailyCalories: Number(form.dailyCalories),
-      proteinPercent: Number(form.proteinPercent),
-      carbsPercent: Number(form.carbsPercent),
-      fatPercent: Number(form.fatPercent),
+      proteinPercent: Number(String(form.proteinPercent).replace(",", ".")),
+      carbsPercent: Number(String(form.carbsPercent).replace(",", ".")),
+      fatPercent: Number(String(form.fatPercent).replace(",", ".")),
       endDate: form.endDate || null,
+      status: "ALTERNATIVE",
+      version: plan?.version,
     };
     try {
       const saved = await api.runAction(
         {
           title: editing ? "Actualizando plan" : "Guardando plan",
-          description: "Estamos recalculando tu objetivo diario...",
+          description: "Guardando una alternativa sin cambiar tu meta vigente…",
         },
         () => api.request(editing ? `/api/profile/nutrition-plans/${plan.id}` : "/api/profile/nutrition-plans", {
           method: editing ? "PUT" : "POST",
@@ -92,9 +93,10 @@ export function NutritionPlanDialog({ api, plan, plans = [], onClose, onChanged 
         }),
         { quiet: true },
       );
+      if (intent === "schedule") { setSavedAlternative(saved); return; }
       await onChanged?.(saved);
       window.dispatchEvent(new Event("scalegrams:plan-updated"));
-      api.notify(editing ? "Plan alimenticio actualizado." : "Plan alimenticio guardado.");
+      api.notify(editing ? "Alternativa actualizada." : "Alternativa guardada. Tu meta vigente se conserva.");
       onClose();
     } catch (error) {
       const message = error.message || (editing ? "No se pudo actualizar el plan." : "No se pudo guardar el plan.");
@@ -106,14 +108,15 @@ export function NutritionPlanDialog({ api, plan, plans = [], onClose, onChanged 
     }
   }
 
+  if (savedAlternative) return <NutritionPlanScheduleDialog api={api} plan={savedAlternative} onChanged={onChanged} onClose={async () => { await onChanged?.(); onClose(); }} />;
+
   return (
     <ModalShell
       as="form"
       onClose={onClose}
       closeDisabled={saving}
-      title={editing ? "Editar plan" : "Crear plan"}
-      eyebrow="Plan alimenticio"
-      description="Definí tus calorías diarias y cómo querés distribuirlas."
+      title={editing ? "Editar alternativa" : "Crear alternativa"}
+      description="Guardar una alternativa conserva tu meta vigente. Para aplicarla, revisá y confirmá su programación."
       closeLabel="Cerrar plan"
       className="nutrition-plan-dialog"
       backdropClassName="dialog-backdrop"
@@ -123,7 +126,7 @@ export function NutritionPlanDialog({ api, plan, plans = [], onClose, onChanged 
         <>
           <button type="button" className="secondary" disabled={saving} onClick={onClose}>Cancelar</button>
           <button type="submit" className="primary" disabled={saving || Math.round(total * 10) / 10 !== 100}>
-            {saving ? "Guardando..." : editing ? "Guardar cambios" : "Crear plan"}
+            {saving ? "Guardando..." : intent === "schedule" ? "Guardar y revisar programación" : "Guardar alternativa"}
           </button>
         </>
       )}
@@ -146,7 +149,7 @@ export function NutritionPlanDialog({ api, plan, plans = [], onClose, onChanged 
             <strong>¿Cuántas calorías querés consumir?</strong>
             <small>Este es tu presupuesto diario. Los gramos se recalculan mientras distribuís los macros.</small>
           </div>
-          <Input label="Calorías por día" type="number" min="800" max="10000" step="10" value={form.dailyCalories} onChange={(event) => setField("dailyCalories", event.target.value)} required />
+          <Input label="Calorías por día" type="number" min="1" max="10000" step="1" value={form.dailyCalories} onChange={(event) => setField("dailyCalories", event.target.value)} required />
         </section>
 
         <section className="plan-dialog-section">
@@ -159,17 +162,18 @@ export function NutritionPlanDialog({ api, plan, plans = [], onClose, onChanged 
             <MacroControl label="Carbohidratos" description="Energía para tu día" value={form.carbsPercent} grams={grams.carbs} onChange={(value) => setMacro("carbsPercent", value)} tone="carbs" />
             <MacroControl label="Grasas" description="Hormonas y vitaminas" value={form.fatPercent} grams={grams.fat} onChange={(value) => setMacro("fatPercent", value)} tone="fat" />
           </div>
-          <div className="macro-distribution" aria-label="Distribución de macronutrientes">
+          <div className="macro-distribution" style={{ overflow: "hidden" }} aria-label="Distribución de macronutrientes">
             <span className="protein" style={{ width: `${form.proteinPercent}%` }} />
             <span className="carbs" style={{ width: `${form.carbsPercent}%` }} />
             <span className="fat" style={{ width: `${form.fatPercent}%` }} />
           </div>
           <div className={`macro-total ${Math.round(total * 10) / 10 === 100 ? "ok" : "bad"}`}>
             <strong>Total {formatNumber(total, 1)}%</strong>
-            <span>{Math.max(0, 100 - total)}% disponible · {grams.protein}g proteínas / {grams.carbs}g carbs / {grams.fat}g grasas</span>
+            <span>{total > 100 ? `${formatNumber(total - 100, 1)} % de más` : `${formatNumber(100 - total, 1)} % por distribuir`} · {grams.protein} g proteínas / {grams.carbs} g carbohidratos / {grams.fat} g grasas</span>
           </div>
         </section>
 
+        <fieldset className="plan-save-intent"><legend>Al guardar</legend><label><input type="radio" name="plan-intent" value="alternative" checked={intent === "alternative"} onChange={() => setIntent("alternative")} /> Guardar alternativa</label><label><input type="radio" name="plan-intent" value="schedule" checked={intent === "schedule"} onChange={() => setIntent("schedule")} /> Guardar y revisar programación</label><p>La programación requiere una confirmación adicional. Si volvés sin confirmar, la alternativa queda guardada.</p></fieldset>
         {formError && <p className="form-error nutrition-plan-dialog-error" role="alert">{formError}</p>}
       </div>
     </ModalShell>
