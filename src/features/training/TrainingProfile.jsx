@@ -5,7 +5,7 @@ import { Input, Select } from "../../components/FormControls";
 import { ModalShell } from "../../components/dialog/ModalShell";
 import { TrainingModuleBadge, TrainingStatus } from "./TrainingComponents";
 import { trainingApi } from "./training-api";
-import { categoryPayload, DIFFICULTY_OPTIONS, EQUIPMENT_OPTIONS, exercisePayload, optionLabel, REGISTRATION_TYPES, registrationTypeLabel, TRAINING_MODULES } from "./training-utils";
+import { muscleField, categoryPayload, DIFFICULTY_OPTIONS, EQUIPMENT_OPTIONS, exercisePayload, optionLabel, REGISTRATION_TYPES, registrationTypeLabel, TRAINING_MODULES } from "./training-utils";
 import { useTrainingData } from "./useTrainingData";
 
 const moduleOptions = TRAINING_MODULES.filter((item) => item.value !== "ALL");
@@ -26,7 +26,7 @@ function CategoryEditor({ api, category, onClose, onSaved }) {
 }
 
 function ExerciseEditor({ api, exercise, categories, onClose, onSaved }) {
-  const [form, setForm] = useState(() => ({ name: exercise?.name || "", description: exercise?.description || "", categoryId: exercise?.categoryId ? String(exercise.categoryId) : "", module: exercise?.module || "GYM", primaryMuscles: exercise?.primaryMuscles || "", secondaryMuscles: exercise?.secondaryMuscles || "", equipment: exercise?.equipment || "", difficulty: exercise?.difficulty || "", registrationType: exercise?.registrationType || (exercise?.module === "CALISTHENICS" ? "REPETITIONS" : "WEIGHT_AND_REPETITIONS"), unilateral: Boolean(exercise?.unilateral), externalLoad: Boolean(exercise?.externalLoad), active: exercise?.active !== false }));
+  const [form, setForm] = useState(() => ({ name: exercise?.name || "", description: exercise?.description || "", categoryId: exercise?.categoryId ? String(exercise.categoryId) : "", module: exercise?.module || "GYM", primaryMuscles: muscleField(exercise?.primaryMuscles), secondaryMuscles: muscleField(exercise?.secondaryMuscles), equipment: exercise?.equipment || "", difficulty: exercise?.difficulty || "", registrationType: exercise?.registrationType || (exercise?.module === "CALISTHENICS" ? "REPETITIONS" : "WEIGHT_AND_REPETITIONS"), unilateral: Boolean(exercise?.unilateral), externalLoad: Boolean(exercise?.externalLoad), active: exercise?.active !== false }));
   const [saving, setSaving] = useState(false); const [error, setError] = useState("");
   const categoryOptions = [{ value: "", label: "Sin categoría" }, ...categories.filter((item) => item.module === form.module).map((item) => ({ value: String(item.id), label: `${item.name}${item.system ? " · Base" : " · Personal"}` }))];
   function setField(field, value) { setError(""); setForm((current) => ({ ...current, [field]: value })); }

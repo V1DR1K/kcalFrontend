@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cardioDistanceFromSpeed, cardioEstimatedSteps, cardioPayload, cardioProgress, formatCardioDistance, formatCardioMinutes, formatCardioSpeed, formatCardioSteps } from "../src/features/training/cardio-utils.js";
-import { monthDays, moveItem, normalizeSession, planPayload, sessionPayload, sessionStatusLabel } from "../src/features/training/training-utils.js";
+import { exercisePayload, muscleField, monthDays, moveItem, normalizeSession, planPayload, sessionPayload, sessionStatusLabel } from "../src/features/training/training-utils.js";
 
 test("crea una grilla mensual que inicia el lunes", () => {
   const days = monthDays(new Date(2026, 2, 1));
@@ -75,4 +75,14 @@ test("formatea velocidad y pasos estimados de cardio", () => {
   assert.equal(formatCardioSpeed(8.93), "8,93 km/h");
   assert.equal(formatCardioSteps(8367), "8.367");
   assert.equal(formatCardioSteps(null), "No disponible");
+});
+
+
+test("normaliza músculos de arrays, cadenas y nulos al editar", () => {
+  assert.equal(muscleField(["dorsal", "bíceps"]), "dorsal, bíceps");
+  assert.equal(muscleField(null), "");
+  assert.equal(muscleField("dorsal"), "dorsal");
+  const payload = exercisePayload({ name: "Dominadas", module: "CALISTHENICS", primaryMuscles: ["dorsal", "bíceps"], secondaryMuscles: null });
+  assert.equal(payload.primaryMuscles, "dorsal, bíceps");
+  assert.equal(payload.secondaryMuscles, null);
 });

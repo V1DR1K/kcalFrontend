@@ -43,8 +43,8 @@ function PageLoader({ page, mode }) {
 function SessionRecovery({ onRetry }) {
   return <main className="auth-page"><section className="auth-card">
     <div className="brand auth-brand"><Icon name="scale" className="fill" /><div><strong>ScaleGrams</strong><span>Reconectando</span></div></div>
-    <h1>No pudimos comprobar tu sesiÃ³n</h1>
-    <p className="auth-intro">La conexiÃ³n con ScaleGrams no respondiÃ³. Tus datos de acceso siguen protegidos; probÃ¡ de nuevo cuando tengas conexiÃ³n.</p>
+    <h1>No pudimos comprobar tu sesión</h1>
+    <p className="auth-intro">La conexión con ScaleGrams no respondió. Tus datos de acceso siguen protegidos; probá de nuevo cuando tengas conexión.</p>
     <button className="primary" onClick={onRetry}>Reintentar</button>
   </section></main>;
 }
@@ -127,7 +127,7 @@ export function App() {
   }, [mode, page]);
 
   function saveSession(payload) {
-    if (!payload?.user) throw new Error("La respuesta de autenticaciÃ³n no contiene el usuario.");
+    if (!payload?.user) throw new Error("La respuesta de autenticación no contiene el usuario.");
     setUser(payload.user);
     setSessionState("authenticated");
     window.dispatchEvent(new Event("scalegrams:session-updated"));
@@ -140,7 +140,7 @@ export function App() {
   function logout() {
     clearSessionLocally();
     api.request("/api/auth/logout", { method: "POST" }).catch(() => {
-      api.notify("La sesiÃ³n se cerrÃ³ en este dispositivo, pero no se pudo confirmar su revocaciÃ³n central.", "error");
+      api.notify("La sesión se cerró en este dispositivo, pero no se pudo confirmar su revocación central.", "error");
     });
   }
 
@@ -208,7 +208,7 @@ export function App() {
   useEffect(() => {
     const expireSession = () => {
       clearSessionLocally();
-      api.notify("Tu sesiÃ³n venciÃ³. VolvÃ© a ingresar.", "error");
+      api.notify("Tu sesión venció. Volvé a ingresar.", "error");
     };
     window.addEventListener("scalegrams:session-expired", expireSession);
     return () => window.removeEventListener("scalegrams:session-expired", expireSession);
@@ -231,7 +231,7 @@ export function App() {
       if (now - lastExitAttempt < 2000) return;
       lastExitAttempt = now;
       pushNavigation(modeRef.current, pageRef.current);
-      api.notify("TocÃ¡ atrÃ¡s de nuevo para salir");
+      api.notify("Tocá atrás de nuevo para salir");
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -243,7 +243,7 @@ export function App() {
       document.title = "Ingresar | ScaleGrams";
       return;
     }
-    const titles = { dashboard: "DÃ­a", "my-foods": "Alimentos", recipes: "Recetas", "day-presets": "ReutilizÃ¡ tu dÃ­a", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", plans: "Planes", profile: "Perfil", "training-dashboard": "DÃ­a", "training-calendar": "Calendario de entrenamiento", "training-cardio": "Cardio", "training-profile": "Ejercicios" };
+    const titles = { dashboard: "Día", "my-foods": "Alimentos", recipes: "Recetas", "day-presets": "Reutilizá tu día", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", plans: "Planes", profile: "Perfil", "training-dashboard": "Día", "training-calendar": "Calendario de entrenamiento", "training-cardio": "Cardio", "training-profile": "Ejercicios" };
     document.title = `${titles[page] || "ScaleGrams"} | ScaleGrams`;
   }, [authenticated, mode, page]);
 

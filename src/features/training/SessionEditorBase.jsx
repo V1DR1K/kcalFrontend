@@ -47,7 +47,7 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
   const draftRef = useRef(draft);
   draftRef.current = draft;
   const identitiesRef = useRef(null);
-  const [conflict, setConflict] = useState(cachedDraft ? { server: session, message: "Hay un borrador local. Comparalo con la sesiÃ³n guardada antes de continuar." } : null);
+  const [conflict, setConflict] = useState(cachedDraft ? { server: session, message: "Hay un borrador local. Comparalo con la sesión guardada antes de continuar." } : null);
   const conflictRef = useRef(Boolean(cachedDraft));
   const sessionRef = useRef(session || cachedDraft || {});
   const contentKey = (value) => {
@@ -111,7 +111,7 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
     identitiesRef.current = { submitted: snapshot, saved };
     setDraft((current) => reconcileSessionIdentity(current, snapshot, saved));
     setSaveState("saved");
-    if (!quiet) api.notify("SesiÃƒÂ³n guardada.");
+    if (!quiet) api.notify("Sesión guardada.");
     return saved || sessionRef.current;
   }
 
@@ -126,7 +126,7 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
 
   function enqueueSave(snapshot, quiet = true) {
     pendingRef.current = { snapshot, quiet };
-    if (!flushRef.current) flushRef.current = flushPending().catch((saveError) => { setSaveState("error"); setError(saveError?.message || "No se pudo guardar la sesiÃƒÂ³n."); throw saveError; }).finally(() => { flushRef.current = null; });
+    if (!flushRef.current) flushRef.current = flushPending().catch((saveError) => { setSaveState("error"); setError(saveError?.message || "No se pudo guardar la sesión."); throw saveError; }).finally(() => { flushRef.current = null; });
     return flushRef.current;
   }
 
@@ -154,7 +154,7 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
   async function resolveConflict(useLocal) {
     try {
       const server = await trainingApi.session(api, sessionRef.current.id);
-      if (!useLocal && !await api.confirm({ title: "Â¿Descartar el borrador local?", description: "Se reemplazarÃ¡ por la versiÃ³n guardada.", confirmLabel: "Usar versiÃ³n guardada" })) return;
+      if (!useLocal && !await api.confirm({ title: "¿Descartar el borrador local?", description: "Se reemplazará por la versión guardada.", confirmLabel: "Usar versión guardada" })) return;
       sessionRef.current = server; versionRef.current = server.version; lastSavedRef.current = server;
       identitiesRef.current = null;
       const remote = createSessionDraft(type, server);
@@ -167,7 +167,7 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
         : remote;
       conflictRef.current = false; setConflict(null); setError(""); setDraft(next);
       if (sessionStatus(server.status) !== "IN_PROGRESS") clearStoredDraft();
-    } catch (failure) { setError(failure.message || "No pudimos recuperar la sesiÃ³n guardada."); }
+    } catch (failure) { setError(failure.message || "No pudimos recuperar la sesión guardada."); }
   }
 
   async function closeEditor() {
@@ -180,7 +180,7 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
       onSaved?.(lastSavedRef.current);
       clearStoredDraft(); onClose();
     } catch (closeError) {
-      setError(closeError?.message || "No se pudo guardar la sesiÃƒÂ³n antes de cerrarla.");
+      setError(closeError?.message || "No se pudo guardar la sesión antes de cerrarla.");
     } finally { setSaving(false); }
   }
 
@@ -201,8 +201,8 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
       window.clearTimeout(timerRef.current);
       await enqueueSave(draft, true);
       const completed = await trainingApi.completeSession(api, sessionRef.current.id, { version: versionRef.current, persistPlanChanges });
-      api.notify("DÃƒÂ­a finalizado."); onSaved?.(completed || { ...draft, status: "COMPLETED" }); clearStoredDraft(); onClose();
-    } catch (completeError) { setError(completeError?.message || "No se pudo finalizar el dÃƒÂ­a."); }
+      api.notify("Día finalizado."); onSaved?.(completed || { ...draft, status: "COMPLETED" }); clearStoredDraft(); onClose();
+    } catch (completeError) { setError(completeError?.message || "No se pudo finalizar el día."); }
     finally { setCompleting(false); }
   }
 
@@ -215,49 +215,49 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
 
   async function cancelSession() {
     if (!sessionRef.current?.id || readOnly || saving || completing || conflict) return;
-    const confirmed = await api.confirm({ title: "Ã‚Â¿Cancelar esta sesiÃƒÂ³n?", description: "QuedarÃƒÂ¡ cancelada y ya no se podrÃƒÂ¡ editar.", confirmLabel: "Cancelar sesiÃƒÂ³n" });
+    const confirmed = await api.confirm({ title: "¿Cancelar esta sesión?", description: "Quedará cancelada y ya no se podrá editar.", confirmLabel: "Cancelar sesión" });
     if (!confirmed) return;
     setSaving(true);
-    try { window.clearTimeout(timerRef.current); await enqueueSave(draft, true); const cancelled = await trainingApi.cancelSession(api, sessionRef.current.id, { version: versionRef.current }); api.notify("SesiÃƒÂ³n cancelada."); onSaved?.(cancelled); clearStoredDraft(); onClose(); }
-    catch (cancelError) { setError(cancelError?.message || "No se pudo cancelar la sesiÃƒÂ³n."); }
+    try { window.clearTimeout(timerRef.current); await enqueueSave(draft, true); const cancelled = await trainingApi.cancelSession(api, sessionRef.current.id, { version: versionRef.current }); api.notify("Sesión cancelada."); onSaved?.(cancelled); clearStoredDraft(); onClose(); }
+    catch (cancelError) { setError(cancelError?.message || "No se pudo cancelar la sesión."); }
     finally { setSaving(false); }
   }
 
-  const initialFocusStatus = readOnly ? <span className={`training-session-status training-session-status-${status.toLowerCase()}`}>{sessionStatusLabel(status)}</span> : <span className="training-save-indicator" role="status" aria-live="polite">{saveState === "saving" ? "GuardandoÃ¢â‚¬Â¦" : saveState === "error" ? "Error al guardar" : saveState === "saved" ? "Guardado" : "Autoguardado activo"}</span>;
-  const footer = <>{!readOnly && <button type="button" className="training-danger-button training-cancel-session" onClick={cancelSession} disabled={saving || completing}>Descartar sesiÃƒÂ³n</button>}<button type="button" className="training-secondary" onClick={closeEditor} disabled={saving || completing}>Cerrar</button>{!readOnly && <><button type="submit" form={`training-session-${type.toLowerCase()}`} className="training-secondary" disabled={saving || completing}>{saving ? "GuardandoÃ¢â‚¬Â¦" : "Guardar y salir"}</button><button type="button" className="training-primary" onClick={complete} disabled={saving || completing}>{completing ? "FinalizandoÃ¢â‚¬Â¦" : "Finalizar sesiÃƒÂ³n"}</button></>}</>;
+  const initialFocusStatus = readOnly ? <span className={`training-session-status training-session-status-${status.toLowerCase()}`}>{sessionStatusLabel(status)}</span> : <span className="training-save-indicator" role="status" aria-live="polite">{saveState === "saving" ? "Guardando…" : saveState === "error" ? "Error al guardar" : saveState === "saved" ? "Guardado" : "Autoguardado activo"}</span>;
+  const footer = <>{!readOnly && <button type="button" className="training-danger-button training-cancel-session" onClick={cancelSession} disabled={saving || completing}>Descartar sesión</button>}<button type="button" className="training-secondary" onClick={closeEditor} disabled={saving || completing}>Cerrar</button>{!readOnly && <><button type="submit" form={`training-session-${type.toLowerCase()}`} className="training-secondary" disabled={saving || completing}>{saving ? "Guardando…" : "Guardar y salir"}</button><button type="button" className="training-primary" onClick={complete} disabled={saving || completing}>{completing ? "Finalizando…" : "Finalizar sesión"}</button></>}</>;
 
   return <>
-    <ModalShell title={session?.id ? `${readOnly ? "Detalle de" : "Editar"} ${moduleLabel(type).toLowerCase()}` : `Nueva sesiÃƒÂ³n de ${moduleLabel(type).toLowerCase()}`} description={isGym ? "RegistrÃƒÂ¡ ejercicios y series. Se guarda automÃƒÂ¡ticamente." : "RegistrÃƒÂ¡ ejercicios y repeticiones. Se guarda automÃƒÂ¡ticamente."} onClose={closeEditor} closeDisabled={saving || completing} theme="training" className={`training-session-editor ${className}`.trim()} backdropClassName="training-session-backdrop" footer={footer}>
+    <ModalShell title={session?.id ? `${readOnly ? "Detalle de" : "Editar"} ${moduleLabel(type).toLowerCase()}` : `Nueva sesión de ${moduleLabel(type).toLowerCase()}`} description={isGym ? "Registrá ejercicios y series. Se guarda automáticamente." : "Registrá ejercicios y repeticiones. Se guarda automáticamente."} onClose={closeEditor} closeDisabled={saving || completing} theme="training" className={`training-session-editor ${className}`.trim()} backdropClassName="training-session-backdrop" footer={footer}>
       <form id={`training-session-${type.toLowerCase()}`} className="training-editor-form" onSubmit={saveAndExit} inert={saving || completing ? true : undefined}>
         <div className="training-editor-meta"><button type="button" className="training-date-button" onClick={() => !readOnly && setPickerOpen(true)}><Icon name="today" /><span>Fecha<strong>{new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(new Date(`${draft.date}T00:00:00`))}</strong></span><Icon name="chevron_right" /></button><div className="training-session-header-status">{initialFocusStatus}</div></div>
-        {draft.planId && <div className="training-session-source"><span>Plan asociado</span><strong>{draft.planDayName || draft.planName || plans.find((plan) => String(plan.id) === String(draft.planId))?.name || "Plan de entrenamiento"}</strong><small>La estructura del plan es una referencia. Los datos de esta sesiÃƒÂ³n son independientes.</small></div>}
-        <div className="training-exercise-log"><div className="training-section-heading"><div><h3>Ejercicios</h3><span>AgregÃƒÂ¡ y ordenÃƒÂ¡ lo que realmente hiciste.</span></div><button type="button" className="training-secondary training-add-control" onClick={addExercise} disabled={readOnly}><Icon name="add" />Agregar</button></div>
+        {draft.planId && <div className="training-session-source"><span>Plan asociado</span><strong>{draft.planDayName || draft.planName || plans.find((plan) => String(plan.id) === String(draft.planId))?.name || "Plan de entrenamiento"}</strong><small>La estructura del plan es una referencia. Los datos de esta sesión son independientes.</small></div>}
+        <div className="training-exercise-log"><div className="training-section-heading"><div><h3>Ejercicios</h3><span>Agregá y ordená lo que realmente hiciste.</span></div><button type="button" className="training-secondary training-add-control" onClick={addExercise} disabled={readOnly}><Icon name="add" />Agregar</button></div>
           {draft.exercises.length ? draft.exercises.map((exercise, exerciseIndex) => <article className="training-log-exercise" key={exercise.id}><div className="training-log-exercise-heading"><strong>Ejercicio {exerciseIndex + 1}</strong><div className="training-move-controls"><button type="button" className="training-icon-action" aria-label={`Mover ejercicio ${exerciseIndex + 1} hacia arriba`} disabled={readOnly || exerciseIndex === 0} onClick={() => setDraft((current) => ({ ...current, exercises: moveItem(current.exercises, exerciseIndex, exerciseIndex - 1) }))}><Icon name="keyboard_arrow_up" /></button><button type="button" className="training-icon-action" aria-label={`Mover ejercicio ${exerciseIndex + 1} hacia abajo`} disabled={readOnly || exerciseIndex === draft.exercises.length - 1} onClick={() => setDraft((current) => ({ ...current, exercises: moveItem(current.exercises, exerciseIndex, exerciseIndex + 1) }))}><Icon name="expand_more" /></button><button type="button" className="training-icon-action training-delete-control" aria-label={`Quitar ejercicio ${exerciseIndex + 1}`} onClick={() => setDraft((current) => ({ ...current, exercises: current.exercises.filter((_, index) => index !== exerciseIndex) }))} disabled={readOnly}><Icon name="delete" /></button></div></div>
             <ExerciseCombobox api={api} module={type} value={exercise.exerciseId} initialItems={initialItems} label="Ejercicio persistido" disabled={readOnly} onChange={(value) => selectExercise(exerciseIndex, value, initialItems.find((item) => String(item.id) === String(value)))} onExerciseChange={(selected) => selectExercise(exerciseIndex, String(selected.id), selected)} />
-            {exercise.exerciseId && <small className="training-plan-registration">{registrationTypeLabel(exercise.registrationType, type)}{exercise.unilateral ? " Ã‚Â· unilateral" : ""}</small>}
+            {exercise.exerciseId && <small className="training-plan-registration">{registrationTypeLabel(exercise.registrationType, type)}{exercise.unilateral ? " · unilateral" : ""}</small>}
             <div className="training-set-list">{exercise.sets.map((set, setIndex) => setFields(exercise, set, exerciseIndex, setIndex, type, updateSet, moveSet))}</div>
             <button type="button" className="training-text-button" onClick={() => updateExercise(exerciseIndex, { sets: [...exercise.sets, blankSet()] })} disabled={readOnly || !exercise.exerciseId}><Icon name="add" />Agregar serie</button>
-            <label className="field training-notes-field"><span>Notas del ejercicio</span><textarea value={exercise.notes} maxLength="500" disabled={readOnly} onChange={(event) => updateExercise(exerciseIndex, { notes: event.target.value })} placeholder="TÃƒÂ©cnica, dificultad o ajuste para la prÃƒÂ³xima vez" /></label>
-          </article>) : <div className="training-empty-inline"><Icon name="add_circle" /><span>AgregÃƒÂ¡ un ejercicio para comenzar la sesiÃƒÂ³n.</span></div>}
+            <label className="field training-notes-field"><span>Notas del ejercicio</span><textarea value={exercise.notes} maxLength="500" disabled={readOnly} onChange={(event) => updateExercise(exerciseIndex, { notes: event.target.value })} placeholder="Técnica, dificultad o ajuste para la próxima vez" /></label>
+          </article>) : <div className="training-empty-inline"><Icon name="add_circle" /><span>Agregá un ejercicio para comenzar la sesión.</span></div>}
         </div>
         <details className="training-session-details">
-          <summary><span>Detalles opcionales</span><small>TÃƒÂ­tulo y notas para volver despuÃƒÂ©s</small></summary>
+          <summary><span>Detalles opcionales</span><small>Título y notas para volver después</small></summary>
           <div className="training-session-details-content">
-            <Input label="TÃƒÂ­tulo" value={draft.title} maxLength="160" disabled={readOnly} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} placeholder={draft.planDayName || "Ej.: SesiÃƒÂ³n de fuerza"} />
-            <label className="field training-notes-field"><span>Notas de la sesiÃƒÂ³n</span><textarea value={draft.notes} maxLength="1000" disabled={readOnly} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} placeholder="CÃƒÂ³mo te sentiste, descansos o prÃƒÂ³ximos pasos" /></label>
+            <Input label="Título" value={draft.title} maxLength="160" disabled={readOnly} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} placeholder={draft.planDayName || "Ej.: Sesión de fuerza"} />
+            <label className="field training-notes-field"><span>Notas de la sesión</span><textarea value={draft.notes} maxLength="1000" disabled={readOnly} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} placeholder="Cómo te sentiste, descansos o próximos pasos" /></label>
           </div>
         </details>
         {error && <p className="training-form-error" role="alert">{error}</p>}
-        {conflict && <section aria-label="Comparar sesiÃ³n y borrador" className="training-conflict-review">
+        {conflict && <section aria-label="Comparar sesión y borrador" className="training-conflict-review">
           <p>{conflict.message}</p>
-          <p>Tu borrador: {draft.title} Â· {draft.exercises.length} ejercicios.</p>
-          {conflict.server && <details><summary>VersiÃ³n guardada: {conflict.server.title || "SesiÃ³n"}</summary><ul>{(conflict.server.exercises || []).map((item) => <li key={item.id}>{item.exerciseName} Â· {(item.sets || []).map((set) => `${set.repetitions ?? "â€”"} repeticiones / ${set.weightKg ?? "â€”"} kg`).join("; ")}</li>)}</ul></details>}
-          <button type="button" className="training-secondary" onClick={() => resolveConflict(false)}>Usar versiÃ³n guardada</button>
+          <p>Tu borrador: {draft.title} · {draft.exercises.length} ejercicios.</p>
+          {conflict.server && <details><summary>Versión guardada: {conflict.server.title || "Sesión"}</summary><ul>{(conflict.server.exercises || []).map((item) => <li key={item.id}>{item.exerciseName} · {(item.sets || []).map((set) => `${set.repetitions ?? "—"} repeticiones / ${set.weightKg ?? "—"} kg`).join("; ")}</li>)}</ul></details>}
+          <button type="button" className="training-secondary" onClick={() => resolveConflict(false)}>Usar versión guardada</button>
           <button type="button" className="training-primary" onClick={() => resolveConflict(true)}>Reaplicar mi borrador</button>
         </section>}
       </form>
     </ModalShell>
     {pickerOpen && <DatePickerDialog value={draft.date || dateKey()} onSelect={(date) => setDraft((current) => ({ ...current, date }))} onClose={() => setPickerOpen(false)} theme="training" className="training-date-picker" backdropClassName="training-date-picker-backdrop" />}
-    {planChangePrompt && <ModalShell title="Ã‚Â¿QuÃƒÂ© hacemos con los cambios?" description="Cambiaste los ejercicios de esta sesiÃƒÂ³n respecto del plan original." onClose={() => setPlanChangePrompt(false)} closeOnBackdrop={false} theme="training" className="training-plan-change-dialog" backdropClassName="training-session-backdrop" footer={<><button type="button" className="training-secondary" onClick={() => setPlanChangePrompt(false)}>Volver</button><button type="button" className="training-secondary" onClick={() => finish(false)}>Solo esta sesiÃƒÂ³n</button><button type="button" className="training-primary" onClick={() => finish(true)}>Aplicar cambios al plan</button></>}><div className="training-plan-change-options"><p>PodÃƒÂ©s mantener el plan intacto o usar el nuevo orden y selecciÃƒÂ³n para los prÃƒÂ³ximos dÃƒÂ­as.</p></div></ModalShell>}
+    {planChangePrompt && <ModalShell title="¿Qué hacemos con los cambios?" description="Cambiaste los ejercicios de esta sesión respecto del plan original." onClose={() => setPlanChangePrompt(false)} closeOnBackdrop={false} theme="training" className="training-plan-change-dialog" backdropClassName="training-session-backdrop" footer={<><button type="button" className="training-secondary" onClick={() => setPlanChangePrompt(false)}>Volver</button><button type="button" className="training-secondary" onClick={() => finish(false)}>Solo esta sesión</button><button type="button" className="training-primary" onClick={() => finish(true)}>Aplicar cambios al plan</button></>}><div className="training-plan-change-options"><p>Podés mantener el plan intacto o usar el nuevo orden y selección para los próximos días.</p></div></ModalShell>}
   </>;
 }

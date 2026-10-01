@@ -1,5 +1,5 @@
 export const TRAINING_MODULES = [
-  { value: "ALL", label: "Todos los mÃ³dulos" },
+  { value: "ALL", label: "Todos los módulos" },
   { value: "GYM", label: "Gimnasio" },
   { value: "CALISTHENICS", label: "Calistenia" },
 ];
@@ -19,19 +19,19 @@ export const EQUIPMENT_OPTIONS = [
   { value: "DUMBBELL", label: "Mancuernas" },
   { value: "KETTLEBELL", label: "Kettlebell" },
   { value: "CABLE", label: "Polea" },
-  { value: "MACHINE", label: "MÃ¡quina" },
-  { value: "SMITH_MACHINE", label: "MÃ¡quina Smith" },
+  { value: "MACHINE", label: "Máquina" },
+  { value: "SMITH_MACHINE", label: "Máquina Smith" },
   { value: "BENCH", label: "Banco" },
   { value: "PULL_UP_BAR", label: "Barra de dominadas" },
   { value: "PARALLEL_BARS", label: "Barras paralelas" },
   { value: "RINGS", label: "Anillas" },
   { value: "PARALLETTES", label: "Paralelas" },
   { value: "BAND", label: "Banda" },
-  { value: "BOX", label: "CajÃ³n" },
+  { value: "BOX", label: "Cajón" },
   { value: "AB_WHEEL", label: "Rueda abdominal" },
   { value: "HEX_BAR", label: "Barra hexagonal" },
   { value: "SLED", label: "Trineo" },
-  { value: "ROWING_MACHINE", label: "Remo ergomÃ©trico" },
+  { value: "ROWING_MACHINE", label: "Remo ergométrico" },
   { value: "AIR_BIKE", label: "Bicicleta de aire" },
   { value: "OTHER", label: "Otro" },
 ];
@@ -89,15 +89,15 @@ export function exerciseRegistration(exercise = {}, module) {
 export function formatExerciseTarget(exercise = {}, module) {
   const type = exerciseRegistration(exercise, module);
   const sets = exercise.targetSets || 0;
-  if (type === "TIME") return `${sets}Ã—${exercise.targetSeconds || 0} s`;
-  if (type === "DISTANCE") return `${sets}Ã—${exercise.targetDistanceMeters || 0} m`;
-  if (type === "REPETITIONS_AND_TIME") return `${sets}Ã—${exercise.targetRepetitions || 0} Â· ${exercise.targetSeconds || 0} s`;
-  return `${sets}Ã—${exercise.targetRepetitions || 0}${module === "GYM" && type === "WEIGHT_AND_REPETITIONS" && exercise.targetWeightKg != null && exercise.targetWeightKg !== "" ? ` Â· ${exercise.targetWeightKg} kg` : ""}`;
+  if (type === "TIME") return `${sets}×${exercise.targetSeconds || 0} s`;
+  if (type === "DISTANCE") return `${sets}×${exercise.targetDistanceMeters || 0} m`;
+  if (type === "REPETITIONS_AND_TIME") return `${sets}×${exercise.targetRepetitions || 0} · ${exercise.targetSeconds || 0} s`;
+  return `${sets}×${exercise.targetRepetitions || 0}${module === "GYM" && type === "WEIGHT_AND_REPETITIONS" && exercise.targetWeightKg != null && exercise.targetWeightKg !== "" ? ` · ${exercise.targetWeightKg} kg` : ""}`;
 }
 
 export function formatDuration(minutes) {
   const value = Number(minutes || 0);
-  if (!value) return "Sin duraciÃ³n";
+  if (!value) return "Sin duración";
   return value >= 60 ? `${Math.floor(value / 60)} h ${value % 60 ? `${value % 60} min` : ""}`.trim() : `${value} min`;
 }
 
@@ -116,7 +116,7 @@ export function normalizeSession(source = {}) {
     planDayId: source.planDayId || "",
     planName: source.planName || "",
     planDayName: source.planDayName || "",
-    title: source.title || source.planDayName || source.planName || "SesiÃ³n libre",
+    title: source.title || source.planDayName || source.planName || "Sesión libre",
     status: sessionStatus(source.status || source.sessionStatus),
     version: source.version ?? null,
     startedAt: source.startedAt || null,
@@ -201,7 +201,7 @@ export function planPayload(plan) {
     endDate: plan.endDate || null,
     active: Boolean(plan.active),
     days: (plan.days || []).map((day, position) => ({
-      name: day.name.trim() || `DÃ­a ${position + 1}`,
+      name: day.name.trim() || `Día ${position + 1}`,
       ...(plan.frequencyMode === "FIXED" ? { dayOfWeek: day.dayOfWeek } : {}),
       position,
       exercises: (day.exercises || []).map((exercise, exercisePosition) => ({
@@ -212,14 +212,18 @@ export function planPayload(plan) {
   };
 }
 
+export function muscleField(value) {
+  return Array.isArray(value) ? value.filter(Boolean).join(", ") : typeof value === "string" ? value : "";
+}
+
 export function exercisePayload(exercise) {
   return {
     name: exercise.name.trim(),
     description: exercise.description?.trim() || null,
     categoryId: exercise.categoryId ? Number(exercise.categoryId) : null,
     module: exercise.module,
-    primaryMuscles: exercise.primaryMuscles?.trim() || null,
-    secondaryMuscles: exercise.secondaryMuscles?.trim() || null,
+    primaryMuscles: muscleField(exercise.primaryMuscles).trim() || null,
+    secondaryMuscles: muscleField(exercise.secondaryMuscles).trim() || null,
     equipment: exercise.equipment || null,
     difficulty: exercise.difficulty || null,
     registrationType: registrationType(exercise.registrationType, exercise.module),
