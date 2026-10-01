@@ -13,7 +13,7 @@ async function seedProfileApp(page, { withPlanHistory = false } = {}) {
     let body = {};
     if (url.pathname === "/api/auth/me") body = { id: 1, fullName: "Persona Perfil", email: "perfil@example.com" };
     if (url.pathname === "/api/profile" && request.method() === "PATCH") {
-      profile = { ...profile, ...request.postDataJSON() };
+      profile = { ...profile, ...request.postDataJSON(), dailyCalorieGoal: 2140, goalOrigin: "SCHEDULED", nutritionPlanName: "Plan vigente" };
       body = profile;
     } else if (url.pathname === "/api/profile") body = profile;
     if (url.pathname === "/api/profile/weight-entries") body = [];
@@ -37,6 +37,8 @@ test("permite modificar la altura desde Perfil", async ({ page }) => {
 
   expect((await request).postDataJSON()).toEqual({ heightCm: 182.5 });
   await expect(height).toHaveValue("182.5");
+  await expect(page.getByText("2.140 kcal", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Plan programado: Plan vigente/)).toBeVisible();
   await expect(page.getByText("Altura actualizada.", { exact: true })).toBeVisible();
 });
 

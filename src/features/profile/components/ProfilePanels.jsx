@@ -33,7 +33,8 @@ export function HeightEditor({ api, profile, setProfile }) {
     setSaving(true);
     try {
       const saved = await api.runAction({ title: "Actualizando altura", description: "Estamos guardando tu medida..." }, () => api.request("/api/profile", { method: "PATCH", body: JSON.stringify({ heightCm: value }) }), { quiet: true });
-      setProfile((current) => current ? { ...current, heightCm: saved.heightCm } : current);
+      setProfile(saved);
+      window.dispatchEvent(new Event("scalegrams:profile-updated"));
       setHeight(saved.heightCm);
       api.notify("Altura actualizada.");
     } catch (saveError) {
@@ -56,7 +57,9 @@ export function WeightPanel({ api, profile, setProfile, entries, setEntries, wei
     try {
       const payload = await api.runAction({ title: "Anotando peso", description: "Estamos guardando tu registro..." }, () => api.request("/api/profile/weight-entries", { method: "POST", body: JSON.stringify({ weightKg: Number(weight), entryDate: today() }) }), { quiet: true });
       setEntries((current) => [...current.filter((entry) => entry.entryDate !== payload.entryDate), payload].sort((a, b) => a.entryDate.localeCompare(b.entryDate)));
-      setProfile({ ...profile, weightKg: Number(payload.weightKg) });
+      const updated = await api.request("/api/profile");
+      setProfile(updated);
+      window.dispatchEvent(new Event("scalegrams:profile-updated"));
       setWeight(payload.weightKg);
       api.notify("Peso registrado.");
     } catch { api.notify("No se pudo registrar el peso.", "error"); }

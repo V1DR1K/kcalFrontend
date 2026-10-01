@@ -44,6 +44,7 @@ export function Profile({ api, logout, mode = "nutrition" }) {
   useEffect(() => {
     load();
   }, [load]);
+  useEffect(() => { window.addEventListener("scalegrams:plan-updated", load); return () => window.removeEventListener("scalegrams:plan-updated", load); }, [load]);
   if (loading)
     return (
       <section className={`page ${training ? "training-page training-profile-page" : ""}`.trim()}>
@@ -73,9 +74,10 @@ export function Profile({ api, logout, mode = "nutrition" }) {
             <div className="grid three">
               <Stat icon="monitor_weight" label="Peso" value={`${formatNumber(profile?.weightKg, 1)} kg`} />
               <Stat icon="height" label="Altura" value={`${formatNumber(profile?.heightCm)} cm`} />
-              <Stat icon="local_fire_department" label="Meta diaria" value={`${formatNumber(profile?.dailyCalorieGoal)} kcal`} />
+              <Stat icon="local_fire_department" label="Meta de hoy" value={`${formatNumber(profile?.dailyCalorieGoal)} kcal`} />
             </div>
-            <ProfileHeightEditor api={api} profile={profile} setProfile={setProfile} />
+            <p className="goal-origin">{profile?.goalOrigin === "SCHEDULED" ? `Plan programado: ${profile.nutritionPlanName}` : "Meta manual"} · Actualizar medidas conserva esta meta.</p>
+          <ProfileHeightEditor api={api} profile={profile} setProfile={setProfile} />
           </Panel>
           <ProfileWeightPanel api={api} profile={profile} setProfile={setProfile} entries={weightEntries} setEntries={setWeightEntries} setWeight={setWeight} weight={weight} savingWeight={savingWeight} setSavingWeight={setSavingWeight} />
         </div>
@@ -86,8 +88,9 @@ export function Profile({ api, logout, mode = "nutrition" }) {
           <div className="grid three">
             <Stat icon="monitor_weight" label="Peso" value={`${formatNumber(profile?.weightKg, 1)} kg`} />
             <Stat icon="height" label="Altura" value={`${formatNumber(profile?.heightCm)} cm`} />
-            <Stat icon="local_fire_department" label="Meta diaria" value={`${formatNumber(profile?.dailyCalorieGoal)} kcal`} />
+            <Stat icon="local_fire_department" label="Meta de hoy" value={`${formatNumber(profile?.dailyCalorieGoal)} kcal`} />
           </div>
+          <p className="goal-origin">{profile?.goalOrigin === "SCHEDULED" ? `Plan programado: ${profile.nutritionPlanName}` : "Meta manual"} · Actualizar medidas conserva esta meta.</p>
           <ProfileHeightEditor api={api} profile={profile} setProfile={setProfile} />
         </Panel>
         <ProfileWeightPanel api={api} profile={profile} setProfile={setProfile} entries={weightEntries} setEntries={setWeightEntries} setWeight={setWeight} weight={weight} savingWeight={savingWeight} setSavingWeight={setSavingWeight} />

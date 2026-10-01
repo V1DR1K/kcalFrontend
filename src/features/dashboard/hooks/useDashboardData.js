@@ -62,7 +62,8 @@ export function useDashboardData(api) {
   useEffect(() => {
     const refreshPlan = () => load(selectedDate);
     window.addEventListener("scalegrams:plan-updated", refreshPlan);
-    return () => window.removeEventListener("scalegrams:plan-updated", refreshPlan);
+    window.addEventListener("scalegrams:profile-updated", refreshPlan);
+    return () => { window.removeEventListener("scalegrams:plan-updated", refreshPlan); window.removeEventListener("scalegrams:profile-updated", refreshPlan); };
   }, [load, selectedDate]);
 
   useEffect(() => {

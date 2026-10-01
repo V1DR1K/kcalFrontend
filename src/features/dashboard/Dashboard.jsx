@@ -277,7 +277,8 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
           </div>
         </div>
         <div className="balance-copy">
-          <h2>Tu balance de hoy</h2>
+          <h2>{selectedDate === today() ? "Tu balance de hoy" : "Balance del día consultado"}</h2>
+          <p className="goal-origin">{selectedDate === today() ? "Meta de hoy" : "Meta del día"}: {data?.plan?.goalOrigin === "SCHEDULED" ? `plan ${data.plan.name}` : "meta manual"}</p>
           <p>
             {formatNumber(data?.caloriesConsumed)} de {formatNumber(data?.calorieGoal)} kcal consumidas
           </p>
