@@ -1187,3 +1187,43 @@ test("keeps the food draft open and rolls back the optimistic diary entry when s
   await expect(page.locator(".edit-log-modal").getByRole("button", { name: "Agregar a Desayuno" })).toBeEnabled();
   await expect(page.locator(".meal-card").filter({ hasText: "Desayuno" }).first()).toContainText("Sin alimentos registrados");
 });
+
+
+test("SG047 keeps AI text, close and actions inside a displaced keyboard viewport", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { aiAvailable: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.locator('input[data-photo-source="gallery"]').setInputFiles({ name: "meal.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64") });
+  const dialog = page.locator(".ai-photo-context-modal");
+  const input = dialog.getByRole("textbox");
+  await input.fill("Descripción larga de la comida. ".repeat(7));
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 320, offsetTop: 92 };
+    for (const key of ["height", "offsetTop"]) Object.defineProperty(window.visualViewport, key, { configurable: true, get: () => window.__keyboardFrame[key] });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
+  await expect.poll(() => input.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const modal = element.closest(".ai-photo-context-modal");
+    const header = modal.querySelector("header").getBoundingClientRect();
+    const footer = modal.querySelector(":scope > footer").getBoundingClientRect();
+    const top = window.visualViewport.offsetTop;
+    const bottom = top + window.visualViewport.height;
+    return header.top >= top - 1 && footer.bottom <= bottom + 1 && rect.top >= header.bottom - 1 && rect.bottom <= footer.top + 1;
+  })).toBe(true);
+  const text = await input.inputValue();
+  await input.press("End");
+  await input.press("Backspace");
+  await expect(input).toHaveValue(text.slice(0, -1));
+  await expect(input).toBeFocused();
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 844, offsetTop: 0 };
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "false");
+  await expect(input).toHaveValue(text.slice(0, -1));
+  await expect(dialog.getByRole("button", { name: "Descartar foto" })).toBeVisible();
+});

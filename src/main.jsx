@@ -6,6 +6,7 @@ import { migrateStoredSession } from "./config/app";
 
 let stableDialogHeight = window.visualViewport?.height || window.innerHeight;
 let viewportSyncFrame = 0;
+let stableViewportWidth = window.innerWidth;
 
 function hasTextInputFocus() {
   const activeElement = document.activeElement;
@@ -16,10 +17,15 @@ function syncViewport() {
   viewportSyncFrame = 0;
   const viewport = window.visualViewport;
   const topOffset = viewport?.offsetTop || 0;
-  const visibleHeight = Math.max(0, Math.min(viewport?.height || window.innerHeight, window.innerHeight - topOffset));
+  const visibleHeight = Math.max(1, viewport?.height || window.innerHeight);
+  if (stableViewportWidth !== window.innerWidth) {
+    stableViewportWidth = window.innerWidth;
+    stableDialogHeight = window.innerHeight;
+  }
   const top = `${topOffset}px`;
   const keyboardInsetValue = Math.max(0, window.innerHeight - visibleHeight - topOffset);
-  const keyboardOpen = hasTextInputFocus() && (keyboardInsetValue > 80 || visibleHeight < stableDialogHeight - 80);
+  const hasKeyboardGeometry = keyboardInsetValue > 80 || visibleHeight < stableDialogHeight - 80;
+  const keyboardOpen = (hasTextInputFocus() || document.documentElement.dataset.keyboardOpen === "true") && hasKeyboardGeometry;
   if (!keyboardOpen) stableDialogHeight = visibleHeight;
   const dialogHeight = `${visibleHeight}px`;
   const root = document.documentElement;

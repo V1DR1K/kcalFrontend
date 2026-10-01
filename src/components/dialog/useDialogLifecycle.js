@@ -137,7 +137,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
         revealFrame = window.requestAnimationFrame(() => {
           const target = document.activeElement;
           const dialog = dialogRef.current;
-          if (!dialog || !target || !dialog.contains(target)) return;
+          if (topDialog() !== dialogToken || !dialog || !target || !dialog.contains(target)) return;
           const owner = target.closest?.(SCROLL_OWNER_SELECTOR) || scrollOwnerRef?.current || dialog;
           if (!owner) return;
           const targetRect = target.getBoundingClientRect();
@@ -154,7 +154,11 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
           const padding = 16;
           let delta = 0;
           if (targetRect.top < visibleTop + padding) delta = targetRect.top - visibleTop - padding;
-          else if (targetRect.bottom > scrollBottom - padding) delta = targetRect.bottom - scrollBottom + padding;
+          else if (targetRect.bottom > scrollBottom - padding) {
+            delta = targetRect.height > scrollBottom - visibleTop - padding * 2
+              ? targetRect.top - visibleTop - padding
+              : targetRect.bottom - scrollBottom + padding;
+          }
           if (delta) owner.scrollTop += delta;
         });
       }, 48);
@@ -169,6 +173,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
       focusTarget?.focus?.();
     }
     dialogRef.current?.addEventListener("focusin", revealFocusedControl);
+    dialogRef.current?.addEventListener("input", revealFocusedControl);
     window.visualViewport?.addEventListener("resize", revealFocusedControl);
     window.visualViewport?.addEventListener("scroll", revealFocusedControl);
 
@@ -213,6 +218,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
       window.clearTimeout(revealTimer);
       window.cancelAnimationFrame(revealFrame);
       dialogRef.current?.removeEventListener("focusin", revealFocusedControl);
+      dialogRef.current?.removeEventListener("input", revealFocusedControl);
       window.visualViewport?.removeEventListener("resize", revealFocusedControl);
       window.visualViewport?.removeEventListener("scroll", revealFocusedControl);
       if (restoreFocus && wasTopDialog && (returnFocusRef?.current?.isConnected || previousFocusRef.current?.isConnected)) {

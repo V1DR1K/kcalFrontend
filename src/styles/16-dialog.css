@@ -186,7 +186,7 @@
 /* Long task surfaces remain fullscreen on a phone; compact tasks remain sheets. */
 @media (max-width: 720px) {
   .app-modal-backdrop[class] {
-    top: 0;
+    top: var(--dialog-viewport-top, 0px);
     place-items: start center;
     padding: 0;
     height: var(--dialog-layout-height, var(--dialog-viewport-height, 100dvh));
@@ -380,17 +380,41 @@
   }
 
   html[data-keyboard-open="true"] .edit-log-modal .edit-log-preview,
-  html[data-keyboard-open="true"] .ai-estimate-modal .modal-shell-header p {
+  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal) .modal-shell-header p {
     display: none;
   }
 
-  html[data-keyboard-open="true"] .ai-estimate-modal .modal-shell-header {
+  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal) .modal-shell-header {
     padding-block: 8px;
   }
 
-  html[data-keyboard-open="true"] .ai-estimate-modal .modal-shell-content {
-    scroll-padding-block: 8px var(--dialog-footer-space, 72px);
+  /* AI editors reserve real rows for chrome instead of overlaying their fields. */
+  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal)[class] {
+    height: var(--dialog-visible-height, 100dvh);
+    max-height: var(--dialog-visible-height, 100dvh);
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
+  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal)[class] > .modal-shell-footer {
+    position: relative;
+    padding: 8px 12px;
+  }
+  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal)[class] > .modal-shell-content {
+    padding-bottom: 12px;
+    scroll-padding-block: 8px;
+  }
+  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal) .ai-context-field textarea {
+    min-height: 48px;
+    height: clamp(48px, calc(var(--dialog-visible-height, 100dvh) * .2), 80px);
+    max-height: 80px;
+    resize: none;
+    font-size: 16px;
+  }
+  html[data-keyboard-open="true"] .ai-photo-context-preview {
+    max-height: min(72px, calc(var(--dialog-visible-height, 100dvh) * .2));
+    object-fit: contain;
+  }
+  html[data-keyboard-open="true"] .ai-photo-target-choice { display: none; }
+
 }
 
 @keyframes app-modal-backdrop-in { from { opacity: 0; } }
