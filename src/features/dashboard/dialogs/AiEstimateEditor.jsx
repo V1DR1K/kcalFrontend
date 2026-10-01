@@ -69,7 +69,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
     && decimalNumber(item.proteinGrams) >= 0 && decimalNumber(item.proteinGrams) <= 500
     && decimalNumber(item.carbsGrams) >= 0 && decimalNumber(item.carbsGrams) <= 1000
     && decimalNumber(item.fatGrams) >= 0 && decimalNumber(item.fatGrams) <= 500)
-    && (targetType !== "FOOD" || !addToDiary || Boolean(registrationMealType && registrationDate));
+    && (targetType === "FOOD" && !addToDiary || Boolean(registrationMealType && registrationDate));
   const title = mode === "saved" ? "Revisar estimación guardada" : estimate.name || "Revisar estimación";
   const ariaLabel = mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto";
 
@@ -86,7 +86,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
       footer={
         <div className="ai-estimate-actions">
           <button type="button" className="secondary" disabled={refining || saving} onClick={onDiscard}>{mode === "saved" ? "Cancelar" : "Descartar"}</button>
-          <button type="button" className="primary" disabled={saving || refining || !canConfirm} onClick={() => onConfirm(estimate)}>{saving ? "Guardando..." : mode === "saved" ? "Guardar cambios" : targetType === "FOOD" ? "Guardar alimento" : "Crear receta y agregar una porción"}</button>
+          <button type="button" className="primary" disabled={saving || refining || !canConfirm} onClick={() => onConfirm(estimate)}>{saving ? "Guardando..." : mode === "saved" ? "Guardar cambios" : targetType === "FOOD" ? addToDiary ? "Guardar alimento y registrar consumo" : "Guardar sólo en catálogo" : "Crear receta y agregar una porción"}</button>
         </div>
       }
     >
@@ -107,9 +107,10 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
           <span className="ai-summary-fat"><small>Grasas</small><strong>{formatNumber(totals.fatGrams, 1)}<b>g</b></strong></span>
         </section>
 
-        {mode === "create" && targetType === "FOOD" && <section className="ai-registration-diary-options">
-          <label className="ai-registration-diary-toggle"><input type="checkbox" checked={addToDiary} onChange={(event) => setAddToDiary?.(event.target.checked)} /><span>Agregar también a mi día</span></label>
-          {addToDiary && <div className="edit-log-fields">
+        {mode === "create" && <section className="ai-registration-diary-options">
+          <p>{targetType === "FOOD" ? "Se guardará un alimento en tu catálogo personal." : "Se creará una receta y se registrará una porción en la fecha y comida elegidas."}</p>
+          {targetType === "FOOD" && <label className="ai-registration-diary-toggle"><input type="checkbox" checked={addToDiary} onChange={(event) => setAddToDiary?.(event.target.checked)} /><span>Agregar también a mi día</span></label>}
+          {(addToDiary || targetType === "RECIPE") && <div className="edit-log-fields">
             <Select label="Comida" value={registrationMealType} options={(mealTypes || []).map((item) => ({ value: item.code, label: item.label }))} onChange={(event) => setRegistrationMealType?.(event.target.value)} />
             <Input label="Fecha" type="date" value={registrationDate || ""} onChange={(event) => setRegistrationDate?.(event.target.value)} />
           </div>}

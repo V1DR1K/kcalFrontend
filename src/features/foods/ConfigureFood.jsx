@@ -1,3 +1,4 @@
+import { nutritionWarning } from "../../utils/nutrition";
 import React, { useCallback, useEffect, useState } from "react";
 import { DEFAULT_MEALS } from "../../config/app";
 import { Icon } from "../../components/Icon";
@@ -13,6 +14,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
   const [activeFoodId, setActiveFoodId] = useState(foodId);
   const [quantity, setQuantity] = useState("150");
   const [unit, setUnit] = useState("GRAM");
+  const [logDate, setLogDate] = useState(today);
   const [mealType, setMealType] = useState("LUNCH");
   const [mealTypes, setMealTypes] = useState(DEFAULT_MEALS);
   const [food, setFood] = useState(null);
@@ -94,6 +96,8 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
     if (quantityInGrams <= 0) return;
     setAdding(true);
     try {
+      const warning = nutritionWarning(food) || nutritionWarning(preview);
+      if (warning && !(await api.confirm({ title: "Revisar información nutricional", description: warning, confirmLabel: "Registrar con aviso", tone: "neutral" }))) return;
       const log = await api.runAction(
         { title: "Agregando alimento", description: `Estamos sumando ${food?.name || "el alimento"} a tu día...` },
         () => api.request("/api/nutrition/meal-logs", {
@@ -104,7 +108,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
             mealType,
             quantity: quantityInGrams,
             unit: "GRAM",
-            logDate: today(),
+            logDate,
           }),
         }),
         { quiet: true },
@@ -113,10 +117,9 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
       rememberMeal(user, mealType, log);
       api.notify("Alimento agregado.");
       setPage("dashboard");
-    } catch {
-      api.notify("No se pudo agregar el alimento.", "error");
-      setAdding(false);
-    }
+    } catch (error) {
+      if (!error.cancelled) api.notify(error.message || "No se pudo agregar el alimento.", "error");
+    } finally { setAdding(false); }
   }
   async function enrich() {
     if (!food || enriching) return;
@@ -188,6 +191,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
           <Input decimal label="Cantidad" value={quantity} onChange={(event) => setQuantity(event.target.value)} inputMode="decimal" min="0.1" step="0.01" />
           <Select label="Unidad" value={unit} onChange={(event) => setUnit(event.target.value)} options={configureUnitOptions} />
         </div>
+        <Input label="Fecha del consumo" type="date" value={logDate} onChange={event => setLogDate(event.target.value)} />
         <label className="field">
           <span>Comida</span>
           <select value={mealType} onChange={(event) => setMealType(event.target.value)}>
@@ -201,7 +205,7 @@ export function ConfigureFood({ api, setPage, foodId, user }) {
         <div className="configure-preview"><NutritionSummary nutrition={preview || {}} size="detail" /></div>
         {food && <button type="button" className="secondary nutrient-enrich-button" disabled={enriching} onClick={enrich}>{enriching ? "Buscando nutrientes…" : "Completar perfil nutricional"}</button>}
         {food && (food.createdById === user?.id || user?.role === "ADMIN") && <NutrientEditor api={api} food={food} onSaved={setFood} />}
-        <button className="primary configure-submit" disabled={adding || !food || !activeFoodId || decimalNumber(quantity) <= 0} onClick={add}>
+        <button className="primary configure-submit" disabled={adding || !food || !activeFoodId || !logDate || !preview || !Number.isFinite(decimalNumber(quantity)) || decimalNumber(quantity) <= 0} onClick={add}>
           {adding ? "Agregando…" : "Agregar alimento"}
         </button>
       </Panel>

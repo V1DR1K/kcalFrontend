@@ -1286,3 +1286,21 @@ test("SG038 cancels archived reuse without saving and acknowledges on acceptance
   await confirmation.getByRole("button", { name: "Reutilizar con aviso", exact: true }).click();
   await expect(dialog).not.toBeVisible(); expect(saved).toBe(1);
 });
+
+test("SG009/010 registers an existing food in the explicit date and meal", async ({ page }) => {
+  await seedAuthenticatedApp(page);
+  const food = { id: 905, type: "FOOD", name: "Avena destino", baseUnit: "GRAM", baseQuantity: 100, calories: 100, proteinGrams: 10, carbsGrams: 10, fatGrams: 2, category: "CARB" };
+  await page.route("**/api/foods**", async route => { const path = new URL(route.request().url()).pathname; await route.fulfill({ json: path.endsWith("/preview") ? food : path.endsWith("/preparations") ? [] : path.endsWith("/905") ? food : { items: [food], page: 0, hasNext: false } }); });
+  let saved;
+  await page.route("**/api/nutrition/meal-logs", async route => { saved = route.request().postDataJSON(); await route.fulfill({ json: { id: 906, ...saved, food, ...food, itemType: "FOOD" } }); });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Registrar", exact: true }).first().click();
+  await page.getByLabel("Fecha del consumo", { exact: true }).fill("2026-09-28");
+  await page.getByLabel("Comida del consumo", { exact: true }).selectOption("DINNER");
+  await page.getByRole("button", { name: /Buscar y registrar alimento/ }).click();
+  await expect(page.locator(".picker-destination")).toContainText("Cena");
+  await page.getByPlaceholder("Buscar alimentos...").fill("Avena");
+  await page.locator(".catalog-row-image").filter({ hasText: food.name }).first().click();
+  await page.locator(".edit-log-modal").getByRole("button", { name: "Agregar a Cena", exact: true }).click();
+  await expect.poll(() => saved?.logDate).toBe("2026-09-28"); expect(saved.mealType).toBe("DINNER");
+});

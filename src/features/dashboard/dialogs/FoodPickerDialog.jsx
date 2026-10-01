@@ -43,7 +43,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const [aiUsage, setAiUsage] = useState(null);
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiEstimate, setAiEstimate] = useState(null);
-  const [aiAddToDiary, setAiAddToDiary] = useState(false);
+  const [aiAddToDiary, setAiAddToDiary] = useState(!ingredientOnly);
   const [aiRegistrationMealType, setAiRegistrationMealType] = useState(mealType?.code || DEFAULT_MEALS[0].code);
   const [aiRegistrationDate, setAiRegistrationDate] = useState(selectedDate || today());
   const [aiError, setAiError] = useState("");
@@ -267,8 +267,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             name: estimate.name,
             description: estimate.description || "",
             confidence: Number(estimate.confidence) || 0,
-            mealType: target === "FOOD" ? (aiAddToDiary ? aiRegistrationMealType : null) : mealType.code,
-            logDate: target === "FOOD" ? aiRegistrationDate : selectedDate,
+            mealType: target === "FOOD" && !aiAddToDiary ? null : aiRegistrationMealType,
+            logDate: aiRegistrationDate,
             addToDiary: target === "FOOD" ? aiAddToDiary : true,
             items: aiEstimateDraft(estimate).items,
           }),
@@ -277,7 +277,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       const savedLog = saved?.log;
       if (saved?.food) rememberItem(user, { ...saved.food, type: "FOOD" });
       if (saved?.recipe) rememberItem(user, { ...saved.recipe, type: "RECIPE" });
-      if (savedLog) rememberMeal(user, target === "FOOD" ? aiRegistrationMealType : mealType.code, savedLog);
+      if (savedLog) rememberMeal(user, aiRegistrationMealType, savedLog);
       api.notify(saved?.targetType === "FOOD"
         ? savedLog ? "Alimento guardado y agregado a tu día." : `${saved.food?.name || "Alimento"} guardado en tu catálogo.`
         : "Receta registrada y agregada como una porción.");
@@ -605,6 +605,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             <Icon name="close" />
           </button>
         </header>
+        {!ingredientOnly && <p className="picker-destination">Destino: <strong>{mealType.label}</strong> · {readableDate(selectedDate)}</p>}
         {!aiOnly && <div className="tabs picker-tabs" role="tablist" aria-label="Opciones para agregar comida">
           <button
             type="button"

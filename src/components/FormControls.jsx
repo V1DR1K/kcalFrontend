@@ -26,7 +26,7 @@ export function Input({ label, selectOnFocus = false, numericOnly = false, decim
 }
 
 export function Select({ label, options, error, ...props }) {
-  return <label className="field"><span>{label}</span><select {...props} aria-invalid={Boolean(error)}>{options.map((option) => {
+  return <label className="field"><span>{label}</span><select {...props} aria-label={props["aria-label"] || label} aria-invalid={Boolean(error)}>{options.map((option) => {
     const value = typeof option === "string" ? option : option.value;
     const optionLabel = typeof option === "string" ? option : option.label;
     return <option key={value} value={value}>{optionLabel}</option>;

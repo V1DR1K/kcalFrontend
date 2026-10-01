@@ -3,6 +3,7 @@ import { Icon } from "../../components/Icon";
 import { ModalShell } from "../../components/dialog/ModalShell";
 import { NutritionSummary } from "../../components/NutritionSummary";
 import { DEFAULT_MEALS } from "../../config/app";
+import { Input, Select } from "../../components/FormControls";
 import { today } from "../../utils/format";
 import { FoodPicker } from "../dashboard/dialogs/FoodPickerDialog";
 import "../../styles/05-scanner.css";
@@ -14,6 +15,10 @@ function currentMealType() {
 }
 
 export function Scanner({ api, initialDialog = null, user, setPage, setSelectedFoodId, setPrefillBarcode, CatalogComponent, RecipesComponent, MyFoodsComponent }) {
+  const [destinationDate, setDestinationDate] = useState(today);
+  const [destinationMeal, setDestinationMeal] = useState(() => currentMealType().code);
+  const [foodPickerOpen, setFoodPickerOpen] = useState(false);
+  const selectedMeal = DEFAULT_MEALS.find(meal => meal.code === destinationMeal) || DEFAULT_MEALS[0];
   const [barcode, setBarcode] = useState("");
   const [food, setFood] = useState(null);
   const [cameraOn, setCameraOn] = useState(false);
@@ -189,16 +194,18 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
       <section className="page register-page">
         <header className="register-heading">
           <div>
-            <span className="register-kicker">Catálogo</span>
+            <span className="register-kicker">Consumo</span>
             <h1>Registrar</h1>
             <p>Sumá un alimento a tu registro con el camino más rápido.</p>
           </div>
           <Icon name="qr_code_scanner" />
         </header>
+        <div className="register-destination" aria-label="Destino del registro"><Input label="Fecha del consumo" type="date" value={destinationDate} onChange={event => setDestinationDate(event.target.value)} /><Select label="Comida del consumo" value={destinationMeal} options={DEFAULT_MEALS.map(meal => ({ value: meal.code, label: meal.label }))} onChange={event => setDestinationMeal(event.target.value)} /></div>
         <div className="register-options">
+          <button className="register-option register-option-primary" type="button" disabled={!destinationDate} onClick={() => setFoodPickerOpen(true)}><span className="register-option-icon"><Icon name="search" /></span><span><strong>Buscar y registrar alimento</strong><small>Elegí un alimento o una receta existente para {selectedMeal.label.toLowerCase()}.</small></span><Icon name="arrow_forward" /></button>
           <button className="register-option register-option-primary" type="button" onClick={() => setAiRegistrationOpen(true)}>
             <span className="register-option-icon"><Icon name="photo_camera" /></span>
-            <span><strong>Registrar comida con foto</strong><small>La IA la guarda como alimento si detecta uno; si detecta varios, crea una receta.</small></span>
+            <span><strong>Registrar comida con foto</strong><small>Revisá la estimación, su destino y lo que se guardará antes de confirmar.</small></span>
             <Icon name="arrow_forward" />
           </button>
           <button className="register-option register-option-primary" type="button" onClick={openScanner}>
@@ -231,12 +238,13 @@ export function Scanner({ api, initialDialog = null, user, setPage, setSelectedF
           />
         )}
         {renderCollectionDialog()}
+        {foodPickerOpen && <FoodPicker api={api} user={user} mealType={selectedMeal} selectedDate={destinationDate} onClose={() => setFoodPickerOpen(false)} onDone={() => { setFoodPickerOpen(false); setPage("dashboard"); }} />}
         {aiRegistrationOpen && (
           <FoodPicker
             api={api}
             user={user}
-            mealType={currentMealType()}
-            selectedDate={today()}
+            mealType={selectedMeal}
+            selectedDate={destinationDate}
             aiOnly
             onClose={() => setAiRegistrationOpen(false)}
             onDone={(savedLog) => { setAiRegistrationOpen(false); if (savedLog) setPage("dashboard"); }}
