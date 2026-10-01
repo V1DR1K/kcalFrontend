@@ -1,7 +1,7 @@
 import React, { useId } from "react";
 import { Icon } from "../../../components/Icon";
 import { ModalShell } from "../../../components/dialog/ModalShell";
-import { FoodThumb } from "../../catalog/CatalogComponents";
+import { FoodThumb, NutritionReference, CookedYieldHint } from "../../catalog/CatalogComponents";
 
 export function FoodLogDialog({ item, eyebrow, title = item?.name, description, isRecipe = false, closing = false, closeDisabled = false, onClose, onSubmit, children, footer, titleId = "food-log-title" }) {
   const generatedTitleId = `${useId().replace(/:/g, "")}-title`;
@@ -27,6 +27,8 @@ export function FoodLogDialog({ item, eyebrow, title = item?.name, description, 
         </header>
          <div className="edit-log-body" data-dialog-scroll-owner="true">
           {isRecipe && description && <p className="recipe-log-description">{description}</p>}
+          <NutritionReference food={isRecipe ? { ...item, type: "RECIPE" } : item} />
+          <CookedYieldHint food={item} />
           {children}
         </div>
         {footer}

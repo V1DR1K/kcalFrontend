@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { CATEGORY_OPTIONS, PREPARATION_OPTIONS, CATEGORY_ART, RECIPE_ART } from "../../config/app";
 import { Icon } from "../../components/Icon";
-import { formatNumber } from "../../utils/format";
+import { formatNumber, formatQuantity } from "../../utils/format";
 import { NutritionSummary } from "../../components/NutritionSummary";
+import { nutritionWarning } from "../../utils/nutrition";
 import { preparationLabel } from "./catalog.utils.js";
 
 export { preparationLabel } from "./catalog.utils.js";
@@ -31,8 +32,9 @@ export function CatalogRow({ item, onPick }) {
       {(foodMeta(item) || item.preparation) && <span className="catalog-meta">
         {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
         <PreparationBadge food={item} />
-        <CookedYieldHint food={item} />
       </span>}
+      <NutritionReference food={item} />
+      {nutritionWarning(item) && <small className="nutrition-warning">{nutritionWarning(item)}</small>}
       <NutritionSummary nutrition={item} />
     </button>
   );
@@ -41,19 +43,12 @@ export function CatalogRow({ item, onPick }) {
 export function groupFoodVariants(items) {
   const groups = new Map();
   for (const item of items || []) {
-    if (!item || item.type === "RECIPE") continue;
+    if (!item) continue;
     const key = item.preparationGroup ? `preparation:${item.preparationGroup}` : `item:${item.type || "FOOD"}:${item.id}`;
     groups.set(key, [...(groups.get(key) || []), item]);
   }
   const result = [...groups.values()].flatMap((variants) => variants.sort((left, right) => (left.preparation === "RAW" ? 0 : 1) - (right.preparation === "RAW" ? 0 : 1)));
-  // Collapse to one representative per preparationGroup, preferring RAW
-  const seenGroups = new Set();
-  return result.filter((item) => {
-    if (!item.preparationGroup) return true;
-    if (seenGroups.has(item.preparationGroup)) return false;
-    seenGroups.add(item.preparationGroup);
-    return true;
-  });
+  return result;
 }
 
 export function CatalogRowWithImage({ item, onPick }) {
@@ -65,9 +60,10 @@ export function CatalogRowWithImage({ item, onPick }) {
         {(foodMeta(item) || item.preparation) && <span className="catalog-meta">
           {foodMeta(item) && <em className="food-brand-line">{foodMeta(item)}</em>}
           <PreparationBadge food={item} />
-          <CookedYieldHint food={item} />
         </span>}
-        <NutritionSummary nutrition={item} />
+        <NutritionReference food={item} />
+        {nutritionWarning(item) && <small className="nutrition-warning">{nutritionWarning(item)}</small>}
+      <NutritionSummary nutrition={item} />
       </span>
        <Icon name="chevron_right" className="row-action" />
     </button>
@@ -97,19 +93,25 @@ export function PreparationBadge({ food, showUnknown = false }) {
   const option = PREPARATION_OPTIONS.find(({ value }) => value === food.preparation);
   if (!option || (!showUnknown && food.preparation === "UNSPECIFIED")) return null;
   return (
-    <small className={`preparation-badge preparation-${food.preparation.toLowerCase()}`} title={food.preparationSource || undefined}>
+    <small className={`preparation-badge preparation-${food.preparation.toLowerCase()}`} title={option.label}>
       {option.label}
     </small>
   );
 }
 
+export function NutritionReference({ food }) {
+  if (food?.type === "RECIPE") return <small className="nutrition-reference">Receta completa</small>;
+  const quantity = Number(food?.baseQuantity);
+  const unit = food?.baseUnit === "MILLILITER" ? "ml" : food?.baseUnit === "GRAM" ? "g" : food?.servingName || "unidad";
+  return <small className="nutrition-reference">{quantity > 0 ? `Por ${formatQuantity(quantity)} ${unit}` : "Base nutricional no informada"}</small>;
+}
 export function CookedYieldHint({ food }) {
-  const factor = Number(food?.cookedYieldFactor);
-  if (!Number.isFinite(factor) || factor <= 0) return null;
-  const source = String(food?.cookedYieldSource || "").toUpperCase();
-  const approximate = source.includes("AI") || source === "GEMINI";
-  const assumption = food?.cookedYieldAssumption;
-  return <small className="cooked-yield-hint" title={assumption || undefined}>{approximate ? "Rendimiento aprox." : "Rendimiento"}: 100 g crudos rinden {formatNumber(factor * 100, 0)} g cocidos</small>;
+  if (!food || food.type === "RECIPE") return null;
+  if (food.preparation === "COOKED") return <small className="cooked-yield-hint">Pesalo cocido.</small>;
+  if (food.preparation === "AS_SOLD") return <small className="cooked-yield-hint">Pesalo tal como se vende.</small>;
+  const factor = Number(food.cookedYieldFactor);
+  if (food.preparation !== "RAW" || !Number.isFinite(factor) || factor <= 0 || factor === 1) return null;
+  return <small className="cooked-yield-hint">Rendimiento estimado: 100 g crudos → {formatNumber(factor * 100)} g cocidos. La cantidad elegida se pesa cruda.</small>;
 }
 
 export function categoryLabel(category) {
@@ -136,7 +138,7 @@ export function NutrientDetails({ nutrients = [], label = "Información nutricio
           return <section key={group}><h4>{title}</h4><div className="nutrient-grid">{values.map((item) => (
             <span key={item.code} className={item.status === "MISSING" ? "missing" : ""}>
               <small>{item.name}</small>
-              <strong>{item.value == null ? "Sin dato" : `${formatNumber(item.value, 1)} ${item.unit}`}</strong>
+              <strong>{item.value == null ? item.knownValue == null ? "Sin dato" : `≥ ${formatNumber(item.knownValue, 1)} ${item.unit} (parcial)` : `${formatNumber(item.value, 1)} ${item.unit}`}</strong>
               <em>{nutrientStatusLabel(item.status)}</em>
             </span>
           ))}</div></section>;

@@ -678,3 +678,9 @@
   .ai-estimate-items-heading h3 { font-size: var(--type-small); }
   .ai-estimate-item { gap: var(--space-2); padding-block: var(--space-2); }
 }
+
+.picker-filters { display: flex; gap: 12px; flex-wrap: wrap; }
+.picker-filters .field { flex: 1 1 130px; min-width: 0; }
+.nutrition-reference { display: block; color: var(--muted); font-size: 12px; }
+.nutrition-warning { display: block; color: var(--text); font-size: 12px; line-height: 1.4; }
+.nutrition-summary abbr { text-decoration: none; }

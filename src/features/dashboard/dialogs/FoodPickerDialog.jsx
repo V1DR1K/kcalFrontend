@@ -8,6 +8,7 @@ import { EditFoodLog, FoodLogDialog, FoodLogForm } from "../../foods/FoodCompone
 import { usePagedCatalog } from "../../catalog/usePagedCatalog";
 import { readRecents, rememberItem, rememberMeal } from "../../../services/recents";
 import { formatNumber, readableDate, today } from "../../../utils/format";
+import { scaleNutrition, sumNutrition, nutritionWarning } from "../../../utils/nutrition";
 import { decimalNumber } from "../../../utils/decimal";
 import { normalizeSearchText } from "../../../utils/search";
 import { hasCookedRecipeWeight, recipeServingFactor } from "../../../utils/recipe";
@@ -27,6 +28,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const pickerTitleId = `${useId().replace(/:/g, "")}-title`;
   const [tab, setTab] = useState("FOOD");
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
+  const [preparation, setPreparation] = useState("");
   const [selected, setSelected] = useState(null);
   const [selectedPreparations, setSelectedPreparations] = useState([]);
   const [quantity, setQuantity] = useState("150");
@@ -69,6 +72,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     api,
     endpoint: tab === "FOOD" ? "/api/foods" : tab === "RECIPE" ? "/api/recipes" : tab === "MINE" ? "/api/foods/mine" : "/api/nutrition/recent-meals",
     query,
+    category: tab === "FOOD" ? category : "",
     enabled: foodSearchReady,
   });
   useEffect(() => {
@@ -376,32 +380,12 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         .then((result) => { if (active) { setPreview(result); if (!result) setPreviewError("No pudimos calcular los nutrientes."); } })
         .catch(() => { if (active) setPreviewError("No pudimos calcular los nutrientes."); });
     } else if (selected.type === "RECIPE" && recipeIngredients) {
-      const nutrition = recipeIngredients.reduce((total, ing) => {
-        const item = ing.recipe || ing.food;
-        const scaled = ing.recipe
-          ? scaleRecipeNutrition(item, decimalNumber(ing.quantity))
-          : scaleFoodNutrition(item, decimalNumber(ing.quantity));
-        return {
-          proteinGrams: total.proteinGrams + scaled.proteinGrams,
-          carbsGrams: total.carbsGrams + scaled.carbsGrams,
-          fatGrams: total.fatGrams + scaled.fatGrams,
-        };
-      }, { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 });
+      const nutrition = sumNutrition(recipeIngredients.map(ing => ing.recipe ? scaleRecipeNutrition(ing.recipe, decimalNumber(ing.quantity)) : scaleFoodNutrition(ing.food, decimalNumber(ing.quantity))));
       const factor = recipeServingFactor(recipeDetail || selected, numericQuantity, unit);
-      setPreview({
-        calories: Math.round((nutrition.proteinGrams * 4 + nutrition.carbsGrams * 4 + nutrition.fatGrams * 9) * factor),
-        proteinGrams: nutrition.proteinGrams * factor,
-        carbsGrams: nutrition.carbsGrams * factor,
-        fatGrams: nutrition.fatGrams * factor,
-      });
+      setPreview(scaleNutrition(nutrition, factor));
     } else if (selected.type === "RECIPE") {
-      const factor = recipeServingFactor(recipeDetail || selected, numericQuantity, unit);
-      setPreview({
-        calories: Math.round(Number(selected.calories || 0) * factor),
-        proteinGrams: Number(selected.proteinGrams || 0) * factor,
-        carbsGrams: Number(selected.carbsGrams || 0) * factor,
-        fatGrams: Number(selected.fatGrams || 0) * factor,
-      });
+      setPreview(scaleNutrition(recipeDetail || selected, recipeServingFactor(recipeDetail || selected, numericQuantity, unit)));
+
     } else {
       setPreview({
         calories: Math.round(selected.calories * numericQuantity),
@@ -418,6 +402,15 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     const logQuantity = selected.type === "FOOD" && unit === "SERVING" ? numericQuantity * Number(selected.servingWeightGrams || 0) : numericQuantity;
     const logUnit = selected.type === "FOOD" ? unit === "SERVING" ? "GRAM" : unit : unit;
     if (logQuantity <= 0) return;
+    const warning = nutritionWarning(selected) || nutritionWarning(preview);
+    if (warning && !draftOnly) {
+      addInFlightRef.current = true;
+      setAdding(true);
+      const accepted = await api.confirm({ title: "Revisar información nutricional", description: `${warning} Podés registrar igualmente; se mostrarán los datos informados.`, confirmLabel: "Registrar con aviso", tone: "neutral" });
+      addInFlightRef.current = false;
+      setAdding(false);
+      if (!accepted) return;
+    }
     if (draftOnly) {
       onDraftAdd?.({
         itemType: selected.type,
@@ -432,10 +425,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         displayName: selected.name,
         imageUrl: selected.imageUrl || null,
         category: selected.category || "OTHER",
-        calories: preview?.calories || 0,
-        proteinGrams: preview?.proteinGrams || 0,
-        carbsGrams: preview?.carbsGrams || 0,
-        fatGrams: preview?.fatGrams || 0,
+        calories: preview?.calories ?? null,
+        proteinGrams: preview?.proteinGrams ?? null,
+        carbsGrams: preview?.carbsGrams ?? null,
+        fatGrams: preview?.fatGrams ?? null,
       });
       onClose();
       return;
@@ -559,6 +552,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     setSelected(item);
   }
   const localQuery = normalizedQuery;
+  const matchesPreparation = item => !preparation || item.preparation === preparation;
+  const filteredFoods = catalog.items.filter(matchesPreparation);
   const addedFoods = catalog.items.filter((item) => !localQuery || normalizeSearchText(`${item.name || ""} ${item.brand || ""}`).includes(localQuery));
   const recentBrackets = catalog.items.filter((meal) => {
     const items = Array.isArray(meal?.items) ? meal.items : [];
@@ -637,6 +632,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             <Icon name="search" />
             <input className="search" type="search" enterKeyHint="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
           </div>
+          {tab === "FOOD" && <div className="picker-filters"><Select label="Categoría" value={category} onChange={event => setCategory(event.target.value)} options={[{ value: "", label: "Todas" }, ...CATEGORY_OPTIONS]} /><Select label="Preparación" value={preparation} onChange={event => setPreparation(event.target.value)} options={[{ value: "", label: "Todas" }, ...PREPARATION_OPTIONS]} /></div>}
         </div>}
         {!aiOnly && <div className="picker-scroll" data-dialog-scroll-owner="true" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
           {tab === "FOOD" && !normalizedQuery && <div className="picker-results">
@@ -645,7 +641,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             ))}
           </div>}
           {(tab === "FOOD" && normalizedQuery.length >= 2 || tab === "RECIPE") && <div className="picker-results">
-            {groupFoodVariants(catalog.items).map((item) => (
+            {groupFoodVariants(tab === "FOOD" ? filteredFoods : catalog.items).map((item) => (
               <CatalogRowWithImage key={`${tab}:${item.id}`} item={{ ...item, type: tab }} onPick={reviewFood} />
             ))}
           </div>}
@@ -664,6 +660,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
            </div>}
           {tab === "FOOD" && normalizedQuery.length === 1 && <CatalogStatus>Escribí al menos 2 caracteres para buscar.</CatalogStatus>}
           {tab === "FOOD" && !normalizedQuery && !recentFoods.length && <CatalogStatus>Buscá un alimento para empezar.</CatalogStatus>}
+          {tab === "FOOD" && preparation && !catalog.initialLoading && catalog.items.length > 0 && !filteredFoods.length && <CatalogStatus>No hay coincidencias con esta preparación.{catalog.hasNext && " Cargá más resultados o cambiá el filtro."}</CatalogStatus>}
           {catalog.initialLoading && <SkeletonRows count={4} className="picker-results-skeleton" label="Buscando alimentos" />}
           {!catalog.initialLoading && catalog.error && (
             <CatalogStatus error>
@@ -719,8 +716,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
                 }}>
                   Cancelar
                 </button>
-                <button className="primary action-control" data-action-state={adding ? "pending" : "idle"} disabled={adding || !preview || decimalNumber(quantity) <= 0}>
-                  {adding ? "Agregando…" : previewError ? "Revisá el cálculo" : !preview ? "Calculando…" : ingredientOnly ? "Agregar ingrediente" : `Agregar a ${mealType.label}`}
+                <button className="primary action-control" data-action-state={adding ? "pending" : "idle"} disabled={adding || !preview || !Number.isFinite(decimalNumber(quantity)) || decimalNumber(quantity) <= 0}>
+                  {adding ? "Agregando…" : (!Number.isFinite(decimalNumber(quantity)) || decimalNumber(quantity) <= 0) ? "Revisá la cantidad" : previewError ? "Revisá el cálculo" : !preview ? "Calculando…" : ingredientOnly ? "Agregar ingrediente" : `Agregar a ${mealType.label}`}
                 </button>
               </footer>
             }

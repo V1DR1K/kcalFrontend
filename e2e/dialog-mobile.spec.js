@@ -1227,3 +1227,37 @@ test("SG047 keeps AI text, close and actions inside a displaced keyboard viewpor
   await expect(input).toHaveValue(text.slice(0, -1));
   await expect(dialog.getByRole("button", { name: "Descartar foto" })).toBeVisible();
 });
+
+
+test("SG005/007/011 valida cantidad y conserva datos ausentes con aviso cancelable", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await seedAuthenticatedApp(page);
+  const food = { id: 901, name: "Pollo pendiente", type: "FOOD", category: "PROTEIN", preparation: "COOKED", baseUnit: "GRAM", baseQuantity: 100, calories: null, proteinGrams: null, carbsGrams: 0, fatGrams: 0, cookedYieldAssumption: "food id 2" };
+  let writes = 0;
+  await page.route("**/api/foods**", async route => {
+    const path = new URL(route.request().url()).pathname;
+    const body = path.endsWith("/preview") ? { calories: null, proteinGrams: null, carbsGrams: 0, fatGrams: 0, nutritionComplete: false } : path.endsWith("/preparations") ? [] : path.endsWith("/901") ? food : { items: [food], page: 0, hasNext: false };
+    await route.fulfill({ json: body });
+  });
+  await page.route("**/api/nutrition/meal-logs", async route => { writes++; await route.fulfill({ json: { id: 902, ...route.request().postDataJSON(), food, calories: null, proteinGrams: null, carbsGrams: 0, fatGrams: 0 } }); });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: "Agregar alimento a Desayuno", exact: true }).click();
+  await page.getByRole("searchbox").fill("pollo");
+  const row = page.locator(".catalog-row", { hasText: "Pollo pendiente" });
+  await expect(row).toContainText("Por 100 g"); await expect(row).toContainText("incompleta");
+  await row.click();
+  const dialog = page.locator(".edit-log-modal");
+  await expect(dialog).toContainText("Pesalo cocido"); await expect(dialog).not.toContainText("food id");
+  const quantity = dialog.getByLabel("Cantidad", { exact: true });
+  await quantity.fill("-1"); await expect(quantity).toHaveValue("-1");
+  await expect(dialog.getByRole("button", { name: "Revisá la cantidad", exact: true })).toBeDisabled();
+  await quantity.fill("12,5"); await expect(quantity).toHaveValue("12.5");
+  await expect(dialog).toContainText("Sin dato");
+  await dialog.getByRole("button", { name: "Agregar a Desayuno", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Revisar información nutricional" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+  expect(writes).toBe(0); await expect(quantity).toHaveValue("12.5");
+  await dialog.getByRole("button", { name: "Agregar a Desayuno", exact: true }).click();
+  await page.getByRole("button", { name: "Registrar con aviso", exact: true }).click();
+  await expect(dialog).not.toBeVisible(); expect(writes).toBe(1);
+});

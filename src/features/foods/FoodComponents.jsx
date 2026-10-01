@@ -4,6 +4,7 @@ import { Icon } from "../../components/Icon";
 import { Input, Select } from "../../components/FormControls";
 import { CatalogStatus, FoodThumb, preparationLabel } from "../catalog/CatalogComponents";
 import { formatNumber, formatQuantity } from "../../utils/format";
+import { nutritionWarning } from "../../utils/nutrition";
 import { decimalNumber } from "../../utils/decimal";
 import { cookedRecipeWeight, rawRecipeWeight, recipeServingFactor } from "../../utils/recipe";
 import { sortRecipeIngredients, scaleFoodNutrition, scaleRecipeNutrition } from "../recipes/recipe.utils";
@@ -177,7 +178,7 @@ export function FoodLogForm({
         )}
         <div className="edit-log-fields">
           <div className={`edit-log-quantity ${isRecipe && unit === "PORTION" ? "portions" : ""}`}>
-            <Input decimal numericOnly label="Cantidad" inputMode="decimal" min="0.1" step="0.01" value={quantity} onChange={(event) => onQuantityChange(event.target.value)} />
+            <Input decimal numericOnly label="Cantidad" inputMode="decimal" min="0.1" step="0.01" value={quantity} onChange={(event) => onQuantityChange(event.target.value)} error={!Number.isFinite(decimalNumber(quantity)) || decimalNumber(quantity) <= 0 ? "Ingresá una cantidad mayor que cero, con hasta 2 decimales." : ""} />
             <small>{isRecipe && unit === "GRAM" ? "g cocidos" : isRecipe ? "porciones" : unit === "MILLILITER" ? "ml" : unit === "UNIT" ? "unidades" : unit === "GRAM" ? "g" : "porciones"}</small>
           </div>
           {mode === "add" ? (
@@ -219,24 +220,8 @@ export function FoodLogForm({
           <div><span>Resultado</span><strong>Resumen nutricional</strong></div>
           <Icon name="monitoring" />
         </div>
-          {!preview ? <SkeletonRows count={2} className="edit-log-preview-loading" label="Calculando nutrientes" /> : <div className="nutrition-preview edit-log-preview">
-        <span className="edit-log-calories">
-          <small>Kcal</small>
-          <strong>{formatNumber(preview?.calories)}</strong>
-        </span>
-        <span className="edit-log-macro protein" aria-label={`Proteínas: ${formatNumber(preview?.proteinGrams, 1)} gramos`}>
-          <small>P</small>
-          <strong>{formatNumber(preview?.proteinGrams, 1)}g</strong>
-        </span>
-        <span className="edit-log-macro carbs" aria-label={`Carbohidratos: ${formatNumber(preview?.carbsGrams, 1)} gramos`}>
-          <small>C</small>
-          <strong>{formatNumber(preview?.carbsGrams, 1)}g</strong>
-        </span>
-        <span className="edit-log-macro fat" aria-label={`Grasas: ${formatNumber(preview?.fatGrams, 1)} gramos`}>
-          <small>G</small>
-          <strong>{formatNumber(preview?.fatGrams, 1)}g</strong>
-        </span>
-          </div>}
+        {!preview ? <p role="status">Ingresá una cantidad válida para calcular.</p> : <><NutritionSummary nutrition={preview} size="full" />{nutritionWarning(preview) && <p className="nutrition-warning">{nutritionWarning(preview)}</p>}</>}
+
       </section>
     </>
   );

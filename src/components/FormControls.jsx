@@ -2,6 +2,7 @@ import React from "react";
 import { normalizeDecimalInput } from "../utils/decimal";
 
 export function Input({ label, selectOnFocus = false, numericOnly = false, decimal = false, error, onFocus, ...props }) {
+  const errorId = React.useId();
   const isNumeric = numericOnly || decimal || props.type === "number";
   const effectiveType = decimal ? "text" : props.type;
   const inputMode = props.inputMode || (props.name === "barcode" ? "numeric" : isNumeric ? "decimal" : undefined);
@@ -12,20 +13,16 @@ export function Input({ label, selectOnFocus = false, numericOnly = false, decim
     if (shouldSelect) requestAnimationFrame(() => target?.select());
   };
   const blockNonNumericKeys = (event) => {
-    if (isNumeric && ["e", "E", "+", "-"].includes(event.key)) event.preventDefault();
+    if (isNumeric && !decimal && ["e", "E"].includes(event.key)) event.preventDefault();
     props.onKeyDown?.(event);
   };
   const cleanNumericInput = (event) => {
     if (decimal) {
       event.currentTarget.value = normalizeDecimalInput(event.currentTarget.value);
-    } else if (isNumeric) {
-      const cleaned = event.currentTarget.value.replace(",", ".").replace(/[^\d.]/g, "");
-      const [whole, ...decimals] = cleaned.split(".");
-      event.currentTarget.value = decimals.length ? `${whole}.${decimals.join("")}` : whole;
     }
     props.onInput?.(event);
   };
-  return <label className="field"><span>{label}</span><input {...props} aria-invalid={Boolean(error)} type={effectiveType} inputMode={inputMode} onFocus={selectValue} onKeyDown={blockNonNumericKeys} onInput={cleanNumericInput} onPointerUp={(event) => { if (shouldSelect) { event.preventDefault(); event.currentTarget.select(); } props.onPointerUp?.(event); }} />{error && <span className="form-error" role="alert">{error}</span>}</label>;
+  return <label className="field"><span>{label}</span><input {...props} aria-label={props["aria-label"] || label} aria-describedby={[props["aria-describedby"], error ? errorId : null].filter(Boolean).join(" ") || undefined} aria-invalid={Boolean(error)} type={effectiveType} inputMode={inputMode} onFocus={selectValue} onKeyDown={blockNonNumericKeys} onInput={cleanNumericInput} onPointerUp={(event) => { if (shouldSelect) { event.preventDefault(); event.currentTarget.select(); } props.onPointerUp?.(event); }} />{error && <span id={errorId} className="form-error" role="alert">{error}</span>}</label>;
 }
 
 export function Select({ label, options, error, ...props }) {

@@ -1,17 +1,9 @@
 export const MAX_DECIMAL_PLACES = 2;
 
-export function normalizeDecimalInput(value, maxFractionDigits = MAX_DECIMAL_PLACES) {
-  const cleaned = String(value ?? "").replace(/,/g, ".").replace(/[^\d.]/g, "");
-  const separatorIndex = cleaned.indexOf(".");
-  if (separatorIndex < 0) return cleaned;
-
-  const whole = cleaned.slice(0, separatorIndex);
-  const fraction = cleaned.slice(separatorIndex + 1).replace(/\./g, "");
-  return `${whole}.${fraction.slice(0, maxFractionDigits)}`;
-}
-
-export function decimalNumber(value) {
-  const normalized = normalizeDecimalInput(value);
-  if (!normalized || normalized === ".") return NaN;
-  return Number(normalized);
+// Preserve the entered text; validation must never turn -1 into 1 or discard pasted characters.
+export function normalizeDecimalInput(value) { return String(value ?? "").replace(/,/g, "."); }
+export function decimalNumber(value, maxFractionDigits = MAX_DECIMAL_PLACES) {
+  const normalized = normalizeDecimalInput(value).trim();
+  const pattern = new RegExp(`^-?(?:\\d+(?:\\.\\d{0,${maxFractionDigits}})?|\\.\\d{1,${maxFractionDigits}})$`);
+  return pattern.test(normalized) ? Number(normalized) : NaN;
 }
