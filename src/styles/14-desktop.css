@@ -50,6 +50,8 @@
   .dashboard-hero { min-height: 226px; padding: 26px 30px; }
   .dashboard-hero-full { grid-template-columns: 190px minmax(210px, .82fr) minmax(280px, 1fr); gap: 28px; }
   .dashboard-hero .calorie-ring { width: 220px; }
+  .dashboard-page .calorie-ring .calorie-values { min-width: 0; max-width: 100%; padding-inline: 8px; }
+  .dashboard-page .calorie-ring .calorie-values strong { min-width: 0; justify-content: center; gap: clamp(1px, .25vw, 4px); font-size: clamp(16px, 1.6vw, 22px); white-space: nowrap; }
   .dashboard-hero h2 { font-size: 28px; }
   .dashboard-hero .balance-copy p { max-width: 28ch; font-size: 16px; }
   .dashboard-hero .macro-strip { gap: 14px; }
@@ -91,6 +93,30 @@
 
   .modal-backdrop { place-items: center; padding: 32px; }
   .picker-modal { max-height: min(820px, calc(100dvh - 64px)); border-radius: var(--radius-modal); }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] { width: min(1040px, 100%); gap: 10px; padding: 14px 18px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > header { padding: 12px 18px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > header h2 { font-size: var(--type-heading-lg); }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > .picker-destination { margin: 0 4px; font-size: var(--type-small); line-height: 1.35; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-tabs button { min-height: 44px; padding-block: 8px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > .picker-tools { gap: 10px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .search-wrap .search { min-height: 46px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-filters .field { gap: 3px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-filters .field select { min-height: 44px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > footer { padding: 8px 12px 0; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > footer button { min-height: 46px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; min-height: 0; padding: 8px 10px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .food-thumb.compact { width: 44px; height: 44px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .catalog-copy { grid-template-columns: minmax(0, 1fr) minmax(220px, 34%); grid-template-areas: "name nutrition" "meta nutrition" "reference nutrition" "warning nutrition"; align-items: center; gap: 2px 12px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .catalog-copy > strong { grid-area: name; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .catalog-meta { grid-area: meta; flex-direction: row; align-items: center; gap: 6px; padding: 0; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .nutrition-reference { grid-area: reference; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .nutrition-warning { grid-area: warning; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .nutrition-summary { grid-area: nutrition; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .preparation-badge { margin-top: 0; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .nutrition-summary > span { min-height: 34px; padding: 5px 6px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .nutrition-summary small { font-size: 10px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .nutrition-summary strong { font-size: 12px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .nutrition-summary .nutrition-kcal strong { font-size: 15px; }
   .compact-modal { place-items: center; padding: 32px; }
   .date-picker-dialog { width: min(480px, 100%); padding: 24px; border-radius: var(--radius-modal); }
   .date-picker-dialog .modal-shell-content > header { display: flex; justify-content: space-between; padding: 1em; }

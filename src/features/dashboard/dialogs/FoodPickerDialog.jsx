@@ -44,7 +44,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const [aiUsage, setAiUsage] = useState(null);
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiEstimate, setAiEstimate] = useState(null);
-  const [aiAddToDiary, setAiAddToDiary] = useState(!ingredientOnly);
+  const [aiAddToDiary, setAiAddToDiary] = useState(true);
   const [aiRegistrationMealType, setAiRegistrationMealType] = useState(mealType?.code || DEFAULT_MEALS[0].code);
   const [aiRegistrationDate, setAiRegistrationDate] = useState(selectedDate || today());
   const [aiError, setAiError] = useState("");
@@ -198,7 +198,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       if (!result?.items?.length) throw new Error("La IA no pudo identificar alimentos en esta foto. Probá con mejor luz.");
       const estimate = aiEstimateWithServings(result);
       const target = estimate.items.length > 1 ? "RECIPE" : "FOOD";
-      setAiAddToDiary(target === "FOOD" && !draftOnly && Boolean(mealType));
+      setAiAddToDiary(target === "FOOD");
       setAiEstimate(estimate);
       setAiUsage(result.usage);
       setAiEstimatePhoto(image);
@@ -234,7 +234,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       const estimate = aiEstimateWithServings(result);
       const target = estimate.items.length > 1 ? "RECIPE" : "FOOD";
       const previousTarget = aiEstimate.items.length > 1 ? "RECIPE" : "FOOD";
-      setAiAddToDiary((current) => target === "FOOD" && (previousTarget === "FOOD" ? current : !draftOnly && Boolean(mealType)));
+      setAiAddToDiary((current) => target === "FOOD" && (previousTarget === "FOOD" ? current : true));
       setAiEstimate(estimate);
       setAiUsage(result.usage);
       setAiCorrection("");
