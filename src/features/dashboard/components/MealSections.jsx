@@ -151,9 +151,9 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
         </div>
       </header>
       {items.length > 0 && <><div className="meal-macros">
-        <small><abbr title="Proteínas">P</abbr> {formatNumber(meal?.proteinGrams, 1)} g</small>
-        <small><abbr title="Carbohidratos">C</abbr> {formatNumber(meal?.carbsGrams, 1)} g</small>
-        <small><abbr title="Grasas">G</abbr> {formatNumber(meal?.fatGrams, 1)} g</small>
+        <small className="meal-macro-protein"><abbr title="Proteínas">P</abbr><span>{formatNumber(meal?.proteinGrams, 1)} g</span></small>
+        <small className="meal-macro-carbs"><abbr title="Carbohidratos">C</abbr><span>{formatNumber(meal?.carbsGrams, 1)} g</span></small>
+        <small className="meal-macro-fat"><abbr title="Grasas">G</abbr><span>{formatNumber(meal?.fatGrams, 1)} g</span></small>
       </div>{items.some(item => item.nutritionComplete === false || [item.calories,item.proteinGrams,item.carbsGrams,item.fatGrams].some(value => value == null)) && <p className="meal-nutrition-warning">Totales parciales: incluyen solo datos informados.</p>}</>}
       {!items.length && yesterdayItems.length > 0 && suggestionState !== "dismissed" && (
         <div className={`yesterday-suggestion ${suggestionState === "copied" ? "copied" : ""}`}>
