@@ -15,7 +15,7 @@ test("SG032–033 dashboard typography and contrast preserve mobile layout", asy
   await page.route("**/api/**", route => {
     const path = new URL(route.request().url()).pathname;
     const json = path === "/api/auth/me" ? {id:1,username:"alex"} : path === "/api/nutrition/dashboard" ? {
-      date:"2026-10-01", calorieGoal:2000, caloriesConsumed:0, waterConsumed:0, waterGoal:2,
+      date:new URL(route.request().url()).searchParams.get("date"), calorieGoal:2000, caloriesConsumed:0, waterConsumed:0, waterGoal:2,
       macros:[{key:"PROTEIN",label:"Proteínas",goal:150,consumed:0},{key:"CARBS",label:"Carbohidratos",goal:200,consumed:0},{key:"FAT",label:"Grasas",goal:65,consumed:0}],
       meals:[{mealType:"BREAKFAST",label:"Desayuno",items:[],calories:0},{mealType:"LUNCH",label:"Almuerzo",items:[],calories:0},{mealType:"DINNER",label:"Cena",items:[],calories:0}], nutrients:[]
     } : [];
@@ -26,6 +26,7 @@ test("SG032–033 dashboard typography and contrast preserve mobile layout", asy
     await page.goto("/nutricion/dia");
     await expect(page.locator(".macro-card")).toHaveCount(3);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await page.locator(".dashboard-page").evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
     const violations = (await new AxeBuilder({page}).withTags(["wcag2aa"]).analyze()).violations;
     expect(violations).toEqual([]);
     const nav = page.locator(width <= 900 ? ".mobile-primary-items button" : ".sidebar nav button").first();

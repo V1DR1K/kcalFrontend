@@ -174,6 +174,9 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
     }
     dialogRef.current?.addEventListener("focusin", revealFocusedControl);
     dialogRef.current?.addEventListener("input", revealFocusedControl);
+    window.addEventListener("resize", revealFocusedControl);
+    const geometryObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(revealFocusedControl);
+    for (const element of [surface, surface?.querySelector(SCROLL_OWNER_SELECTOR), footerRef?.current]) if (element) geometryObserver?.observe(element);
     window.visualViewport?.addEventListener("resize", revealFocusedControl);
     window.visualViewport?.addEventListener("scroll", revealFocusedControl);
 
@@ -219,12 +222,15 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
       window.cancelAnimationFrame(revealFrame);
       dialogRef.current?.removeEventListener("focusin", revealFocusedControl);
       dialogRef.current?.removeEventListener("input", revealFocusedControl);
+      window.removeEventListener("resize", revealFocusedControl);
+      geometryObserver?.disconnect();
       window.visualViewport?.removeEventListener("resize", revealFocusedControl);
       window.visualViewport?.removeEventListener("scroll", revealFocusedControl);
       if (restoreFocus && wasTopDialog && (returnFocusRef?.current?.isConnected || previousFocusRef.current?.isConnected)) {
         const restoreTarget = returnFocusRef?.current?.isConnected ? returnFocusRef.current : previousFocusRef.current;
         window.requestAnimationFrame(() => {
           const currentTop = topDialog();
+          if (currentTop?.dialogRef.current?.contains(document.activeElement)) return;
           const isInsideTop = currentTop?.root?.contains(restoreTarget) && !currentTop.root.inert;
           const fallbackTarget = currentTop && !isInsideTop ? currentTop.dialogRef.current : null;
           const target = restoreTarget.isConnected && (!currentTop || isInsideTop)

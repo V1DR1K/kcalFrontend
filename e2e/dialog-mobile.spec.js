@@ -895,8 +895,9 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
     const rect = element.getBoundingClientRect();
     const surface = element.closest(".ai-estimate-modal").getBoundingClientRect();
     const footerTop = element.closest(".ai-estimate-modal").querySelector(":scope > .modal-shell-footer").getBoundingClientRect().top;
-    return rect.top >= surface.top - 1 && rect.bottom <= footerTop + 1 && rect.bottom <= (window.visualViewport?.height || window.innerHeight) + 1;
-  })).toBe(true);
+    const viewportBottom = window.visualViewport ? window.visualViewport.offsetTop + window.visualViewport.height : window.innerHeight;
+    return {visible:rect.top >= surface.top - 1 && rect.bottom <= footerTop + 1 && rect.bottom <= viewportBottom + 1, top:rect.top, bottom:rect.bottom, surfaceTop:surface.top, footerTop, viewportBottom, focused:document.activeElement === element};
+  })).toMatchObject({visible:true,focused:true});
   const aiFooterBottom = await editor.locator(":scope > .modal-shell-footer").evaluate((element) => element.getBoundingClientRect().bottom);
   expect(aiFooterBottom).toBeLessThanOrEqual(430 + 1);
   const editorScrollBeforeRestore = await editor.locator(".modal-shell-content").evaluate((element) => element.scrollTop);
