@@ -1,3 +1,4 @@
+import { Select } from "../../components/FormControls";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_MEALS } from "../../config/app";
 import { Icon } from "../../components/Icon";
@@ -99,7 +100,9 @@ export function DayPresetsPage({ api, user, seed, onSeedConsumed }) {
   const [mobilePreviewId, setMobilePreviewId] = useState(null);
   const [previewPreset, setPreviewPreset] = useState(null);
   const [applyTarget, setApplyTarget] = useState(null);
-  const [editor, setEditor] = useState(seed?.autoOpenCreate ? { name: "", description: "", items: itemsFromDay(seed.data) } : null);
+  const [registrationMeal, setRegistrationMeal] = useState(DEFAULT_MEALS[0].code);
+  const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [editor, setEditor] = useState(seed?.autoOpenCreate && itemsFromDay(seed.data).length ? { name: "", description: "", items: itemsFromDay(seed.data) } : null);
   const [loading, setLoading] = useState(true);
   const [dayLoading, setDayLoading] = useState(!seed?.data);
   const [error, setError] = useState("");
@@ -138,7 +141,7 @@ export function DayPresetsPage({ api, user, seed, onSeedConsumed }) {
   async function loadDay(date) { setDayLoading(true); try { setDayData(await api.request(`/api/nutrition/dashboard?date=${date}`)); } catch (requestError) { if (requestError.cancelled) return; api.notify(requestError.message || "No se pudo cargar la vista del día.", "error"); } finally { setDayLoading(false); } }
   useEffect(() => { loadPresets(); if (seedRef.current && onSeedConsumed) onSeedConsumed(); }, []);
   useEffect(() => { if (seedRef.current?.data && selectedDate === seedRef.current.date) return; loadDay(selectedDate); }, [selectedDate]);
-  function openCreate() { setEditor({ name: "", description: "", items: currentItems.map((item) => ({ ...item })) }); }
+  function openCreate() { if (!currentItems.length || dayLoading) return; setEditor({ name: "", description: "", items: currentItems.map((item) => ({ ...item })) }); }
   function openEdit(preset) { setMobilePreviewId(null); setEditor({ ...preset, items: (preset.items || []).map((item) => ({ ...item })) }); }
   async function deletePreset(preset) { if (!(await api.confirm({ title: "¿Borrar día guardado?", description: `${preset.name} se quitará de tu lista.`, confirmLabel: "Borrar día" }))) return; try { await api.request(`/api/nutrition/day-presets/${preset.id}`, { method: "DELETE" }); if (selectedPreset?.id === preset.id) setSelectedPreset(null); if (mobilePreviewId === preset.id) setMobilePreviewId(null); await loadPresets(); api.notify("Día guardado borrado."); } catch (requestError) { if (requestError.cancelled) return; api.notify(requestError.message || "No se pudo borrar el día.", "error"); } }
   async function applyPreset(preset, replace) { try { await api.request(`/api/nutrition/day-presets/${preset.id}/apply`, { method: "POST", body: JSON.stringify({ logDate: selectedDate, replace }) }); await loadDay(selectedDate); setApplyTarget(null); setMobilePreviewId(null); api.notify(`${preset.name} aplicado al ${readableDate(selectedDate)}.`); } catch (requestError) { if (requestError.cancelled) return; api.notify(requestError.message || "No se pudo aplicar el día.", "error"); } }
@@ -147,14 +150,15 @@ export function DayPresetsPage({ api, user, seed, onSeedConsumed }) {
   const visiblePreset = previewPreset?.id === activePreset?.id ? previewPreset : activePreset;
   const preview = { title: visiblePreset?.name, description: visiblePreset?.description, status: visiblePreset ? `${visiblePreset.itemCount || visiblePreset.items?.length || 0} elementos · actualizado ${visiblePreset.updatedAt ? new Date(visiblePreset.updatedAt).toLocaleDateString("es-AR") : "recientemente"}` : null, heroItems: presetHeroItems(visiblePreset), totals: visiblePreset ? mealTotals(visiblePreset.items || []) : null, groups: presetGroups(visiblePreset), empty: !visiblePreset };
   return <section className="page abm-page day-presets-page">
-    <header className="abm-page-header"><div><h1>Reutilizá tu día</h1><p>Guardá combinaciones completas y aplicalas cuando tu rutina se repita.</p></div><button type="button" className="primary" onClick={openCreate} disabled={!hasCurrentItems}><Icon name="bookmark_add" />Guardar día actual</button></header>
+    <header className="abm-page-header"><div><h1>Reutilizá tu día</h1><p>Guardá combinaciones completas y aplicalas cuando tu rutina se repita.</p></div><button type="button" className="primary" onClick={openCreate} disabled={!hasCurrentItems || dayLoading} aria-describedby={!hasCurrentItems ? "preset-save-explanation" : undefined}><Icon name="bookmark_add" />Guardar día actual</button></header>
     <div className="day-presets-datebar"><div><span>Fecha de trabajo</span><strong>{readableDate(selectedDate)}</strong></div><label><span className="sr-only">Elegir fecha</span><input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} /></label><div className="day-presets-date-summary"><strong>{dayLoading ? "Cargando…" : `${currentItems.length} elementos`}</strong><small>{formatNumber(currentTotals.calories)} kcal cargadas</small></div></div>
-    {seed?.autoOpenCreate && <div className="abm-callout"><Icon name="check_circle" /><div><strong>Tu día actual está listo para guardar</strong><span>Completá un nombre y una descripción para volver a encontrarlo rápido.</span></div><button type="button" className="text-button" onClick={openCreate}>Abrir formulario</button></div>}
+    {!hasCurrentItems && !dayLoading && <div className="abm-callout"><div><strong>Este día todavía no tiene alimentos</strong><p id="preset-save-explanation">Para guardar una plantilla, primero registrá al menos un alimento en esta fecha.</p><Select label="Comida para registrar" value={registrationMeal} options={DEFAULT_MEALS.map(meal => ({ value:meal.code, label:meal.label }))} onChange={event => setRegistrationMeal(event.target.value)} /></div><button className="primary" onClick={() => setRegistrationOpen(true)}>Registrar alimento</button></div>}
+    {seed?.autoOpenCreate && hasCurrentItems && <div className="abm-callout"><Icon name="check_circle" /><div><strong>Tu día actual está listo para guardar</strong><span>Completá un nombre y una descripción para volver a encontrarlo rápido.</span></div><button type="button" className="text-button" onClick={openCreate}>Abrir formulario</button></div>}
     {error && <CatalogStatus error>{error}<button className="secondary" onClick={loadPresets}>Reintentar</button></CatalogStatus>}
     <div className="day-presets-workspace">
       <section className="abm-list-panel" aria-labelledby="saved-days-title">
         <div className="abm-section-heading"><div><h2 id="saved-days-title">Tus días guardados</h2><p>{presets.length ? "Elegí un día para revisar sus comidas." : "Todavía no guardaste una combinación."}</p></div><span className="abm-count">{presets.length}</span></div>
-        {loading ? <SkeletonRows count={3} /> : !presets.length ? <div className="abm-empty-state"><Icon name="bookmark_border" /><strong>Tu biblioteca empieza acá</strong><span>Guardá el día actual cuando encuentres una combinación que quieras repetir.</span><button type="button" className="secondary" onClick={openCreate} disabled={!hasCurrentItems}>Guardar día actual</button></div> : <div className="day-presets-card-list">{presets.map((preset) => {
+        {loading ? <SkeletonRows count={3} /> : !presets.length ? <div className="abm-empty-state"><Icon name="bookmark_border" /><strong>Tu biblioteca empieza acá</strong><span>Guardá el día actual cuando encuentres una combinación que quieras repetir.</span><button type="button" className="secondary" onClick={hasCurrentItems ? openCreate : () => setRegistrationOpen(true)} disabled={dayLoading}>{hasCurrentItems ? "Guardar día actual" : "Registrar alimento"}</button></div> : <div className="day-presets-card-list">{presets.map((preset) => {
           const active = !compact && selectedPreset?.id === preset.id;
           const totals = mealTotals(preset.items || []);
           return <article key={preset.id} className={`day-preset-library-card ${active ? "selected" : ""}`}>
@@ -171,6 +175,7 @@ export function DayPresetsPage({ api, user, seed, onSeedConsumed }) {
     </div>
     {compact && mobilePreset && <CollectionDetailDialog title={mobilePreset.name} preview={preview} onClose={() => setMobilePreviewId(null)} returnFocusRef={mobileTriggerRef} footer={<><button type="button" className="secondary" onClick={() => openEdit(mobilePreset)}>Editar</button><button type="button" className="primary" onClick={() => requestApply(mobilePreset)}>Aplicar día</button></>} actions={<button type="button" className="secondary danger-text" onClick={() => deletePreset(mobilePreset)}><Icon name="delete" />Borrar día</button>} />}
     {applyTarget && <DayPresetApplyDialog preset={applyTarget} currentItems={currentItems} selectedDate={selectedDate} onClose={() => setApplyTarget(null)} onApply={(replace) => applyPreset(applyTarget, replace)} />}
+    {registrationOpen && <FoodPicker api={api} user={user} mealType={DEFAULT_MEALS.find(meal => meal.code === registrationMeal)} selectedDate={selectedDate} onClose={() => setRegistrationOpen(false)} onDone={async () => { setRegistrationOpen(false); await loadDay(selectedDate); }} />}
     {editor && <PresetEditorDialog api={api} user={user} editor={editor} mealTypes={DEFAULT_MEALS} onClose={() => setEditor(null)} onSaved={async (saved) => { setEditor(null); setSelectedPreset(saved); await loadPresets(); }} />}
   </section>;
 }

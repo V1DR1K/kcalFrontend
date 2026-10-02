@@ -409,10 +409,11 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
       </div>
        <PastMealsPreview api={api} targetDate={selectedDate} targetMeals={data?.meals || []} mealTypes={mealTypes} onCopied={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} onOptimisticConfirm={confirmOptimisticLogs} />
        <section className="day-presets-actions" aria-label="Presets de alimentación">
-         <button type="button" className="day-presets-trigger" onClick={() => onOpenDayPresets?.({ data, date: selectedDate, autoOpenCreate: true })}>
+         <button type="button" className="day-presets-trigger" disabled={!(data?.meals || []).some(meal => meal.items?.length)} aria-describedby="dashboard-preset-help" onClick={() => onOpenDayPresets?.({ data, date: selectedDate, autoOpenCreate: true })}>
            <span><strong>Guardar este día</strong><small>Guardá la combinación actual y reutilizala cuando la necesites.</small></span>
            <Icon name="arrow_forward" />
          </button>
+         {!(data?.meals || []).some(meal => meal.items?.length) && <p id="dashboard-preset-help">Registrá al menos un alimento para guardar este día como plantilla.</p>}
        </section>
       {pickerMeal && (
         <FoodPicker

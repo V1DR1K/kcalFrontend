@@ -163,3 +163,17 @@ test.describe("Reutilizá tu día responsive", () => {
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth + 1);
   });
 });
+
+test("SG022 explains the disabled save and registers without losing the selected date", async ({ page }) => {
+  await seedAuthenticatedApp(page);
+  await page.goto("/ingresar");
+  await page.getByLabel("Elegir fecha").fill("2026-09-17");
+  await expect(page.getByRole("button", {name:"Guardar día actual", exact:true}).first()).toBeDisabled();
+  await expect(page.getByText("Para guardar una plantilla, primero registrá al menos un alimento en esta fecha.")).toBeVisible();
+  await page.getByLabel("Comida para registrar", {exact:true}).selectOption("DINNER");
+  await page.getByRole("button", {name:"Registrar alimento", exact:true}).first().click();
+  await expect(page.locator(".picker-destination")).toContainText("Cena");
+  await expect(page.locator(".picker-destination")).toContainText("17");
+  await page.getByRole("dialog").getByRole("button", {name:"Cerrar", exact:true}).first().click();
+  await expect(page.getByLabel("Elegir fecha")).toHaveValue("2026-09-17");
+});
