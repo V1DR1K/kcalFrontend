@@ -945,6 +945,7 @@ test("registers an AI food from the diary and keeps its meal destination", async
 
   const estimateDialog = page.locator(".ai-estimate-modal");
   await expect(estimateDialog).toBeVisible();
+  await expect(estimateDialog.getByRole("status")).toContainText("1 alimento detectado");
   await expect(estimateDialog.getByLabel("Agregar también a mi día")).toBeChecked();
   await estimateDialog.getByRole("button", { name: "Guardar alimento y registrar consumo", exact: true }).click();
   await expect.poll(() => confirmation).not.toBeNull();
@@ -998,6 +999,7 @@ test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => 
 
   const dialog = page.locator(".ai-estimate-modal");
   await expect(dialog.locator(".ai-estimate-item")).toHaveCount(3);
+  await expect(dialog.getByRole("status")).toContainText("3 alimentos detectados");
   await expect(dialog.getByRole("button", { name: "Crear receta y agregar una porción", exact: true })).toBeVisible();
   await expect(dialog.getByText("Supuestos de la estimación", { exact: true })).toBeVisible();
   const layout = await dialog.evaluate((element) => {
@@ -1089,6 +1091,70 @@ test("keeps the AI photo context actions visible above the picker footer on desk
   expect(layout.buttonBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
   expect(layout.pickerIsInert).toBe(true);
   expect(layout.pickerIsHidden).toBe("true");
+});
+
+test("pastes an image before analysis, keeps text paste, and ignores images during review", async ({ page, browserName }) => {
+  await seedAuthenticatedApp(page, { aiAvailable: true });
+  if (browserName === "chromium") await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.route("**/api/nutrition/ai-estimates", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+      targetType: "FOOD", name: "Avena", confidence: 85, assumptions: [],
+      items: [{ name: "Avena", category: "CEREAL", preparation: "COOKED", estimatedGrams: 150, proteinGrams: 4, carbsGrams: 42, fatGrams: 1 }],
+    }) });
+  });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+  await page.locator('input[data-photo-source="gallery"]').setInputFiles({
+    name: "preparacion.png", mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+  });
+  const photoEditor = page.locator(".ai-photo-context-modal");
+  await expect(photoEditor).toBeVisible();
+
+  const paste = (type) => page.evaluate((mimeType) => {
+    const transfer = new DataTransfer();
+    const png = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="), (character) => character.charCodeAt(0));
+    transfer.items.add(new File([png], "clipboard-image", { type: mimeType }));
+    const event = new ClipboardEvent("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "clipboardData", { value: transfer });
+    const dispatched = document.dispatchEvent(event);
+    return { dispatched, types: Array.from(event.clipboardData.items).map((item) => ({ kind: item.kind, type: item.type })), prevented: event.defaultPrevented };
+  }, type);
+  const originalPhotoUrl = await photoEditor.locator("img.ai-photo-context-preview").getAttribute("src");
+  const pngPaste = await paste("image/png");
+  expect(pngPaste).toMatchObject({ types: [{ kind: "file", type: "image/png" }], prevented: true });
+  await expect(photoEditor.locator("img.ai-photo-context-preview")).not.toHaveAttribute("src", originalPhotoUrl);
+  await expect(photoEditor.locator("img.ai-photo-context-preview")).toBeVisible();
+
+  await paste("image/gif");
+  await expect(photoEditor.getByRole("alert")).toContainText("JPEG, PNG o WebP");
+  await expect(photoEditor.locator("img.ai-photo-context-preview")).toBeVisible();
+
+  const description = photoEditor.getByLabel("Descripción opcional");
+  if (browserName === "chromium") {
+    await page.evaluate(() => navigator.clipboard.writeText("una banana"));
+    await description.focus();
+    await page.keyboard.press("Control+V");
+    await expect(description).toHaveValue("una banana");
+  } else {
+    const textWasPrevented = await description.evaluate((textarea) => {
+      const transfer = new DataTransfer();
+      transfer.setData("text/plain", "una banana");
+      const event = new ClipboardEvent("paste", { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "clipboardData", { value: transfer });
+      textarea.dispatchEvent(event);
+      return event.defaultPrevented;
+    });
+    expect(textWasPrevented).toBe(false);
+  }
+  await photoEditor.getByRole("button", { name: "Analizar foto", exact: true }).click();
+
+  const estimateEditor = page.locator(".ai-estimate-modal");
+  await expect(estimateEditor).toBeVisible();
+  const pasteDuringReviewWasPrevented = await paste("image/png");
+  expect(pasteDuringReviewWasPrevented.prevented).toBe(false);
+  await expect(estimateEditor.getByRole("status")).toContainText("1 alimento detectado");
+  await expect(page.locator(".ai-photo-context-modal")).toHaveCount(0);
 });
 
 test("creates a share link from a recent meal bracket", async ({ page }) => {

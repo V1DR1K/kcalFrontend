@@ -104,6 +104,27 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     setAiRefinementError("");
     setPendingMealPhoto(file);
   }
+  useEffect(() => {
+    if (ingredientOnly || aiEstimate || aiAnalyzing) return undefined;
+    function handleImagePaste(event) {
+      const items = Array.from(event.clipboardData?.items || []);
+      const imageItems = items.filter((item) => item.kind === "file" && item.type.startsWith("image/"));
+      if (!imageItems.length) return;
+      const supported = imageItems.find((item) => ["image/jpeg", "image/png", "image/webp"].includes(item.type));
+      if (!supported) {
+        event.preventDefault();
+        setAiError("La imagen pegada debe ser JPEG, PNG o WebP.");
+        return;
+      }
+      const file = supported.getAsFile();
+      if (!file) return;
+      event.preventDefault();
+      const extension = supported.type === "image/jpeg" ? "jpg" : supported.type === "image/webp" ? "webp" : "png";
+      selectMealPhoto(new File([file], `imagen-del-portapapeles.${extension}`, { type: supported.type }));
+    }
+    document.addEventListener("paste", handleImagePaste);
+    return () => document.removeEventListener("paste", handleImagePaste);
+  }, [ingredientOnly, aiEstimate, aiAnalyzing]);
   function discardMealPhoto() {
     if (audioRecording) audioRecorderRef.current?.stop();
     setAiError("");
@@ -147,7 +168,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           if (!result?.transcript) throw new Error("No pudimos transcribir la nota. Intentá nuevamente.");
           setAiContext(result.transcript);
         } catch (error) { if (error.cancelled) return;
-          const message = error.message || "No pudimos transcribir la nota. Intentá nuevamente.";
+          const message = `${error.message || "No pudimos transcribir la nota. Intentá nuevamente."}${error.requestId ? ` Código de soporte: ${error.requestId}` : ""}`;
           setAiError(message);
           api.notify(message, "error");
         } finally {
@@ -185,7 +206,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       setAiRefinementError("");
       setPendingMealPhoto(null);
     } catch (error) { if (error.cancelled) return;
-      const message = error.message || "No se pudo analizar la foto.";
+      const message = `${error.message || "No se pudo analizar la foto."}${error.requestId ? ` Código de soporte: ${error.requestId}` : ""}`;
       setAiError(message);
       api.notify(message, "error");
     } finally {
@@ -218,7 +239,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       setAiUsage(result.usage);
       setAiCorrection("");
     } catch (error) { if (error.cancelled) return;
-      const message = error.message || "No se pudo corregir la estimación.";
+      const message = `${error.message || "No se pudo corregir la estimación."}${error.requestId ? ` Código de soporte: ${error.requestId}` : ""}`;
       setAiRefinementError(message);
       api.notify(message, "error");
     } finally {
@@ -285,7 +306,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       discardAiEstimate();
       await onDone?.(savedLog, saved);
     } catch (error) { if (error.cancelled) return;
-      const message = error.message || "No se pudo guardar la estimación.";
+      const message = `${error.message || "No se pudo guardar la estimación."}${error.requestId ? ` Código de soporte: ${error.requestId}` : ""}`;
       setAiSaveError(message);
       api.notify(message, "error");
     } finally {
@@ -687,9 +708,10 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           <Icon name="nutrition" />
           <div>
             <strong>Elegí una foto de tu comida</strong>
-            <p>Revisá los alimentos detectados: uno se guarda en el catálogo; varios forman una receta con una porción.</p>
+            <p>La cantidad define el destino: un alimento se guarda en tu catálogo; dos o más crean una receta con una porción. También podés pegar una imagen con Ctrl+V antes de analizarla.</p>
           </div>
         </div>}
+        {aiError && !pendingMealPhoto && !aiEstimate && <p className="ai-estimate-error" role="alert">{aiError}</p>}
         {shareBracket && <MealShareDialog api={api} bracket={shareBracket} onClose={() => setShareBracket(null)} />}
         {reviewingBracket && <RecentMealReviewDialog title={reviewingBracket.label} destination={mealType.label} items={reviewingBracket.items} saving={adding} onClose={() => setReviewingBracket(null)} onConfirm={(reviewedItems) => addRecentMeal(reviewingBracket, reviewedItems)} />}
         {selected && (

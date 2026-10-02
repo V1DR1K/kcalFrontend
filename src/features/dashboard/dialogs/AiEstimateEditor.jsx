@@ -108,7 +108,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
         </section>
 
         {mode === "create" && <section className="ai-registration-diary-options">
-          <p>{targetType === "FOOD" ? "Se guardará un alimento en tu catálogo personal." : "Se creará una receta y se registrará una porción en la fecha y comida elegidas."}</p>
+          <p role="status" aria-live="polite">{estimate.items.length} {estimate.items.length === 1 ? "alimento detectado: se guardará como alimento en tu catálogo personal." : `alimentos detectados: se creará una receta y se registrará una porción en la fecha y comida elegidas.`}</p>
           {targetType === "FOOD" && <label className="ai-registration-diary-toggle"><input type="checkbox" checked={addToDiary} onChange={(event) => setAddToDiary?.(event.target.checked)} /><span>Agregar también a mi día</span></label>}
           {(addToDiary || targetType === "RECIPE") && <div className="edit-log-fields">
             <Select label="Comida" value={registrationMealType} options={(mealTypes || []).map((item) => ({ value: item.code, label: item.label }))} onChange={(event) => setRegistrationMealType?.(event.target.value)} />
@@ -146,13 +146,11 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                     <div className={`ai-estimate-item-nutrition ${mode === "create" ? "editable" : ""}`} aria-label={`Aporte nutricional de ${item.name || `alimento ${index + 1}`}`}>
                       <span><small>kcal</small><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))}</strong></span>
                       {[
-                        ["Proteínas (g)", "proteinGrams", "proteinQuality"],
-                        ["Carbohidratos (g)", "carbsGrams", "carbohydrateQuality"],
-                        ["Grasas (g)", "fatGrams", "fatQuality"],
-                      ].map(([label, field, decisionField]) => {
-                        const decision = estimate.decision?.[decisionField];
-                        const reviewLabel = decision?.classification === "CONSISTENT" ? "JEV: plausible" : decision?.classification === "REVIEW" ? "JEV: revisar" : decision?.classification === "INSUFFICIENT" ? "JEV: sin evidencia" : null;
-                        return <label className="ai-estimate-macro-edit" key={field}><small>{label}</small>{mode === "create" ? <input type="text" inputMode="decimal" value={item[field] ?? "0"} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)} g</strong>}{reviewLabel && <em>{reviewLabel}</em>}</label>;
+                        ["Proteínas (g)", "proteinGrams"],
+                        ["Carbohidratos (g)", "carbsGrams"],
+                        ["Grasas (g)", "fatGrams"],
+                      ].map(([label, field]) => {
+                        return <label className="ai-estimate-macro-edit" key={field}><small>{label}</small>{mode === "create" ? <input type="text" inputMode="decimal" value={item[field] ?? "0"} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)} g</strong>}</label>;
                       })}
                     </div>
                   </div>

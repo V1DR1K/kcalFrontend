@@ -72,10 +72,10 @@ async function requestInner(path, options) {
   const text = await response.text();
   let body = null;
   if (text) { try { body = JSON.parse(text); } catch { body = text; } }
-  return { ok: response.ok, status: response.status, body };
+  return { ok: response.ok, status: response.status, body, requestId: response.headers?.get?.("X-Request-ID") || null };
 }
 
-function toError(status, body) {
+function toError(status, body, responseRequestId) {
   const payload = typeof body === "object" && body ? body : null;
   let message = "No se pudo completar la operación.";
   if (payload?.message) message = payload.message;
@@ -83,6 +83,7 @@ function toError(status, body) {
   error.status = status;
   error.code = payload?.code;
   error.fields = payload?.fields || {};
+  error.requestId = payload?.requestId || responseRequestId || null;
   return error;
 }
 
@@ -109,7 +110,7 @@ export async function request(path, options = {}) {
     }
   }
   if (!result.ok) {
-    const error = toError(result.status, result.body);
+    const error = toError(result.status, result.body, result.requestId);
     error.retryable = retryableAuthFailure;
     throw error;
   }
