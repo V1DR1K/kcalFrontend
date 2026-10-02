@@ -112,3 +112,20 @@ test("keeps a recoverable state when session bootstrap loses the network", async
   await expect(page.getByRole("button", { name: "Reintentar" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Usuario" })).not.toBeVisible();
 });
+
+test("SG028/029 anonymous reload has no expiry warning and password toggling preserves input", async ({page}) => {
+  await seedAnonymousSession(page); await page.goto("/ingresar");
+  await expect(page.getByRole("heading",{name:"Ingresar a ScaleGrams",exact:true})).toBeVisible();
+  await expect(page.getByText("Tu sesión venció. Volvé a ingresar.",{exact:true})).toHaveCount(0);
+  await page.reload(); await expect(page.getByRole("button",{name:"Ingresar",exact:true})).toBeVisible();
+  await expect(page.getByText("Tu sesión venció. Volvé a ingresar.",{exact:true})).toHaveCount(0);
+  const password=page.getByLabel("Contraseña",{exact:true}); await password.fill("Texto de prueba");
+  await page.getByRole("button",{name:"Mostrar contraseña",exact:true}).click();
+  await expect(password).toHaveAttribute("type","text"); await expect(password).toHaveValue("Texto de prueba"); await expect(password).toBeFocused();
+  await page.getByRole("button",{name:"Ocultar contraseña",exact:true}).click(); await expect(password).toHaveAttribute("type","password"); await expect(password).toHaveValue("Texto de prueba");
+});
+test("SG028 reports expiration after a previously authenticated session", async ({page}) => {
+  await page.addInitScript(() => sessionStorage.setItem("scalegrams.auth.session-seen","true"));
+  await seedAnonymousSession(page); await page.goto("/ingresar");
+  await expect(page.getByText("Tu sesión venció. Volvé a ingresar.",{exact:true})).toBeVisible();
+});

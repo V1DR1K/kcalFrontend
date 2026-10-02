@@ -172,3 +172,10 @@ nav button.active {
 }
 .auth-back:hover { color: var(--primary); }
 .auth-access-note { margin: -10px 0 var(--space-5); color: var(--muted); font-size: 13px; }
+
+.auth-card h1 { font-size:24px; line-height:1.25; margin-block:18px 10px; }
+.auth-password-toggle,.auth-help summary { min-height:44px; font-size:14px; }
+.auth-help { margin-top:18px; }
+.auth-help summary { cursor:pointer; padding-block:12px; }
+.auth-help p { font-size:14px; line-height:1.5; }
+.auth-card input { font-size:16px; }

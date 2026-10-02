@@ -1,3 +1,10 @@
+const SESSION_SEEN_KEY = "scalegrams.auth.session-seen";
+let authenticatedInThisTab = false;
+function hadAuthenticatedSession() { try { return authenticatedInThisTab || sessionStorage.getItem(SESSION_SEEN_KEY) === "true"; } catch { return authenticatedInThisTab; } }
+function rememberAuthenticatedSession() { authenticatedInThisTab = true; try { sessionStorage.setItem(SESSION_SEEN_KEY,"true"); } catch { /* Memory still identifies this tab's active session. */ } }
+export function clearSessionSignal() { authenticatedInThisTab = false; try { sessionStorage.removeItem(SESSION_SEEN_KEY); } catch { /* Storage may be unavailable. */ } }
+function expireKnownSession() { if (hadAuthenticatedSession()) window.dispatchEvent(new Event("scalegrams:session-expired")); clearSessionSignal(); }
+
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || "";
 let refreshPromise = null;
 const REFRESH_LOCK_KEY = "scalegrams.auth.refresh.lock";
@@ -96,7 +103,7 @@ export async function request(path, options = {}) {
     if (refreshResult?.ok) {
       result = await requestInner(path, fetchOptions);
     } else if (refreshResult?.definitive) {
-      window.dispatchEvent(new Event("scalegrams:session-expired"));
+      expireKnownSession();
     } else {
       retryableAuthFailure = true;
     }
@@ -106,5 +113,6 @@ export async function request(path, options = {}) {
     error.retryable = retryableAuthFailure;
     throw error;
   }
+  if ((path === "/api/auth/me" && result.body?.id) || (path === "/api/auth/login" && result.body?.user?.id)) rememberAuthenticatedSession();
   return result.body;
 }

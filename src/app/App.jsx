@@ -2,7 +2,7 @@ import { requestWithArchivedAcknowledgement } from "../services/archived-foods";
 import { clearSessionDrafts } from "../features/training/session-draft";
 import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "../styles.css";
-import { request as apiRequest } from "../services/http";
+import { request as apiRequest, clearSessionSignal } from "../services/http";
 import { Shell } from "./Shell";
 import { AuthScreen } from "../features/auth/AuthScreen";
 import { DashboardSkeleton, SkeletonRows } from "../components/Loading";
@@ -143,6 +143,7 @@ export function App() {
 
   function clearSessionLocally() {
     clearSessionDrafts();
+    clearSessionSignal();
     userRef.current = null;
     confirmationQueue.current.splice(0).forEach(entry => entry.resolve(false));
     confirmationResolver.current?.(false);
