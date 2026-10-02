@@ -158,6 +158,7 @@ test("uses persisted categories and a searchable persisted exercise selector", a
   await page.goto("/ingresar");
   await enterTraining(page);
   await openTrainingSection(page, "Ejercicios");
+  await page.getByText(/Administrar categorías/).click();
   await expect(page.getByRole("heading", { name: "Categorías", exact: true })).toBeVisible();
   await expect(page.getByText("Piernas", { exact: true })).toBeVisible();
   await openTrainingSection(page, "Planes");
@@ -278,4 +279,17 @@ test("does not render weight fields for calisthenics", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /Editar calistenia/i })).toBeVisible();
   await expect(page.getByLabel("Peso (kg)")).toHaveCount(0);
   await expect(page.getByText("Agregá un ejercicio para comenzar la sesión.", { exact: true })).toBeVisible();
+});
+
+test("SG024–026 shows the first result above category administration and readable distinct filters", async ({ page }) => {
+  await page.setViewportSize({width:390,height:844}); await seedTrainingApp(page);
+  await page.route("**/api/training/categories**", route => route.fulfill({json:{items:[{id:10,name:"ABDOMEN",module:"GYM",system:true,active:true},{id:11,name:"ABDOMEN",module:"CALISTHENICS",system:true,active:true}]}}));
+  await page.route("**/api/training/exercises**", route => route.fulfill({json:{items:[{id:1,name:"Pedaleo",category:"CUERPO_COMPLETO",module:"GYM",registrationType:"TIME",equipment:"STATIONARY_BIKE",editable:false,systemExercise:true}],hasNext:false}}));
+  await page.addInitScript(() => history.replaceState({scalegramsMode:"training",scalegramsPage:"training-profile"}, "")); await page.goto("/ingresar");
+  const result = page.locator(".training-exercise-card").first(); await expect(result).toContainText("Bicicleta fija"); await expect(result).toContainText("Cuerpo completo");
+  expect((await result.boundingBox()).y).toBeLessThan(600);
+  await page.locator(".training-filter-disclosure > summary").click();
+  const category = page.getByLabel("Categoría",{exact:true}); await expect(category.locator("option")).toHaveText(["Todas las categorías","Abdomen · Gimnasio · Base","Abdomen · Calistenia · Base"]);
+  await category.selectOption("11"); await expect(page.locator(".training-active-filters")).toContainText("Calistenia");
+  await page.getByRole("button",{name:"Limpiar búsqueda y filtros"}).click(); await expect(category).toHaveValue("");
 });

@@ -32,6 +32,13 @@ export const EQUIPMENT_OPTIONS = [
   { value: "HEX_BAR", label: "Barra hexagonal" },
   { value: "SLED", label: "Trineo" },
   { value: "ROWING_MACHINE", label: "Remo ergométrico" },
+  { value: "STATIONARY_BIKE", label: "Bicicleta fija" },
+  { value: "TREADMILL", label: "Caminadora" },
+  { value: "MEDICINE_BALL", label: "Pelota medicinal" },
+  { value: "JUMP_ROPE", label: "Soga para saltar" },
+  { value: "PLATES", label: "Discos" },
+  { value: "TRX", label: "Bandas de suspensión" },
+  { value: "FOAM_ROLLER", label: "Rodillo de espuma" },
   { value: "AIR_BIKE", label: "Bicicleta de aire" },
   { value: "OTHER", label: "Otro" },
 ];
@@ -256,3 +263,14 @@ export function sessionsForCalendar(data) {
   const source = Array.isArray(data) ? data : data?.days || data?.sessions || [];
   return source.flatMap((entry) => (entry.sessions || []).map((session) => ({ ...session, date: session.date || entry.date }))).map(normalizeSession);
 }
+
+export function trainingCategoryLabel(value) {
+  if (!value) return "Sin categoría";
+  const labels = { ABDOMEN:"Abdomen", CUERPO_COMPLETO:"Cuerpo completo", ACONDICIONAMIENTO:"Acondicionamiento", PIERNAS:"Piernas", PECHO:"Pecho", ESPALDA:"Espalda", HOMBROS:"Hombros", BICEPS:"Bíceps", TRICEPS:"Tríceps", GLUTEOS:"Glúteos", CUADRICEPS:"Cuádriceps", ISQUIOTIBIALES:"Isquiotibiales", PANTORRILLAS:"Pantorrillas", ANTEBRAZOS:"Antebrazos", EMPUJE:"Empuje", TIRON:"Tirón", CORE:"Zona media", MOVILIDAD:"Movilidad" };
+  const code = String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  return labels[code] || (value === String(value).toUpperCase() ? String(value).replaceAll("_", " ").toLocaleLowerCase("es-AR").replace(/^./, char => char.toUpperCase()) : value);
+}
+export function trainingCategoryOption(category) {
+  return `${trainingCategoryLabel(category.name)} · ${moduleLabel(category.module)} · ${category.system ? "Base" : "Personal"}`;
+}
+export function equipmentLabel(value) { return optionLabel(EQUIPMENT_OPTIONS, value, "Equipo sin especificar"); }

@@ -774,3 +774,9 @@
 @media (prefers-reduced-motion: reduce) {
   .training-nav-group, .training-shell .training-nav-group button .material-symbols-outlined, .training-primary, .training-secondary, .training-danger-button, .training-icon-action, .training-text-button, .training-loading span { animation: none !important; transition-duration: 80ms !important; transition-property: color, background-color, border-color, box-shadow, opacity, outline-color !important; }
 }
+
+.training-filter-disclosure,.training-category-disclosure { margin-block:12px; }
+.training-filter-disclosure > summary,.training-category-disclosure > summary { cursor:pointer; min-height:44px; padding:12px; border:1px solid var(--outline); border-radius:var(--radius-control); font-size:14px; }
+.training-profile-page > .field input { font-size:16px; min-height:48px; }
+.training-active-filters { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:12px; font-size:14px; }
+.training-profile-page .training-page-intro { margin-block:8px 12px; }
