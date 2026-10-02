@@ -1,3 +1,4 @@
+import { Hydration } from "./components/Hydration";
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
 import { Header, Macro, Panel } from "../../components/Layout";
@@ -44,7 +45,6 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
   const [deletingLogIds, setDeletingLogIds] = useState(() => new Set());
   const [movingLogIds, setMovingLogIds] = useState(() => new Set());
   const [waterSaving, setWaterSaving] = useState(false);
-  const [waterActionState, setWaterActionState] = useState("idle");
   const [mealClipboard, setMealClipboard] = useState(null);
   const [convertingMeal, setConvertingMeal] = useState(null);
   const [sharingMeal, setSharingMeal] = useState(null);
@@ -200,16 +200,12 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
     }));
     return () => load();
   }
-  function adjustWaterOptimistic(deltaLiters) {
-    invalidateLoads();
-    setData((current) => ({ ...current, waterConsumedLiters: Math.max(0, Math.round((Number(current?.waterConsumedLiters || 0) + deltaLiters) * 100) / 100) }));
-    return () => load();
-  }
+
   if (loading && !data) {
     return (
       <section className="page" role="status" aria-live="polite" aria-label="Preparando tu día">
         <h1 className="sr-only">Día</h1>
-        <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
+        <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging || waterSaving} />} />
         <div className="dashboard-skeleton" aria-hidden="true">
           <div className="dashboard-skeleton-hero">
             <div className="skeleton skeleton-ring" />
@@ -232,7 +228,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
   if (error && !data) {
     return (
       <section className="page">
-        <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
+        <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging || waterSaving} />} />
         <CatalogStatus error>
           {error}
           <button className="secondary" onClick={() => load(selectedDate)}>
@@ -244,7 +240,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
   }
   return (
     <section className="page dashboard-page" ref={dashboardTopRef}>
-      <Header title="Día" compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
+      <Header title="Día" compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging || waterSaving} />} />
       <CompactBalanceBar
         visible={compactBalance}
         consumed={data?.caloriesConsumed}
@@ -294,6 +290,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
           ))}
         </div>
       </div>
+      <Hydration api={api} date={selectedDate} consumed={data?.waterConsumedLiters} goal={data?.waterGoalLiters} onSaved={load} onBusyChange={setWaterSaving} />
       <div className="meal-grid">
         {mealTypes.map((mealType, mealIndex) => (
           <MealCard
@@ -406,82 +403,6 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
         ))}
       </div>
        <div className={`grid ${recentMeals.length ? "two" : ""}`}>
-         <div className="dashboard-water action-surface" data-action-state={waterActionState}>
-           <Icon name="water_drop" />
-           <p><strong>Hidratación</strong><small>{formatNumber(data?.waterConsumedLiters, 1)} L de {formatNumber(data?.waterGoalLiters, 1)} L</small></p>
-           <div className="water-actions">
-             <button
-               className="secondary action-control"
-               disabled={waterSaving || !Number(data?.waterConsumedLiters)}
-               onClick={async () => {
-                 if (waterSaving) return;
-                 setWaterSaving(true);
-                 setWaterActionState("undoing");
-                 const restore = adjustWaterOptimistic(-0.5);
-                 try {
-                   await api.runAction(
-                     { title: "Deshaciendo hidratación", description: "Estamos actualizando tu registro de agua..." },
-                     async () => {
-                       await api.request(`/api/nutrition/water-logs/latest?date=${selectedDate}`, { method: "DELETE" });
-                       api.notify("Último registro de agua eliminado.");
-                       await load();
-                     },
-                     { quiet: true },
-                   );
-                   setWaterActionState("success");
-                   window.setTimeout(() => setWaterActionState("idle"), 700);
-                 } catch {
-                   restore();
-                   setWaterActionState("error");
-                   api.notify("No hay agua para descontar.", "error");
-                   window.setTimeout(() => setWaterActionState("idle"), 700);
-                 } finally {
-                   setWaterSaving(false);
-                 }
-               }}
-             >
-               {waterActionState === "undoing" ? "Deshaciendo..." : "Deshacer"}
-             </button>
-             <button
-               className="secondary action-control"
-               disabled={waterSaving}
-               onClick={async () => {
-                 if (waterSaving) return;
-                 setWaterSaving(true);
-                 setWaterActionState("adding");
-                 const restore = adjustWaterOptimistic(0.5);
-                 try {
-                   await api.runAction(
-                     { title: "Registrando hidratación", description: "Estamos guardando el agua consumida..." },
-                     async () => {
-                       await api.request("/api/nutrition/water-logs", {
-                         method: "POST",
-                         body: JSON.stringify({
-                           liters: 0.5,
-                           logDate: selectedDate,
-                         }),
-                       });
-                       api.notify("Hidratación registrada.");
-                       await load();
-                     },
-                     { quiet: true },
-                   );
-                   setWaterActionState("success");
-                   window.setTimeout(() => setWaterActionState("idle"), 700);
-                 } catch {
-                   restore();
-                   setWaterActionState("error");
-                   api.notify("No se pudo registrar el agua.", "error");
-                   window.setTimeout(() => setWaterActionState("idle"), 700);
-                 } finally {
-                   setWaterSaving(false);
-                 }
-               }}
-             >
-               {waterActionState === "adding" ? "Guardando..." : "Sumar 0.5L"}
-             </button>
-           </div>
-         </div>
         {Boolean(recentMeals.length) && <Panel title="Comidas recientes">
           <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} onOptimisticConfirm={confirmOptimisticLogs} />
         </Panel>}

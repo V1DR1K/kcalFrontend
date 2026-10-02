@@ -128,7 +128,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
   return (
     <article
       ref={cardRef}
-      className="meal-card action-surface"
+      className={`meal-card action-surface ${items.length ? "" : "meal-card-empty"}`}
       data-action-state={bulkActionState}
       data-meal-type={mealType.code}
       style={{ "--meal-delay": `${entryDelay}ms` }}
@@ -139,7 +139,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
       <header>
         <div className="meal-heading">
           <Icon name="restaurant" />
-          <div><span>{mealType.label}</span><strong>{meal?.calories || 0} kcal</strong></div>
+          <div><span>{mealType.label}</span><strong>{items.length ? `${meal?.calories || 0} kcal` : "Sin alimentos registrados"}</strong></div>
         </div>
         <div className="meal-header-actions">
           <details className="meal-menu" ref={menuRef}><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button className="action-control" disabled={!items.length || hasPendingItems} onClick={copyAll}>Copiar todo</button><button className="action-control" disabled={!clipboard?.length || hasPendingItems} onClick={() => { menuRef.current?.removeAttribute("open"); addLogs(clipboard); }}>Pegar</button><button className="action-control" disabled={!items.some(isCopyableMealLog) || hasPendingItems} onClick={() => { menuRef.current?.removeAttribute("open"); onConvertToRecipe?.(); }}>Convertir en receta</button><button className="danger-text action-control" disabled={!items.length || hasPendingItems} onClick={() => { menuRef.current?.removeAttribute("open"); deleteAll(); }}>Borrar todo</button></div></details>
@@ -147,11 +147,11 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
           <button className="icon-button action-control" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><Icon name="add" /></button>
         </div>
       </header>
-      <div className="meal-macros">
+      {items.length > 0 && <div className="meal-macros">
         <small>P {formatNumber(meal?.proteinGrams, 1)}g</small>
         <small>C {formatNumber(meal?.carbsGrams, 1)}g</small>
         <small>G {formatNumber(meal?.fatGrams, 1)}g</small>
-      </div>
+      </div>}
       {!items.length && yesterdayItems.length > 0 && suggestionState !== "dismissed" && (
         <div className={`yesterday-suggestion ${suggestionState === "copied" ? "copied" : ""}`}>
           <Icon name="content_copy" />
@@ -196,7 +196,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
           );
         })
       ) : (
-        <div className="history-empty dashboard-food-empty"><Icon name="no_meals" /><strong>Sin alimentos registrados</strong><small>Todavía no cargaste nada. Usá el botón + para agregar comida.</small></div>
+        <button className="secondary dashboard-food-empty-action" onClick={onAdd}>Agregar alimento</button>
       )}
     </article>
   );

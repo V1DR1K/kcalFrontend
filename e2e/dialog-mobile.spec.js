@@ -1304,3 +1304,28 @@ test("SG009/010 registers an existing food in the explicit date and meal", async
   await page.locator(".edit-log-modal").getByRole("button", { name: "Agregar a Cena", exact: true }).click();
   await expect.poll(() => saved?.logDate).toBe("2026-09-28"); expect(saved.mealType).toBe("DINNER");
 });
+
+test("SG002/015–018 keeps balance separate and logs precise water amounts", async ({ page }, testInfo) => {
+  await seedAuthenticatedApp(page);
+  let water = 0; const entries = []; const writes = [];
+  await page.route("**/api/nutrition/water-logs**", async route => { const request = route.request(); if (request.method() === "POST") { const body = request.postDataJSON(); writes.push(body); entries.push(body.liters); water += body.liters; } else water -= entries.pop() || 0; await route.fulfill({ status: 204 }); });
+  await page.route("**/api/nutrition/dashboard**", async route => { await route.fulfill({ json: { date: new URL(route.request().url()).searchParams.get("date"), caloriesConsumed: 0, calorieGoal: 12345, waterConsumedLiters: water, waterGoalLiters: 2, macros: [], meals: [] } }); });
+  await page.goto("/ingresar");
+  for (const width of [320, 360, 390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect.poll(() => page.locator(".dashboard-hero").evaluate(hero => { const ring = hero.querySelector(".calorie-ring").getBoundingClientRect(); const copy = hero.querySelector(".balance-copy").getBoundingClientRect(); return ring.right <= copy.left + 1 || ring.left >= copy.right - 1 || ring.bottom <= copy.top + 1 || ring.top >= copy.bottom - 1; })).toBe(true);
+    expect(await page.locator("body").evaluate(element => element.scrollWidth <= innerWidth)).toBe(true);
+    if ([320,390].includes(width)) await page.screenshot({ path: testInfo.outputPath(`dashboard-${width}.png`), fullPage:true });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.locator(".dashboard-page").evaluate(element => element.getBoundingClientRect().height)).toBeLessThan(1560);
+  const hydration = page.getByRole("region", { name: "Hidratación", exact: true });
+  await hydration.getByRole("button", { name: "+250 ml", exact: true }).click();
+  await expect(hydration).toContainText("0,25 L");
+  await hydration.getByRole("button", { name: "Otra cantidad", exact: true }).click();
+  await hydration.getByLabel("Cantidad de agua (ml)", { exact: true }).fill("330");
+  await hydration.getByRole("button", { name: "Registrar agua", exact: true }).click();
+  await expect(hydration).toContainText("0,58 L");
+  await hydration.getByRole("button", { name: "Deshacer", exact: true }).click();
+  await expect(hydration).toContainText("0,25 L"); expect(writes.map(body => body.liters)).toEqual([0.25, 0.33]);
+});

@@ -184,3 +184,28 @@
     animation: none;
   }
 }
+
+.dashboard-page .meal-menu summary,.dashboard-page .meal-header-actions .icon-button { min-width:44px; min-height:44px; }
+.dashboard-page .water-actions .secondary { min-height:44px; font-size:14px; }
+.dashboard-page .dashboard-water { margin-block:0 16px; }
+.dashboard-page .water-actions { flex-wrap:wrap; }
+.water-custom { display:flex; flex-wrap:wrap; align-items:end; gap:12px; width:100%; }
+.water-custom .field { flex:1 1 160px; min-width:0; }
+.water-custom input { width:100%; font-size:16px; }
+.dashboard-food-empty-action { margin:0 14px 12px; min-height:44px; }
+.dashboard-page .meal-card-empty { align-self:start; }
+.dashboard-page .balance-copy { min-width:0; overflow-wrap:anywhere; }
+.dashboard-page .calorie-ring { min-width:0; max-width:100%; }
+@media(max-width:600px) {
+ .dashboard-page .dashboard-hero { grid-template-columns:minmax(0,1fr); gap:12px; padding:16px; text-align:center; }
+ .dashboard-page .calorie-ring { width:160px; }
+ .dashboard-page .balance-copy h2 { font-size:20px; margin:0; }
+ .dashboard-page .balance-copy p { margin:6px 0; }
+ .dashboard-page .macro-strip { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+ .dashboard-page .macro { min-width:0; }
+ .dashboard-page .meal-card-empty > header { padding:10px 12px; border-bottom:0; }
+ .dashboard-page .meal-card-empty .meal-share-trigger { display:none; }
+ .dashboard-page .meal-heading > div > strong { white-space:normal; }
+ .dashboard-page .meal-header-actions { gap:4px; }
+ .dashboard-page .dashboard-water .water-actions { justify-content:flex-start; gap:8px; }
+}
