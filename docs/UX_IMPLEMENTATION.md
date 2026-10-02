@@ -30,3 +30,5 @@ Fuente: auditoría del 2026-10-01; 46 hallazgos y SG047 reportado por el usuario
 Regresión adicional de SG042: reaplicar conflictos identifica cada instancia por su ID de sesión, aunque se repita el mismo ejercicio; un ejercicio eliminado se agrega con identidad nueva. Prueba de payload e identidad y recorridos con dos clientes Chromium/WebKit aprobados.
 
 CI de frontend: el control de contraste espera el fin real de la animación de entrada y el fixture respeta la fecha solicitada. SG047 observa cambios de geometría y resize; el retorno de foco no reemplaza un foco ya establecido dentro del nuevo diálogo superior. Revalidación local y CI antes de main.
+
+Despliegue: la imagen anterior de frontend se conserva en el directorio privado de estado del usuario SSH, configurable con SCALEGRAMS_BACKUP_ROOT, porque /opt/backups no es escribible en este servidor. bash -n aprobado.

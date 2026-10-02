@@ -6,7 +6,8 @@ revision="${1:?Expected full Git revision}"
 test "$(git rev-parse HEAD)" = "$revision"
 mapfile -t web_ids < <(docker ps -q | xargs -r docker inspect --format '{{.Id}} {{range .NetworkSettings.Networks}}{{range .Aliases}}{{.}} {{end}}{{end}}' | awk '$0 ~ /(^| )scalegrams-web( |$)/ {print $1}')
 test "${#web_ids[@]}" -eq 1
-backup="/opt/backups/scalegrams/ux-audit-web-$revision"
+backup_root="${SCALEGRAMS_BACKUP_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/scalegrams/backups}"
+backup="$backup_root/ux-audit-web-$revision"
 mkdir -p "$backup"
 if [[ ! -f "$backup/READY_WEB" ]]; then
   web_image="$(docker inspect --format '{{.Image}}' "${web_ids[0]}")"
