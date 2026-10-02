@@ -708,7 +708,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           <Icon name="nutrition" />
           <div>
             <strong>Elegí una foto de tu comida</strong>
-            <p>La cantidad define el destino: un alimento se guarda en tu catálogo; dos o más crean una receta con una porción. También podés pegar una imagen con Ctrl+V antes de analizarla.</p>
+            <p>Un alimento va al catálogo; dos o más crean una receta con una porción. Pegá la foto con Ctrl+V antes de analizar.</p>
           </div>
         </div>}
         {aiError && !pendingMealPhoto && !aiEstimate && <p className="ai-estimate-error" role="alert">{aiError}</p>}
