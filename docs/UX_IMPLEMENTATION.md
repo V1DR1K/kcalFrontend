@@ -34,3 +34,5 @@ CI de frontend: el control de contraste espera el fin real de la animación de e
 Despliegue: la imagen anterior de frontend se conserva en el directorio privado de estado del usuario SSH, configurable con SCALEGRAMS_BACKUP_ROOT, porque /opt/backups no es escribible en este servidor. bash -n aprobado.
 
 Regresión de pantalla corta reproducida en Chromium/WebKit: el bloqueo del fondo impedía desplazar los filtros recortados del selector. Se reconoce ese contenedor y se ajusta la separación del foco a su altura. La altura de viewport se inicializa antes del primer render para evitar la carrera encontrada en Safari tablet por CI.
+
+SG030: la revisión visual de producción detectó «carbs» en la distribución porcentual del balance. Se reemplaza por «carbohidratos» para mantener el vocabulario del perfil y de las metas. Verificación de frontend, compilación y recorridos operativos en Chromium/WebKit; CI completo antes de volver a publicar.

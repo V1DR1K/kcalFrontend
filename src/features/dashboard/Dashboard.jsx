@@ -280,7 +280,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
           </p>
           {data?.plan && (
             <small>
-              {data.plan.proteinPercent}% proteínas / {data.plan.carbsPercent}% carbs / {data.plan.fatPercent}% grasas
+              {data.plan.proteinPercent}% proteínas / {data.plan.carbsPercent}% carbohidratos / {data.plan.fatPercent}% grasas
             </small>
           )}
         </div>
