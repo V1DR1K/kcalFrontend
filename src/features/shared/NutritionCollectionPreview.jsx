@@ -1,14 +1,14 @@
 import React from "react";
 import { Icon } from "../../components/Icon";
 import { FoodThumb } from "../catalog/CatalogComponents";
-import { formatNumber } from "../../utils/format";
+import { formatMeasure, formatNutrient } from "../../utils/format";
 
 export function NutritionMetrics({ totals, compact = false }) {
   const values = [
-    ["Kcal", formatNumber(totals?.calories || 0)],
-    ["Proteínas", `${formatNumber(totals?.proteinGrams || 0, 1)} g`],
-    ["Carbohidratos", `${formatNumber(totals?.carbsGrams || 0, 1)} g`],
-    ["Grasas", `${formatNumber(totals?.fatGrams || 0, 1)} g`],
+    ["kcal", formatNutrient(totals?.calories)],
+    ["Proteínas", formatNutrient(totals?.proteinGrams, 1, "g")],
+    ["Carbohidratos", formatNutrient(totals?.carbsGrams, 1, "g")],
+    ["Grasas", formatNutrient(totals?.fatGrams, 1, "g")],
   ];
   return <div className={`collection-metrics ${compact ? "compact" : ""}`.trim()} aria-label="Resumen nutricional">
     {values.map(([label, value]) => <span key={label}><small>{label}</small><strong>{value}</strong></span>)}
@@ -20,8 +20,7 @@ function itemImage(item) {
 }
 
 function itemAmount(item) {
-  const unit = item.unit === "PORTION" ? "porción/es" : item.unit === "GRAM" ? "g" : item.unit === "MILLILITER" ? "ml" : "unidad/es";
-  return `${item.quantity ?? ""} ${unit}`.trim();
+  return formatMeasure(item.quantity, item.unit || "GRAM");
 }
 
 export function NutritionCollectionPreview({
@@ -55,7 +54,7 @@ export function NutritionCollectionPreview({
           {group.items.map((item, index) => <div className="collection-preview-item" key={`${item.id || item.itemId || item.name || item.displayName}-${index}`}>
             <FoodThumb item={itemImage(item)} compact />
             <span><strong>{item.name || item.displayName || "Alimento"}</strong><small>{itemAmount(item)}</small></span>
-            <b>{formatNumber(item.calories || 0)} kcal</b>
+            <b>{formatNutrient(item.calories, 0, "kcal")}</b>
           </div>)}
         </div>
       </section>)}

@@ -148,9 +148,9 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
         </div>
       </header>
       {items.length > 0 && <div className="meal-macros">
-        <small>P {formatNumber(meal?.proteinGrams, 1)}g</small>
-        <small>C {formatNumber(meal?.carbsGrams, 1)}g</small>
-        <small>G {formatNumber(meal?.fatGrams, 1)}g</small>
+        <small><abbr title="Proteínas">P</abbr> {formatNumber(meal?.proteinGrams, 1)} g</small>
+        <small><abbr title="Carbohidratos">C</abbr> {formatNumber(meal?.carbsGrams, 1)} g</small>
+        <small><abbr title="Grasas">G</abbr> {formatNumber(meal?.fatGrams, 1)} g</small>
       </div>}
       {!items.length && yesterdayItems.length > 0 && suggestionState !== "dismissed" && (
         <div className={`yesterday-suggestion ${suggestionState === "copied" ? "copied" : ""}`}>

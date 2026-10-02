@@ -1,6 +1,6 @@
 import React from "react";
 import { Icon } from "./Icon";
-import { formatNumber } from "../utils/format";
+import { formatNumber, macroLabel } from "../utils/format";
 
 export function Header({ title, action, compact = false, className = "" }) {
   return (
@@ -23,8 +23,8 @@ export function Macro({ macro }) {
   const tone = String(macro.key || macro.label || "").toLowerCase();
   return (
     <section className={`macro-card macro-${tone}`}>
-      <h3>{macro.label}</h3>
-      <p className="big"><strong>{formatNumber(macro.consumed)}</strong><span> / {formatNumber(macro.goal)}g</span></p>
+      <h3>{macroLabel(macro)}</h3>
+      <p className="big"><strong>{formatNumber(macro.consumed)}</strong><span> / {formatNumber(macro.goal)} g</span></p>
       <div className="bar">
         <span style={{ width: `${percent}%` }} />
       </div>

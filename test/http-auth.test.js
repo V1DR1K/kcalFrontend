@@ -1,6 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { request } from "../src/services/http.js";
+import { request, clearSessionSignal } from "../src/services/http.js";
 
 function response(status, body) {
   return {
@@ -22,6 +22,8 @@ function storage() {
 
 beforeEach(() => {
   global.localStorage = storage();
+  global.sessionStorage = storage();
+  clearSessionSignal();
   global.window = { dispatchEvent() {} };
 });
 
@@ -53,7 +55,9 @@ test("refreshes an expired cookie session while restoring the user", { concurren
   assert.equal(calls[1].options.credentials, "include");
 });
 
-test("emits session-expired when a refresh token is rejected", { concurrency: false }, async () => {
+test("emits session-expired when a known session refresh is rejected", { concurrency: false }, async () => {
+  global.fetch = async () => response(200, { id: 1, username: "alex" });
+  await request("/api/auth/me");
   let expired = 0;
   global.window = { dispatchEvent(event) { if (event.type === "scalegrams:session-expired") expired += 1; } };
   global.fetch = async (url) => url === "/api/auth/refresh"
@@ -65,6 +69,8 @@ test("emits session-expired when a refresh token is rejected", { concurrency: fa
 });
 
 test("does not emit session-expired when refresh is temporarily unavailable", { concurrency: false }, async () => {
+  global.fetch = async () => response(200, { id: 1, username: "alex" });
+  await request("/api/auth/me");
   let expired = 0;
   global.window = { dispatchEvent(event) { if (event.type === "scalegrams:session-expired") expired += 1; } };
   global.fetch = async (url) => url === "/api/auth/refresh"
@@ -72,5 +78,13 @@ test("does not emit session-expired when refresh is temporarily unavailable", { 
     : response(401, { message: "expired" });
 
   await assert.rejects(() => request("/api/foods"), (error) => error.status === 401 && error.retryable === true);
+  assert.equal(expired, 0);
+});
+
+test("anonymous rejected refresh does not announce an expired session", async () => {
+  let expired = 0;
+  global.window = { dispatchEvent() { expired++; } };
+  global.fetch = async () => response(401, { message: "anonymous" });
+  await assert.rejects(() => request("/api/auth/me"), { status: 401 });
   assert.equal(expired, 0);
 });

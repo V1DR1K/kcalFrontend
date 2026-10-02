@@ -101,10 +101,10 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
         </>}
 
         <section className="ai-estimate-summary" aria-label="Resumen nutricional de la estimación">
-          <span className="ai-summary-calories"><small aria-label={mode === "create" ? "Kilocalorías totales" : "Kilocalorías aproximadas"}>Kcal</small><strong>{formatNumber(calories)}</strong></span>
-          <span className="ai-summary-protein"><small>Proteínas</small><strong>{formatNumber(totals.proteinGrams, 1)}<b>g</b></strong></span>
-          <span className="ai-summary-carbs"><small aria-label="Carbohidratos"><span className="ai-estimate-label-full">Carbohidratos</span><span className="ai-estimate-label-short" aria-hidden="true">Carbos</span></small><strong>{formatNumber(totals.carbsGrams, 1)}<b>g</b></strong></span>
-          <span className="ai-summary-fat"><small>Grasas</small><strong>{formatNumber(totals.fatGrams, 1)}<b>g</b></strong></span>
+          <span className="ai-summary-calories"><small aria-label={mode === "create" ? "Kilocalorías totales" : "Kilocalorías aproximadas"}>kcal</small><strong>{formatNumber(calories)}</strong></span>
+          <span className="ai-summary-protein"><small>Proteínas</small><strong>{formatNumber(totals.proteinGrams, 1)}<b> g</b></strong></span>
+          <span className="ai-summary-carbs"><small aria-label="Carbohidratos"><span className="ai-estimate-label-full">Carbohidratos</span><span className="ai-estimate-label-short" aria-hidden="true">Carbohidratos</span></small><strong>{formatNumber(totals.carbsGrams, 1)}<b> g</b></strong></span>
+          <span className="ai-summary-fat"><small>Grasas</small><strong>{formatNumber(totals.fatGrams, 1)}<b> g</b></strong></span>
         </section>
 
         {mode === "create" && <section className="ai-registration-diary-options">
@@ -144,7 +144,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                     </div>
                     {item.catalogFoodId && <small className="ai-estimate-catalog-match">Se usará el alimento del catálogo ({item.catalogMatchConfidence || 0}% de coincidencia).</small>}
                     <div className={`ai-estimate-item-nutrition ${mode === "create" ? "editable" : ""}`} aria-label={`Aporte nutricional de ${item.name || `alimento ${index + 1}`}`}>
-                      <span><small>Kcal</small><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))}</strong></span>
+                      <span><small>kcal</small><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))}</strong></span>
                       {[
                         ["Proteínas (g)", "proteinGrams", "proteinQuality"],
                         ["Carbohidratos (g)", "carbsGrams", "carbohydrateQuality"],
@@ -152,7 +152,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                       ].map(([label, field, decisionField]) => {
                         const decision = estimate.decision?.[decisionField];
                         const reviewLabel = decision?.classification === "CONSISTENT" ? "JEV: plausible" : decision?.classification === "REVIEW" ? "JEV: revisar" : decision?.classification === "INSUFFICIENT" ? "JEV: sin evidencia" : null;
-                        return <label className="ai-estimate-macro-edit" key={field}><small>{label}</small>{mode === "create" ? <input type="text" inputMode="decimal" value={item[field] ?? "0"} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)}g</strong>}{reviewLabel && <em>{reviewLabel}</em>}</label>;
+                        return <label className="ai-estimate-macro-edit" key={field}><small>{label}</small>{mode === "create" ? <input type="text" inputMode="decimal" value={item[field] ?? "0"} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)} g</strong>}{reviewLabel && <em>{reviewLabel}</em>}</label>;
                       })}
                     </div>
                   </div>

@@ -24,7 +24,7 @@ function NutritionPills({ nutrition }) {
 
 function CompactBalanceBar({ visible, consumed, goal, macros, onGoTop }) {
   const macroByKey = new Map(macros.map((macro) => [String(macro.key).toUpperCase(), macro]));
-  const compactMacros = [["PROTEIN", "Proteína", "P"], ["CARBS", "Carbos", "C"], ["FAT", "Grasas", "G"]];
+  const compactMacros = [["PROTEIN", "Proteínas", "P"], ["CARBS", "Carbohidratos", "C"], ["FAT", "Grasas", "G"]];
   return (
     <div className={`compact-balance-shell ${visible ? "visible" : ""}`} aria-hidden={!visible}>
       <button type="button" className="compact-balance" onClick={onGoTop} tabIndex={visible ? 0 : -1} aria-label="Volver arriba al balance completo">
@@ -32,7 +32,7 @@ function CompactBalanceBar({ visible, consumed, goal, macros, onGoTop }) {
         <span className="compact-macros">
           {compactMacros.map(([key, label, shortLabel]) => {
             const macro = macroByKey.get(key);
-            return <span key={key}><b className="macro-full-label">{label}</b><b className="macro-short-label">{shortLabel}</b><strong>{formatNumber(macro?.consumed)}<small>/{formatNumber(macro?.goal)}g</small></strong></span>;
+            return <span key={key}><b className="macro-full-label">{label}</b><b className="macro-short-label"><abbr title={label}>{shortLabel}</abbr></b><strong>{formatNumber(macro?.consumed)}<small>/{formatNumber(macro?.goal)} g</small></strong></span>;
           })}
         </span>
         <Icon name="keyboard_arrow_up" className="compact-balance-up" />

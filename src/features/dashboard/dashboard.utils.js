@@ -1,4 +1,4 @@
-import { formatQuantity } from "../../utils/format.js";
+import { formatQuantity, formatMeasure } from "../../utils/format.js";
 import { formatRecipeLogAmount } from "../../utils/recipe.js";
 import { normalizeMealLogReference } from "./mealLogPayload.js";
 import { decimalNumber } from "../../utils/decimal.js";
@@ -51,7 +51,7 @@ export function formatMealLogAmount(log) {
     } catch {}
     return "Estimación por foto";
   }
-  return `${formatQuantity(log.quantity)} g`;
+  return formatMeasure(log.quantity, log.unit || "GRAM");
 }
 
 export function mealLogName(log) { return log.itemType === "RECIPE" ? log.recipe?.name : log.itemType === "AI_ESTIMATE" ? log.displayName || "Comida estimada" : log.food?.name; }

@@ -254,7 +254,7 @@ function DayDemo({ active }) {
       <div className="demo-record is-complete"><span><Icon name="restaurant" /></span><div><strong>Almuerzo</strong><small>Pollo, arroz y vegetales</small></div><b>612 kcal</b><Icon name="check" /></div>
       <div className="demo-record is-next"><span><Icon name="add" /></span><div><strong>Merienda</strong><small>Lista para registrar</small></div><Icon name="arrow_forward" /></div>
     </div>
-    <div className="demo-macro-strip"><span><i /><strong>Proteínas</strong><b>76 / 125 g</b></span><span><i /><strong>Carbos</strong><b>110 / 190 g</b></span><span><i /><strong>Grasas</strong><b>32 / 65 g</b></span></div>
+    <div className="demo-macro-strip"><span><i /><strong>Proteínas</strong><b>76 / 125 g</b></span><span><i /><strong>Carbohidratos</strong><b>110 / 190 g</b></span><span><i /><strong>Grasas</strong><b>32 / 65 g</b></span></div>
   </DemoScene>;
 }
 
@@ -281,7 +281,7 @@ function TrainingDemo({ active }) {
 function CardioDemo({ active }) {
   return <DemoScene active={active} className="demo-scene-cardio">
     <DemoWindowTitle label="CARDIO · CAMINADORA" title="Tu ritmo también se registra." description="Distancia, tiempo e inclinación en el mismo lugar." icon="trending_up" />
-    <div className="demo-cardio-service"><div><span>PRÓXIMO SERVICE</span><strong>16 h 20 min</strong><small>restantes de 20 horas</small></div><div className="demo-cardio-meter"><i><b /></i><span>18% usado</span></div></div>
+    <div className="demo-cardio-service"><div><span>PRÓXIMO MANTENIMIENTO</span><strong>16 h 20 min</strong><small>restantes de 20 horas</small></div><div className="demo-cardio-meter"><i><b /></i><span>18% usado</span></div></div>
     <div className="demo-cardio-record"><div className="demo-cardio-record-head"><span><Icon name="today" /> ÚLTIMO REGISTRO</span><b>HOY, 07:42</b></div><div className="demo-cardio-values"><div><strong>4,50</strong><span>km</span></div><div><strong>35</strong><span>minutos</span></div><div><strong>Incl.</strong><span>inclinada</span></div></div></div>
     <div className="demo-cardio-footer"><span><Icon name="history" /> Historial de cardio</span><b>Registrar otro <Icon name="arrow_forward" /></b></div>
   </DemoScene>;
