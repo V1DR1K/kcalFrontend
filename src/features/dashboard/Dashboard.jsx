@@ -1,4 +1,3 @@
-import { Hydration } from "./components/Hydration";
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
 import { Header, Macro, Panel } from "../../components/Layout";
@@ -44,7 +43,6 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
   const [editingAiEstimate, setEditingAiEstimate] = useState(null);
   const [deletingLogIds, setDeletingLogIds] = useState(() => new Set());
   const [movingLogIds, setMovingLogIds] = useState(() => new Set());
-  const [waterSaving, setWaterSaving] = useState(false);
   const [mealClipboard, setMealClipboard] = useState(null);
   const [convertingMeal, setConvertingMeal] = useState(null);
   const [sharingMeal, setSharingMeal] = useState(null);
@@ -205,7 +203,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
     return (
       <section className="page" role="status" aria-live="polite" aria-label="Preparando tu día">
         <h1 className="sr-only">Día</h1>
-        <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging || waterSaving} />} />
+        <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
         <div className="dashboard-skeleton" aria-hidden="true">
           <div className="dashboard-skeleton-hero">
             <div className="skeleton skeleton-ring" />
@@ -228,7 +226,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
   if (error && !data) {
     return (
       <section className="page">
-        <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging || waterSaving} />} />
+        <Header compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
         <CatalogStatus error>
           {error}
           <button className="secondary" onClick={() => load(selectedDate)}>
@@ -240,7 +238,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
   }
   return (
     <section className="page dashboard-page" ref={dashboardTopRef}>
-      <Header title="Día" compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging || waterSaving} />} />
+      <Header title="Día" compact action={<DateNavigator date={selectedDate} setDate={changeDate} changing={dateChanging} />} />
       <CompactBalanceBar
         visible={compactBalance}
         consumed={data?.caloriesConsumed}
@@ -291,7 +289,6 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
           ))}
         </div>
       </div>
-      <Hydration api={api} date={selectedDate} consumed={data?.waterConsumedLiters} goal={data?.waterGoalLiters} onSaved={load} onBusyChange={setWaterSaving} />
       <div className="meal-grid">
         {mealTypes.map((mealType, mealIndex) => (
           <MealCard

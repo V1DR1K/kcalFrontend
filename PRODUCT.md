@@ -8,11 +8,11 @@ web
 
 ## Users
 
-Personas que registran sus comidas y su hidratacion desde el celular o la web para seguir un plan nutricional en el ritmo de su dia.
+Personas que registran sus comidas desde el celular o la web para seguir un plan nutricional en el ritmo de su dia.
 
 ## Product Purpose
 
-ScaleGrams hace visible el cumplimiento cotidiano de un plan nutricional. Permite registrar comidas, cantidades, calorias, macronutrientes y agua para que el usuario pueda decidir con precision que ajustar durante el dia.
+ScaleGrams hace visible el cumplimiento cotidiano de un plan nutricional. Permite registrar comidas, cantidades, calorias y macronutrientes para que el usuario pueda decidir con precision que ajustar durante el dia.
 
 ## Positioning
 
@@ -24,7 +24,7 @@ La aplicacion se usa principalmente durante o despues de las comidas. La navegac
 
 ## Capabilities and Constraints
 
-- Registro de comidas, cantidades, agua, calorias y macronutrientes.
+- Registro de comidas, cantidades, calorias y macronutrientes.
 - Catalogo de alimentos, recetas, escaner de codigos e historial.
 - El acceso es solo para cuentas existentes; no hay registro publico en produccion.
 - La funcion de estimacion asistida depende de su configuracion de produccion y no debe prometerse como disponibilidad universal.

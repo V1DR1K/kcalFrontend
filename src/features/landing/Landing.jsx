@@ -9,7 +9,7 @@ const scenes = [
     accent: "#4edea3",
     icon: "monitoring",
     title: "Un día que se entiende de un vistazo.",
-    description: "Comidas, agua y objetivos conviven en una bitácora clara para decidir qué sigue sin perder el hilo.",
+    description: "Comidas y objetivos conviven en una bitácora clara para decidir qué sigue sin perder el hilo.",
     action: "Ver el registro diario",
   },
   {
@@ -144,7 +144,6 @@ export function Landing() {
             </div>
             <div className="landing-board-side">
               <div className="landing-board-side-item"><span><Icon name="fitness_center" /> Último entreno</span><strong>Gimnasio <small>· 42 min</small></strong></div>
-              <div className="landing-board-side-item"><span><Icon name="water_drop" /> Hidratación</span><strong>1,2 <small>/ 2,0 L</small></strong></div>
             </div>
           </div>
           <span className="landing-board-caption">Demo ilustrativa</span>
@@ -190,7 +189,7 @@ export function Landing() {
           <a className="landing-primary" href="/ingresar">Entrar a mi cuenta <Icon name="arrow_forward" /></a>
         </div>
         <dl className="landing-capabilities-list">
-          <div id="capacidad-day" tabIndex={-1}><dt><Icon name="monitoring" /> Registro diario</dt><dd>Consultá comidas, hidratación y la meta vigente; agregá alimentos a la fecha y comida que elegís.</dd></div>
+          <div id="capacidad-day" tabIndex={-1}><dt><Icon name="monitoring" /> Registro diario</dt><dd>Consultá comidas y la meta vigente; agregá alimentos a la fecha y comida que elegís.</dd></div>
           <div id="capacidad-photo" tabIndex={-1}><dt><Icon name="photo_camera" /> Estimación desde una foto</dt><dd>Identificá alimentos y macros estimados, revisá los supuestos y corregí antes de guardar.</dd></div>
           <div id="capacidad-training" tabIndex={-1}><dt><Icon name="fitness_center" /> Gimnasio y calistenia</dt><dd>Armá planes, registrá series, repeticiones, cargas, tiempos y tu progreso semanal.</dd></div>
           <div id="capacidad-cardio" tabIndex={-1}><dt><Icon name="trending_up" /> Cardio de caminadora</dt><dd>Guardá kilómetros, minutos e inclinación y llevá el contador hasta el próximo service.</dd></div>

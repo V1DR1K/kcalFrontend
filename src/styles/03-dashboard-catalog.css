@@ -1289,12 +1289,6 @@ summary:focus-visible {
 }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
 
-.water-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;

@@ -34,10 +34,6 @@
 .history-food p small, .history-food > span:last-child { color: var(--muted); font-size: 12px; }
 .history-empty { display: grid; place-items: center; gap: 5px; padding: 30px; border: 1px dashed var(--outline); border-radius: 16px; color: var(--muted); text-align: center; }
 .history-empty .material-symbols-outlined { color: var(--primary); font-size: 30px; }
-.history-water { display: flex; align-items: center; gap: var(--space-3); padding: 14px var(--space-4); border: 1px solid color-mix(in srgb, var(--tertiary) 25%, transparent); border-radius: 15px; background: color-mix(in srgb, var(--tertiary) 7%, transparent); }
-.history-water > .material-symbols-outlined { color: var(--tertiary); }
-.history-water p { display: grid; gap: 2px; margin: 0; }
-.history-water small { color: var(--muted); }
 .history-preview-loading { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 180px; color: var(--muted); }
 .history-calendar-toolbar { display: flex; justify-content: flex-end; margin-top: -10px; }
 .calendar-export { display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding-inline: 14px; white-space: nowrap; }

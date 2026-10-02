@@ -171,7 +171,6 @@ rounded:
   landing: "12px"
   recent: "13px"
   panel: "14px"
-  water: "15px"
   surface: "16px"
   preview: "18px"
   dialog: "20px"
