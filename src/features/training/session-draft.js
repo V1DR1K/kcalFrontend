@@ -18,3 +18,17 @@ export function sessionDraftKey(userId, sessionId, type) {
 export function clearSessionDrafts(storage = sessionStorage) {
   for (const key of Object.keys(storage)) if (key.startsWith("scalegrams.session-draft.")) storage.removeItem(key);
 }
+
+// A catalog exercise may occur twice. Reapply by session identity, never catalog ID.
+export function rebaseSessionDraft(local, remote, newKey) {
+  const available = new Map(remote.exercises.map(item => [String(item.id), item]));
+  return { ...local, version:remote.version, exercises:local.exercises.map(item => {
+    const identity = String(item.persistedId ?? item.id);
+    const match = available.get(identity);
+    if (match && String(match.exerciseId) === String(item.exerciseId)) {
+      available.delete(identity);
+      return {...item, persistedId:match.id, origin:match.origin, sourcePlanExerciseId:match.sourcePlanExerciseId};
+    }
+    return {...item, id:newKey(), persistedId:undefined, origin:"ADDED", sourcePlanExerciseId:null};
+  }) };
+}

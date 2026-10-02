@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { reconcileSessionIdentity, sessionDraftKey } from "../src/features/training/session-draft.js";
+import { rebaseSessionDraft, reconcileSessionIdentity, sessionDraftKey } from "../src/features/training/session-draft.js";
 import { sessionPayload } from "../src/features/training/training-utils.js";
 
 test("a delayed response merges identity without overwriting typing or remounting the row", () => {
@@ -21,4 +21,15 @@ test("draft keys separate users, sessions, and new-session modules", () => {
   assert.notEqual(sessionDraftKey(1, 5, "GYM"), sessionDraftKey(2, 5, "GYM"));
   assert.notEqual(sessionDraftKey(1, null, "GYM"), sessionDraftKey(1, null, "CALISTHENICS"));
   assert.equal(sessionDraftKey(null, 5, "GYM"), null);
+});
+
+test("conflict review preserves separate repeated exercises and treats removed identities as new", () => {
+  const remote={version:4, exercises:[{id:10,exerciseId:1,origin:"PLAN"},{id:11,exerciseId:1,origin:"ADDED"}]};
+  const local={notes:"", exercises:[{id:11,exerciseId:1,sets:[{reps:"12"}]},{id:10,exerciseId:1,sets:[{reps:"8"}]},{id:99,exerciseId:1,sets:[]}]};
+  const rebased=rebaseSessionDraft(local,remote,()=>"new-key");
+  const payload=sessionPayload(rebased,"GYM");
+  assert.deepEqual(payload.exercises.map(item=>item.id),[11,10,undefined]);
+  assert.deepEqual(payload.exercises.map(item=>item.sets[0]?.repetitions),[12,8,undefined]);
+  assert.equal(payload.version,4);
+  assert.equal(rebased.exercises[2].id,"new-key");
 });

@@ -1,4 +1,4 @@
-import { reconcileSessionIdentity, sessionDraftKey } from "./session-draft";
+import { rebaseSessionDraft, reconcileSessionIdentity, sessionDraftKey } from "./session-draft";
 import React, { useEffect, useRef, useState } from "react";
 import { DatePickerDialog } from "../../components/DatePickerDialog";
 import { Icon } from "../../components/Icon";
@@ -178,10 +178,7 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
       const remote = createSessionDraft(type, server);
       lastSavedContentRef.current = contentKey(remote);
       const next = useLocal && sessionStatus(server.status) === "IN_PROGRESS"
-        ? { ...draftRef.current, version: server.version, exercises: draftRef.current.exercises.map((item) => {
-            const match = remote.exercises.find((candidate) => String(candidate.exerciseId) === String(item.exerciseId));
-            return { ...item, id: match?.id || key(), persistedId: match?.id, origin: match?.origin || "ADDED", sourcePlanExerciseId: match?.sourcePlanExerciseId || null };
-          }) }
+        ? rebaseSessionDraft(draftRef.current, remote, key)
         : remote;
       conflictRef.current = false; setConflict(null); setError(""); setDraft(next);
       if (sessionStatus(server.status) !== "IN_PROGRESS") clearStoredDraft();
