@@ -108,7 +108,7 @@
   .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .food-thumb.compact { width: 44px; height: 44px; }
   .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .catalog-copy { grid-template-columns: minmax(0, 1fr) minmax(220px, 34%); grid-template-areas: "name nutrition" "meta nutrition" "reference nutrition" "warning nutrition"; align-items: center; gap: 2px 12px; }
   .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .catalog-copy > strong { grid-area: name; }
-  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .catalog-meta { grid-area: meta; flex-direction: row; align-items: center; gap: 6px; padding: 0; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .catalog-meta { grid-area: meta; flex-direction: column; align-items: start; gap: 4px; padding: 0; }
   .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .nutrition-reference { grid-area: reference; }
   .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .nutrition-warning { grid-area: warning; }
   .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] .picker-scroll .catalog-row-image .nutrition-summary { grid-area: nutrition; }
