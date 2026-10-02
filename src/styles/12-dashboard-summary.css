@@ -201,8 +201,10 @@
  .dashboard-page .calorie-ring { width:160px; }
  .dashboard-page .balance-copy h2 { font-size:20px; margin:0; }
  .dashboard-page .balance-copy p { margin:6px 0; }
- .dashboard-page .macro-strip { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
- .dashboard-page .macro { min-width:0; }
+ .dashboard-page .macro-strip { grid-template-columns:minmax(0,1fr); gap:8px; }
+ .dashboard-page .macro-card { min-width:0; grid-template-columns:minmax(0,1fr) auto; text-align:left; }
+ .dashboard-page .macro-card h3 { overflow-wrap:anywhere; }
+ .dashboard-page .macro-card .big { white-space:nowrap; }
  .dashboard-page .meal-card-empty > header { padding:10px 12px; border-bottom:0; }
  .dashboard-page .meal-card-empty .meal-share-trigger { display:none; }
  .dashboard-page .meal-heading > div > strong { white-space:normal; }

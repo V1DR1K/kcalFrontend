@@ -36,3 +36,5 @@ Despliegue: la imagen anterior de frontend se conserva en el directorio privado 
 Regresión de pantalla corta reproducida en Chromium/WebKit: el bloqueo del fondo impedía desplazar los filtros recortados del selector. Se reconoce ese contenedor y se ajusta la separación del foco a su altura. La altura de viewport se inicializa antes del primer render para evitar la carrera encontrada en Safari tablet por CI.
 
 SG030: la revisión visual de producción detectó «carbs» en la distribución porcentual del balance. Se reemplaza por «carbohidratos» para mantener el vocabulario del perfil y de las metas. Verificación de frontend, compilación y recorridos operativos en Chromium/WebKit; CI completo antes de volver a publicar.
+
+SG002: la captura de producción en WebKit móvil reveló superposición interna de nombres y cantidades de macronutrientes. El ancho de página no la detectaba: las tres columnas anidadas recortaban su contenido. En móvil se usa una fila por macronutriente, con nombre flexible y cantidad íntegra. La prueba reproduce el fallo anterior en Chromium/WebKit y verifica separación y contención de cada nombre/valor entre 320 y 1440 px con plan y metas reales.
