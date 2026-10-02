@@ -64,7 +64,7 @@ function initialPathname() {
   return "/ingresar";
 }
 
-scheduleViewportSync();
+syncViewport();
 migrateStoredSession();
 window.visualViewport?.addEventListener("resize", scheduleViewportSync);
 window.visualViewport?.addEventListener("scroll", scheduleViewportSync);

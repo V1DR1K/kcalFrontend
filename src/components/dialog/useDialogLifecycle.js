@@ -6,7 +6,7 @@ let previousBodyOverflow = "";
 let previousScrollRootOverflow = "";
 let lockedScrollRoot = null;
 let touchStartY = 0;
-const SCROLL_OWNER_SELECTOR = '[data-dialog-scroll-owner="true"]';
+const SCROLL_OWNER_SELECTOR = '[data-dialog-scroll-owner="true"], .picker-tools';
 
 function topDialog() {
   return activeDialogStack[activeDialogStack.length - 1];
@@ -151,7 +151,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
           const visibleBottom = Math.min(ownerRect.bottom, viewportBottom);
           const footerIsVisible = footerRect && footerRect.top > visibleTop && footerRect.top < visibleBottom;
           const scrollBottom = footerIsVisible ? Math.min(visibleBottom, footerRect.top) : visibleBottom;
-          const padding = 16;
+          const padding = Math.min(16, Math.max(0, (scrollBottom - visibleTop - targetRect.height) / 2));
           let delta = 0;
           if (targetRect.top < visibleTop + padding) delta = targetRect.top - visibleTop - padding;
           else if (targetRect.bottom > scrollBottom - padding) {

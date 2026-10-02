@@ -1386,3 +1386,17 @@ test("SG047 correction and saved description keep text and quantity across keybo
   await expect(saved.getByRole("button",{name:"Guardar cambios",exact:true})).toBeEnabled();
   await saved.getByRole("button",{name:"Cancelar",exact:true}).click(); expect(writes).toBe(1);
 });
+
+test("short picker filter area permits touch scrolling without moving the background", async ({page}) => {
+ await page.setViewportSize({width:390,height:430});await seedAuthenticatedApp(page);await page.goto("/ingresar");
+ await page.getByRole("button",{name:/Agregar alimento a Desayuno/i}).click();
+ const tools=page.locator(".picker-tools");
+ const touch=await tools.evaluate(element=>{
+  const dispatch=(type,y,cancelable=false)=>{const event=new Event(type,{bubbles:true,cancelable});Object.defineProperty(event,"touches",{value:[{clientY:y,clientX:60}]});element.dispatchEvent(event);return event.defaultPrevented;};
+  const rect=element.getBoundingClientRect();dispatch("touchstart",rect.top+40);
+  return {scrollable:element.scrollHeight>element.clientHeight,blocked:dispatch("touchmove",rect.top+16,true)};
+ });
+ expect(touch).toEqual({scrollable:true,blocked:false});
+ const category=page.locator(".picker-modal").getByLabel("Categoría",{exact:true});await category.focus();
+ await expect.poll(()=>category.evaluate(element=>{const control=element.getBoundingClientRect(),owner=element.closest(".picker-tools").getBoundingClientRect();return control.top>=owner.top-1&&control.bottom<=owner.bottom+1;})).toBe(true);
+});

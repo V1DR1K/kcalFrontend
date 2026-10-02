@@ -32,3 +32,5 @@ Regresión adicional de SG042: reaplicar conflictos identifica cada instancia po
 CI de frontend: el control de contraste espera el fin real de la animación de entrada y el fixture respeta la fecha solicitada. SG047 observa cambios de geometría y resize; el retorno de foco no reemplaza un foco ya establecido dentro del nuevo diálogo superior. Revalidación local y CI antes de main.
 
 Despliegue: la imagen anterior de frontend se conserva en el directorio privado de estado del usuario SSH, configurable con SCALEGRAMS_BACKUP_ROOT, porque /opt/backups no es escribible en este servidor. bash -n aprobado.
+
+Regresión de pantalla corta reproducida en Chromium/WebKit: el bloqueo del fondo impedía desplazar los filtros recortados del selector. Se reconoce ese contenedor y se ajusta la separación del foco a su altura. La altura de viewport se inicializa antes del primer render para evitar la carrera encontrada en Safari tablet por CI.
