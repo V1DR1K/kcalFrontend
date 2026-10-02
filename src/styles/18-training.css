@@ -780,3 +780,10 @@
 .training-profile-page > .field input { font-size:16px; min-height:48px; }
 .training-active-filters { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:12px; font-size:14px; }
 .training-profile-page .training-page-intro { margin-block:8px 12px; }
+
+.maintenance-list { display:grid; gap:12px; }
+.maintenance-row { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; padding:14px 0; border-bottom:1px solid var(--outline); }
+.maintenance-row > div:first-child { display:grid; gap:6px; min-width:0; }
+.maintenance-row p { margin:0; overflow-wrap:anywhere; }
+.maintenance-history p,.maintenance-row span { font-size:14px; }
+.maintenance-row small { font-size:12px; }

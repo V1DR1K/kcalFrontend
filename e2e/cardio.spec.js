@@ -109,3 +109,27 @@ test("mantiene Cardio sin desborde horizontal en anchos móviles", async ({ page
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
 });
+
+test("SG046 corrects maintenance after review and keeps annulled records", async ({ page }) => {
+  await seedCardioApp(page, {initialPage:"training-cardio"});
+  let service={id:11,equipment:"TREADMILL",servicedAt:"2026-09-07T10:00:00Z",notes:"Correa",version:0,annulledAt:null}; let saved=0;
+  await page.route("**/api/training/cardio/services**",async route => { const method=route.request().method(); const path=new URL(route.request().url()).pathname;
+    if(method === "PUT") { const body=route.request().postDataJSON(); expect(body.version).toBe(service.version); service={...service,...body,version:service.version+1}; saved++; return route.fulfill({json:service}); }
+    if(path.endsWith("/annul")) { expect(route.request().postDataJSON().version).toBe(service.version); service={...service,annulledAt:"2026-09-08T15:00:00Z",version:service.version+1}; saved++; return route.fulfill({json:service}); }
+    await route.fulfill({json:{items:[service],page:0,hasNext:false}});
+  });
+  await page.goto("/ingresar");
+  await page.locator(".maintenance-row").getByRole("button",{name:"Corregir",exact:true}).click();
+  const editor=page.getByRole("dialog",{name:"Corregir mantenimiento"});
+  await editor.getByLabel("Fecha y hora",{exact:true}).fill("2026-09-06T07:00");
+  await editor.getByRole("button",{name:"Revisar corrección",exact:true}).click();
+  await page.getByRole("alertdialog").getByRole("button",{name:"Cancelar",exact:true}).click(); expect(saved).toBe(0);
+  await expect(editor.getByLabel("Fecha y hora",{exact:true})).toHaveValue("2026-09-06T07:00");
+  await editor.getByRole("button",{name:"Revisar corrección",exact:true}).click();
+  await page.getByRole("button",{name:"Guardar corrección",exact:true}).click(); await expect(editor).not.toBeVisible(); expect(saved).toBe(1);
+  await page.locator(".maintenance-row").getByRole("button",{name:"Anular",exact:true}).click();
+  await page.getByRole("alertdialog").getByRole("button",{name:"Cancelar",exact:true}).click(); expect(saved).toBe(1);
+  await page.locator(".maintenance-row").getByRole("button",{name:"Anular",exact:true}).click();
+  await page.getByRole("alertdialog").getByRole("button",{name:"Anular mantenimiento",exact:true}).click();
+  await expect(page.locator(".maintenance-row")).toContainText("Anulado"); await expect(page.locator(".maintenance-row button")).toHaveCount(0); expect(saved).toBe(2);
+});
