@@ -168,7 +168,7 @@ export function Landing() {
                 <p className="landing-chapter-label"><Icon name={scene.icon} /><span>{scene.label}</span></p>
                 <h3>{scene.title}</h3>
                 <p>{scene.description}</p>
-                <a className="landing-chapter-action" href="#capacidades">{scene.action} <Icon name="arrow_forward" /></a>
+                <a className="landing-chapter-action" href={`#capacidad-${scene.id}`}>{scene.action} <Icon name="arrow_forward" /></a>
                 <div className="landing-chapter-mobile-demo"><DemoWindow active={index} progress={0.5} /></div>
               </article>
             ))}
@@ -190,9 +190,10 @@ export function Landing() {
           <a className="landing-primary" href="/ingresar">Entrar a mi cuenta <Icon name="arrow_forward" /></a>
         </div>
         <dl className="landing-capabilities-list">
-          <div><dt><Icon name="photo_camera" /> Estimación desde una foto</dt><dd>Identificá alimentos y macros estimados, revisá los supuestos y corregí antes de guardar.</dd></div>
-          <div><dt><Icon name="fitness_center" /> Gimnasio y calistenia</dt><dd>Armá planes, registrá series, repeticiones, cargas, tiempos y tu progreso semanal.</dd></div>
-          <div><dt><Icon name="trending_up" /> Cardio de caminadora</dt><dd>Guardá kilómetros, minutos e inclinación y llevá el contador hasta el próximo service.</dd></div>
+          <div id="capacidad-day" tabIndex={-1}><dt><Icon name="monitoring" /> Registro diario</dt><dd>Consultá comidas, hidratación y la meta vigente; agregá alimentos a la fecha y comida que elegís.</dd></div>
+          <div id="capacidad-photo" tabIndex={-1}><dt><Icon name="photo_camera" /> Estimación desde una foto</dt><dd>Identificá alimentos y macros estimados, revisá los supuestos y corregí antes de guardar.</dd></div>
+          <div id="capacidad-training" tabIndex={-1}><dt><Icon name="fitness_center" /> Gimnasio y calistenia</dt><dd>Armá planes, registrá series, repeticiones, cargas, tiempos y tu progreso semanal.</dd></div>
+          <div id="capacidad-cardio" tabIndex={-1}><dt><Icon name="trending_up" /> Cardio de caminadora</dt><dd>Guardá kilómetros, minutos e inclinación y llevá el contador hasta el próximo service.</dd></div>
         </dl>
       </section>
 

@@ -62,7 +62,7 @@ test("admin updates an original food through a JSON PUT without changing the URL
   const request = await putRequest;
 
   expect(request.postDataJSON()).toMatchObject({ name: "Cebolla", proteinGrams: 1.1, carbsGrams: 8.4, fatGrams: 0 });
-  await expect(page).toHaveURL(/\/ingresar$/);
+  await expect(page).toHaveURL(/\/nutricion\/alimentos$/);
   await expect(page.getByRole("dialog")).toBeHidden();
   await expect(page.getByText("Alimento actualizado.")).toBeVisible();
   await expect(page.locator(".admin-food-row .nutrition-summary")).toContainText("38");
@@ -83,7 +83,7 @@ test("keeps the editor open and reports a failed PUT", async ({ page }) => {
 
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByText("No se pudo actualizar la cebolla.")).toBeVisible();
-  await expect(page).toHaveURL(/\/ingresar$/);
+  await expect(page).toHaveURL(/\/nutricion\/alimentos$/);
 });
 
 test("does not show the original catalog tab to a regular user", async ({ page }) => {

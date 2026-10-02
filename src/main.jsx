@@ -85,7 +85,7 @@ function Root() {
   }, []);
 
   React.useEffect(() => {
-    document.title = pathname === "/" ? "ScaleGrams | Tu plan, en contexto" : "Ingresar | ScaleGrams";
+    if (pathname === "/") document.title = "ScaleGrams | Tu plan, en contexto";
   }, [pathname]);
 
   return pathname === "/" ? <Landing /> : <App />;

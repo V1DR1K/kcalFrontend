@@ -1,3 +1,4 @@
+import { routeAtPath, routePath, safeReturnPath } from "./routes";
 import { requestWithArchivedAcknowledgement } from "../services/archived-foods";
 import { clearSessionDrafts } from "../features/training/session-draft";
 import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -31,6 +32,8 @@ const PlansPage = lazyPage(() => import("../features/plans/PlansPage"), "PlansPa
 const DayPresetsPage = lazyPage(() => import("../features/day-presets/DayPresetsPage"), "DayPresetsPage");
 
 function navigationState() {
+  const explicitRoute = routeAtPath(window.location.pathname);
+  if (explicitRoute) return explicitRoute;
   const state = window.history.state || {};
   const mode = state.scalegramsMode === "training" ? "training" : "nutrition";
   return { mode, page: typeof state.scalegramsPage === "string" ? state.scalegramsPage : null };
@@ -52,6 +55,8 @@ function SessionRecovery({ onRetry }) {
 
 export function App() {
   const initialNavigation = navigationState();
+  const foodIdRef = useRef(initialNavigation.foodId || null);
+  const returnPathRef = useRef(safeReturnPath(new URLSearchParams(window.location.search).get("retorno")) || (routeAtPath(window.location.pathname) ? window.location.pathname + window.location.search : null));
   const [page, setPageRaw] = useState(() => initialNavigation.page || "login");
   const [mode, setModeRaw] = useState(() => initialNavigation.mode);
   const pageRef = useRef(page);
@@ -62,7 +67,12 @@ export function App() {
   modeRef.current = mode;
 
   function pushNavigation(nextMode, nextPage, replace = false) {
-    window.history[replace ? "replaceState" : "pushState"]({ ...(window.history.state || {}), scalegramsMode: nextMode, scalegramsPage: nextPage }, "");
+    const params = new URLSearchParams();
+    const shared = new URLSearchParams(window.location.search).get("compartir");
+    if (shared) params.set("compartir", shared);
+    const path = routePath(nextMode, nextPage, foodIdRef.current);
+    const { scalegramsModal: _modal, ...state } = window.history.state || {};
+    window.history[replace ? "replaceState" : "pushState"]({ ...state, scalegramsMode: nextMode, scalegramsPage: nextPage }, "", `${path}${params.size ? `?${params}` : ""}`);
   }
 
   function setPage(next) {
@@ -88,7 +98,8 @@ export function App() {
   userRef.current = user;
   const [sessionState, setSessionState] = useState("checking");
   const [sessionRetry, setSessionRetry] = useState(0);
-  const [selectedFoodId, setSelectedFoodId] = useState(null);
+  const [selectedFoodId, setSelectedFoodIdRaw] = useState(initialNavigation.foodId || null);
+  function setSelectedFoodId(id) { foodIdRef.current = id; setSelectedFoodIdRaw(id); }
   const [prefillBarcode, setPrefillBarcode] = useState("");
   const [dayPresetSeed, setDayPresetSeed] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
@@ -128,10 +139,15 @@ export function App() {
     setUser(payload.user);
     setSessionState("authenticated");
     window.dispatchEvent(new Event("scalegrams:session-updated"));
-    setModeRaw("nutrition");
-    nutritionPageRef.current = "dashboard";
-    setPageRaw("dashboard");
-    pushNavigation("nutrition", "dashboard");
+    const returnPath = safeReturnPath(returnPathRef.current);
+    const target = returnPath ? routeAtPath(new URL(returnPath, window.location.origin).pathname) : { mode:"nutrition", page:"dashboard" };
+    setModeRaw(target.mode); setPageRaw(target.page);
+    if (target.foodId) setSelectedFoodId(target.foodId);
+    if (target.mode === "training") trainingPageRef.current = target.page;
+    else nutritionPageRef.current = target.page;
+    pushNavigation(target.mode, target.page, true);
+    if (returnPath) window.history.replaceState(window.history.state,"",returnPath);
+    returnPathRef.current = null;
   }
 
   function logout() {
@@ -141,7 +157,9 @@ export function App() {
     });
   }
 
-  function clearSessionLocally() {
+  function clearSessionLocally(preserveDestination = false) {
+    if (preserveDestination) returnPathRef.current = safeReturnPath(window.location.pathname + window.location.search);
+    else returnPathRef.current = null;
     clearSessionDrafts();
     clearSessionSignal();
     userRef.current = null;
@@ -151,7 +169,17 @@ export function App() {
     setConfirmation(null);
     setUser(null);
     setSessionState("anonymous");
-    setPage("login");
+    setPageRaw("login");
+    redirectToLogin();
+  }
+
+  function redirectToLogin() {
+    const params = new URLSearchParams();
+    const returnPath = safeReturnPath(returnPathRef.current);
+    if (returnPath) params.set("retorno",returnPath);
+    const shared = new URLSearchParams(window.location.search).get("compartir");
+    if (shared) params.set("compartir",shared);
+    window.history.replaceState({scalegramsMode:"nutrition",scalegramsPage:"login"},"",`/ingresar${params.size ? `?${params}` : ""}`);
   }
 
   function openDayPresets(seed = null) {
@@ -202,17 +230,15 @@ export function App() {
       setUser(sessionUser);
       setSessionState("authenticated");
       if (pageRef.current === "login") {
-        setModeRaw("nutrition");
-        nutritionPageRef.current = "dashboard";
-        setPageRaw("dashboard");
-        pushNavigation("nutrition", "dashboard", true);
-      }
+        saveSession({user:sessionUser});
+      } else pushNavigation(modeRef.current,pageRef.current,true);
     }).catch((error) => {
       if (!active) return;
       if (error?.status === 401 && !error.retryable) {
         setUser(null);
         setSessionState("anonymous");
         setPageRaw("login");
+        redirectToLogin();
         return;
       }
       setSessionState("unavailable");
@@ -223,7 +249,7 @@ export function App() {
 
   useEffect(() => {
     const expireSession = () => {
-      clearSessionLocally();
+      clearSessionLocally(true);
       api.notify("Tu sesión venció. Volvé a ingresar.", "error");
     };
     window.addEventListener("scalegrams:session-expired", expireSession);
@@ -233,13 +259,14 @@ export function App() {
   useEffect(() => {
     let lastExitAttempt = 0;
     const onPopState = (event) => {
+      const route = routeAtPath(window.location.pathname);
       const state = event.state;
-      if (state && typeof state.scalegramsPage === "string") {
-        const nextMode = state.scalegramsMode === "training" ? "training" : "nutrition";
-        setModeRaw(nextMode);
-        setPageRaw(state.scalegramsPage);
-        if (nextMode === "training") trainingPageRef.current = state.scalegramsPage;
-        else nutritionPageRef.current = state.scalegramsPage;
+      if (route || (window.location.pathname === "/ingresar" && state?.scalegramsPage)) {
+        const target = route || {mode: state.scalegramsMode === "training" ? "training" : "nutrition",page:state.scalegramsPage};
+        setModeRaw(target.mode); setPageRaw(target.page);
+        if (target.foodId) setSelectedFoodId(target.foodId);
+        if (target.mode === "training") trainingPageRef.current = target.page;
+        else nutritionPageRef.current = target.page;
         return;
       }
       if (sessionState !== "authenticated") return;

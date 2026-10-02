@@ -178,3 +178,5 @@ html:has(.landing-page) { overflow-x: visible; }
 @media (max-width: 560px) {
   .landing-header { min-height: calc(78px + env(safe-area-inset-top, 0px)); }
 }
+
+.landing-capabilities-list > div { scroll-margin-top:100px; }

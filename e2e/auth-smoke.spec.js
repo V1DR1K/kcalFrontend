@@ -22,7 +22,7 @@ test("renders the public landing and links to account access", async ({ page }) 
   await expect(page.getByRole("heading", { name: /entrená con estructura/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: /cada kilómetro también cuenta/i })).toBeVisible();
   await expect(page.locator(".landing-hero").getByRole("link", { name: /ingresar a scalegrams/i })).toHaveAttribute("href", "/ingresar");
-  await expect(page.getByRole("link", { name: /entender la estimación/i })).toHaveAttribute("href", "#capacidades");
+  await expect(page.getByRole("link", { name: /entender la estimación/i })).toHaveAttribute("href", "#capacidad-photo");
   await expect(page.getByRole("link", { name: /saltar al contenido/i })).toHaveAttribute("href", "#landing-title");
 });
 
@@ -100,7 +100,7 @@ test("redirects an older standalone install from the legacy root start path", as
   }));
 
   await page.goto("/");
-  await expect(page).toHaveURL(/\/ingresar$/);
+  await expect(page).toHaveURL(/\/nutricion\/dia$/);
   await expect(page.locator(".app-shell")).toBeVisible();
 });
 
@@ -128,4 +128,29 @@ test("SG028 reports expiration after a previously authenticated session", async 
   await page.addInitScript(() => sessionStorage.setItem("scalegrams.auth.session-seen","true"));
   await seedAnonymousSession(page); await page.goto("/ingresar");
   await expect(page.getByText("Tu sesión venció. Volvé a ingresar.",{exact:true})).toBeVisible();
+});
+
+test("SG008 stable routes survive reload and browser back/forward", async ({page}) => {
+  await page.route("**/api/**", route => route.fulfill({json: new URL(route.request().url()).pathname === "/api/auth/me" ? {id:1,username:"test"} : {days:[],items:[],macros:[],meals:[]} }));
+  await page.goto("/nutricion/historial"); await expect(page.getByRole("heading",{name:"Historial",exact:true})).toBeVisible(); await expect(page).toHaveTitle("Historial | ScaleGrams");
+  await page.reload(); await expect(page.getByRole("heading",{name:"Historial",exact:true})).toBeVisible();
+  await page.goto("/entrenamiento/cardio"); await expect(page.getByRole("heading",{name:"Cardio",exact:true})).toBeVisible();
+  await page.goBack(); await expect(page.getByRole("heading",{name:"Historial",exact:true})).toBeVisible();
+  await page.goForward(); await expect(page.getByRole("heading",{name:"Cardio",exact:true})).toBeVisible();
+});
+test("SG008 returns to the protected internal destination after login", async ({page}) => {
+  await seedAnonymousSession(page);
+  await page.route("**/api/**",route => route.fulfill({json:{items:[],days:[],meals:[],macros:[]}}));
+  await page.route("**/api/auth/me",route => route.fulfill({status:401,json:{message:"Sin sesión"}}));
+  await page.route("**/api/auth/refresh",route => route.fulfill({status:401,json:{}}));
+  await page.route("**/api/auth/login",route => route.fulfill({json:{user:{id:1,username:"test"}}}));
+  await page.goto("/entrenamiento/cardio"); await expect(page).toHaveURL(/\/ingresar\?retorno=/);
+  await page.getByLabel("Usuario",{exact:true}).fill("test"); await page.getByLabel("Contraseña",{exact:true}).fill("password"); await page.getByRole("button",{name:"Ingresar",exact:true}).click();
+  await expect(page).toHaveURL(/\/entrenamiento\/cardio$/); await expect(page.getByRole("heading",{name:"Cardio",exact:true})).toBeVisible();
+});
+test("SG031 landing chapter links target their own topic",async({page}) => {
+  await page.goto("/");
+  for(const [name,id] of [["Ver el registro diario","day"],["Entender la estimación","photo"],["Explorar tus sesiones","training"],["Ver el control de cardio","cardio"]]) {
+    const link=page.getByRole("link",{name:new RegExp(name)}); await expect(link).toHaveAttribute("href",`#capacidad-${id}`); await link.click(); await expect(page).toHaveURL(new RegExp(`#capacidad-${id}$`)); await expect(page.locator(`#capacidad-${id}`)).toBeInViewport();
+  }
 });
