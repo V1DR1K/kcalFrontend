@@ -117,3 +117,16 @@ test("SG003/039 permite porcentajes transitorios y exige confirmar el impacto", 
   await expect(page.getByText("Plan programado.", { exact: true })).toBeVisible();
   expect(confirmations).toBe(1);
 });
+
+test("SG035 shows one available count and manual alternative when exhausted", async ({page}) => {
+  await seedProfileApp(page);
+  await page.route("**/api/nutrition/ai-estimates/usage",route=>route.fulfill({json:{available:true,used:2,dailyLimit:5,status:"Usaste 2 de 5"}}));
+  await page.goto("/nutricion/perfil");
+  const quota=page.locator(".ai-usage-panel");
+  await expect(quota).toContainText("3 estimaciones disponibles hoy");
+  await expect(quota).not.toContainText("Usaste");
+  await expect(quota.getByRole("link",{name:"Registrar con foto"})).toHaveAttribute("href","/nutricion/registrar");
+  await page.route("**/api/nutrition/ai-estimates/usage",route=>route.fulfill({json:{available:true,used:5,dailyLimit:5}}));
+  await page.reload(); await expect(quota).toContainText("Agotaste");
+  await expect(quota.getByRole("link",{name:"Registrar manualmente"})).toBeVisible();
+});

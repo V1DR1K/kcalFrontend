@@ -479,11 +479,11 @@ test("keeps photo buttons reachable while searching with the mobile keyboard ope
   const picker = page.locator(".picker-modal");
   await picker.getByPlaceholder("Buscar alimentos...").focus();
   await page.evaluate(() => {
-    document.documentElement.dataset.keyboardOpen = "true";
-    document.documentElement.style.setProperty("--dialog-visible-height", "430px");
-    document.documentElement.style.setProperty("--dialog-layout-height", "430px");
-    document.documentElement.style.setProperty("--app-shell-height", "430px");
+    Object.defineProperty(window.visualViewport, "height", {configurable:true, get:()=>430});
+    Object.defineProperty(window.visualViewport, "offsetTop", {configurable:true, get:()=>0});
+    window.visualViewport.dispatchEvent(new Event("resize"));
   });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
   const layout = await picker.locator(".picker-photo-actions").evaluate((footer) => ({
     footer: footer.getBoundingClientRect().toJSON(),
     buttons: [...footer.querySelectorAll(".ai-photo-trigger")].map((button) => button.getBoundingClientRect().toJSON()),
@@ -1328,4 +1328,21 @@ test("SG002/015–018 keeps balance separate and logs precise water amounts", as
   await expect(hydration).toContainText("0,58 L");
   await hydration.getByRole("button", { name: "Deshacer", exact: true }).click();
   await expect(hydration).toContainText("0,25 L"); expect(writes.map(body => body.liters)).toEqual([0.25, 0.33]);
+});
+
+test("SG034 photo source is a natural sheet with both actions on short screens", async ({page}) => {
+  await page.setViewportSize({width:390,height:430});
+  await seedAuthenticatedApp(page,{aiAvailable:true});
+  await page.goto("/nutricion/registrar");
+  await page.getByRole("button",{name:/Registrar comida con foto/i}).click();
+  const sheet=page.locator(".picker-source-sheet");
+  await expect(sheet).toBeVisible();
+  const bounds=await sheet.boundingBox(); expect(bounds.height).toBeLessThan(430);
+  for (const name of ["Tomar foto","Elegir foto","Cerrar"]) {
+    const button=sheet.getByRole("button",{name,exact:true});
+    await expect(button).toBeVisible(); const box=await button.boundingBox();
+    expect(box.height).toBeGreaterThanOrEqual(44); expect(box.y+box.height).toBeLessThanOrEqual(431);
+  }
+  await sheet.getByRole("button",{name:"Cerrar",exact:true}).click();
+  await expect(page).toHaveURL(/nutricion\/registrar/);
 });

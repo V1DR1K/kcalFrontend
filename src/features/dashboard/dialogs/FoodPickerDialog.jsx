@@ -1,3 +1,4 @@
+import { aiAvailability } from "../../../utils/ai-availability";
 import React, { useEffect, useId, useRef, useState } from "react";
 import { CATEGORY_OPTIONS, DEFAULT_MEALS, PREPARATION_OPTIONS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
@@ -12,7 +13,7 @@ import { scaleNutrition, sumNutrition, nutritionWarning } from "../../../utils/n
 import { decimalNumber } from "../../../utils/decimal";
 import { normalizeSearchText } from "../../../utils/search";
 import { hasCookedRecipeWeight, recipeServingFactor } from "../../../utils/recipe";
-import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, aiQuotaReset, createMealLogs, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, sortMealLogs } from "../dashboard.utils";
+import { aiEstimateDraft, aiEstimateWithServings, aiProposalFood, createMealLogs, formatMealLogAmount, isCopyableMealLog, macroCalories, macroValue, mealLogItem, mealLogName, mealTotals, savedAiEstimate, sortMealLogs } from "../dashboard.utils";
 import { sortRecipeIngredients, scaleFoodNutrition, scaleRecipeNutrition } from "../../recipes/recipe.utils";
 import { MealPhotoContextEditor as MealPhotoContextEditorDialog } from "./MealPhotoDialog";
 import { ModalShell } from "../../../components/dialog/ModalShell";
@@ -64,7 +65,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const addInFlightRef = useRef(false);
   const audioRecorderRef = useRef(null);
   const audioStreamRef = useRef(null);
-  const aiQuotaBlocked = Boolean(aiUsage?.blockedUntil && new Date(aiUsage.blockedUntil) > new Date());
+  const availability = aiAvailability(aiUsage);
   const recentFoods = readRecents(user).items.slice(0, 20).map((item) => ({ ...item, type: "FOOD" }));
   const normalizedQuery = normalizeSearchText(query);
   const foodSearchReady = tab !== "FOOD" || normalizedQuery.length >= 2;
@@ -590,7 +591,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       title={aiOnly ? "Registrar con IA" : ingredientOnly ? "Agregar ingrediente" : "Agregar comida"}
       onClose={onClose}
       closeDisabled={adding}
-      className="picker-modal"
+      className={`picker-modal ${aiOnly ? "picker-source-sheet" : ""}`}
       backdropClassName="modal-backdrop"
       hideHeader
       wrapContent={false}
@@ -685,7 +686,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         {aiOnly && !pendingMealPhoto && !aiEstimate && <div className="ai-registration-intro" data-dialog-scroll-owner="true">
           <Icon name="nutrition" />
           <div>
-            <strong>La IA decide el tipo de registro</strong>
+            <strong>Elegí una foto de tu comida</strong>
             <p>Revisá los alimentos detectados: uno se guarda en el catálogo; varios forman una receta con una porción.</p>
           </div>
         </div>}
@@ -753,7 +754,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         {pendingMealPhoto && <MealPhotoContextEditorDialog photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
         {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} saveError={aiSaveError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} targetType={aiEstimate.items.length > 1 ? "RECIPE" : "FOOD"} addToDiary={aiAddToDiary} setAddToDiary={setAiAddToDiary} registrationMealType={aiRegistrationMealType} setRegistrationMealType={setAiRegistrationMealType} registrationDate={aiRegistrationDate} setRegistrationDate={setAiRegistrationDate} mealTypes={mealTypes} />}
         {!ingredientOnly && <footer className="picker-photo-actions">
-          <button type="button" className="secondary ai-photo-trigger ai-gallery-trigger" disabled={aiAnalyzing || !aiUsage?.available || aiQuotaBlocked} onClick={() => galleryInputRef.current?.click()}>
+          {aiOnly && <p className="photo-availability" role="status"><strong>{availability.headline}</strong><span>{availability.detail}</span></p>}
+          <button type="button" className="secondary ai-photo-trigger ai-gallery-trigger" disabled={aiAnalyzing || !availability.canCapture} onClick={() => galleryInputRef.current?.click()}>
             <Icon name="photo_library" />
             Elegir foto
           </button>
@@ -761,7 +763,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               ref={galleryInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              disabled={aiAnalyzing || !aiUsage?.available || aiQuotaBlocked}
+              disabled={aiAnalyzing || !availability.canCapture}
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 event.currentTarget.value = "";
@@ -769,15 +771,15 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               }}
               hidden
             />
-          <button type="button" className="primary ai-photo-trigger ai-camera-trigger" disabled={aiAnalyzing || !aiUsage?.available || aiQuotaBlocked} onClick={() => cameraInputRef.current?.click()}>
+          <button type="button" className="primary ai-photo-trigger ai-camera-trigger" disabled={aiAnalyzing || !availability.canCapture} onClick={() => cameraInputRef.current?.click()}>
             <Icon name="photo_camera" />
-            {aiAnalyzing ? "Analizando..." : aiQuotaBlocked ? `Vuelve ${aiQuotaReset(aiUsage)}` : "Tomar foto"}
+            {aiAnalyzing ? "Analizando..." : "Tomar foto"}
           </button>
             <input ref={cameraInputRef} data-photo-source="camera"
               type="file"
               accept="image/jpeg,image/png,image/webp"
               capture="environment"
-              disabled={aiAnalyzing || !aiUsage?.available || aiQuotaBlocked}
+              disabled={aiAnalyzing || !availability.canCapture}
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 event.currentTarget.value = "";
@@ -785,6 +787,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               }}
               hidden
             />
+          {aiOnly && !availability.canCapture && <button type="button" className="secondary photo-manual-return" onClick={onClose}>Volver al registro manual</button>}
         </footer>}
     </ModalShell>
   );
