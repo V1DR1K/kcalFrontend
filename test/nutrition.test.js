@@ -10,3 +10,8 @@ test("unknown contributions preserve partial totals while zero remains valid", (
  assert.equal(nutritionWarning({ ...known, calories: 0, proteinGrams: 0, category: "OTHER" }), "");
  assert.match(nutritionWarning({ ...known, calories: 0, proteinGrams: 0, category: "PROTEIN" }), /verificar/);
 });
+
+test("legacy object nutrients do not crash an AI preview", () => {
+  const result = scaleNutrition({calories:100,proteinGrams:10,carbsGrams:0,fatGrams:2,nutrients:{IRON:1}}, 0.5);
+  assert.equal(result.calories,50); assert.equal(result.knownTotals.proteinGrams,5);
+});

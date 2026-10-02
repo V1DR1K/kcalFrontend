@@ -6,10 +6,10 @@ async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = f
     localStorage.removeItem("scalegrams.refreshToken");
     localStorage.removeItem("scalegrams.user");
   });
-  const yesterdayItem = { id: 301, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } };
+  const yesterdayItem = { id: 301, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, calories: 387, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } };
   const recipeIngredients = withManyRecipeIngredients
     ? ["Zanahoria", "Avena", "Banana", "Cacao", "Canela", "Chía", "Frutilla", "Huevo", "Leche", "Manzana", "Miel", "Nuez", "Pera", "Queso", "Semillas", "Tomate", "Yogur", "Zapallo"].map((name, index) => ({ food: { id: 40 + index, name, baseQuantity: 100, proteinGrams: 5, carbsGrams: 15, fatGrams: 3, category: "OTHER" }, quantity: 40 + index, unit: "GRAM" }))
-    : [{ food: { id: 14, name: "Zanahoria", baseQuantity: 100, proteinGrams: 1, carbsGrams: 10, fatGrams: 0, category: "VEGETABLE" }, quantity: 90, unit: "GRAM" }, { food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "CEREAL" }, quantity: 150, unit: "GRAM" }];
+    : [{ food: { id: 14, name: "Zanahoria", baseQuantity: 100, calories: 44, proteinGrams: 1, carbsGrams: 10, fatGrams: 0, category: "VEGETABLE" }, quantity: 90, unit: "GRAM" }, { food: { id: 11, name: "Avena", baseQuantity: 100, calories: 387, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "CEREAL" }, quantity: 150, unit: "GRAM" }];
   const recipe = { id: 22, name: "Tostada proteica", description: "Una preparación simple para el desayuno.", rawTotalWeightGrams: 300, cookedTotalWeightGrams: 260, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, ingredients: recipeIngredients };
   const recipeItem = { id: 202, itemType: "RECIPE", quantity: recipeUnit === "GRAM" ? 180 : 1, unit: recipeUnit, calories: 350, proteinGrams: 28, carbsGrams: 42, fatGrams: 8, recipe };
   let targetDashboardDate = null;
@@ -31,7 +31,7 @@ async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = f
         const loggedItems = withRecipeLog
           ? [recipeItem]
           : withFoodLog
-            ? [{ id: 101, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } }]
+            ? [{ id: 101, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, food: { id: 11, name: "Avena", baseQuantity: 100, calories: 387, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, category: "OTHER" } }]
             : [];
         const meals = (withFoodLog || withRecipeLog)
           ? [{ mealType: "BREAKFAST", label: "Desayuno", calories: 400, proteinGrams: 13, carbsGrams: 68, fatGrams: 7, items: loggedItems }, { mealType: "LUNCH", items: [] }, { mealType: "AFTERNOON_SNACK", items: [] }, { mealType: "DINNER", items: [] }]
@@ -514,7 +514,7 @@ test("pins modal actions without taking a grid row on mobile", async ({ page }) 
   });
 
   expect(layout.footerPosition).toBe("absolute");
-  expect(layout.rows).toBe(4);
+  expect(layout.rows).toBe(5);
   expect(layout.footer.bottom).toBeLessThanOrEqual(430 + 1);
   expect(layout.scroll.bottom).toBeLessThanOrEqual(layout.footer.bottom);
 });
@@ -546,7 +546,7 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
     };
   });
 
-  expect(layout.rows).toBe(4);
+  expect(layout.rows).toBe(5);
   expect(layout.tabs.height).toBeLessThan(60);
   expect(layout.status.top).toBeGreaterThanOrEqual(layout.scroll.top);
   expect(layout.status.bottom).toBeLessThanOrEqual(layout.scroll.bottom);
@@ -787,7 +787,7 @@ test("shares a logged meal bracket from the dashboard header", async ({ page }) 
   const breakfast = page.locator(".meal-card").filter({ hasText: "Avena" }).first();
   const lunch = page.locator('.meal-card[data-meal-type="LUNCH"]');
   await expect(breakfast.getByRole("button", { name: "Compartir Desayuno" })).toBeEnabled();
-  await expect(lunch.getByRole("button", { name: "Compartir Almuerzo" })).toBeDisabled();
+  await expect(lunch.getByRole("button", { name: "Compartir Almuerzo", includeHidden:true })).toBeDisabled();
   const headerActions = await breakfast.locator(".meal-header-actions > *").evaluateAll((elements) => elements.map((element) => {
     const rect = element.getBoundingClientRect();
     return { left: rect.left, right: rect.right };
@@ -825,7 +825,7 @@ test("keeps the AI description textarea at a non-zooming size on mobile", async 
 
 test("keeps the day preset editor footer reachable on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await seedAuthenticatedApp(page, { withPreset: true });
+  await seedAuthenticatedApp(page, { withPreset: true, withFoodLog:true });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: "Guardar este día" }).click();
 
@@ -945,7 +945,7 @@ test("registers an AI food from the diary and keeps its meal destination", async
   const estimateDialog = page.locator(".ai-estimate-modal");
   await expect(estimateDialog).toBeVisible();
   await expect(estimateDialog.getByLabel("Agregar también a mi día")).toBeChecked();
-  await estimateDialog.getByRole("button", { name: "Guardar alimento", exact: true }).click();
+  await estimateDialog.getByRole("button", { name: "Guardar alimento y registrar consumo", exact: true }).click();
   await expect.poll(() => confirmation).not.toBeNull();
   expect(analyzeTarget).toBe("RECIPE_FALLBACK");
   expect(confirmation).toMatchObject({ addToDiary: true, mealType: "BREAKFAST", captureId: "capture-food-test" });
@@ -967,7 +967,7 @@ test("automatically registers a single detected food as a food", async ({ page }
   const photoDialog = page.locator(".ai-photo-context-modal");
   await photoDialog.getByRole("button", { name: "Analizar foto", exact: true }).click();
   await expect.poll(() => analyzeTarget).toBe("LEGACY_RECIPE_FALLBACK");
-  await expect(page.locator(".ai-estimate-modal").getByRole("button", { name: "Guardar alimento", exact: true })).toBeVisible();
+  await expect(page.locator(".ai-estimate-modal").getByRole("button", { name: "Guardar alimento y registrar consumo", exact: true })).toBeVisible();
 });
 
 test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => {
@@ -1028,8 +1028,7 @@ test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => 
   await expect(dialog.locator(".ai-estimate-summary small")).toHaveCount(4);
   const compactSummary = await dialog.locator(".ai-estimate-summary small").evaluateAll((labels) => labels.every((label) => label.scrollWidth <= label.clientWidth + 1));
   expect(compactSummary).toBe(true);
-  const shortViewportFooter = await dialog.locator(":scope > .modal-shell-footer").evaluate((element) => element.getBoundingClientRect().bottom <= window.innerHeight + 1);
-  expect(shortViewportFooter).toBe(true);
+  await expect.poll(() => dialog.locator(":scope > .modal-shell-footer").evaluate(element => element.getBoundingClientRect().bottom <= (window.visualViewport.offsetTop + window.visualViewport.height) + 1)).toBe(true);
   await expect(dialog.getByRole("button", { name: "Crear receta y agregar una porción", exact: true })).toBeVisible();
 });
 
@@ -1185,7 +1184,7 @@ test("keeps the food draft open and rolls back the optimistic diary entry when s
   await expect(page.locator(".edit-log-modal")).toBeVisible();
   await expect(page.locator(".edit-log-modal").getByLabel("Cantidad")).toHaveValue("30");
   await expect(page.locator(".edit-log-modal").getByRole("button", { name: "Agregar a Desayuno" })).toBeEnabled();
-  await expect(page.locator(".meal-card").filter({ hasText: "Desayuno" }).first()).toContainText("Sin alimentos registrados");
+  await expect(page.locator(".meal-card").filter({ hasText: "Desayuno" }).first()).toContainText("Sin registros");
 });
 
 
@@ -1345,4 +1344,44 @@ test("SG034 photo source is a natural sheet with both actions on short screens",
   }
   await sheet.getByRole("button",{name:"Cerrar",exact:true}).click();
   await expect(page).toHaveURL(/nutricion\/registrar/);
+});
+
+test("SG047 correction and saved description keep text and quantity across keyboard frames", async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await seedAuthenticatedApp(page,{aiAvailable:true});
+  let writes=0;
+  const estimate={name:"Prueba teclado",description:"Descripción inicial",confidence:80,items:[{name:"Avena",estimatedGrams:100,proteinGrams:10,carbsGrams:20,fatGrams:5}]};
+  await page.route("**/api/nutrition/ai-estimates",async route => {writes++; await route.fulfill({json:{...estimate,usage:{available:true}}});});
+  await page.goto("/nutricion/dia");
+  await page.getByRole("button",{name:"Agregar alimento a Desayuno",exact:true}).click();
+  await page.locator('input[data-photo-source="gallery"]').setInputFiles({name:"meal.png",mimeType:"image/png",buffer:Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=","base64")});
+  await page.getByRole("button",{name:"Analizar foto",exact:true}).click();
+  const editor=page.locator(".ai-estimate-modal");
+  await expect(editor).toBeVisible();
+  await editor.getByText("Corregir o agregar alimentos con IA",{exact:true}).click();
+  const correction=editor.getByLabel("Tu corrección",{exact:true});
+  await correction.fill("Cambiar los ingredientes. ".repeat(8));
+  async function frame(height,offsetTop) {
+    await page.evaluate(({height,offsetTop})=>{
+      window.__editFrame={height,offsetTop};
+      for (const key of ["height","offsetTop"]) Object.defineProperty(window.visualViewport,key,{configurable:true,get:()=>window.__editFrame[key]});
+      window.visualViewport.dispatchEvent(new Event("resize"));
+    },{height,offsetTop});
+    await expect.poll(()=>editor.evaluate(el=>{const header=el.querySelector("header").getBoundingClientRect(),footer=el.querySelector(":scope > footer").getBoundingClientRect(); return header.top >= window.visualViewport.offsetTop-1 && footer.bottom <= window.visualViewport.offsetTop+window.visualViewport.height+1;})).toBe(true);
+  }
+  await frame(320,92); await expect(correction).toBeFocused();
+  const text=await correction.inputValue(); await correction.press("End"); await correction.press("Backspace");
+  await frame(280,130); await expect(correction).toHaveValue(text.slice(0,-1));
+  const grams=editor.getByLabel("Gramos",{exact:true}).first(); await grams.fill("125"); await expect(grams).toBeFocused();
+  await frame(844,0); await expect(grams).toHaveValue("125"); expect(writes).toBe(1);
+  await editor.getByRole("button",{name:"Cerrar estimación",exact:true}).click();
+  await page.route("**/api/nutrition/dashboard**",route=>route.fulfill({json:{date:"2026-10-01",calorieGoal:2000,caloriesConsumed:165,macros:[],meals:[{mealType:"BREAKFAST",items:[{id:777,itemType:"AI_ESTIMATE",displayName:estimate.name,mealType:"BREAKFAST",logDate:"2026-10-01",calories:165,proteinGrams:10,carbsGrams:20,fatGrams:5,quantity:1,unit:"PORTION",aiEstimateDetails:JSON.stringify(estimate)}]}],nutrients:[]}}));
+  await page.reload(); await page.locator(".meal-item").first().click();
+  await page.locator(".meal-item-detail-actions").getByRole("button",{name:/Editar/}).click();
+  const saved=page.locator(".ai-estimate-modal"); const description=saved.getByLabel("Descripción",{exact:true});
+  await description.fill("Descripción revisada con teclado. ".repeat(6)); await frame(320,92);
+  await expect(description).toBeFocused(); const savedText=await description.inputValue();
+  await frame(844,0); await expect(description).toHaveValue(savedText);
+  await expect(saved.getByRole("button",{name:"Guardar cambios",exact:true})).toBeEnabled();
+  await saved.getByRole("button",{name:"Cancelar",exact:true}).click(); expect(writes).toBe(1);
 });

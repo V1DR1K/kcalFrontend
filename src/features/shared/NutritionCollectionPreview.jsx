@@ -1,7 +1,7 @@
 import React from "react";
 import { Icon } from "../../components/Icon";
 import { FoodThumb } from "../catalog/CatalogComponents";
-import { formatMeasure, formatNutrient } from "../../utils/format";
+import { formatMeasure, formatNutrient, formatNumber } from "../../utils/format";
 
 export function NutritionMetrics({ totals, compact = false }) {
   const values = [
@@ -10,9 +10,9 @@ export function NutritionMetrics({ totals, compact = false }) {
     ["Carbohidratos", formatNutrient(totals?.carbsGrams, 1, "g")],
     ["Grasas", formatNutrient(totals?.fatGrams, 1, "g")],
   ];
-  return <div className={`collection-metrics ${compact ? "compact" : ""}`.trim()} aria-label="Resumen nutricional">
+  return <><div className={`collection-metrics ${compact ? "compact" : ""}`.trim()} aria-label="Resumen nutricional">
     {values.map(([label, value]) => <span key={label}><small>{label}</small><strong>{value}</strong></span>)}
-  </div>;
+  </div>{totals?.nutritionComplete === false && <p className="collection-partial-notice">Totales parciales · {totals.knownTotals?.calories == null ? "Calorías sin dato" : `${formatNumber(totals.knownTotals.calories)} calorías informadas`} · hay información pendiente.</p>}</>;
 }
 
 function itemImage(item) {

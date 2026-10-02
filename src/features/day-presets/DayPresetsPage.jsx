@@ -7,12 +7,12 @@ import { useCompactLayout } from "../../components/useCompactLayout";
 import { SkeletonRows } from "../../components/Loading";
 import { CatalogStatus } from "../catalog/CatalogComponents";
 import { FoodPicker } from "../dashboard/dialogs/FoodPickerDialog";
-import { mealTotals } from "../dashboard/dashboard.utils";
+import { sumNutrition as mealTotals } from "../../utils/nutrition";
 import { NutritionCollectionPreview } from "../shared/NutritionCollectionPreview";
 import { CollectionDetailDialog } from "../shared/CollectionDetailDialog";
 import { normalizePresetPreviewItem, presetItemCacheKey, presetItemNeedsImageHydration, scalePresetNutrition, serializablePresetItem } from "./day-preset.utils";
 import { decimalNumber, normalizeDecimalInput } from "../../utils/decimal";
-import { formatNumber, readableDate, today } from "../../utils/format";
+import { formatMeasure, formatNutrient, readableDate, today } from "../../utils/format";
 
 function presetItemFromLog(log, mealType) {
   const itemType = log.itemType || log.type;
@@ -23,7 +23,7 @@ function presetItemFromLog(log, mealType) {
     unit: log.unit || (itemType === "RECIPE" ? "PORTION" : "GRAM"),
     displayName: item?.name || log.displayName || (itemType === "AI_ESTIMATE" ? "Comida estimada" : "Alimento"),
     imageUrl: item?.imageUrl || null, category: item?.category || "OTHER",
-    calories: Number(log.calories || 0), proteinGrams: Number(log.proteinGrams || 0), carbsGrams: Number(log.carbsGrams || 0), fatGrams: Number(log.fatGrams || 0),
+    calories: log.calories ?? null, proteinGrams: log.proteinGrams ?? null, carbsGrams: log.carbsGrams ?? null, fatGrams: log.fatGrams ?? null,
     ...(itemType === "AI_ESTIMATE" ? { aiEstimateConfidence: log.aiEstimateConfidence || 0, aiEstimateDetails: log.aiEstimateDetails || "{}" } : {}),
   };
 }
@@ -72,10 +72,10 @@ function PresetEditorDialog({ api, user, editor, mealTypes, onClose, onSaved }) 
       <label className="abm-field"><span>Descripción <small>(opcional)</small></span><textarea value={draft.description || ""} maxLength={240} rows={3} placeholder="Contá cuándo o por qué querés repetirlo" onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} /></label>
       <div className="day-editor-brackets" aria-label="Comidas del día">
         {groupedItems.map((meal) => <section className="day-editor-bracket" key={meal.code} aria-labelledby={`day-editor-${meal.code}`}>
-          <header className="day-editor-bracket-heading"><div><span className="day-editor-bracket-knot" aria-hidden="true" /><div><h3 id={`day-editor-${meal.code}`}>{meal.label}</h3><small>{meal.items.length ? `${meal.items.length} elemento${meal.items.length === 1 ? "" : "s"}` : "Todavía sin elementos"}</small></div></div><strong>{formatNumber(mealTotals(meal.items).calories)} kcal</strong></header>
+          <header className="day-editor-bracket-heading"><div><span className="day-editor-bracket-knot" aria-hidden="true" /><div><h3 id={`day-editor-${meal.code}`}>{meal.label}</h3><small>{meal.items.length ? `${meal.items.length} elemento${meal.items.length === 1 ? "" : "s"}` : "Todavía sin elementos"}</small></div></div><strong>{formatNutrient(mealTotals(meal.items).calories, 0, "kcal")}</strong></header>
           <div className="day-editor-bracket-items">
             {meal.items.map((item) => <article className="day-editor-item" key={`${item.itemId || item.displayName}-${item.draftIndex}`}>
-              <div className="day-editor-item-main"><div className="day-editor-thumb"><img src={item.imageUrl || "/category-assets/other.webp"} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/category-assets/other.webp"; }} /></div><div><strong>{item.displayName || "Alimento"}</strong><small>{formatNumber(item.quantity)} {item.unit === "GRAM" ? "g" : item.unit === "MILLILITER" ? "ml" : item.unit === "PORTION" ? "porción/es" : "unidad/es"} · {formatNumber(item.calories)} kcal</small></div></div>
+              <div className="day-editor-item-main"><div className="day-editor-thumb"><img src={item.imageUrl || "/category-assets/other.webp"} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/category-assets/other.webp"; }} /></div><div><strong>{item.displayName || "Alimento"}</strong><small>{formatMeasure(item.quantity, item.unit)} · {formatNutrient(item.calories, 0, "kcal")}</small></div></div>
               <div className="day-editor-controls"><label><span>Cantidad</span><input inputMode="decimal" value={item.quantity} onChange={(event) => updateItem(item.draftIndex, "quantity", normalizeDecimalInput(event.target.value))} /></label><label><span>Unidad</span><select value={item.unit} onChange={(event) => updateItem(item.draftIndex, "unit", event.target.value)}><option value="GRAM">Gramos</option><option value="MILLILITER">Mililitros</option><option value="UNIT">Unidades</option><option value="PORTION">Porciones</option></select></label><label className="day-editor-move"><span>Mover a…</span><select value={item.mealType} aria-label={`Mover ${item.displayName || "elemento"} a otra comida`} onChange={(event) => updateItem(item.draftIndex, "mealType", event.target.value)}>{mealTypes.map((option) => <option key={option.code} value={option.code}>{option.label}</option>)}</select></label><button type="button" className="icon-button danger-text" aria-label={`Quitar ${item.displayName || "elemento"}`} onClick={() => setDraft((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== item.draftIndex) }))}><Icon name="delete" /></button></div>
             </article>)}
           </div>
@@ -151,7 +151,7 @@ export function DayPresetsPage({ api, user, seed, onSeedConsumed }) {
   const preview = { title: visiblePreset?.name, description: visiblePreset?.description, status: visiblePreset ? `${visiblePreset.itemCount || visiblePreset.items?.length || 0} elementos · actualizado ${visiblePreset.updatedAt ? new Date(visiblePreset.updatedAt).toLocaleDateString("es-AR") : "recientemente"}` : null, heroItems: presetHeroItems(visiblePreset), totals: visiblePreset ? mealTotals(visiblePreset.items || []) : null, groups: presetGroups(visiblePreset), empty: !visiblePreset };
   return <section className="page abm-page day-presets-page">
     <header className="abm-page-header"><div><h1>Reutilizá tu día</h1><p>Guardá combinaciones completas y aplicalas cuando tu rutina se repita.</p></div><button type="button" className="primary" onClick={openCreate} disabled={!hasCurrentItems || dayLoading} aria-describedby={!hasCurrentItems ? "preset-save-explanation" : undefined}><Icon name="bookmark_add" />Guardar día actual</button></header>
-    <div className="day-presets-datebar"><div><span>Fecha de trabajo</span><strong>{readableDate(selectedDate)}</strong></div><label><span className="sr-only">Elegir fecha</span><input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} /></label><div className="day-presets-date-summary"><strong>{dayLoading ? "Cargando…" : `${currentItems.length} elementos`}</strong><small>{formatNumber(currentTotals.calories)} kcal cargadas</small></div></div>
+    <div className="day-presets-datebar"><div><span>Fecha de trabajo</span><strong>{readableDate(selectedDate)}</strong></div><label><span className="sr-only">Elegir fecha</span><input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} /></label><div className="day-presets-date-summary"><strong>{dayLoading ? "Cargando…" : `${currentItems.length} elementos`}</strong><small>{formatNutrient(currentTotals.knownTotals?.calories ?? currentTotals.calories, 0, "kcal")} {currentTotals.calories == null ? "informadas · datos pendientes" : "cargadas"}</small></div></div>
     {!hasCurrentItems && !dayLoading && <div className="abm-callout"><div><strong>Este día todavía no tiene alimentos</strong><p id="preset-save-explanation">Para guardar una plantilla, primero registrá al menos un alimento en esta fecha.</p><Select label="Comida para registrar" value={registrationMeal} options={DEFAULT_MEALS.map(meal => ({ value:meal.code, label:meal.label }))} onChange={event => setRegistrationMeal(event.target.value)} /></div><button className="primary" onClick={() => setRegistrationOpen(true)}>Registrar alimento</button></div>}
     {seed?.autoOpenCreate && hasCurrentItems && <div className="abm-callout"><Icon name="check_circle" /><div><strong>Tu día actual está listo para guardar</strong><span>Completá un nombre y una descripción para volver a encontrarlo rápido.</span></div><button type="button" className="text-button" onClick={openCreate}>Abrir formulario</button></div>}
     {error && <CatalogStatus error>{error}<button className="secondary" onClick={loadPresets}>Reintentar</button></CatalogStatus>}
@@ -166,7 +166,7 @@ export function DayPresetsPage({ api, user, seed, onSeedConsumed }) {
               <span className="day-preset-card-image"><img src={presetHeroItems(preset)[0]?.imageUrl || "/category-assets/other.webp"} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/category-assets/other.webp"; }} /></span>
               <span className="day-preset-card-copy"><strong>{preset.name}</strong><small>{preset.description || "Sin descripción"}</small><em>{preset.itemCount || preset.items?.length || 0} elementos · {Object.values(preset.mealCounts || {}).reduce((sum, count) => sum + count, 0)} comidas</em></span><Icon name="chevron_right" />
             </button>
-            <div className="day-preset-card-meta"><span>{formatNumber(totals.calories)} kcal</span><span>{formatNumber(totals.proteinGrams, 1)} g proteína</span><small>Actualizado {preset.updatedAt ? new Date(preset.updatedAt).toLocaleDateString("es-AR") : "recientemente"}</small></div>
+            <div className="day-preset-card-meta"><span>{formatNutrient(totals.calories, 0, "kcal")}</span><span>{formatNutrient(totals.proteinGrams, 1, "g")} proteína</span><small>Actualizado {preset.updatedAt ? new Date(preset.updatedAt).toLocaleDateString("es-AR") : "recientemente"}</small></div>
             <div className="day-preset-card-actions"><button type="button" className="primary" onClick={() => requestApply(preset)}><Icon name="play_arrow" />Aplicar</button><button type="button" className="secondary" onClick={() => openEdit(preset)}><Icon name="edit" />Editar</button><button type="button" className="icon-button danger-text" aria-label={`Borrar ${preset.name}`} onClick={() => deletePreset(preset)}><Icon name="delete" /></button></div>
           </article>;
         })}</div>}

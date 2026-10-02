@@ -115,6 +115,7 @@ function PastMealsPreview({ api, targetDate, targetMeals = [], mealTypes, onCopi
       );
     } catch (error) {
       onOptimisticRollback(optimisticLogs);
+      if (error.cancelled) { setStatus((current) => ({ ...current, [mealType]: "idle" })); return; }
       setStatus((current) => ({ ...current, [mealType]: "error" }));
       api.notify(mealCopyErrorMessage(error, "No se pudo copiar la comida completa."), "error");
     }

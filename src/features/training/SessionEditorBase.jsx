@@ -103,7 +103,19 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
     const version = versionRef.current ?? snapshot.version;
     snapshot = identitiesRef.current ? reconcileSessionIdentity(snapshot, identitiesRef.current.submitted, identitiesRef.current.saved) : snapshot;
     const payload = sessionPayload({ ...snapshot, exercises: snapshot.exercises.filter((exercise) => exercise.exerciseId), ...(version != null ? { version } : {}) }, type);
-    const saved = await trainingApi.saveSession(api, sessionRef.current, payload);
+    let saved;
+    try { saved = await trainingApi.saveSession(api, sessionRef.current, payload); }
+    catch (failure) {
+      if (failure.status === 409) {
+        conflictRef.current = true;
+        pendingRef.current = null;
+        window.clearTimeout(timerRef.current);
+        let server = null;
+        try { server = await trainingApi.session(api, sessionRef.current.id); } catch { /* Keep the draft if the network is unavailable. */ }
+        setConflict({server, message:"La sesión cambió en otro guardado. Tu borrador se conservó; elegí cómo continuar."});
+      }
+      throw failure;
+    }
     if (saved?.id) sessionRef.current = saved;
     if (saved?.version != null) versionRef.current = saved.version;
     lastSavedRef.current = saved || sessionRef.current;
@@ -125,6 +137,7 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
   }
 
   function enqueueSave(snapshot, quiet = true) {
+    if (conflictRef.current) return Promise.reject(new Error("Compará el borrador con la versión guardada antes de continuar."));
     pendingRef.current = { snapshot, quiet };
     if (!flushRef.current) flushRef.current = flushPending().catch((saveError) => { setSaveState("error"); setError(saveError?.message || "No se pudo guardar la sesión."); throw saveError; }).finally(() => { flushRef.current = null; });
     return flushRef.current;
@@ -142,7 +155,12 @@ export function SessionEditorBase({ api, type, session, plans = [], exercises = 
 
   useEffect(() => {
     if (!storageKey || readOnly) return;
-    try { sessionStorage.setItem(storageKey, JSON.stringify(draft)); } catch { /* Storage restrictions cannot block editing. */ }
+    try {
+      const currentKey = sessionDraftKey(api.getUserId?.(), sessionRef.current?.id, type) || storageKey;
+      if (!conflict && contentKey(draft) === lastSavedContentRef.current) sessionStorage.removeItem(currentKey);
+      else sessionStorage.setItem(currentKey, JSON.stringify(draft));
+      if (currentKey !== storageKey) sessionStorage.removeItem(storageKey);
+    } catch { /* Storage restrictions cannot block editing. */ }
   }, [draft, readOnly, storageKey]);
 
   function clearStoredDraft() {

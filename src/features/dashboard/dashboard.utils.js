@@ -11,8 +11,8 @@ export function aiProposalFood(item) {
   const parsedGrams = decimalNumber(item?.estimatedGrams);
   const estimatedGrams = Number.isFinite(parsedGrams) && parsedGrams > 0 ? parsedGrams : 100;
   const factor = 100 / estimatedGrams;
-  const nutrients = Object.fromEntries(Object.entries(item?.nutrients || {}).map(([code, value]) => [code, Number(value || 0) * factor]));
-  return { name: item?.name?.trim() || "Alimento estimado", category: item?.category || "OTHER", preparation: item?.preparation || "UNSPECIFIED", baseQuantity: 100, proteinGrams: Number(item?.proteinGrams || 0) * factor, carbsGrams: Number(item?.carbsGrams || 0) * factor, fatGrams: Number(item?.fatGrams || 0) * factor, nutrients };
+  const nutrients = Object.fromEntries(Object.entries(item?.nutrients || {}).map(([code, value]) => [code, value == null ? null : Number(value) * factor]));
+  return { name: item?.name?.trim() || "Alimento estimado", category: item?.category || "OTHER", preparation: item?.preparation || "UNSPECIFIED", baseQuantity: 100, calories: [item?.proteinGrams,item?.carbsGrams,item?.fatGrams].every(value => value != null) ? macroCalories(item.proteinGrams,item.carbsGrams,item.fatGrams) * factor : null, proteinGrams: Number(item?.proteinGrams || 0) * factor, carbsGrams: Number(item?.carbsGrams || 0) * factor, fatGrams: Number(item?.fatGrams || 0) * factor, nutrients };
 }
 
 export function aiEstimateWithServings(result) {

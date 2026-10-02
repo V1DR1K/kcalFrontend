@@ -228,7 +228,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
           const isInsideTop = currentTop?.root?.contains(restoreTarget) && !currentTop.root.inert;
           const fallbackTarget = currentTop && !isInsideTop ? currentTop.dialogRef.current : null;
           const target = restoreTarget.isConnected && (!currentTop || isInsideTop)
-            && (!restoreTarget.matches?.(FOCUSABLE_SELECTOR) || visibleFocusableElements(restoreTarget.closest("[role=dialog]" )).includes(restoreTarget))
+            && (!currentTop || !restoreTarget.matches?.(FOCUSABLE_SELECTOR) || visibleFocusableElements(currentTop.dialogRef.current).includes(restoreTarget))
             ? restoreTarget
             : fallbackTarget || visibleFocusableElements(currentTop?.dialogRef.current)[0];
           if (!target?.isConnected) return;

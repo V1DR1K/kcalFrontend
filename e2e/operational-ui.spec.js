@@ -32,3 +32,8 @@ test("SG032–033 dashboard typography and contrast preserve mobile layout", asy
     expect(parseFloat(await nav.evaluate(el => getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(14);
   }
 });
+
+test("published revision is a real JSON artifact", async ({request}) => {
+ const response=await request.get("/version.json"); expect(response.ok()).toBe(true);
+ const version=await response.json(); expect(version.revision).toMatch(/^[a-f0-9]{7,40}$/); expect(Date.parse(version.buildTime)).toBeGreaterThan(0);
+});

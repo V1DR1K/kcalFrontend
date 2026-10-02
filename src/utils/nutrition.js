@@ -5,7 +5,7 @@ export function scaleNutrition(source = {}, factor = 1) {
   for (const key of NUTRITION_FIELDS) {
     const value = source[key];
     result[key] = value == null ? null : Number(value) * factor;
-    const subtotal = source.knownTotals?.[key] ?? source.nutrients?.find(item => item.code === codes[key])?.knownValue ?? value;
+    const subtotal = source.knownTotals?.[key] ?? (Array.isArray(source.nutrients) ? source.nutrients.find(item => item.code === codes[key])?.knownValue : null) ?? value;
     knownTotals[key] = subtotal == null ? null : Number(subtotal) * factor;
   }
   if (result.calories != null) result.calories = Math.round(result.calories);
@@ -23,6 +23,6 @@ export function sumNutrition(items = []) {
 export function nutritionWarning(food = {}) {
   if (food.nutritionWarning) return food.nutritionWarning;
   if (NUTRITION_FIELDS.some(key => food[key] == null)) return "Información nutricional incompleta. Los totales incluirán solo los datos informados.";
-  if (food.category === "PROTEIN" && NUTRITION_FIELDS.every(key => Number(food[key]) === 0)) return "Composición pendiente de verificar. Compará con otra variante.";
+  if (["PROTEIN", "MEAT"].includes(food.category) && NUTRITION_FIELDS.every(key => Number(food[key]) === 0)) return "Composición pendiente de verificar. Compará con otra variante.";
   return "";
 }

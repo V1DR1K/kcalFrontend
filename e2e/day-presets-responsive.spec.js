@@ -131,7 +131,7 @@ test.describe("Reutilizá tu día responsive", () => {
   });
 
   test("stacks the date controls vertically on iPhone WebKit", async ({ page }, testInfo) => {
-    test.skip(!testInfo.project.name.includes("webkit-iphone"), "iPhone WebKit contract");
+    test.skip(!testInfo.project.name.includes("webkit-iphone") || page.viewportSize().width > 600, "Portrait iPhone WebKit contract");
 
     await seedAuthenticatedApp(page);
     await page.goto("/ingresar");

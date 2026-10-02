@@ -284,6 +284,7 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
             </small>
           )}
         </div>
+        {data?.nutritionComplete === false && <p role="status">Información nutricional parcial: {formatNumber(data.caloriesConsumed)} calorías informadas. Hay datos pendientes; los valores conocidos se conservan.</p>}
         <div className="macro-strip">
           {macros.map((macro) => (
             <Macro key={macro.key} macro={macro} />

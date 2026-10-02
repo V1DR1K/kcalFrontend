@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => {
     __GIT_HASH__: JSON.stringify(gitHash),
     __COMMIT_TIME__: JSON.stringify(commitTime),
   },
-  plugins: [localHttps ? basicSsl() : null, react(), dashboardPreload()].filter(Boolean),
+  plugins: [localHttps ? basicSsl() : null, react(), dashboardPreload(), { name:"published-revision", generateBundle() { this.emitFile({type:"asset",fileName:"version.json",source:JSON.stringify({revision:gitHash,buildTime})}); } }].filter(Boolean),
   server: {
     host: "0.0.0.0",
     port: 5173,

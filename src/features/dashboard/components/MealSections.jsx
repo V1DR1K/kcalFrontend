@@ -59,6 +59,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
     } catch (error) {
       onOptimisticRollback(optimisticLogs);
       setSuggestionState("idle");
+      if (error.cancelled) return;
       api.notify(mealCopyErrorMessage(error, "No se pudo copiar la comida de ayer."), "error");
     }
   }
@@ -82,6 +83,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
       );
     } catch (error) {
       onOptimisticRollback(optimisticLogs);
+      if (error.cancelled) { setBulkActionState("idle"); return; }
       setBulkActionState("error");
       api.notify(mealCopyErrorMessage(error, "No se pudo pegar la comida. Se revirtieron los cambios."), "error");
       window.setTimeout(() => setBulkActionState("idle"), 700);
@@ -112,6 +114,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
     }
     catch {
       restore();
+      if (error.cancelled) { setBulkActionState("idle"); return; }
       setBulkActionState("error");
       api.notify("No se pudo borrar toda la comida. Se revirtieron los cambios.", "error");
       window.setTimeout(() => setBulkActionState("idle"), 700);
@@ -147,11 +150,11 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
           <button className={`${items.length ? "icon-button" : "secondary meal-empty-add"} action-control`} aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><Icon name="add" />{!items.length && "Agregar"}</button>
         </div>
       </header>
-      {items.length > 0 && <div className="meal-macros">
+      {items.length > 0 && <><div className="meal-macros">
         <small><abbr title="Proteínas">P</abbr> {formatNumber(meal?.proteinGrams, 1)} g</small>
         <small><abbr title="Carbohidratos">C</abbr> {formatNumber(meal?.carbsGrams, 1)} g</small>
         <small><abbr title="Grasas">G</abbr> {formatNumber(meal?.fatGrams, 1)} g</small>
-      </div>}
+      </div>{items.some(item => item.nutritionComplete === false || [item.calories,item.proteinGrams,item.carbsGrams,item.fatGrams].some(value => value == null)) && <p className="meal-nutrition-warning">Totales parciales: incluyen solo datos informados.</p>}</>}
       {!items.length && yesterdayItems.length > 0 && suggestionState !== "dismissed" && (
         <div className={`yesterday-suggestion ${suggestionState === "copied" ? "copied" : ""}`}>
           <Icon name="content_copy" />
@@ -191,7 +194,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
             >
               <FoodThumb item={item} compact />
               <span className="meal-item-copy"><span>{item.name}</span><small>{formatMealLogAmount(log)}{log.itemType === "FOOD" ? foodPreparationSuffix(log.food) : ""}{log.optimistic ? " · Guardando…" : ""}</small></span>
-              <strong>{log.calories} kcal</strong>
+              <strong>{log.calories == null ? "Sin dato" : `${formatNumber(log.calories)} kcal`}</strong>
             </SwipeableMealItem>
           );
         })

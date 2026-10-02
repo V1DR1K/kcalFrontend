@@ -59,8 +59,9 @@ export function RecentMeals({ user, api, date, mealTypes, onDone, onOptimisticAd
       if (elapsed < 520) await new Promise((resolve) => window.setTimeout(resolve, 520 - elapsed));
       setStates((current) => ({ ...current, [meal.id]: "added" }));
       window.setTimeout(() => setStates((current) => ({ ...current, [meal.id]: "idle" })), 1300);
-    } catch {
+    } catch (error) {
       onOptimisticRollback(optimisticLogs);
+      if (error.cancelled) { setStates((current) => ({ ...current, [meal.id]: "idle" })); return; }
       setStates((current) => ({ ...current, [meal.id]: "error" }));
       api.notify("No se pudo agregar la comida reciente.", "error");
       window.setTimeout(() => setStates((current) => ({ ...current, [meal.id]: "idle" })), 900);

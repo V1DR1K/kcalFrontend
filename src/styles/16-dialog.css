@@ -90,7 +90,7 @@
 }
 
 .app-modal-surface.picker-modal[class] {
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
 }
 
 @supports (height: 100dvh) {
@@ -213,7 +213,7 @@
     height: min(var(--dialog-visible-height, var(--dialog-viewport-height, 100dvh)), var(--app-shell-height, 100dvh));
   }
 
-  .app-modal-surface.picker-modal[class] { grid-template-rows: auto auto auto minmax(0, 1fr); }
+  .app-modal-surface.picker-modal[class] { grid-template-rows: auto auto auto auto minmax(0, 1fr); }
 
   .app-modal-surface[class]:has(> footer, > .modal-shell-footer) > .modal-shell-content,
   .app-modal-surface[class]:has(> footer, > .modal-shell-footer) > [data-dialog-scroll-owner="true"] {
@@ -232,7 +232,7 @@
   }
 
   .app-modal-surface.picker-modal[class] {
-    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
     padding-left: max(var(--space-3), calc(var(--space-3) + env(safe-area-inset-left)));
     padding-right: max(var(--space-3), calc(var(--space-3) + env(safe-area-inset-right)));
   }
@@ -430,4 +430,19 @@
     transition-delay: 0ms !important;
     transition-property: color, background-color, border-color, box-shadow, opacity, outline-color !important;
   }
+}
+
+/* Destination is its own row. Ingredients omit it and the photo footer. */
+.app-modal-surface.picker-modal:not(:has(> .picker-destination))[class] { grid-template-rows:auto auto auto minmax(0,1fr); }
+@media (max-height: 500px) and (max-width: 900px) {
+  .app-modal-backdrop[class] { padding:0; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] { height:var(--dialog-visible-height,100dvh); max-height:var(--dialog-visible-height,100dvh); padding:4px 12px; gap:4px; grid-template-rows:auto auto auto auto minmax(0,1fr); }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > header { padding:4px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > header h2 { font-size:20px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > .picker-destination { margin:0; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > .picker-tools { max-height:56px; overflow-y:auto; gap:4px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > .picker-scroll { padding-bottom:64px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > footer { position:absolute; inset:auto 0 0; padding:4px 12px; }
+  .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > footer button { min-height:44px; }
+  .app-modal-surface.picker-modal:not(:has(> .picker-destination))[class] { grid-template-rows:auto auto auto minmax(0,1fr); }
 }

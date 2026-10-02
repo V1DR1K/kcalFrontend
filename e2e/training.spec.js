@@ -293,3 +293,37 @@ test("SG024–026 shows the first result above category administration and reada
   await category.selectOption("11"); await expect(page.locator(".training-active-filters")).toContainText("Calistenia");
   await page.getByRole("button",{name:"Limpiar búsqueda y filtros"}).click(); await expect(category).toHaveValue("");
 });
+
+test("SG042 serializes delayed saves and compares a second client's conflict", async ({page}) => {
+  const other = await page.context().newPage();
+  let server={id:20,version:0,status:"IN_PROGRESS",module:"GYM",date:"2026-10-01",title:"Compartida",exercises:[{id:10,exerciseId:1,exerciseName:"Sentadilla",registrationType:"REPETITIONS",sets:[{id:101,setNumber:1,repetitions:6,completed:false}]}]};
+  let active=0,maxActive=0,writes=0,releaseFirst;
+  const delay = new Promise(resolve => {releaseFirst=resolve;});
+  for (const client of [page,other]) {
+    await seedTrainingApp(client,{hasPlan:false});
+    await client.route("**/api/training/sessions**", async route => {
+      if (route.request().method() === "GET") return route.fulfill({json:new URL(route.request().url()).pathname.endsWith("/20") ? server : {items:[server]}});
+      const payload=route.request().postDataJSON(); writes++; active++; maxActive=Math.max(maxActive,active);
+      if(writes === 1) await delay;
+      if(payload.version !== server.version) {active--; return route.fulfill({status:409,json:{code:"CONFLICT",message:"Otra versión guardada"}});}
+      server={...server,...payload,version:server.version+1,exercises:payload.exercises.map((ex,index)=>({...ex,id:10+index,exerciseName:"Sentadilla",sets:ex.sets.map((set,i)=>({...set,id:101+i}))}))};
+      active--; await route.fulfill({json:server});
+    });
+    await client.goto("/entrenamiento/dia");
+    await client.getByRole("button",{name:"Continuar Compartida",exact:true}).click();
+    await expect(client.getByLabel("Repeticiones",{exact:true}).first()).toHaveValue("6");
+  }
+  const reps=page.getByLabel("Repeticiones",{exact:true}).first();
+  await reps.fill("8"); await expect.poll(()=>writes).toBe(1);
+  await reps.fill("9"); releaseFirst();
+  await expect.poll(()=>server.exercises[0].sets[0].repetitions).toBe(9);
+  await expect(reps).toHaveValue("9"); expect(maxActive).toBe(1); expect(writes).toBe(2);
+  const otherReps=other.getByLabel("Repeticiones",{exact:true}).first();
+  await otherReps.fill("10");
+  await expect(other.getByRole("region",{name:"Comparar sesión y borrador"})).toBeVisible();
+  await expect(otherReps).toHaveValue("10"); expect(writes).toBe(3);
+  await other.getByRole("button",{name:"Reaplicar mi borrador",exact:true}).click();
+  await expect.poll(()=>server.exercises[0].sets[0].repetitions).toBe(10);
+  expect(writes).toBe(4); expect(server.id).toBe(20); expect(server.exercises[0].sets[0].id).toBe(101);
+  await other.close();
+});

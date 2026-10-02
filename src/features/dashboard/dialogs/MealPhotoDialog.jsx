@@ -31,7 +31,7 @@ export function MealPhotoContextEditor({ photoUrl, context, setContext, error, r
         <div className="ai-context-tools">
           <label className="ai-context-field">
             <span>Descripción opcional</span>
-            <textarea maxLength={240} placeholder="Ej.: dos empanadas de carne con queso y gaseosa" value={context} onChange={(event) => setContext(event.target.value)} />
+            <textarea aria-label="Descripción opcional" maxLength={240} placeholder="Ej.: dos empanadas de carne con queso y gaseosa" value={context} onChange={(event) => setContext(event.target.value)} />
           </label>
           <button type="button" className={`secondary ai-note-record ${recording ? "recording" : ""}`} disabled={transcribing || analyzing} onClick={onToggleRecording}>
             <Icon name={recording ? "stop_circle" : "mic"} />

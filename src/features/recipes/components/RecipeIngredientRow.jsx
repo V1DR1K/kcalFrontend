@@ -2,7 +2,7 @@ import React from "react";
 import { Icon } from "../../../components/Icon";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
-import { formatNumber, formatQuantity } from "../../../utils/format";
+import { formatNumber, formatQuantity, formatNutrient } from "../../../utils/format";
 import { foodPreparationSuffix, scaleFoodNutrition, scaleRecipeNutrition } from "../recipe.utils";
 import { FoodThumb } from "../../catalog/CatalogComponents";
 
@@ -24,7 +24,7 @@ export function RecipeIngredientRow({ ingredient, index, locked = false, onChang
         {onRemove && <NutritionSummary nutrition={nutrition} />}
       </div>
       <div className="daily-recipe-ingredient-meta">
-        <span className="daily-recipe-ingredient-kcal">{formatNumber(nutrition.calories)} kcal</span>
+        <span className="daily-recipe-ingredient-kcal">{formatNutrient(nutrition.calories, 0, "kcal")}</span>
         {locked ? (
           <span className="daily-recipe-ingredient-quantity"><strong>{formatQuantity(ingredient?.quantity)}</strong><small>g</small></span>
         ) : (

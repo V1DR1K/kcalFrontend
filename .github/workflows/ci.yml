@@ -17,9 +17,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npm run check:frontend
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e -- --project=chromium --workers=1
+        env:
+          GIT_HASH: ${{ github.sha }}
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:e2e -- --project=chromium --project=webkit-iphone --workers=2
+      - run: npm run test:e2e -- e2e/day-presets-responsive.spec.js e2e/safari-responsive.spec.js --project=webkit-iphone-short --project=webkit-ipad --project=webkit-iphone-landscape --workers=2
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
@@ -42,9 +46,16 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
-        run: ssh "$VPS_USER@$VPS_HOST" "cd /opt/projects/scalegrams/front/scalegrams-frontend && git fetch origin main && git diff --quiet && git diff --cached --quiet && git checkout main && git pull --ff-only origin main && test \"\$(git rev-parse HEAD)\" = '${{ github.sha }}' && /opt/infra/bin/deploy-service scalegrams web"
+        run: ssh "$VPS_USER@$VPS_HOST" "cd /opt/projects/scalegrams/front/scalegrams-frontend && git fetch origin main && git diff --quiet && git diff --cached --quiet && git checkout main && git pull --ff-only origin main && test \"\$(git rev-parse HEAD)\" = '${{ github.sha }}' && bash scripts/release-web.sh ${{ github.sha }}"
       - name: Verify production host identity
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: ssh "$VPS_USER@$VPS_HOST" 'html="$(curl --fail --silent --show-error --retry 6 --retry-delay 5 https://scalegrams.neticar.com.ar/)"; grep -q "<title>ScaleGrams" <<<"$html"'
+      - name: Verify published web revision
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          revision="$(ssh "$VPS_USER@$VPS_HOST" 'curl --fail --silent --show-error --retry 6 --retry-delay 5 https://scalegrams.neticar.com.ar/version.json')"
+          grep -Fq '${{ github.sha }}' <<<"$revision"

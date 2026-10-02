@@ -1,0 +1,1425 @@
+{
+  "findings": [
+    {
+      "id": "SG001",
+      "priority": "P1",
+      "title": "Las acciones de foto son inaccesibles por teclado",
+      "phase": "1",
+      "type": "defecto funcional confirmado.",
+      "error": "Elegir foto y Tomar foto son `label` sin foco ni rol interactivo, con inputs `file` ocultos mediante `hidden` y `display:none`. En Registrar con IA, seis pulsaciones de Tab mantuvieron el foco en Cerrar.",
+      "reproduce": "Registrar → Registrar comida con foto → navegar únicamente con Tab, Shift+Tab y Enter.",
+      "impact": "una persona de teclado no puede iniciar el flujo de foto. El aspecto de botón promete una interacción que no existe para ella.",
+      "fix": "Botones nativos de cámara/galería; acciones dentro del área visible, también al buscar. CI en fix/**.",
+      "acceptance": "ambas acciones reciben foco y Enter/Espacio abren el selector; Shift+Tab funciona; el cierre del selector conserva el diálogo y devuelve el foco; no aparece una segunda acción duplicada en el lector.",
+      "effort": "S.",
+      "dependencies": "ninguna.",
+      "sourceCandidates": "`features/dashboard/dialogs/FoodPickerDialog.jsx:754`.",
+      "evidence": [
+        "keyboard-photo-evidence.txt",
+        "mobile-foto.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        1
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "usar botones nativos `type=\"button\"` que activen los inputs mediante referencias, o inputs visualmente ocultos pero accesibles con un patrón correcto. Conservar `accept` y `capture`, nombres accesibles, foco visible, estado disabled real y retorno de foco. Aplicar el patrón a Elegir foto, Tomar foto y revisar Escanear tabla nutricional."
+    },
+    {
+      "id": "SG002",
+      "priority": "P1",
+      "title": "El balance se superpone a 320 px",
+      "phase": "1",
+      "type": "defecto visual confirmado.",
+      "error": "el círculo de calorías invade el texto adyacente; Tu balance de hoy se divide en cuatro líneas. Medir solo `scrollWidth` no detecta la superposición.",
+      "reproduce": "Día → viewport 320 × 844 → observar el bloque superior.",
+      "impact": "el resumen principal pierde lectura precisamente en el tamaño más exigente.",
+      "fix": "Balance sin intersección, comidas vacías compactas y agua al inicio; 250/500 ml, cantidad propia y deshacer desde servidor; controles de 44 px.",
+      "acceptance": "a 320, 360, 390, 768 y 1024 px no hay intersección de cajas, recorte ni palabras apiladas; los datos siguen siendo legibles con texto ampliado. Validar también título largo y objetivos de cinco dígitos con fixtures.",
+      "effort": "M.",
+      "dependencies": "ninguna.",
+      "sourceCandidates": "`styles/03-dashboard-catalog.css`, `styles/08-responsive-sections.css:72`, `styles/14-desktop.css`.",
+      "evidence": [
+        "320-dia.png",
+        "mobile-dia.png",
+        "768-dia.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        20
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "cambiar a una columna a un umbral determinado por el contenido; poner valor y explicación en filas separadas. Hacer el círculo proporcional al espacio asignado y revisar su SVG, sus dimensiones mínimas y todos los overrides de `.dashboard-hero` y `.calorie-ring`. Un texto más pequeño no es una solución suficiente."
+    },
+    {
+      "id": "SG003",
+      "priority": "P1",
+      "title": "La explicación de calorías se comprime en una columna muy angosta",
+      "phase": "1",
+      "type": "defecto visual confirmado.",
+      "error": "en Editar plan a 390 px, la pregunta y su explicación se fragmentan en numerosas líneas, mientras el número de paso queda abajo. El formulario requiere un scroll largo antes de llegar a las decisiones centrales.",
+      "reproduce": "Planes → Editar → 390 × 844 → recorrer la sección de calorías.",
+      "impact": "configurar el objetivo diario parece más complejo de lo que es y la relación entre etiqueta e input se debilita.",
+      "fix": "Alternativas, programación/cancelación con vista previa y versiones; vigencias derivadas sin cambiar fechas declaradas. V44 conserva planes y fechas. Alternativas separadas de programación; comparación antes/después y recuperación explícita de vista previa. Porcentajes independientes y entrada directa; editor móvil sin superposición.",
+      "acceptance": "la explicación ocupa el ancho disponible, el campo aparece inmediatamente después y la acción final sigue visible; no regresa el defecto al entrar a Historial antes de abrir Planes. Verificar 320–430 px y viewport corto.",
+      "effort": "M.",
+      "dependencies": "ninguna.",
+      "sourceCandidates": "`styles/06-history.css:196`, `styles/08-responsive-sections.css:376`, `styles/07-profile.css`, `features/profile/components/NutritionPlanDialog.jsx`.",
+      "evidence": [
+        "mobile-editar-plan-nutricion.png",
+        "mobile-plan-calorias-detalle.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        9,
+        10
+      ],
+      "acceptanceEvidence": "e2e/profile.spec.js; BE ProfileTimelineIntegrationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "una columna para explicación e input en móvil; ubicar el número junto al título o eliminarlo si no ayuda. Revisar la cascada de `.plan-calorie-step`: el código local contiene una regla de tres columnas y un ajuste móvil que debe seguir vigente tras cargar los estilos de Historial y Perfil."
+    },
+    {
+      "id": "SG004",
+      "priority": "P1",
+      "title": "Los porcentajes parecen trabados cuando suman 100",
+      "phase": "1",
+      "type": "defecto de interacción confirmado.",
+      "error": "el plan tiene 23/55/22. ArrowRight sobre Proteínas mantiene 23; no explica que antes hay que reducir otro macro. En el código local `setMacro` limita el valor al remanente disponible.",
+      "reproduce": "Planes → Editar → enfocar Proteínas porcentaje → intentar aumentarlo con flecha derecha o deslizador.",
+      "impact": "el usuario puede interpretar el control como roto y no saber cómo alcanzar la distribución deseada.",
+      "fix": "Alternativas, programación/cancelación con vista previa y versiones; vigencias derivadas sin cambiar fechas declaradas. V44 conserva planes y fechas. Alternativas separadas de programación; comparación antes/después y recuperación explícita de vista previa. Porcentajes independientes y entrada directa; editor móvil sin superposición.",
+      "acceptance": "modificar 23 a 30 produce feedback comprensible; se puede alcanzar 30/48/22; el total se anuncia sin saturar al lector; nunca se guarda un total inválido. No cambiar los valores persistidos hasta confirmar.",
+      "effort": "M.",
+      "dependencies": "SG003.",
+      "sourceCandidates": "`NutritionPlanDialog.jsx:setMacro`, `ProfilePanels.jsx:MacroControl`.",
+      "evidence": [
+        "macro-training-editor-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        9,
+        10
+      ],
+      "acceptanceEvidence": "e2e/profile.spec.js; BE ProfileTimelineIntegrationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "permitir una distribución temporal fuera de 100 con mensaje y guardar bloqueado, o redistribuir los otros valores con reglas explícitas y posibilidad de bloquearlos. Para la opción de menor cambio, permitir edición temporal y comunicar cuánto falta o sobra. Ofrecer input numérico accesible junto al slider."
+    },
+    {
+      "id": "SG005",
+      "priority": "P1",
+      "title": "Un alimento con valores en cero aparece como una opción normal",
+      "phase": "1",
+      "type": "problema de integridad de datos presentado en UI, confirmado; origen pendiente de diagnóstico.",
+      "error": "buscar pollo ofrece Pechuga de Pollo, Cocido/a, con 0 kcal y P/C/G en 0, junto a otras variantes con valores. No hay una advertencia de dato incompleto.",
+      "reproduce": "Día → agregar alimento → buscar pollo → ubicar Pechuga de Pollo cocida con todos los valores en cero.",
+      "impact": "la UI transmite certeza sobre un registro sospechoso y puede llevar a un seguimiento engañoso. La auditoría no determina cuál sería su composición correcta.",
+      "fix": "Valores ausentes se conservan; snapshots retienen subtotales conocidos y completitud (V45). Historial utiliza energía guardada. Ranking por palabra completa y advertencia para composición sospechosa, sin sustituir datos. Cantidades negativas/invalidas visibles y rechazadas; coma decimal, referencias y preparación claras; desconocidos y subtotales parciales; filtros y variantes diferenciadas; aviso cancelable antes de registrar. Matriz de aceptación, versión web exacta y respaldo previo. Recuperación real de 409 sin reintentar a ciegas, energía/desconocidos consistentes en recetas/plantillas/IA y retorno de foco de diálogos. Pruebas con dos clientes y editores de IA.",
+      "acceptance": "el caso observado se corrige con una fuente validada o se identifica claramente como incompleto; cero válido y dato ausente son estados distintos; registros históricos no cambian silenciosamente.",
+      "effort": "M/L.",
+      "dependencies": "investigación del contrato de datos.",
+      "sourceCandidates": "`FoodPickerDialog.jsx`, `CatalogComponents.jsx`, DTO y transformación nutricional que sirve `/api/foods`.",
+      "evidence": [
+        "mobile-alimento-cero.png",
+        "food-validation-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        13,
+        16,
+        32
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js; test/nutrition.test.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "dataEvidence": "Producción id 306 COOKED/MEAT tiene macros null y kcal 0. Advertencia de incompletitud y alternativas explícitas, sin sustituir datos ni reescribir histórico; BE docs/NUTRITION_DATA_EVIDENCE.md.",
+      "proposedFix": "investigar la entidad y su derivación crudo/cocido en backend y datos. Presentar un estado explícito de dato incompleto cuando corresponda y ofrecer una alternativa. No reemplazar automáticamente cualquier cero: agua y nutrientes individuales pueden tener ceros legítimos. Conservar nutrición histórica y evitar migraciones indiscriminadas."
+    },
+    {
+      "id": "SG006",
+      "priority": "P2",
+      "title": "El conteo de ingredientes contradice al detalle de la receta",
+      "phase": "2",
+      "type": "defecto funcional de presentación confirmado.",
+      "error": "Fajitas Avrus muestra 0 ingredientes en el listado y 4 al abrir el detalle. La ampliación confirmó el mismo defecto con una receta propia recién creada: listado 0, detalle 1. Persiste tras recargar. Los macros sí están disponibles en la tarjeta.",
+      "reproduce": "Registrar → Recetas → Explorar recetas → Avril → comparar la tarjeta y el detalle de Fajitas Avrus.",
+      "impact": "aparenta una receta vacía y erosiona la confianza en la biblioteca.",
+      "fix": "Conteo real de ingredientes por consulta agrupada de página; resúmenes sin listas ni cálculo nutricional por receta. Conteo del servidor, fallback sin cero inventado; acción Crear receta en estado vacío; detalle conserva desconocidos.",
+      "acceptance": "tarjeta y detalle coinciden; una propiedad ausente no se convierte en cero; no hace falta cargar todos los ingredientes de todas las recetas para renderizar un conteo.",
+      "effort": "S/M.",
+      "dependencies": "contrato del listado.",
+      "sourceCandidates": "`features/recipes/Recipes.jsx:34`.",
+      "evidence": [
+        "draft-exercises-community-evidence.txt",
+        "recipe-detail-evidence.txt",
+        "mobile-comunidad-recetas.png",
+        "mobile-receta-comunidad-detalle.png",
+        "writes-recipe-zero-count.png",
+        "writes-recipe-one-ingredient-detail.png",
+        "writes-evidence-01.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        14,
+        18
+      ],
+      "acceptanceEvidence": "e2e/recipes-responsive.spec.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "usar un `ingredientCount` definido por el contrato del listado. No inferir cero de un array no incluido: el código local usa `ingredients?.length || 0`. Hasta tener conteo, omitir el dato o mostrar Detalles disponibles."
+    },
+    {
+      "id": "SG007",
+      "priority": "P2",
+      "title": "Una cantidad negativa se convierte silenciosamente en positiva",
+      "phase": "2",
+      "type": "defecto de normalización confirmado.",
+      "error": "pegar -1 en Cantidad termina mostrando 1. La normalización local elimina caracteres no numéricos, incluido el signo. La coma decimal, en cambio, se interpreta correctamente como 12.5.",
+      "reproduce": "seleccionar Pollo desmechado → pegar -1 en Cantidad → esperar el cálculo.",
+      "impact": "se altera el significado del dato sin explicar el cambio.",
+      "fix": "Valores ausentes se conservan; snapshots retienen subtotales conocidos y completitud (V45). Historial utiliza energía guardada. Ranking por palabra completa y advertencia para composición sospechosa, sin sustituir datos. Cantidades negativas/invalidas visibles y rechazadas; coma decimal, referencias y preparación claras; desconocidos y subtotales parciales; filtros y variantes diferenciadas; aviso cancelable antes de registrar. Matriz de aceptación, versión web exacta y respaldo previo. Recuperación real de 409 sin reintentar a ciegas, energía/desconocidos consistentes en recetas/plantillas/IA y retorno de foco de diálogos. Pruebas con dos clientes y editores de IA.",
+      "acceptance": "-1 nunca se transforma en un registro válido de 1; 0 y texto inválido reciben feedback local; 12,5 y 12.5 representan la misma cantidad; mantener hasta dos decimales según contrato.",
+      "effort": "M.",
+      "dependencies": "ninguna.",
+      "sourceCandidates": "`utils/decimal.js:4` y consumidores de `normalizeDecimalInput`.",
+      "evidence": [
+        "food-validation-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        13,
+        16,
+        32
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js; test/nutrition.test.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "separar texto ingresado, parsing y validación. Conservar temporalmente el signo y mostrar Cantidad debe ser mayor que cero; bloquear la confirmación inválida. Aceptar coma o punto decimal deliberadamente. No eliminar caracteres de forma que cambie la magnitud o el signo."
+    },
+    {
+      "id": "SG008",
+      "priority": "P2",
+      "title": "Toda la navegación conserva la dirección de ingreso",
+      "phase": "4",
+      "type": "limitación de navegación confirmada.",
+      "error": "Día, Historial, Planes, Recetas y Entrenamiento mantienen `/ingresar`. El código local usa History API sin actualizar la URL.",
+      "reproduce": "ingresar → navegar entre estas pantallas → copiar la dirección.",
+      "impact": "no se pueden compartir enlaces a una pantalla, abrirla en otra pestaña o entender la ubicación a partir de la dirección.",
+      "fix": "URLs estables por pantalla, recarga/atrás/adelante, títulos y retorno interno seguro; enlaces compartidos preservados y anclas de landing específicas.",
+      "acceptance": "un enlace a Historial abre Historial tras validar la sesión; recargar conserva la pantalla; Atrás y Adelante reproducen el recorrido; enlaces de compartir existentes funcionan.",
+      "effort": "L.",
+      "dependencies": "inventario de rutas y compatibilidad.",
+      "sourceCandidates": null,
+      "evidence": [
+        "registrar-evidence.txt",
+        "nutrition-mobile-evidence.txt",
+        "training-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        28
+      ],
+      "acceptanceEvidence": "e2e/auth-smoke.spec.js; test/routes.test.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "mapear cada superficie a una ruta estable; resolver la ruta de entrada, integrar Atrás/Adelante, autorización y título. Mantener compatibilidad con parámetros de compartir. Incorporar enlaces nativos en la navegación cuando corresponda."
+    },
+    {
+      "id": "SG009",
+      "priority": "P2",
+      "title": "Registrar no ofrece la búsqueda manual principal",
+      "phase": "3",
+      "type": "recomendación de arquitectura de información basada en el recorrido.",
+      "error": "Registrar ofrece foto, escáner, crear alimento, recetas y alimentos personales; buscar un alimento existente depende de regresar al + de una comida en Día.",
+      "reproduce": "entrar a Registrar y tratar de cargar un alimento del catálogo escribiendo su nombre.",
+      "impact": "el destino que parece resolver el registro prioriza mecanismos especiales y administración del catálogo.",
+      "fix": "Búsqueda y registro existentes primero; fecha/comida visibles; foto distingue catálogo y consumo, con destino explícito; escaneo permite elegir fecha y respeta avisos.",
+      "acceptance": "desde Registrar se encuentra un alimento existente y se revisa su cantidad sin regresar a Día; queda claro si se registra consumo o se crea una entidad de catálogo.",
+      "effort": "M.",
+      "dependencies": "SG010 y SG011.",
+      "sourceCandidates": "`features/scanner/Scanner.jsx`, `FoodPickerDialog.jsx`.",
+      "evidence": [
+        "desktop-registrar.png",
+        "mobile-registrar.png",
+        "registrar-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        19
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "agregar Registrar alimento como acción principal, con buscador y selección explícita de fecha/comida. Separar Crear alimento y gestionar el catálogo como acciones secundarias. Reutilizar FoodPicker y su validación."
+    },
+    {
+      "id": "SG010",
+      "priority": "P2",
+      "title": "La foto elige una comida sin una selección explícita",
+      "phase": "3",
+      "type": "confusión de destino observada.",
+      "error": "abrir foto desde Registrar muestra Almuerzo en el encabezado, aunque no se eligió una comida allí; el código local la deriva de la hora. A la vez el texto dice que guarda alimentos o recetas en el catálogo.",
+      "reproduce": "Registrar → Registrar comida con foto → observar encabezado y explicación.",
+      "impact": "no queda claro si el resultado irá al almuerzo de hoy, al catálogo o a ambos lugares.",
+      "fix": "Búsqueda y registro existentes primero; fecha/comida visibles; foto distingue catálogo y consumo, con destino explícito; escaneo permite elegir fecha y respeta avisos.",
+      "acceptance": "antes de guardar se ve qué entidad se crea y qué consumo se registra; cambiar comida/fecha no requiere salir; ningún destino cambia silenciosamente por la hora.",
+      "effort": "M.",
+      "dependencies": "decisión de producto sobre los dos usos.",
+      "sourceCandidates": "`Scanner.jsx:currentMealType`, `FoodPickerDialog.jsx`.",
+      "evidence": [
+        "mobile-foto.png",
+        "registrar-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        19
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "mostrar y permitir editar destino, fecha y comida antes de confirmar. Si este flujo solo crea catálogo, eliminar la etiqueta de comida y usar Crear desde foto. Mantener una única confirmación que resuma todos los efectos."
+    },
+    {
+      "id": "SG011",
+      "priority": "P2",
+      "title": "La base de los nutrientes no está explícita en los resultados",
+      "phase": "2",
+      "type": "problema de claridad observado.",
+      "error": "los resultados muestran Kcal/P/C/G sin expresar al lado si corresponden a 100 g, a una unidad o a una porción. El rendimiento 100 g crudos → cocidos no sustituye esa base.",
+      "reproduce": "buscar pollo y comparar un producto envasado, Nuggets y una pechuga.",
+      "impact": "números aparentemente comparables pueden representar cantidades distintas.",
+      "fix": "Valores ausentes se conservan; snapshots retienen subtotales conocidos y completitud (V45). Historial utiliza energía guardada. Ranking por palabra completa y advertencia para composición sospechosa, sin sustituir datos. Cantidades negativas/invalidas visibles y rechazadas; coma decimal, referencias y preparación claras; desconocidos y subtotales parciales; filtros y variantes diferenciadas; aviso cancelable antes de registrar. Matriz de aceptación, versión web exacta y respaldo previo. Recuperación real de 409 sin reintentar a ciegas, energía/desconocidos consistentes en recetas/plantillas/IA y retorno de foco de diálogos. Pruebas con dos clientes y editores de IA.",
+      "acceptance": "cada tarjeta tiene una base inequívoca; productos con bases distintas se pueden comparar sin inferir unidades; el total cambia con la cantidad de manera consistente.",
+      "effort": "M.",
+      "dependencies": "contrato de base nutricional.",
+      "sourceCandidates": "`CatalogComponents.jsx`, `FoodPickerDialog.jsx`, `components/NutritionSummary.jsx`.",
+      "evidence": [
+        "food-validation-evidence.txt",
+        "03-agregar-desktop.png",
+        "04-cantidad-desktop.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        13,
+        16,
+        32
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js; test/nutrition.test.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "mostrar Por 100 g, Por unidad de X g o Por porción de X g a partir del contrato del alimento. En la revisión de cantidad, distinguir la referencia del total que se agregará."
+    },
+    {
+      "id": "SG012",
+      "priority": "P2",
+      "title": "El rendimiento crudo a cocido se explica incluso cuando no corresponde",
+      "phase": "2",
+      "type": "problema editorial confirmado.",
+      "error": "un alimento ya cocido o vendido envasado repite 100 g crudos rinden 100 g cocidos. El tooltip aclara que no cambia de peso, pero esa explicación no está disponible de forma cómoda en móvil.",
+      "reproduce": "Día → + de Desayuno → buscar pollo; comparar rendimiento de productos cocidos y envasados.",
+      "impact": "agrega trabajo de interpretación a cada resultado y puede hacer creer que hay que convertir una cantidad que ya está lista.",
+      "fix": "Valores ausentes se conservan; snapshots retienen subtotales conocidos y completitud (V45). Historial utiliza energía guardada. Ranking por palabra completa y advertencia para composición sospechosa, sin sustituir datos. Cantidades negativas/invalidas visibles y rechazadas; coma decimal, referencias y preparación claras; desconocidos y subtotales parciales; filtros y variantes diferenciadas; aviso cancelable antes de registrar. Matriz de aceptación, versión web exacta y respaldo previo. Recuperación real de 409 sin reintentar a ciegas, energía/desconocidos consistentes en recetas/plantillas/IA y retorno de foco de diálogos. Pruebas con dos clientes y editores de IA.",
+      "acceptance": "los alimentos cocidos no exigen interpretar una conversión crudo/cocido ficticia; los que sí requieren factor conservan una explicación accesible y el cálculo correcto.",
+      "effort": "S/M.",
+      "dependencies": "SG011.",
+      "sourceCandidates": "`CatalogComponents.jsx:PreparationBadge`, utilidades de preparación y rendimiento.",
+      "evidence": [
+        "food-validation-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        13,
+        16,
+        32
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js; test/nutrition.test.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "mostrar Pesalo cocido o Tal como se vende según preparación; exponer conversión solo donde tenga significado. Diferenciar factor de cocción y base de nutrientes. Dar ayuda visible mediante botón si hace falta."
+    },
+    {
+      "id": "SG013",
+      "priority": "P2",
+      "title": "Algunos tooltips revelan detalles internos",
+      "phase": "2",
+      "type": "defecto de contenido confirmado en el DOM desplegado.",
+      "error": "la variante cocida de Pechuga de Pollo tiene un título con food id 2 y factor .7500, en lugar de una explicación para el usuario.",
+      "reproduce": "buscar pollo → inspeccionar o enfocar la ayuda de rendimiento de esa variante; el texto también consta en el snapshot.",
+      "impact": "expone lenguaje de implementación, no una guía de uso, y puede perderse en touch.",
+      "fix": "Valores ausentes se conservan; snapshots retienen subtotales conocidos y completitud (V45). Historial utiliza energía guardada. Ranking por palabra completa y advertencia para composición sospechosa, sin sustituir datos. Cantidades negativas/invalidas visibles y rechazadas; coma decimal, referencias y preparación claras; desconocidos y subtotales parciales; filtros y variantes diferenciadas; aviso cancelable antes de registrar. Matriz de aceptación, versión web exacta y respaldo previo. Recuperación real de 409 sin reintentar a ciegas, energía/desconocidos consistentes en recetas/plantillas/IA y retorno de foco de diálogos. Pruebas con dos clientes y editores de IA.",
+      "acceptance": "títulos, tooltips y textos accesibles no incluyen IDs internos; la ayuda explica qué cantidad pesar y cómo se calcula.",
+      "effort": "S.",
+      "dependencies": "SG005 y SG012.",
+      "sourceCandidates": "`CatalogComponents.jsx` y dato de descripción recibido por API.",
+      "evidence": [
+        "food-tooltip-evidence.txt",
+        "food-validation-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        13,
+        16,
+        32
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js; test/nutrition.test.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "separar descripción técnica y descripción pública; convertirla en Derivado de la versión cruda con un rendimiento estimado del 75% cuando ese dato esté validado. No publicar IDs o formatos de base de datos como ayuda."
+    },
+    {
+      "id": "SG014",
+      "priority": "P2",
+      "title": "La búsqueda exige leer demasiados metadatos antes de elegir",
+      "phase": "3",
+      "type": "recomendación de jerarquía visual basada en búsqueda real.",
+      "error": "pollo produce variantes muy parecidas y resultados como Repollo. Cada tarjeta combina marca, categoría, preparación, rendimiento y cuatro valores; no hay filtros visibles por preparación en ese selector.",
+      "reproduce": "Día → + de Desayuno → buscar pollo; revisar relevancia, variantes y metadatos.",
+      "impact": "aumenta el tiempo de comparación y la posibilidad de elegir una variante equivocada.",
+      "fix": "Valores ausentes se conservan; snapshots retienen subtotales conocidos y completitud (V45). Historial utiliza energía guardada. Ranking por palabra completa y advertencia para composición sospechosa, sin sustituir datos. Cantidades negativas/invalidas visibles y rechazadas; coma decimal, referencias y preparación claras; desconocidos y subtotales parciales; filtros y variantes diferenciadas; aviso cancelable antes de registrar. Matriz de aceptación, versión web exacta y respaldo previo. Recuperación real de 409 sin reintentar a ciegas, energía/desconocidos consistentes en recetas/plantillas/IA y retorno de foco de diálogos. Pruebas con dos clientes y editores de IA.",
+      "acceptance": "las coincidencias de pollo son fáciles de distinguir; Repollo no desplaza coincidencias relevantes; los estados seleccionado, cargando y sin resultados quedan claros.",
+      "effort": "M.",
+      "dependencies": "SG005, SG011 y SG012.",
+      "sourceCandidates": "`FoodPickerDialog.jsx`, `utils/search.js`, ranking del endpoint de alimentos.",
+      "evidence": [
+        "360-busqueda.png",
+        "food-validation-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        13,
+        16,
+        32
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js; test/nutrition.test.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "ordenar por coincidencia y contexto; priorizar nombre, marca y estado crudo/cocido. Poner nutrientes sobre una base común y dejar rendimiento en detalle. Ofrecer filtros ligeros de preparación/categoría y conservar coincidencias parciales útiles al final. No fusionar entidades con distinta composición solo porque su nombre se parece."
+    },
+    {
+      "id": "SG015",
+      "priority": "P2",
+      "title": "El día vacío consume demasiada altura",
+      "phase": "3",
+      "type": "recomendación de densidad y jerarquía.",
+      "error": "a 390 px el contenedor principal de Día mide aproximadamente 2.399 px de alto. Las cuatro comidas repiten macros en cero, icono, título de vacío y explicación. El resumen superior ocupa casi 400 px antes de comenzar el registro.",
+      "reproduce": "Día sin comidas → viewport 390 × 844 → recorrer hasta Cena e Hidratación.",
+      "impact": "el usuario recorre mucho contenido sin información nueva para acceder a Cena, agua o reutilización.",
+      "fix": "Balance sin intersección, comidas vacías compactas y agua al inicio; 250/500 ml, cantidad propia y deshacer desde servidor; controles de 44 px.",
+      "acceptance": "propuesta a validar: el día vacío se reduce al menos un 35% en 390 × 844, sin recortar información útil ni áreas táctiles; se puede localizar cada comida rápidamente.",
+      "effort": "M.",
+      "dependencies": "SG002.",
+      "sourceCandidates": "`MealSections.jsx:MealCard`, `styles/12-dashboard-summary.css`.",
+      "evidence": [
+        "mobile-dia.png",
+        "nutrition-mobile-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        20
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "compactar comidas vacías con nombre, estado y un botón Agregar alimento; evitar macros vacíos y explicaciones repetidas. Dar más espacio cuando hay registros. Compactar también el resumen inicial manteniendo los objetivos visibles."
+    },
+    {
+      "id": "SG016",
+      "priority": "P2",
+      "title": "Algunos objetivos táctiles son menores que el estándar del proyecto",
+      "phase": "3",
+      "type": "medición confirmada; mejora de comodidad, no incumplimiento AA automático.",
+      "error": "menú de comidas 40 × 40 px; botones de agua 38 px de alto; tabs de recetas 38 px; Exportar a Excel 42 px. Los elementos dentro de menús cerrados no se contabilizan como controles visibles fallidos.",
+      "reproduce": "Viewport 390 × 844; medir áreas de menú de comidas, agua, tabs de recetas y exportar.",
+      "impact": "dificulta acertar con el pulgar y produce inconsistencias entre controles.",
+      "fix": "Balance sin intersección, comidas vacías compactas y agua al inicio; 250/500 ml, cantidad propia y deshacer desde servidor; controles de 44 px.",
+      "acceptance": "mediciones de controles visibles cumplen el objetivo; no aumenta el scroll innecesariamente; teclado y foco conservan su comportamiento.",
+      "effort": "S/M.",
+      "dependencies": "ninguna.",
+      "sourceCandidates": "`.meal-menu summary`, `.water-actions`, `.tabs`, `.calendar-export`.",
+      "evidence": [
+        "nutrition-mobile-evidence.txt",
+        "registrar-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        20
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "llevar el área interactiva a 44 × 44 px como mínimo y acciones principales a 48 px, conservando separación. El icono puede permanecer pequeño; debe crecer el área del control. Revisar sliders y checkboxes por su objetivo completo, no solo el dibujo."
+    },
+    {
+      "id": "SG017",
+      "priority": "P2",
+      "title": "El registro de agua está demasiado lejos del inicio",
+      "phase": "3",
+      "type": "recomendación de jerarquía.",
+      "error": "Hidratación aparece después de las cuatro comidas; el día vacío ya supera dos pantallas antes de llegar allí.",
+      "reproduce": "Día vacío → móvil → buscar la acción de Hidratación desde el inicio.",
+      "impact": "una acción frecuente y breve requiere buscar o recorrer una pantalla larga.",
+      "fix": "Balance sin intersección, comidas vacías compactas y agua al inicio; 250/500 ml, cantidad propia y deshacer desde servidor; controles de 44 px.",
+      "acceptance": "desde el inicio de Día se accede al registro de agua en un toque, sin perder fecha ni scroll; Deshacer mantiene el mismo registro.",
+      "effort": "M.",
+      "dependencies": "SG015 y SG016.",
+      "sourceCandidates": "`DashboardSections.jsx`, `Dashboard.jsx`, `styles/12-dashboard-summary.css`.",
+      "evidence": [
+        "nutrition-mobile-evidence.txt",
+        "02-dia-desktop.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        20
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "incorporar un resumen de agua accionable cerca del balance, o una acción contextual accesible desde el inicio. Evitar dos contadores de agua con estados independientes; reutilizar el mismo modelo de datos."
+    },
+    {
+      "id": "SG018",
+      "priority": "P2",
+      "title": "El agua solo ofrece incrementos de medio litro",
+      "phase": "3",
+      "type": "oportunidad de usabilidad confirmada en controles disponibles.",
+      "error": "la acción es Sumar 0.5L; no se vio una cantidad personalizada o una opción de vaso menor.",
+      "reproduce": "Día → Hidratación → revisar opciones disponibles sin confirmar un registro.",
+      "impact": "quien bebe otra cantidad tiene que aproximar o esperar para registrar, reduciendo precisión y hábito.",
+      "fix": "Balance sin intersección, comidas vacías compactas y agua al inicio; 250/500 ml, cantidad propia y deshacer desde servidor; controles de 44 px.",
+      "acceptance": "250 ml y una cantidad personalizada pueden registrarse en fixtures; la suma y Deshacer son correctos y no se duplica una solicitud por doble toque.",
+      "effort": "M.",
+      "dependencies": "SG016 y verificación del backend para cantidad variable.",
+      "sourceCandidates": "hidratación de `DashboardSections.jsx` y contrato del registro de agua.",
+      "evidence": [
+        "nutrition-mobile-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        20
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "ofrecer accesos de 250 y 500 ml y una opción Otra cantidad; usar una sola unidad de entrada y convertir a litros para el resumen. Localizar el texto a Sumar 0,5 L si se conserva."
+    },
+    {
+      "id": "SG019",
+      "priority": "P2",
+      "title": "El historial presenta falta de datos como un valor cero",
+      "phase": "2",
+      "type": "problema semántico confirmado.",
+      "error": "octubre y septiembre sin registros muestran Promedio del mes 0 kcal. El detalle vacío también presenta 0%, calorías restantes y macros como si hubiera un día medido.",
+      "reproduce": "Historial → meses de octubre y septiembre de 2026 vacíos → abrir un detalle vacío.",
+      "impact": "se confunde no haber registrado con haber consumido cero y puede interpretarse un dato ausente como un resultado real.",
+      "fix": "Historial usa energía histórica, cuenta registros y completitud; promedios hasta hoy incluyen ceros y excluyen ausentes. Resuelve vigencias por consulta de rango. V46 conserva agua con precisión de ml. Recetas conservan energía informada independiente de macros ausentes. Calendario distingue sin registros/parcial/completo/hoy/futuro con texto, promedio explica muestra y exportación secundaria informa disponibilidad/rango. Excel conserva Sin dato y cero válido; consultas limitadas a 4 simultáneas.",
+      "acceptance": "mes vacío no comunica consumo medido; un mes con dos días registrados especifica el denominador del promedio y excluye días futuros según la definición de producto.",
+      "effort": "M.",
+      "dependencies": "definición del promedio.",
+      "sourceCandidates": "`features/history/History.jsx`, `features/history/dialogs/HistoryDialogs.jsx`.",
+      "evidence": [
+        "history-evidence.txt",
+        "history-scanner-evidence.txt",
+        "mobile-historial-detalle.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        21,
+        22
+      ],
+      "acceptanceEvidence": "e2e/history.spec.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "usar Sin registros o — cuando no hay observaciones; explicar la población del promedio. En el detalle, mostrar un estado vacío y una acción Registrar en esta fecha. No modificar los números de días que realmente tienen registros."
+    },
+    {
+      "id": "SG020",
+      "priority": "P2",
+      "title": "El calendario destaca el plan en días sin actividad sin explicar su estado",
+      "phase": "2",
+      "type": "recomendación de semántica visual.",
+      "error": "todos los días, incluidos los futuros, muestran la misma línea amarilla y la leyenda Balanceado. El plan se ve en escritorio y desaparece como texto dentro de la celda móvil; la explicación del estado es limitada.",
+      "reproduce": "Historial → octubre vacío → comparar celdas actuales/futuras a 1440 y 390 px.",
+      "impact": "el usuario puede confundir plan asignado, día con registro y objetivo cumplido; la información disponible cambia según pantalla.",
+      "fix": "Historial usa energía histórica, cuenta registros y completitud; promedios hasta hoy incluyen ceros y excluyen ausentes. Resuelve vigencias por consulta de rango. V46 conserva agua con precisión de ml. Recetas conservan energía informada independiente de macros ausentes. Calendario distingue sin registros/parcial/completo/hoy/futuro con texto, promedio explica muestra y exportación secundaria informa disponibilidad/rango. Excel conserva Sin dato y cero válido; consultas limitadas a 4 simultáneas.",
+      "acceptance": "se distingue un día sin registros de uno registrado y uno cumplido sin depender solo del color; móvil conserva el significado de escritorio.",
+      "effort": "M.",
+      "dependencies": "SG019.",
+      "sourceCandidates": "`History.jsx`, `styles/06-history.css`.",
+      "evidence": [
+        "desktop-historial.png",
+        "mobile-historial.png",
+        "320-historial.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        21,
+        22
+      ],
+      "acceptanceEvidence": "e2e/history.spec.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "separar plan asignado, registro y cumplimiento con símbolos y textos. Mantener estado textual en tooltip accesible o detalle y destacar hoy de forma consistente. Dar menor énfasis a futuro y días sin actividad."
+    },
+    {
+      "id": "SG021",
+      "priority": "P2",
+      "title": "Exportar domina el historial aunque no hay registros",
+      "phase": "3",
+      "type": "recomendación de prioridad de acciones.",
+      "error": "Exportar a Excel es el elemento de mayor contraste y ancho completo en móvil, incluso con 0 días registrados; en escritorio queda separado de las métricas por espacio poco útil.",
+      "reproduce": "Historial vacío → comparar el énfasis de Exportar, período y calendario.",
+      "impact": "la acción secundaria desplaza la revisión del historial y la recuperación del estado vacío.",
+      "fix": "Historial usa energía histórica, cuenta registros y completitud; promedios hasta hoy incluyen ceros y excluyen ausentes. Resuelve vigencias por consulta de rango. V46 conserva agua con precisión de ml. Recetas conservan energía informada independiente de macros ausentes. Calendario distingue sin registros/parcial/completo/hoy/futuro con texto, promedio explica muestra y exportación secundaria informa disponibilidad/rango. Excel conserva Sin dato y cero válido; consultas limitadas a 4 simultáneas.",
+      "acceptance": "el calendario y su período lideran; al exportar se ve rango y contenido; sin datos se explica el resultado. Validar el archivo en cuenta de pruebas.",
+      "effort": "S/M.",
+      "dependencies": "SG019.",
+      "sourceCandidates": "`History.jsx:25`, `.history-calendar-toolbar`.",
+      "evidence": [
+        "desktop-historial.png",
+        "mobile-historial.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        21,
+        22
+      ],
+      "acceptanceEvidence": "e2e/history.spec.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "mover Exportar a un control secundario junto al período, comunicar el rango y ofrecer un estado explícito si no hay registros. Si exportar vacío tiene utilidad, explicar qué incluye en vez de deshabilitar por defecto."
+    },
+    {
+      "id": "SG022",
+      "priority": "P2",
+      "title": "La biblioteca vacía de días reutilizables no ofrece una salida accionable",
+      "phase": "3",
+      "type": "problema de recuperación observado.",
+      "error": "dos Guardar día actual están deshabilitados y el texto invita a guardarlo cuando haya una combinación, sin una acción directa para empezar a registrar. Fecha de trabajo y Elegir fecha duplican parte de la información.",
+      "reproduce": "Reutilizá tu día con fecha vacía → revisar dos acciones Guardar día actual deshabilitadas.",
+      "impact": "el primer uso llega a un destino sin un siguiente paso efectivo.",
+      "fix": "Vacíos permiten registrar alimento sin perder fecha/comida; deshabilitar guardado explica el requisito y no abre editor vacío.",
+      "acceptance": "con cero elementos existe una acción utilizable; retorna con la misma fecha; los controles deshabilitados explican la condición que falta.",
+      "effort": "S/M.",
+      "dependencies": "SG008 si se implementan rutas primero.",
+      "sourceCandidates": "`features/day-presets/DayPresetsPage.jsx`.",
+      "evidence": [
+        "mobile-presets.png",
+        "nutrition-mobile-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        23
+      ],
+      "acceptanceEvidence": "e2e/day-presets-responsive.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "un único CTA Ir a registrar comidas para el día seleccionado, explicación visible de por qué no se puede guardar y un resumen de la fecha sin duplicación. Cambiar a Guardar día cuando haya contenido válido."
+    },
+    {
+      "id": "SG023",
+      "priority": "P2",
+      "title": "El vacío de recetas contradice el botón de creación",
+      "phase": "3",
+      "type": "defecto de copy confirmado.",
+      "error": "la página tiene Crear receta, pero el estado vacío indica Creá una receta desde Registrar.",
+      "reproduce": "Registrar → Recetas → Mis recetas vacío → comparar texto del vacío y CTA de cabecera.",
+      "impact": "desvía al usuario de una acción que ya tiene disponible y sugiere un requisito inexistente.",
+      "fix": "Conteo real de ingredientes por consulta agrupada de página; resúmenes sin listas ni cálculo nutricional por receta. Conteo del servidor, fallback sin cero inventado; acción Crear receta en estado vacío; detalle conserva desconocidos.",
+      "acceptance": "la primera receta se puede comenzar directamente desde el vacío; la explicación no exige cambiar de pantalla; ambos accesos abren el mismo formulario.",
+      "effort": "S.",
+      "dependencies": "ninguna.",
+      "sourceCandidates": "`features/recipes/Recipes.jsx:98`.",
+      "evidence": [
+        "mobile-recetas.png",
+        "registrar-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        14,
+        18
+      ],
+      "acceptanceEvidence": "e2e/recipes-responsive.spec.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "cambiar el texto a Creá tu primera receta y utilizar el mismo controlador de creación en el CTA vacío y en la cabecera. Evitar repetir tres mensajes de cero sin ayudar a avanzar."
+    },
+    {
+      "id": "SG024",
+      "priority": "P2",
+      "title": "Los ejercicios aparecen después de más de tres mil píxeles",
+      "phase": "3",
+      "type": "problema de arquitectura y densidad medido.",
+      "error": "a 390 px, Ejercicios base comienza aproximadamente a 3.040,5 px; la página mide 6.713 px. Antes hay seis filtros y veinte categorías.",
+      "reproduce": "Entrenamiento → Ejercicios → móvil → tratar de encontrar un ejercicio del catálogo.",
+      "impact": "la tarea central queda enterrada bajo herramientas de administración y filtros.",
+      "fix": "Buscar primero, filtros con estado y limpieza, categorías desplegables después de resultados; nombres públicos completos y módulo en cada opción; IDs conservados.",
+      "acceptance": "a 390 × 844 el primer resultado o vacío útil se ve en la primera pantalla; filtros se aplican y limpian con estado visible; la administración de categorías sigue disponible.",
+      "effort": "M.",
+      "dependencies": "SG025 y SG026.",
+      "sourceCandidates": "`features/training/TrainingProfile.jsx:63`, `styles/18-training.css`.",
+      "evidence": [
+        "draft-exercises-community-evidence.txt",
+        "mobile-training-ejercicios.png",
+        "mobile-ejercicios-lista.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        24
+      ],
+      "acceptanceEvidence": "e2e/training.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "búsqueda visible primero; filtros avanzados en disclosure o panel; resultados inmediatamente después. Mover administrar categorías a una pestaña o sección colapsada. Mantener Nuevo ejercicio como secundaria respecto de buscar uno existente. Evitar resetear scroll innecesariamente al filtrar."
+    },
+    {
+      "id": "SG025",
+      "priority": "P2",
+      "title": "Hay categorías indistinguibles en el selector",
+      "phase": "2",
+      "type": "defecto de desambiguación confirmado.",
+      "error": "aparecen ABDOMEN · Base dos veces y ACONDICIONAMIENTO · Base dos veces porque pertenecen a módulos distintos, pero el selector no expresa el módulo.",
+      "reproduce": "Entrenamiento → Ejercicios → Módulo Todos → abrir Categoría.",
+      "impact": "elegir una opción puede producir un resultado inesperado y obliga a ensayar.",
+      "fix": "Buscar primero, filtros con estado y limpieza, categorías desplegables después de resultados; nombres públicos completos y módulo en cada opción; IDs conservados.",
+      "acceptance": "no hay dos opciones con el mismo nombre visible/accesible cuando representan entidades distintas; cambiar módulo limpia una categoría incompatible.",
+      "effort": "S.",
+      "dependencies": "ninguna.",
+      "sourceCandidates": "`TrainingProfile.jsx:49`.",
+      "evidence": [
+        "training-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        24
+      ],
+      "acceptanceEvidence": "e2e/training.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "incluir el módulo en el nombre accesible, agrupar opciones por módulo o filtrar según Módulo. Si está en Todos, mostrar Abdomen — Gimnasio y Abdomen — Calistenia. Preservar IDs diferentes."
+    },
+    {
+      "id": "SG026",
+      "priority": "P2",
+      "title": "El catálogo expone enums y nombres técnicos",
+      "phase": "2",
+      "type": "defecto de contenido confirmado.",
+      "error": "los ejercicios muestran STATIONARY_BIKE, TREADMILL y CUERPO_COMPLETO; varias categorías están sin tildes y en mayúsculas.",
+      "reproduce": "Entrenamiento → Ejercicios → primera página → ubicar Bicicleta fija y Carrera en cinta.",
+      "impact": "cuesta escanear la información y parece contenido sin terminar.",
+      "fix": "Buscar primero, filtros con estado y limpieza, categorías desplegables después de resultados; nombres públicos completos y módulo en cada opción; IDs conservados.",
+      "acceptance": "no aparecen códigos con guiones bajos ni enums crudos en tarjetas, filtros o nombres accesibles; los casos desconocidos muestran Equipo sin especificar con seguimiento interno.",
+      "effort": "S/M.",
+      "dependencies": "revisión de enums de API.",
+      "sourceCandidates": "`features/training/training-utils.js`, `TrainingProfile.jsx:62`.",
+      "evidence": [
+        "training-evidence.txt",
+        "mobile-ejercicios-lista.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        24
+      ],
+      "acceptanceEvidence": "e2e/training.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "centralizar etiquetas públicas para equipo, categoría, módulo, tipo y dificultad. Mantener códigos de API separados. Añadir Bicicleta fija y Caminadora al mapa si sus enums existen; fallback humano con diagnóstico interno."
+    },
+    {
+      "id": "SG027",
+      "priority": "P2",
+      "title": "Guardar plan aparece dentro del editor de un día",
+      "phase": "3",
+      "type": "confusión de alcance observada, no fallo de guardado demostrado.",
+      "error": "al editar Día 1 dentro de Nuevo plan, el pie cambia a Volver al plan / Guardar plan. El contexto inmediato es un día, mientras la confirmación guarda la entidad completa y puede depender de campos del nivel anterior.",
+      "reproduce": "Entrenamiento → Planes → Agregar plan → Agregar día → Agregar ejercicio → revisar footer.",
+      "impact": "no se distingue conservar los cambios del día de guardar todo el plan; un error del nombre del plan podría estar fuera del contexto visible.",
+      "fix": "Disponibilidad PATCH independiente, IDs estables y copia inactiva; índices preservados en edición/reordenamiento. Copia con diálogo, activación confirmada, Listo vuelve al borrador y sesiones libres en curso reutilizadas. IDs/objetivos de planes conservados.",
+      "acceptance": "editar un día y regresar conserva el borrador sin persistir; la confirmación final comunica qué guarda; errores del nivel superior quedan visibles y enfocados.",
+      "effort": "M.",
+      "dependencies": "validación integral del plan.",
+      "sourceCandidates": "`TrainingPlanDialog.jsx:129`, `TrainingPlanDayEditor.jsx`.",
+      "evidence": [
+        "macro-training-editor-evidence.txt",
+        "mobile-dia-plan-editor.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        6,
+        8
+      ],
+      "acceptanceEvidence": "e2e/training.spec.js; BE TrainingControllerIntegrationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "usar Listo o Volver al plan para incorporar cambios al borrador; reservar Crear/Guardar plan al nivel general. Si se mantiene el guardado global, resumir su alcance y llevar al primer error de todo el formulario."
+    },
+    {
+      "id": "SG028",
+      "priority": "P2",
+      "title": "Un visitante anónimo recibe un aviso falso de sesión vencida",
+      "phase": "2",
+      "type": "defecto de estado confirmado en una sesión de navegador sin autenticar.",
+      "error": "cargar o recargar el ingreso muestra Tu sesión venció. Volvé a ingresar, después de `/api/auth/me` 401 y refresh 400, aun sin haber iniciado sesión en ese navegador.",
+      "reproduce": "En navegador sin autenticación → ingresar → recargar → observar alerta inicial.",
+      "impact": "transmite un error inexistente en el primer contacto y puede hacer pensar que las credenciales o el sitio tienen un problema.",
+      "fix": "Sesión conocida separada de acceso anónimo y conexión; ingreso con encabezado/ayuda, mostrar contraseña conserva valor/selección/foco; doble envío protegido.",
+      "acceptance": "el primer acceso anónimo y su recarga no muestran vencimiento; una sesión que realmente expira sí avisa; errores de conectividad siguen ofreciendo Reintentar.",
+      "effort": "M.",
+      "dependencies": "estados de sesión.",
+      "sourceCandidates": "`services/http.js:88–99`, `app/App.jsx:expireSession`.",
+      "evidence": [
+        "login-evidence.txt",
+        "public-login-sesion-vencida.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        27
+      ],
+      "acceptanceEvidence": "e2e/auth-smoke.spec.js; test/http-auth.test.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "distinguir bootstrap anónimo de expiración de una sesión previamente autenticada. El primero debe mostrar el formulario con normalidad; el segundo puede conservar el aviso y el destino original. Evitar refresh innecesario si el contrato permite reconocer una sesión ausente."
+    },
+    {
+      "id": "SG029",
+      "priority": "P2",
+      "title": "El ingreso no ayuda a comprobar o recuperar el acceso",
+      "phase": "2",
+      "type": "mejora de usabilidad basada en controles ausentes.",
+      "error": "el formulario ofrece usuario, contraseña e ingresar; no hay Mostrar contraseña ni una vía visible de ayuda para cuentas existentes.",
+      "reproduce": "Ingreso a 390 × 844 → revisar controles de contraseña y ayuda.",
+      "impact": "cuesta detectar un error de tipeo en móvil y no hay siguiente paso claro para quien perdió acceso.",
+      "fix": "Sesión conocida separada de acceso anónimo y conexión; ingreso con encabezado/ayuda, mostrar contraseña conserva valor/selección/foco; doble envío protegido.",
+      "acceptance": "se puede comprobar la contraseña sin perder foco ni valor; la ayuda tiene un destino operativo; no se promete registro público ni un reset no implementado.",
+      "effort": "S para mostrar; M/L para recuperación.",
+      "dependencies": "definición del canal de ayuda.",
+      "sourceCandidates": "`features/auth/AuthScreen.jsx`, `components/FormControls.jsx`.",
+      "evidence": [
+        "01-login-desktop.png",
+        "public-login-mobile.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        27
+      ],
+      "acceptanceEvidence": "e2e/auth-smoke.spec.js; test/http-auth.test.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "agregar mostrar/ocultar contraseña con `aria-pressed`, manteniendo autocomplete y managers. Agregar un enlace de recuperación solo si existe un mecanismo real; de lo contrario, ayuda concreta de acceso sin inventar un email ni soporte inexistente."
+    },
+    {
+      "id": "SG030",
+      "priority": "P3",
+      "title": "La terminología y las unidades varían entre pantallas",
+      "phase": "5",
+      "type": "refinamiento editorial confirmado.",
+      "error": "Proteina/Proteínas, Carbos/carbs/Carbohidratos, P/C/G y 0.5L/0,0 L conviven. Falta espacio entre número y unidad en varias mediciones.",
+      "reproduce": "Comparar macros, unidades y etiquetas de Día, Planes, Historial e Hidratación.",
+      "impact": "aumenta el esfuerzo de aprendizaje y debilita la percepción de precisión.",
+      "fix": "Carbohidratos/mantenimiento y nombres de macronutrientes uniformes; cantidades es-AR con unidades separadas y abreviaturas explicadas. Vistas previas distinguen datos ausentes de cero.",
+      "acceptance": "los mismos conceptos reciben el mismo nombre; las abreviaturas tienen equivalente accesible; 0,5 L y 127 g se presentan consistentemente.",
+      "effort": "S/M.",
+      "dependencies": "ninguna.",
+      "sourceCandidates": "`utils/format.js`, `config/app.js`, `Layout.jsx`, `NutritionSummary.jsx`.",
+      "evidence": [
+        "nutrition-mobile-evidence.txt",
+        "nutrition-dialogs-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        29
+      ],
+      "acceptanceEvidence": "test/format.test.js; e2e/cardio.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "un glosario para español argentino; labels completos en contexto educativo y abreviaturas solo con leyenda clara. Centralizar formato de cantidades con coma decimal, separador de miles y espacio antes de unidad."
+    },
+    {
+      "id": "SG031",
+      "priority": "P2",
+      "title": "Los enlaces específicos de la landing llevan todos a la misma sección",
+      "phase": "4",
+      "type": "discrepancia entre etiqueta y destino confirmada; impacto a validar con usuarios.",
+      "error": "Ver el registro diario, Entender la estimación, Explorar tus sesiones y Ver el control de cardio tienen el mismo destino `#capacidades`, una sección general.",
+      "reproduce": "Landing → links Ver el registro diario, Entender la estimación, Explorar tus sesiones y Ver el control de cardio → comparar href.",
+      "impact": "una etiqueta específica promete profundizar en un tema y termina en contenido genérico.",
+      "fix": "URLs estables por pantalla, recarga/atrás/adelante, títulos y retorno interno seguro; enlaces compartidos preservados y anclas de landing específicas.",
+      "acceptance": "cada enlace específico lleva a contenido de ese tema; la URL/ancla y el foco permiten entender dónde se llegó; teclado y Atrás conservan navegación normal.",
+      "effort": "S.",
+      "dependencies": "ninguna.",
+      "sourceCandidates": "`features/landing/Landing.jsx`.",
+      "evidence": [
+        "public-evidence.txt",
+        "public-landing-mobile.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        28
+      ],
+      "acceptanceEvidence": "e2e/auth-smoke.spec.js; test/routes.test.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "dirigir cada enlace al bloque correspondiente o usar una etiqueta común honesta. Conservar anclas navegables, desplazamiento con offset del header y una alternativa sin animación."
+    },
+    {
+      "id": "SG032",
+      "priority": "P2",
+      "title": "La letra pequeña de navegación y metadatos requiere más esfuerzo en móvil",
+      "phase": "5",
+      "type": "recomendación de legibilidad; contraste no certificado.",
+      "error": "la barra inferior usa alrededor de 11 px; ayudas de macros y varios indicadores usan 10–11 px en el código local y se ven pequeños en las capturas. Algunas son instrucciones necesarias, no decoración.",
+      "reproduce": "Viewport 390 y 320 px → revisar labels de barra inferior y ayudas de macros.",
+      "impact": "obliga a acercar o ampliar para confirmar ubicación, unidades y restricciones.",
+      "fix": "Tokens/metadatos >=12 px, navegación 14 px e inputs 16 px; cabeceras operativas con estilo común. Vacíos de comidas integran Agregar en la cabecera para evitar duplicación y desplazamiento.",
+      "acceptance": "metadata necesaria y navegación son legibles a 320–390 px y con ampliación de texto; contraste medido AA donde corresponde; ampliación no recorta controles.",
+      "effort": "M.",
+      "dependencies": "SG002 y SG003.",
+      "sourceCandidates": "`styles/17-visual-contract.css:123`, `styles/07-profile.css`, `styles/01-foundation.css`.",
+      "evidence": [
+        "mobile-dia.png",
+        "mobile-plan-calorias-detalle.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        30
+      ],
+      "acceptanceEvidence": "e2e/operational-ui.spec.js (axe WCAG AA)",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "reservar 12–14 px para etiquetas operativas y 16 px para texto de formularios. Dar más contraste y espacio a instrucciones relevantes. Evaluar contraste compuesto real de fondos y transparencias; no reducir tamaños para arreglar SG002 o SG003."
+    },
+    {
+      "id": "SG033",
+      "priority": "P3",
+      "title": "Los títulos de páginas equivalentes tienen escalas distintas",
+      "phase": "5",
+      "type": "recomendación de coherencia visual.",
+      "error": "Día usa una cabecera compacta, mientras Historial, Registrar y otras superficies presentan títulos significativamente mayores en escritorio. Las acciones y descripciones también cambian de alineación.",
+      "reproduce": "Escritorio 1440 × 900 → comparar cabeceras Día, Historial y Registrar.",
+      "impact": "cada sección requiere volver a interpretar qué nivel de información se está leyendo.",
+      "fix": "Tokens/metadatos >=12 px, navegación 14 px e inputs 16 px; cabeceras operativas con estilo común. Vacíos de comidas integran Agregar en la cabecera para evitar duplicación y desplazamiento.",
+      "acceptance": "las pantallas equivalentes comparten una jerarquía; las variantes están documentadas y no dependen de overrides dispersos.",
+      "effort": "S/M.",
+      "dependencies": "SG015 y SG024.",
+      "sourceCandidates": "`components/Layout.jsx:Header`, cabeceras ABM y estilos de página.",
+      "evidence": [
+        "02-dia-desktop.png",
+        "desktop-historial.png",
+        "desktop-registrar.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        30
+      ],
+      "acceptanceEvidence": "e2e/operational-ui.spec.js (axe WCAG AA)",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "definir variantes explícitas de cabecera para pantalla operativa y edición; compactar solo donde hay una razón funcional. Mantener línea base, ancho, espaciado y ubicación de acción principal coherentes."
+    },
+    {
+      "id": "SG034",
+      "priority": "P3",
+      "title": "El selector inicial de foto usa una pantalla completa casi vacía",
+      "phase": "5",
+      "type": "recomendación de composición.",
+      "error": "Registrar con IA ocupa casi todo el viewport móvil con una breve explicación arriba, dos acciones abajo y mucho espacio vacío en medio.",
+      "reproduce": "Registrar → Registrar comida con foto → viewport 390 × 844.",
+      "impact": "la elección sencilla parece una tarea larga y aleja explicación y acción.",
+      "fix": "Fuente de foto en sheet natural, revisión mantiene diálogo completo; disponibilidad derivada en un solo mensaje, cuota agotada deshabilita captura y ofrece registro manual.",
+      "acceptance": "explicación y ambas opciones se comprenden de un vistazo; a viewport corto siguen visibles y accesibles; se conserva el regreso a Registrar.",
+      "effort": "S/M.",
+      "dependencies": "SG001 y SG010.",
+      "sourceCandidates": "variante `aiPhotoOnly` de `FoodPickerDialog.jsx`, `ModalShell.jsx`.",
+      "evidence": [
+        "mobile-foto.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        31
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js; e2e/profile.spec.js; test/ai-availability.test.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "usar un sheet de altura natural para elegir fuente y reservar pantalla completa para revisar foto y resultados. Mantener botones en una posición cómoda, cierre claro y safe area. No comprimir formularios largos que sí necesitan toda la pantalla."
+    },
+    {
+      "id": "SG035",
+      "priority": "P3",
+      "title": "La cuota de IA se informa tres veces en el perfil",
+      "phase": "5",
+      "type": "refinamiento de densidad.",
+      "error": "el bloque comunica 99 disponibles, 0 de 99 usadas y otra frase Usaste 0 de 99, con información equivalente.",
+      "reproduce": "Perfil de nutrición → bloque Fotos con IA → comparar mensajes de cuota.",
+      "impact": "ocupa espacio de una pantalla ya larga sin aclarar un siguiente paso.",
+      "fix": "Fuente de foto en sheet natural, revisión mantiene diálogo completo; disponibilidad derivada en un solo mensaje, cuota agotada deshabilita captura y ofrece registro manual.",
+      "acceptance": "se entiende la cuota con una sola lectura; no se inventa horario de reinicio; el estado agotado ofrece una alternativa manual.",
+      "effort": "S.",
+      "dependencies": "SG009.",
+      "sourceCandidates": "`features/profile/Profile.jsx`, `ProfilePanels.jsx`.",
+      "evidence": [
+        "nutrition-mobile-evidence.txt",
+        "desktop-perfil.png",
+        "mobile-perfil.png"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        31
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js; e2e/profile.spec.js; test/ai-availability.test.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "una métrica principal y una explicación de cuándo se reinicia si ese dato existe; vincular Registrar con foto. Mantener disponible/usado como valores derivados de una misma respuesta."
+    },
+    {
+      "id": "SG036",
+      "priority": "P2",
+      "title": "El ingreso carece de un encabezado principal semántico",
+      "phase": "2",
+      "type": "defecto semántico confirmado; señal de buenas prácticas.",
+      "error": "Ingreso es texto dentro de la marca y no hay `h1`. Axe informa `page-has-heading-one` en su conjunto completo de reglas.",
+      "reproduce": "Ingreso anónimo → inspeccionar encabezados semánticos y ejecutar reglas completas de axe.",
+      "impact": "una persona que navega por encabezados no encuentra el nombre de la tarea.",
+      "fix": "Sesión conocida separada de acceso anónimo y conexión; ingreso con encabezado/ayuda, mostrar contraseña conserva valor/selección/foco; doble envío protegido.",
+      "acceptance": "existe un h1 visible y significativo; los campos mantienen labels y autocomplete; no se presenta el hallazgo como una falla WCAG automática si solo corresponde a best practice.",
+      "effort": "S.",
+      "dependencies": "SG029.",
+      "sourceCandidates": "`features/auth/AuthScreen.jsx`.",
+      "evidence": [
+        "login-evidence.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        27
+      ],
+      "acceptanceEvidence": "e2e/auth-smoke.spec.js; test/http-auth.test.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "introducir `h1` Ingresar a ScaleGrams y conservar la marca separada de la estructura semántica. Revisar el título de documento y su relación con la tarea."
+    },
+    {
+      "id": "SG037",
+      "priority": "P2",
+      "title": "Crear un alimento deja el mismo formulario listo para volver a crear",
+      "phase": "3",
+      "type": "fricción de finalización confirmada; duplicación efectiva no comprobada.",
+      "error": "Crear alimento desde Registrar devuelve Alimento creado y el registro persiste, pero el diálogo permanece en Crear alimento con todos los datos y el mismo CTA. Se confirmó en dos observaciones posteriores, no solo durante la respuesta.",
+      "reproduce": "Registrar → Crear alimento → completar nombre y macros → Crear alimento → observar la pantalla luego de desaparecer el aviso.",
+      "impact": "el usuario puede interpretar que todavía falta confirmar y repetir el envío. El informe no afirma que se haya creado un duplicado.",
+      "fix": "Reutilización de archivados requiere acknowledgedArchivedFoodIds en registros, recetas/copia y plantillas; validación previa y transaccional, historial/archivo conservados. Error compatible informa IDs/nombres y respuestas señalan archived. Alta con confirmación y Crear otro; recientes actualizados; reconocimiento explícito de archivados centralizado para todas las escrituras JSON, con cola de avisos y cancelación segura.",
+      "acceptance": "tras un POST exitoso se identifica el registro y su estado; volver a pulsar la acción no vuelve a crear el mismo alimento por confusión; crear desde catálogo y desde Registrar tiene un final consistente.",
+      "effort": "S/M.",
+      "dependencies": "ninguna.",
+      "sourceCandidates": "`features/catalog/components/CatalogForms.jsx`, `features/foods/components/FoodEditorForm.jsx:54`, contenedor de creación en Registrar.",
+      "evidence": [
+        "writes-food-before-save.png",
+        "writes-food-save-stays-open.png",
+        "writes-evidence-01.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        15,
+        17
+      ],
+      "acceptanceEvidence": "e2e/food-catalog-editor.spec.js; e2e/dialog-mobile.spec.js; test/archived-foods.test.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "definir la salida de éxito: cerrar y mostrar el alimento creado con una siguiente acción, o convertir explícitamente el formulario a edición con el ID devuelto. Si se quiere crear varios, ofrecer Crear otro y limpiar la instancia nueva. Mantener protección contra envíos repetidos."
+    },
+    {
+      "id": "SG038",
+      "priority": "P2",
+      "title": "Recientes permite volver a registrar un alimento borrado",
+      "phase": "2",
+      "type": "contradicción de comportamiento y copy confirmada.",
+      "error": "Borrar alimento promete retirarlo de nuevas búsquedas/selecciones y lo mueve a Alimentos eliminados. Sin embargo, Comidas recientes conserva una acción Revisar y permitió crear un nuevo registro de Desayuno con ese alimento; POST batch respondió 200.",
+      "reproduce": "crear alimento → registrarlo en una comida → borrar el alimento del catálogo → Día → Comidas recientes → Revisar → Agregar.",
+      "impact": "el alcance de Borrar cambia según el punto de entrada; es posible reutilizar algo que el usuario decidió retirar.",
+      "fix": "Reutilización de archivados requiere acknowledgedArchivedFoodIds en registros, recetas/copia y plantillas; validación previa y transaccional, historial/archivo conservados. Error compatible informa IDs/nombres y respuestas señalan archived. Alta con confirmación y Crear otro; recientes actualizados; reconocimiento explícito de archivados centralizado para todas las escrituras JSON, con cola de avisos y cancelación segura.",
+      "acceptance": "todas las entradas aplican la misma regla o explican una excepción deliberada; no hay nueva selección de un alimento archivado sin indicarlo; los totales históricos no se pierden.",
+      "effort": "M.",
+      "dependencies": "decisión de producto sobre archivado y reutilización.",
+      "sourceCandidates": "`services/recents.js`, `features/dashboard/components/QuickMeals.jsx`, `features/catalog/components/MyFoodsPanel.jsx:58`, validación de selección en backend.",
+      "evidence": [
+        "writes-deleted-food-recent.png",
+        "writes-evidence-01.txt",
+        "writes-evidence-02.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        15,
+        17
+      ],
+      "acceptanceEvidence": "e2e/food-catalog-editor.spec.js; e2e/dialog-mobile.spec.js; test/archived-foods.test.js; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "acordar una regla de selección para alimentos archivados y aplicarla a búsquedas, recetas, presets y recientes. Conservar los históricos. Si está permitido reutilizar desde un histórico, explicarlo y ofrecer Reactivar; si no, bloquear el nuevo uso y ofrecer sustituir. Actualizar o invalidar la caché local de recientes al archivar."
+    },
+    {
+      "id": "SG039",
+      "priority": "P1",
+      "title": "Crear y borrar un plan futuro cambia la vigencia del plan anterior sin explicarlo",
+      "phase": "1",
+      "type": "efecto persistente y omisión de información confirmados.",
+      "error": "Balanceado comenzaba el 13/08 y no tenía fin. Crear el plan de prueba del 1–2/12 puso su fin en 30/11. Borrar el plan nuevo no restauró la vigencia: el editor del original seguía con 30/11. Fue necesario restaurar ese campo manualmente.",
+      "reproduce": "partir de un plan vigente sin fin → crear otro futuro → borrar el futuro → abrir el anterior y comparar Finaliza.",
+      "impact": "el usuario cree que crea una alternativa y luego la descarta, pero modifica la continuidad de su plan real. Puede quedar un intervalo sin el plan previsto.",
+      "fix": "Alternativas, programación/cancelación con vista previa y versiones; vigencias derivadas sin cambiar fechas declaradas. V44 conserva planes y fechas. Alternativas separadas de programación; comparación antes/después y recuperación explícita de vista previa. Porcentajes independientes y entrada directa; editor móvil sin superposición.",
+      "acceptance": "crear una alternativa no acorta otros planes; programar comunica qué plan termina y cuándo; eliminar un cambio futuro deja una continuidad elegida explícitamente. Cubrir ausencia de fin, solapamientos, varios cambios futuros y edición posterior del plan previo.",
+      "effort": "M/L.",
+      "dependencies": "definición de alternativa frente a programación temporal.",
+      "sourceCandidates": "`features/profile/components/NutritionPlanDialog.jsx`, `kcalBackend/src/main/java/com/scalegrams/profile/ProfileService.java:109`, `ProfileService.java:152`.",
+      "evidence": [
+        "writes-current-plan-unexpected-end.png",
+        "writes-evidence-01.txt",
+        "writes-evidence-02.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        9,
+        10
+      ],
+      "acceptanceEvidence": "e2e/profile.spec.js; BE ProfileTimelineIntegrationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "distinguir Guardar alternativa de Programar cambio. Antes de modificar otro plan, mostrar los intervalos antes/después y confirmar el efecto. Al borrar un cambio futuro, ofrecer restaurar la continuidad, con control de versión y sin sobrescribir ediciones posteriores. Revisar también qué plan alimenta los valores de fallback del perfil."
+    },
+    {
+      "id": "SG040",
+      "priority": "P2",
+      "title": "Guardar medidas cambia la meta de Perfil y la deja distinta del plan del Día",
+      "phase": "2",
+      "type": "discrepancia persistente de presentación confirmada; atribución al guardado de altura corroborada por código local.",
+      "error": "al guardar los mismos 180 cm y anotar los mismos 75 kg, Perfil pasó de Meta diaria 2200 a 2697 kcal tras recargar; Día continuaba con Balanceado y 2200. En la sesión inicial la UI no actualizó esa meta junto con la altura. El servicio local recalcula objetivos al PATCH de perfil y la UI solo incorpora heightCm de la respuesta.",
+      "reproduce": "con plan manual de 2200 → guardar altura actual y peso actual → recargar Perfil → comparar Meta diaria con Día.",
+      "impact": "la misma cuenta comunica dos presupuestos diarios sin explicar cuál guía los registros. La auditoría no interpreta 2697 como una recomendación nutricional válida.",
+      "fix": "Medidas conservan metas manuales; perfil y dashboard resuelven la misma meta efectiva y su origen. Perfil usa la respuesta completa; peso consulta perfil vigente. Meta/origen visibles y eventos actualizan dashboard e historial respetando fecha.",
+      "acceptance": "las dos pantallas concuerdan para la misma fecha; guardar una medida sin cambio no sustituye silenciosamente el objetivo manual; cualquier recálculo optativo muestra antes/después y su origen.",
+      "effort": "M.",
+      "dependencies": "contrato de objetivo efectivo de SG039.",
+      "sourceCandidates": "`features/profile/components/ProfilePanels.jsx:35`, `kcalBackend/src/main/java/com/scalegrams/profile/ProfileService.java:67`, `ProfileService.java:236`.",
+      "evidence": [
+        "writes-profile-calorie-changed.png",
+        "writes-profile-restored.png",
+        "writes-evidence-01.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        11,
+        12
+      ],
+      "acceptanceEvidence": "e2e/profile.spec.js; BE ProfileTimelineIntegrationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "mostrar una única meta efectiva basada en el plan de la fecha, y separar cualquier estimación calculada del perfil con una etiqueta clara. No reemplazar un objetivo manual al editar una medida sin decisión expresa. Incorporar la respuesta completa pertinente o invalidar las consultas de perfil y objetivo tras guardar."
+    },
+    {
+      "id": "SG041",
+      "priority": "P1",
+      "title": "Editar un ejercicio falla si no se vuelven a escribir los músculos",
+      "phase": "1",
+      "type": "defecto funcional confirmado.",
+      "error": "crear un ejercicio con músculos opcionales vacíos funciona. Reabrirlo, cambiar solo Descripción y guardar deja el editor abierto con `e.primaryMuscles?.trim is not a function`. Es un error de tipos mostrado directamente al usuario. Completar ambos campos de músculos permitió continuar.",
+      "reproduce": "crear ejercicio personal con categoría y sin músculos → recargar → Editar → cambiar descripción → Guardar ejercicio.",
+      "impact": "bloquea una edición normal de campos independientes y no proporciona una instrucción útil para recuperarse.",
+      "fix": "Formulario y payload normalizan músculos de arrays/cadenas/nulos.",
+      "acceptance": "editar nombre o descripción funciona sin tocar músculos; arrays vacíos/múltiples, strings y null se normalizan deliberadamente; creación y edición producen el mismo contrato y conservan los músculos existentes. No se muestran excepciones JavaScript en UI.",
+      "effort": "S/M.",
+      "dependencies": "confirmar tipo de músculos de la API desplegada.",
+      "sourceCandidates": "`features/training/TrainingProfile.jsx:28`, `features/training/training-utils.js:215`.",
+      "evidence": [
+        "writes-exercise-edit-runtime-error.png",
+        "writes-evidence-02.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        7
+      ],
+      "acceptanceEvidence": "test/training-utils.test.js; e2e/training.spec.js",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "proposedFix": "normalizar la respuesta en un adaptador de formulario: arrays de músculos a texto delimitado, null a vacío. Serializar al tipo exacto que exige el contrato y tolerar respuestas de versiones compatibles. Evitar `.trim` sobre tipos no normalizados. Mantener el detalle técnico en logs y presentar un error recuperable al usuario."
+    },
+    {
+      "id": "SG042",
+      "priority": "P1",
+      "title": "Las sesiones guardadas pueden entrar en conflicto y no finalizar",
+      "phase": "1",
+      "type": "defecto funcional confirmado; causa de persistencia pendiente de diagnóstico.",
+      "error": "la sesión desde plan tuvo un primer PUT 200 y los siguientes PUT a `/api/training/sessions/7` devolvieron 409 CONFLICT. Guardar y salir y Finalizar no completaron el recorrido. La sesión libre guardó 10 reps/notas y las conservó tras recargar, pero al continuar y finalizar su PUT también falló con conflicto. El aviso genérico no permite saber qué recuperar.",
+      "reproduce": "iniciar sesión con un ejercicio → agregar serie y métricas → guardar → continuar desde Calendario → finalizar. Probar tanto sesión de plan como libre, con actualizaciones sucesivas y recarga entre ellas.",
+      "impact": "deja el registro en proceso, bloquea el cierre y puede perder cambios recientes que solo existen en el editor. En el caso desde plan, el detalle tras cancelar mostraba 0 reps/0 kg frente a las 8 reps/10 kg rechazadas.",
+      "fix": "Actualización de series por número preservando IDs y restricciones; finalización repetida idempotente. Guardados en cola, identidad del servidor sin borrar escritura nueva; borradores por usuario/sesión, recuperación explícita de conflictos y cierre/finalización ordenados. Matriz de aceptación, versión web exacta y respaldo previo. Recuperación real de 409 sin reintentar a ciegas, energía/desconocidos consistentes en recetas/plantillas/IA y retorno de foco de diálogos. Pruebas con dos clientes y editores de IA.",
+      "acceptance": "guardar varias veces y después finalizar funciona con las mismas series, desde plan y libre; una recarga conserva los valores confirmados; la finalización se ejecuta una vez y cambia estado. Un conflicto provocado con dos clientes conserva el borrador y muestra una recuperación concreta. La cancelación/borrado sigue disponible.",
+      "effort": "M/L.",
+      "dependencies": "logs de restricción y contrato de versión/IDs; no se requiere reproducir sobre datos reales.",
+      "sourceCandidates": "`features/training/SessionEditorBase.jsx:82`, `features/training/training-utils.js:161`, `kcalBackend/src/main/java/com/scalegrams/training/TrainingService.java:807`, `TrainingService.java:1241`.",
+      "evidence": [
+        "writes-session-save-conflict.png",
+        "writes-free-session-persisted.png",
+        "writes-free-session-finalize-conflict.png",
+        "writes-evidence-02.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        4,
+        5,
+        32
+      ],
+      "acceptanceEvidence": "e2e/training.spec.js SG042 (dos clientes/demora/409); BE TrainingControllerIntegrationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "identificar la restricción o conflicto concreto en los logs de producción y verificar la versión desplegada. Revisar serialización de IDs/versiones, coordinación de autoguardado, actualización de ejercicios/series y orden de persistencia. Preferir identidad estable de hijos y actualizaciones compatibles con restricciones; no añadir flush o reintentos a ciegas. Implementar recuperación explícita de un 409: conservar borrador, distinguir versión vieja de integridad y permitir comparar/reintentar sin duplicar una sesión."
+    },
+    {
+      "id": "SG043",
+      "priority": "P1",
+      "title": "Desactivar un plan existente falla por conflicto después de reactivarlo",
+      "phase": "1",
+      "type": "defecto funcional confirmado; causa de persistencia pendiente de diagnóstico.",
+      "error": "el plan temporal con un día y ejercicio se creó y editó. Tras duplicar y eliminar la copia, reactivar el original respondió 200; al pulsar Desactivar se obtuvo PUT `/api/training/plans/2` 409. Un segundo intento confirmó el conflicto y el plan continuaba activo. Solo se mostró un aviso temporal.",
+      "reproduce": "crear plan con día/ejercicio → duplicar → borrar copia → activar original → desactivar original. Revisar también guardar sucesivamente sin duplicación para aislar la causa.",
+      "impact": "el control promete retirar una estructura de las sugerencias y no lo hace. El usuario puede verse empujado a eliminar el plan para lograrlo.",
+      "fix": "Disponibilidad PATCH independiente, IDs estables y copia inactiva; índices preservados en edición/reordenamiento. Copia con diálogo, activación confirmada, Listo vuelve al borrador y sesiones libres en curso reutilizadas. IDs/objetivos de planes conservados.",
+      "acceptance": "activar/desactivar repetidamente conserva los días, los IDs pertinentes y los históricos; editar y duplicar no rompe el toggle; un 409 no se presenta como éxito y ofrece recuperación sin obligar a borrar.",
+      "effort": "M/L.",
+      "dependencies": "diagnóstico compartido con SG042 si la restricción resulta relacionada.",
+      "sourceCandidates": "`features/profile/components/TrainingPlanManager.jsx:19`, `features/training/training-utils.js:193`, `kcalBackend/src/main/java/com/scalegrams/training/TrainingService.java:593`.",
+      "evidence": [
+        "writes-plan-deactivate-conflict.png",
+        "writes-evidence-02.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        6,
+        8
+      ],
+      "acceptanceEvidence": "e2e/training.spec.js; BE TrainingControllerIntegrationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "diagnosticar la restricción concreta; comparar payload/versiones y cómo el backend reconstruye días/ejercicios en un cambio de disponibilidad. Separar un cambio de estado de la edición de toda la estructura, o preservar IDs y actualizar sin generar conflictos de hijos. Mantener el error junto al control y explicar que el estado no cambió."
+    },
+    {
+      "id": "SG044",
+      "priority": "P2",
+      "title": "Duplicar un plan cambia la disponibilidad sin anunciarlo",
+      "phase": "2",
+      "type": "efecto de interacción confirmado y recomendación de composición.",
+      "error": "Duplicar abre un `window.prompt` para el nombre; la copia guardada se convirtió en la sugerencia del Día y el original quedó desactivado. El aviso solo dijo Plan duplicado. Al eliminar la copia quedó Sin plan activo.",
+      "reproduce": "plan activo con un día → Duplicar → dar nombre → revisar Día y disponibilidad del original → borrar la copia.",
+      "impact": "una acción percibida como crear una alternativa cambia qué rutina se seguirá. El prompt además separa esta tarea del patrón de formularios del producto.",
+      "fix": "Disponibilidad PATCH independiente, IDs estables y copia inactiva; índices preservados en edición/reordenamiento. Copia con diálogo, activación confirmada, Listo vuelve al borrador y sesiones libres en curso reutilizadas. IDs/objetivos de planes conservados.",
+      "acceptance": "copiar sin activar mantiene el plan original; elegir usar la copia muestra qué plan se desactiva; nombres inválidos/duplicados reciben errores locales; borrar una copia no deja una transición inesperada.",
+      "effort": "M.",
+      "dependencies": "SG043 para validar la gestión de disponibilidad.",
+      "sourceCandidates": "`features/profile/components/TrainingPlanManager.jsx:33`, `kcalBackend/src/main/java/com/scalegrams/training/TrainingService.java:619`, reglas de cierre de planes activos.",
+      "evidence": [
+        "writes-evidence-02.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        6,
+        8
+      ],
+      "acceptanceEvidence": "e2e/training.spec.js; BE TrainingControllerIntegrationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "reemplazar el prompt por un diálogo con nombre, módulo, estado y explicación del efecto. Por defecto conservar la disponibilidad original y guardar una copia inactiva, o pedir expresamente Usar esta copia en lugar del plan actual. Comunicar ambos estados al finalizar; cancelar no cambia ninguno."
+    },
+    {
+      "id": "SG045",
+      "priority": "P2",
+      "title": "Día oculta la sesión libre que quedó en proceso",
+      "phase": "3",
+      "type": "fricción de continuidad confirmada.",
+      "error": "después de Guardar y salir de la sesión libre, Día volvió a Prepará tu próxima sesión, Crear plan y Sesión libre. No mostró Continuar ni la sesión en proceso. Calendario sí mostraba la entrada y permitía continuar; los datos estaban guardados.",
+      "reproduce": "sin plan activo → Sesión libre → guardar ejercicio/serie → Guardar y salir → Día → comparar con Calendario del mismo día.",
+      "impact": "el usuario debe descubrir una vía secundaria para recuperar trabajo y puede iniciar otra sesión creyendo que la anterior no existe.",
+      "fix": "Disponibilidad PATCH independiente, IDs estables y copia inactiva; índices preservados en edición/reordenamiento. Copia con diálogo, activación confirmada, Listo vuelve al borrador y sesiones libres en curso reutilizadas. IDs/objetivos de planes conservados.",
+      "acceptance": "Día y Calendario reflejan la misma sesión; Continuar recupera valores guardados y no crea un nuevo ID; múltiples sesiones tienen etiquetas distinguibles y un estado claro.",
+      "effort": "M.",
+      "dependencies": "SG042 para completar la aceptación de finalización; la continuidad se puede corregir independientemente.",
+      "sourceCandidates": "pantalla de Día de entrenamiento y su resolución de sesiones libres, `features/training/SessionEditorBase.jsx`.",
+      "evidence": [
+        "writes-free-session-persisted.png",
+        "writes-evidence-02.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        6,
+        8
+      ],
+      "acceptanceEvidence": "e2e/training.spec.js; BE TrainingControllerIntegrationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "dar prioridad en Día a las sesiones en proceso de la fecha, aunque no tengan plan. Mostrar Continuar con módulo, último guardado y cantidad de ejercicios; conservar iniciar otra como acción explícita cuando está permitido."
+    },
+    {
+      "id": "SG046",
+      "priority": "P2",
+      "title": "Registrar mantenimiento no ofrece cómo corregir una entrada equivocada",
+      "phase": "2",
+      "type": "recomendación de recuperabilidad; guardado de mantenimiento no ejecutado.",
+      "error": "Registrar service reinicia el ciclo de 20 horas. La UI observada no ofrece edición, historial administrable ni borrado; el controlador local expone POST de service y no una ruta de eliminación. No se creó una entrada para no dejar un mantenimiento ficticio sin retirada; se consultó esa preferencia al usuario.",
+      "reproduce": "Cardio → Registrar service → revisar fecha, efecto y opciones de gestión del mantenimiento. Para probar la persistencia usar un entorno donde pueda retirarse la entrada.",
+      "impact": "un error de fecha o un envío accidental puede modificar el contador sin un camino visible para corregirlo.",
+      "fix": "Historial paginado, actualización con versión, anulación conservada e idempotente; contador desde último válido; permisos por propietario y serialización evitan duplicados exactos. V47 añade versión/anulación sin borrar registros. Historial con estado válido/anulado, corrección revisada y anulación confirmada; versiones y resumen actualizados; cancelar conserva formulario.",
+      "acceptance": "crear, recargar, corregir y anular un service produce el contador esperado con varias sesiones antes/después; cancelar conserva el estado; anular el último evento recupera el anterior. Ejecutar esta aceptación en cuenta de pruebas con capacidad de limpieza.",
+      "effort": "M/L.",
+      "dependencies": "decisión sobre anulación e historial de mantenimiento.",
+      "sourceCandidates": "pantalla Cardio, `features/training/training-api.js:16`, `kcalBackend/src/main/java/com/scalegrams/training/TrainingController.java:102`.",
+      "evidence": [
+        "writes-service-no-delete-form.png",
+        "writes-evidence-02.txt"
+      ],
+      "observedPresentationVerified": true,
+      "underlyingCauseVerification": "The finding is supported by deployed UI evidence. Verify the cause against the deployed source and contracts before implementation.",
+      "verificationScope": "Observed deployed UI; local source paths are candidates and must be checked against the deployed version.",
+      "status": "implemented_release_verification",
+      "implementationCommits": [
+        25,
+        26
+      ],
+      "acceptanceEvidence": "e2e/cardio.spec.js; BE TrainingControllerIntegrationTests; BE ScaleGramsApplicationTests",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "databaseVerification": "PostgreSQL 17 obligatorio en CI; Docker local indisponible, no se considera aprobado por la compilación",
+      "proposedFix": "agregar historial de mantenimientos con editar/anular y confirmación del impacto en el ciclo. Recalcular el uso desde el último evento válido; respetar permisos e históricos. Antes de guardar, resumir fecha y contador resultante. Definir si fechas futuras son válidas y tratar duplicados deliberadamente."
+    },
+    {
+      "id": "SG047",
+      "priority": "P1",
+      "title": "Teclado móvil rompe la vista de estimación IA",
+      "error": "Reportado por el usuario; viewport visible y acciones podían quedar fuera del encuadre.",
+      "fix": "Rectángulo visible único; footer en fila propia durante el teclado; textarea acotado y desplazamiento sólo del diálogo superior. Fuente de foto en sheet natural, revisión mantiene diálogo completo; disponibilidad derivada en un solo mensaje, cuota agotada deshabilita captura y ofrece registro manual. Matriz de aceptación, versión web exacta y respaldo previo. Recuperación real de 409 sin reintentar a ciegas, energía/desconocidos consistentes en recetas/plantillas/IA y retorno de foco de diálogos. Pruebas con dos clientes y editores de IA.",
+      "acceptance": "Escribir/borrar/pegar/editar no pierde estado ni bloquea acciones.",
+      "evidence": [],
+      "implementationCommits": [
+        2,
+        31,
+        32
+      ],
+      "acceptanceEvidence": "e2e/dialog-mobile.spec.js SG047: descripción de foto, descripción guardada, corrección y cantidad",
+      "implementationStatus": "Implementado; evidencia local asociada, PostgreSQL y despliegue sujetos a CI y revisión publicada",
+      "physicalDeviceVerification": "Pendiente: no hay teléfonos Android/iOS disponibles; las pruebas son simulaciones de visualViewport en Chromium/WebKit",
+      "status": "implemented_release_verification",
+      "proposedFix": "Rectángulo visualViewport height+offsetTop, cuerpo desplazable, encabezado/footer dentro del área visible; preservar texto/selección/foco sin remontar."
+    }
+  ],
+  "releaseGate": "No integrar main antes de CI aprobado en ambos repositorios. Backend salud/revisión antes de publicar frontend.",
+  "keyboardScope": "Automatizado/simulado; sin validación física Android/iOS."
+}

@@ -69,7 +69,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
     && decimalNumber(item.proteinGrams) >= 0 && decimalNumber(item.proteinGrams) <= 500
     && decimalNumber(item.carbsGrams) >= 0 && decimalNumber(item.carbsGrams) <= 1000
     && decimalNumber(item.fatGrams) >= 0 && decimalNumber(item.fatGrams) <= 500)
-    && (targetType === "FOOD" && !addToDiary || Boolean(registrationMealType && registrationDate));
+    && (mode === "saved" ? Boolean(mealType && logDate) : targetType === "FOOD" && !addToDiary || Boolean(registrationMealType && registrationDate));
   const title = mode === "saved" ? "Revisar estimación guardada" : estimate.name || "Revisar estimación";
   const ariaLabel = mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto";
 
@@ -93,7 +93,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
       <div className="ai-estimate-editor">
         {mode === "saved" && <>
           <Input label="Nombre de la comida" value={estimate.name} onChange={(event) => setEstimate((current) => ({ ...current, name: event.target.value }))} />
-          <label className="ai-context-field"><span>Descripción</span><textarea maxLength={240} value={estimate.description || ""} onChange={(event) => setEstimate((current) => ({ ...current, description: event.target.value }))} /></label>
+          <label className="ai-context-field"><span>Descripción</span><textarea aria-label="Descripción" maxLength={240} value={estimate.description || ""} onChange={(event) => setEstimate((current) => ({ ...current, description: event.target.value }))} /></label>
           <div className="edit-log-fields">
             <Select label="Comida" value={mealType} options={mealTypes.map((item) => ({ value: item.code, label: item.label }))} onChange={(event) => setMealType(event.target.value)} />
             <Input label="Fecha" type="date" value={logDate} onChange={(event) => setLogDate(event.target.value)} />
@@ -132,7 +132,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                 </div>
                 <div className="ai-estimate-item-fields">
                   <Input label="Alimento" value={item.name} disabled={refining || saving} onChange={(event) => updateItemName(index, event.target.value)} />
-                  <label className="ai-estimate-grams-field"><span>Gramos</span><span className="ai-estimate-grams-input"><input type="text" disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onChange={(event) => updateItem(index, event.target.value)} /><span>g</span></span></label>
+                  <label className="ai-estimate-grams-field"><span>Gramos</span><span className="ai-estimate-grams-input"><input aria-label="Gramos" type="text" disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onChange={(event) => updateItem(index, event.target.value)} /><span>g</span></span></label>
                 </div>
                 <details className="ai-estimate-item-details">
                   <summary>Ver detalle nutricional</summary>
@@ -184,7 +184,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
         {mode === "create" && <details className="ai-estimate-refinement" open={refinementOpen} onToggle={(event) => setRefinementOpen(event.currentTarget.open)}>
           <summary>Corregir o agregar alimentos con IA</summary>
           <p>Describí qué falta o qué hay que ajustar. La foto y los cambios actuales se usarán como referencia.</p>
-          <label className="ai-context-field"><span>Tu corrección</span><textarea maxLength={240} disabled={refining} placeholder="Ej.: agregá una banana de 120 g y quitá el queso" value={correction} onChange={(event) => setCorrection(event.target.value)} /></label>
+          <label className="ai-context-field"><span>Tu corrección</span><textarea aria-label="Tu corrección" maxLength={240} disabled={refining} placeholder="Ej.: agregá una banana de 120 g y quitá el queso" value={correction} onChange={(event) => setCorrection(event.target.value)} /></label>
           {refinementError && <p className="ai-estimate-error" role="alert">{refinementError}</p>}
           <button type="button" className="secondary" disabled={refining || !correction.trim()} onClick={applyRefinement}>{refining ? "Corrigiendo..." : "Aplicar corrección"}</button>
         </details>}

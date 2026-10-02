@@ -1,6 +1,6 @@
 /* Shared reading sizes and page headers. Inputs stay 16 px to avoid mobile focus zoom. */
 .page-header, .abm-page-header { gap: var(--space-6); align-items: end; }
-.page-header h1, .abm-page-header h1 { font-family: var(--font-display); font-size: clamp(30px, 4vw, 44px); line-height: 1.12; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.page-header h1, .abm-page-header h1, .register-heading h1 { font-family: var(--font-display); font-size: clamp(30px, 4vw, 44px); line-height: 1.12; letter-spacing: -.025em; overflow-wrap: anywhere; }
 .page-header p, .abm-page-header p, .training-page-intro, .plans-page-intro { font-size: var(--type-body-sm); line-height: 1.5; color: var(--muted); max-width: 62ch; }
 .app-shell :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
 .app-modal-surface :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
@@ -10,7 +10,7 @@ abbr[title] { text-decoration: none; }
 @media (max-width: 600px) {
   .page-header:not(.dashboard-page-header), .abm-page-header { align-items: stretch; flex-wrap: wrap; gap: var(--space-4); }
   .page-header:not(.dashboard-page-header) > div, .abm-page-header > div { flex: 1 1 100%; }
-  .page-header h1, .abm-page-header h1 { font-size: var(--type-page-title); }
+  .page-header h1, .abm-page-header h1, .register-heading h1 { font-size: var(--type-page-title); }
 }
 
 .meal-empty-add { min-height: 44px; padding-inline: 10px; gap: 4px; }
