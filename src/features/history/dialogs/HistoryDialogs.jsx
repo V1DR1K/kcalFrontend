@@ -1,3 +1,4 @@
+import { nutritionDayHasActivity } from "../history-state";
 import React, { useEffect, useId, useRef, useState } from "react";
 import { Icon } from "../../../components/Icon";
 import { CatalogStatus, FoodThumb } from "../../catalog/CatalogComponents";
@@ -13,8 +14,10 @@ export function HistoryExportDialog({ api, monthDate, exporting, setExporting, o
   async function exportSelection() {
     setExporting(true);
     try {
-      const dates = (await api.request(`/api/nutrition/history?year=${monthDate.getFullYear()}&month=${monthDate.getMonth() + 1}`)).days.map((day) => day.date);
-      const details = await Promise.all(dates.map((date) => api.request(`/api/nutrition/dashboard?date=${date}`)));
+      const dates = (await api.request(`/api/nutrition/history?year=${monthDate.getFullYear()}&month=${monthDate.getMonth() + 1}`)).days.filter(nutritionDayHasActivity).map((day) => day.date);
+      if (!dates.length) { api.notify("No hay consumos registrados en este mes.", "error"); return; }
+      const details = [];
+      for (let start = 0; start < dates.length; start += 4) details.push(...await Promise.all(dates.slice(start, start + 4).map(date => api.request(`/api/nutrition/dashboard?date=${date}`))));
       downloadMealsExcel(details, `scalegrams-comidas-${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`);
       onClose();
       api.notify(`Excel exportado: ${monthLabel}.`);
@@ -26,7 +29,7 @@ export function HistoryExportDialog({ api, monthDate, exporting, setExporting, o
   }
   return <ModalShell onClose={onClose} closeDisabled={exporting} initialFocusRef={closeRef} hideHeader labelledBy={titleId} className="app-modal-compact history-export-dialog" backdropClassName="history-export-backdrop" wrapContent={false} dialogProps={{ "data-dialog-scroll-owner": "true" }}>
     <header><div><span className="eyebrow">Historial</span><h2 id={titleId}>Exportar comidas</h2><p>Descargá un Excel con todos los alimentos, cantidades y macros registrados.</p></div><button ref={closeRef} type="button" className="history-preview-close" onClick={onClose} disabled={exporting} aria-label="Cerrar exportación"><Icon name="close" /></button></header>
-    <div className="history-export-options"><div className="history-export-option selected"><Icon name="calendar_month" /><span><strong>Mes completo</strong><small>{monthLabel} · todas las comidas registradas</small></span><Icon name="check_circle" /></div></div>
+    <div className="history-export-options"><div className="history-export-option selected"><Icon name="calendar_month" /><span><strong>Mes completo</strong><small>{monthLabel} · del 1 al {new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate()} · todas las comidas registradas</small></span><Icon name="check_circle" /></div></div>
     <footer><button type="button" className="secondary" onClick={onClose} disabled={exporting}>Cancelar</button><button type="button" className="primary" onClick={exportSelection} disabled={exporting}><Icon name="download" />{exporting ? "Preparando Excel…" : "Descargar Excel"}</button></footer>
   </ModalShell>;
 }
@@ -46,6 +49,8 @@ export function HistoryDayPreview({ api, day, onClose }) {
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [api, day.date]);
+  const partial = detail?.energyComplete === false || day.energyComplete === false;
+  const hasRecords = detail ? (detail.meals || []).some(meal => meal.items?.length) : nutritionDayHasActivity(day);
   const consumed = detail?.caloriesConsumed ?? day.caloriesConsumed ?? 0;
   const goal = detail?.calorieGoal ?? day.calorieGoal ?? 0;
   const progress = Math.min(100, Math.round(consumed / (goal || 1) * 100));
@@ -60,12 +65,13 @@ export function HistoryDayPreview({ api, day, onClose }) {
     }
   }
   return <ModalShell onClose={onClose} initialFocusRef={closeRef} hideHeader labelledBy={titleId} className="history-preview" backdropClassName="history-preview-backdrop" wrapContent={false}>
-    <header className="history-preview-header"><div><span className="eyebrow">Resumen del día</span><h2 id={titleId}>{readableDate(day.date)}</h2><small>{day.planName || detail?.plan?.name}</small></div><div className="history-preview-header-actions"><button type="button" className="secondary history-day-export" onClick={exportDay} disabled={!detail || exporting}><Icon name="download" />{exporting ? "Exportando…" : "Exportar día"}</button><button ref={closeRef} className="history-preview-close" onClick={onClose} aria-label="Cerrar detalle"><Icon name="close" /></button></div></header>
+    <header className="history-preview-header"><div><span className="eyebrow">Resumen del día</span><h2 id={titleId}>{readableDate(day.date)}</h2><small>{day.planName || detail?.plan?.name}</small></div><div className="history-preview-header-actions"><button type="button" className="secondary history-day-export" onClick={exportDay} disabled={!detail || !hasRecords || exporting}><Icon name="download" />{exporting ? "Exportando…" : "Exportar día"}</button><button ref={closeRef} className="history-preview-close" onClick={onClose} aria-label="Cerrar detalle"><Icon name="close" /></button></div></header>
     <div className="history-preview-scroll" data-dialog-scroll-owner="true">
-      <div className="history-calorie-summary"><div className="history-calorie-ring" style={{ "--day-progress": `${progress * 3.6}deg` }}><strong>{formatNumber(consumed)}</strong><small>de {formatNumber(goal)} kcal</small></div><div><span>{day.goalReached ? "Objetivo cumplido" : "Balance del día"}</span><strong>{progress}%</strong><small>{formatNumber(Math.max(0, goal - consumed))} kcal restantes</small></div></div>
+      <p className="history-data-notice">{!hasRecords ? "Sin consumos registrados. Esto no indica que hayas consumido cero calorías." : partial ? "Calorías informadas: total parcial. Falta información nutricional y este día no cuenta para el promedio." : "Calorías completas de los consumos registrados."}</p>
+      <div className="history-calorie-summary"><div className="history-calorie-ring" style={{ "--day-progress": `${progress * 3.6}deg` }}><strong>{formatNumber(consumed)}</strong><small>de {formatNumber(goal)} kcal</small></div><div><span>{day.goalReached ? "Dentro de la meta" : partial ? "Total parcial" : "Balance del día"}</span><strong>{progress}%</strong><small>{formatNumber(Math.max(0, goal - consumed))} kcal restantes</small></div></div>
        {error && <CatalogStatus error>{error}</CatalogStatus>}
        {loading && <SkeletonRows count={4} className="history-preview-skeleton" label="Cargando detalle del día" />}
-      {detail && <><div className="history-macros">{(detail.macros || []).map((macro) => <article key={macro.key}><span>{macro.label}</span><strong>{formatNumber(macro.consumed)}g</strong><small>de {formatNumber(macro.goal)}g</small><i><b style={{ width: `${Math.min(100, Number(macro.consumed || 0) / (Number(macro.goal) || 1) * 100)}%` }} /></i></article>)}</div><div className="history-meals">{(detail.meals || []).filter((meal) => meal.items?.length).map((meal, mealIndex) => <article className="history-meal" key={meal.mealType} style={{ "--meal-delay": `${mealIndex * 45}ms` }}><header><div><Icon name="restaurant" /><strong>{meal.label}</strong></div><small>{formatNumber(meal.calories)} kcal</small></header><div>{meal.items.map((item) => <div className="history-food" key={item.id}><FoodThumb item={item.itemType === "RECIPE" ? { ...item.recipe, type: "RECIPE" } : item.itemType === "AI_ESTIMATE" ? { name: mealLogName(item), category: "OTHER" } : item.food} compact /><span><strong>{mealLogName(item)}</strong><small>{formatMealLogAmount(item)} · {formatNumber(item.calories)} kcal</small></span></div>)}</div></article>)}</div></>}
+      {detail && <><div className="history-macros">{(detail.macros || []).map((macro) => <article key={macro.key}><span>{macro.label}</span><strong>{formatNumber(macro.consumed)}g</strong><small>de {formatNumber(macro.goal)}g</small><i><b style={{ width: `${Math.min(100, Number(macro.consumed || 0) / (Number(macro.goal) || 1) * 100)}%` }} /></i></article>)}</div><div className="history-meals">{(detail.meals || []).filter((meal) => meal.items?.length).map((meal, mealIndex) => <article className="history-meal" key={meal.mealType} style={{ "--meal-delay": `${mealIndex * 45}ms` }}><header><div><Icon name="restaurant" /><strong>{meal.label}</strong></div><small>{formatNumber(meal.calories)} kcal</small></header><div>{meal.items.map((item) => <div className="history-food" key={item.id}><FoodThumb item={item.itemType === "RECIPE" ? { ...item.recipe, type: "RECIPE" } : item.itemType === "AI_ESTIMATE" ? { name: mealLogName(item), category: "OTHER" } : item.food} compact /><span><strong>{mealLogName(item)}</strong><small>{formatMealLogAmount(item)} · {item.calories == null ? "Calorías sin dato" : `${formatNumber(item.calories)} kcal`}</small></span></div>)}</div></article>)}</div></>}
     </div>
   </ModalShell>;
 }
@@ -76,7 +82,7 @@ function downloadMealsExcel(details, filename) {
     const name = mealLogName(item) || "Sin nombre";
     const type = item.itemType === "RECIPE" ? "Receta" : item.itemType === "AI_ESTIMATE" ? "Estimación" : "Alimento";
     const unit = item.itemType === "RECIPE" && item.unit === "GRAM" ? "g cocidos" : item.unit === "GRAM" ? "g" : item.unit || "";
-    return [detail.date, meal.label, name, type, item.quantity ?? "", unit, item.calories ?? 0, item.proteinGrams ?? 0, item.carbsGrams ?? 0, item.fatGrams ?? 0];
+    return [detail.date, meal.label, name, type, item.quantity ?? "", unit, item.calories ?? "Sin dato", item.proteinGrams ?? "Sin dato", item.carbsGrams ?? "Sin dato", item.fatGrams ?? "Sin dato"];
   })));
   const table = `<table><thead><tr>${headers.map((header) => `<th>${escapeExcel(header)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeExcel(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
   const blob = new Blob([`\ufeff<html><head><meta charset="UTF-8"></head><body>${table}</body></html>`], { type: "application/vnd.ms-excel;charset=utf-8" });

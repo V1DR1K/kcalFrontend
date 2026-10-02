@@ -1,14 +1,11 @@
+import { nutritionDayHasActivity, nutritionDayState, historyDayLabel } from "./history-state";
 import React, { useCallback, useEffect, useState } from "react";
 import { Header, Panel } from "../../components/Layout";
 import { Icon } from "../../components/Icon";
 import "../../styles/06-history.css";
 import { CatalogStatus } from "../catalog/CatalogComponents";
-import { formatNumber, readableDate } from "../../utils/format";
+import { formatNumber, readableDate, today } from "../../utils/format";
 import { HistoryDayPreview, HistoryExportDialog } from "./dialogs/HistoryDialogs";
-
-function nutritionDayHasActivity(day) {
-  return Number(day?.caloriesConsumed || 0) > 0;
-}
 
 export function History({ api }) {
   const [data, setData] = useState(null); const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [selectedDay, setSelectedDay] = useState(null); const [exportOpen, setExportOpen] = useState(false); const [exporting, setExporting] = useState(false); const [monthOffset, setMonthOffset] = useState(0);
@@ -22,12 +19,13 @@ export function History({ api }) {
   return (
     <section className="page history-page">
       <Header title="Historial" />
-      <div className="grid two history-summary"><Panel title="Promedio del mes"><p className="big">{formatNumber(data?.averageCalories)} kcal</p></Panel><Panel title="Días con objetivo cumplido"><p className="big">{data?.completedGoalDays || 0} días</p></Panel></div>
-      <div className="history-calendar-toolbar"><button className="primary calendar-export" type="button" onClick={() => setExportOpen(true)}><Icon name="download" />Exportar a Excel</button></div>
+      <div className="grid two history-summary"><Panel title="Promedio del mes"><p className="big">{data?.averageCalories == null ? "Sin datos suficientes" : `${formatNumber(data.averageCalories)} kcal`}</p><p>Sobre {data?.averageDayCount ?? days.filter(day => nutritionDayHasActivity(day) && day.date <= today() && day.energyComplete !== false).length} días con calorías completas hasta hoy. Incluye ceros registrados.</p></Panel><Panel title="Días dentro de la meta"><p className="big">{data?.completedGoalDays || 0} días</p></Panel></div>
+      <div className="history-calendar-toolbar"><button className="secondary calendar-export" type="button" disabled={!activeDays} onClick={() => setExportOpen(true)}><Icon name="download" />Exportar a Excel</button><p>{activeDays ? "Exportá los consumos registrados de este mes, incluidos los que tienen datos incompletos." : "La exportación estará disponible cuando haya consumos registrados en este mes."}</p></div>
       <section className="history-calendar-surface">
         <div className="history-calendar-heading"><button type="button" className="history-calendar-icon-action" aria-label="Mes anterior" onClick={() => setMonthOffset((offset) => offset - 1)}><Icon name="chevron_left" /></button><div><h2>{monthLabel}</h2><span>{activeDays} {activeDays === 1 ? "día registrado" : "días registrados"}</span></div><button type="button" className="history-calendar-icon-action" aria-label="Mes siguiente" onClick={() => setMonthOffset((offset) => offset + 1)} disabled={monthOffset >= 0}><Icon name="chevron_right" /></button></div>
         <div className="history-calendar-weekdays" aria-hidden="true">{["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day}>{day}</span>)}</div>
-        <div className="history-calendar-grid">{Array.from({ length: leadingDays }, (_, index) => <span className="history-calendar-spacer" key={`leading-spacer-${index}`} />)}{days.map((day) => { const active = nutritionDayHasActivity(day); const status = day.goalReached ? "objetivo cumplido" : active ? "día registrado" : "sin actividad registrada"; return <button type="button" data-history-date={day.date} key={day.date} className={`history-calendar-day ${active ? "history-calendar-day-active" : ""}`.trim()} style={{ "--plan-color": planColor(day.planId || day.planName) }} title={`Ver detalle del ${readableDate(day.date)}`} aria-label={`${readableDate(day.date)}, ${status}. Ver detalle`} onClick={() => setSelectedDay(day)}><b>{new Date(`${day.date}T00:00:00`).getDate()}</b>{day.planName && <small>{day.planName}</small>}{day.goalReached && <Icon name="check_circle" />}</button>; })}{Array.from({ length: trailingDays }, (_, index) => <span className="history-calendar-spacer" key={`trailing-spacer-${index}`} />)}</div>
+        <div className="history-calendar-grid">{Array.from({ length: leadingDays }, (_, index) => <span className="history-calendar-spacer" key={`leading-spacer-${index}`} />)}{days.map((day) => { const active = nutritionDayHasActivity(day); const status = historyDayLabel(day, today()); const future = day.date > today(); const partial = nutritionDayState(day) === "PARTIAL"; return <button type="button" data-history-date={day.date} key={day.date} className={`history-calendar-day ${active ? "history-calendar-day-active" : ""} ${future ? "history-calendar-day-future" : ""} ${day.date === today() ? "history-calendar-day-today" : ""}`.trim()} style={{ "--plan-color": active ? planColor(day.planId || day.planName) : "var(--outline)" }} title={`Ver detalle del ${readableDate(day.date)}`} aria-label={`${readableDate(day.date)}, ${status}. Ver detalle`} onClick={() => setSelectedDay(day)}><b>{new Date(`${day.date}T00:00:00`).getDate()}</b><span className="history-day-state">{future ? "Futuro" : partial ? "Parcial" : active ? "Registro" : "—"}</span>{day.date === today() && <span className="history-day-today-label">Hoy</span>}{!future && day.goalReached && <Icon name="check_circle" />}</button>; })}{Array.from({ length: trailingDays }, (_, index) => <span className="history-calendar-spacer" key={`trailing-spacer-${index}`} />)}</div>
+        <p className="history-state-legend">— Sin registros · Registro: datos completos · Parcial: información pendiente · ✓ Dentro de la meta · Hoy: día actual. Los días futuros no cuentan para el promedio.</p>
         {plans.length > 0 && <div className="history-plan-legend">{plans.map(([key, day]) => <span key={key}><i style={{ background: planColor(day.planId || day.planName) }} />{day.planName}</span>)}</div>}
       </section>
       {selectedDay && <HistoryDayPreview api={api} day={selectedDay} onClose={() => setSelectedDay(null)} />}{exportOpen && <HistoryExportDialog api={api} monthDate={viewDate} exporting={exporting} setExporting={setExporting} onClose={() => setExportOpen(false)} />}

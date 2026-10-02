@@ -283,3 +283,12 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .history-calendar-day small { display: none; }
   .history-calendar-icon-action { width: 44px; min-height: 44px; }
 }
+
+.history-calendar-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.history-calendar-toolbar p,.history-state-legend,.history-data-notice { font-size:14px; color:var(--muted); }
+.history-page .calendar-export { min-height:44px; }
+.history-day-state,.history-day-today-label { font-size:12px; line-height:1.3; }
+.history-page .history-calendar-day { min-width:0; padding-inline:2px; gap:3px; }
+.history-calendar-day-today { outline:2px solid var(--primary); outline-offset:-2px; }
+.history-calendar-day-future { border-style:dashed; }
+.history-day-today-label { color:var(--primary); }

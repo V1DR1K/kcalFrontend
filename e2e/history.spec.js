@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { test, expect } from "@playwright/test";
 
 function currentMonth() {
@@ -98,4 +99,24 @@ test("keeps the history calendar usable on a narrow viewport", async ({ page }) 
   expect(layout.surfaceRight).toBeLessThanOrEqual(layout.viewport + 1);
   expect(layout.gridOverflow).toBe(false);
   expect(layout.actionSize).toBeGreaterThanOrEqual(44);
+});
+
+test("SG019–021 distinguishes zero, partial and missing records and preserves unknown exported values", async ({ page }) => {
+  await seedHistoryApp(page, { startOnHistory: true });
+  const now = new Date(); const day = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  const empty = { date: dateKey(1), caloriesConsumed: 0, recordCount: 0, recordState: "NONE", goalReached: false };
+  const partial = { date: day, caloriesConsumed: 0, recordCount: 1, recordState: "PARTIAL", energyComplete: false, goalReached: false };
+  await page.route("**/api/nutrition/history**", route => route.fulfill({ json: { days: [partial], averageCalories: null, averageDayCount: 0, completedGoalDays: 0 } }));
+  await page.route("**/api/nutrition/dashboard**", route => route.fulfill({ json: { date: day, energyComplete: false, meals: [{ mealType:"BREAKFAST", label:"Desayuno", items:[{ id:1, itemType:"FOOD", quantity:100, unit:"GRAM", calories:null, proteinGrams:null, carbsGrams:0, fatGrams:0, food:{name:"Sin composición"} }] }] } }));
+  await page.goto("/ingresar");
+  await expect(page.getByText("Sin datos suficientes", { exact:true })).toBeVisible();
+  await expect(page.locator(`[data-history-date="${day}"]`)).toHaveAccessibleName(/Calorías incompletas/);
+  await page.getByRole("button", { name:/Exportar a Excel/ }).click();
+  const downloadPromise = page.waitForEvent("download"); await page.getByRole("button", { name:"Descargar Excel", exact:true }).click();
+  const download = await downloadPromise; const contents = await readFile(await download.path(), "utf8");
+  expect(contents).toContain("Sin composición"); expect(contents).toContain("<td>Sin dato</td><td>Sin dato</td><td>0</td><td>0</td>");
+  await page.route("**/api/nutrition/history**", route => route.fulfill({ json: { days:[empty], averageCalories:null, completedGoalDays:0 } }));
+  await page.reload();
+  await expect(page.getByRole("button", { name:/Exportar a Excel/ })).toBeDisabled();
+  await expect(page.locator(`[data-history-date="${empty.date}"]`)).toHaveAccessibleName(/Sin registros/);
 });
