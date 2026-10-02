@@ -50,7 +50,7 @@
 .selected-controls { display: grid; grid-template-columns: minmax(110px, .7fr) minmax(150px, 1fr); gap: 10px; align-items: end; }
 .nutrition-preview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .nutrition-preview span { display: grid; gap: 2px; min-width: 0; padding: 10px; border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-high); text-align: center; }
-.nutrition-preview small { color: var(--muted); font-size: 11px; }
+.nutrition-preview small { color: var(--muted); font-size: 12px; }
 .nutrition-preview strong { color: var(--text); font-size: 17px; font-variant-numeric: tabular-nums; }
 
 .mini {
@@ -125,12 +125,12 @@
 .nutrient-details summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text); font-weight: 800; }
 .nutrient-details summary span { color: var(--muted); font-size: 12px; font-weight: 700; }
 .nutrient-groups { display: grid; gap: 14px; padding: 4px 0 2px; }
-.nutrient-groups h4 { margin: 0 0 7px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.nutrient-groups h4 { margin: 0 0 7px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
 .nutrient-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 .nutrient-grid span { display: grid; gap: 2px; min-width: 0; padding: 9px; background: var(--surface-high); border: 1px solid var(--outline); border-radius: var(--radius-control); }
-.nutrient-grid small { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nutrient-grid small { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nutrient-grid strong { color: var(--text); font-size: 13px; font-variant-numeric: tabular-nums; }
-.nutrient-grid em { color: var(--muted); font-size: 10px; font-style: normal; }
+.nutrient-grid em { color: var(--muted); font-size: 12px; font-style: normal; }
 .nutrient-grid .missing strong, .nutrient-grid .missing em { color: var(--warning); }
 .nutrient-editor { display: grid; gap: 8px; margin-top: 12px; }
 .nutrient-editor-fields { display: grid; gap: 8px; max-height: 360px; overflow: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 10px; border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-high); }

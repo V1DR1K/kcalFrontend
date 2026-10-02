@@ -193,7 +193,7 @@
   .compact-modal.closing .edit-log-modal { animation: edit-sheet-out 180ms ease-in forwards; }
   .edit-log-header { padding: 14px 14px var(--space-3); border-bottom: 1px solid color-mix(in srgb, var(--text) 8%, transparent); }
   .edit-log-header .food-thumb.compact { width: 44px; height: 44px; }
-  .edit-log-identity > span { font-size: 10px; }
+  .edit-log-identity > span { font-size: 12px; }
   .edit-log-modal h2 { font-size: 18px; }
   .edit-log-body {
     min-height: 0;
@@ -213,7 +213,7 @@
   .edit-log-section { gap: 10px; padding: 12px; }
   .edit-log-section-heading { gap: 8px; }
   .edit-log-section-heading strong { font-size: 14px; }
-  .edit-log-section-heading small { font-size: 11px; }
+  .edit-log-section-heading small { font-size: 12px; }
   .daily-recipe-editor { gap: 10px; padding: 12px; overflow: hidden; border-color: color-mix(in srgb, var(--primary) 22%, transparent); background: color-mix(in srgb, var(--primary) 5%, transparent); }
   .daily-recipe-fields { gap: 8px; }
   .daily-recipe-fields .field { gap: 5px; }
@@ -258,7 +258,7 @@
   .edit-log-modal .edit-log-preview .edit-log-calories { padding-left: 12px; border-left: 0; }
   .edit-log-modal .edit-log-preview strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
   .edit-log-modal .edit-log-preview .edit-log-calories strong { font-size: 24px; line-height: 1; }
-  .edit-log-modal .edit-log-preview small { color: var(--muted); font-size: 10px; font-weight: 800; }
+  .edit-log-modal .edit-log-preview small { color: var(--muted); font-size: 12px; font-weight: 800; }
   .edit-log-modal .edit-log-preview .protein strong { color: var(--primary); }
   .edit-log-modal .edit-log-preview .carbs strong { color: var(--tertiary); }
   .edit-log-modal .edit-log-preview .fat strong { color: var(--warning); }
@@ -541,7 +541,7 @@
   .panel > .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .panel > .grid.three .stat { min-width: 0; padding: 10px 8px; }
   .panel > .grid.three .stat strong { font-size: 15px; white-space: nowrap; }
-  .panel > .grid.three .stat small { font-size: 11px; }
+  .panel > .grid.three .stat small { font-size: 12px; }
   .preset-grid { display: grid; grid-template-columns: 1fr; gap: 10px; overflow: visible; margin: 0; padding: 0; scroll-snap-type: none; }
   .preset-card { min-height: 0; }
   .macro-control, .macro-control input[type="range"] { min-width: 0; width: 100%; }
@@ -593,18 +593,18 @@
   .ai-estimate-editor .edit-log-fields input[type="date"] { inline-size: 100%; padding-inline: 10px; }
   .selected-heading .food-thumb.compact { width: 38px; height: 38px; }
   .selected-heading strong { font-size: 14px; }
-  .selected-heading .preparation-badge { margin-top: 3px; padding: 2px 6px; font-size: 10px; }
+  .selected-heading .preparation-badge { margin-top: 3px; padding: 2px 6px; font-size: 12px; }
   .selected-heading .icon-button { width: 38px; min-height: 38px; }
   .selected-editor .split { gap: 8px; }
   .selected-controls { grid-template-columns: minmax(88px, .7fr) minmax(125px, 1fr); gap: 7px; }
   .selected-controls .field { gap: 4px; }
-  .selected-controls .field span { font-size: 11px; }
+  .selected-controls .field span { font-size: 12px; }
   .selected-controls input,
   .selected-controls select { min-height: 42px; padding: 0 10px; }
   .nutrition-preview { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
   .nutrition-preview span { gap: 1px; padding: 7px 3px; }
   .nutrition-preview strong { font-size: 14px; }
-  .nutrition-preview small { font-size: 9px; }
+  .nutrition-preview small { font-size: 12px; }
   .account-panel .danger-button { width: 100%; }
 
   .scanner-stage {

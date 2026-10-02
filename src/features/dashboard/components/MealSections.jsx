@@ -139,12 +139,12 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
       <header>
         <div className="meal-heading">
           <Icon name="restaurant" />
-          <div><span>{mealType.label}</span><strong>{items.length ? `${meal?.calories || 0} kcal` : "Sin alimentos registrados"}</strong></div>
+          <div><span>{mealType.label}</span><strong>{items.length ? `${meal?.calories || 0} kcal` : "Sin registros"}</strong></div>
         </div>
         <div className="meal-header-actions">
           <details className="meal-menu" ref={menuRef}><summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary><div><button className="action-control" disabled={!items.length || hasPendingItems} onClick={copyAll}>Copiar todo</button><button className="action-control" disabled={!clipboard?.length || hasPendingItems} onClick={() => { menuRef.current?.removeAttribute("open"); addLogs(clipboard); }}>Pegar</button><button className="action-control" disabled={!items.some(isCopyableMealLog) || hasPendingItems} onClick={() => { menuRef.current?.removeAttribute("open"); onConvertToRecipe?.(); }}>Convertir en receta</button><button className="danger-text action-control" disabled={!items.length || hasPendingItems} onClick={() => { menuRef.current?.removeAttribute("open"); deleteAll(); }}>Borrar todo</button></div></details>
           <button type="button" className="icon-button action-control meal-share-trigger" aria-label={`Compartir ${mealType.label}`} disabled={!items.length || hasPendingItems} onClick={onShare}><Icon name="share" /></button>
-          <button className="icon-button action-control" aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><Icon name="add" /></button>
+          <button className={`${items.length ? "icon-button" : "secondary meal-empty-add"} action-control`} aria-label={`Agregar alimento a ${mealType.label}`} onClick={onAdd}><Icon name="add" />{!items.length && "Agregar"}</button>
         </div>
       </header>
       {items.length > 0 && <div className="meal-macros">
@@ -195,9 +195,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
             </SwipeableMealItem>
           );
         })
-      ) : (
-        <button className="secondary dashboard-food-empty-action" onClick={onAdd}>Agregar alimento</button>
-      )}
+      ) : null}
     </article>
   );
 }

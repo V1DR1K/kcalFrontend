@@ -592,7 +592,7 @@
 .training-cardio-week-day { display: grid; grid-template-rows: 76px auto auto; align-items: end; justify-items: center; gap: var(--space-1); min-width: 0; color: var(--training-muted); }
 .training-cardio-week-day.is-today { color: var(--cardio-accent); }
 .training-cardio-week-day b { font-size: var(--type-micro); font-weight: 800; text-transform: capitalize; }
-.training-cardio-week-day small { overflow: hidden; max-width: 100%; color: inherit; font-size: 9px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.training-cardio-week-day small { overflow: hidden; max-width: 100%; color: inherit; font-size: 12px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 .training-cardio-week-bar { display: flex; align-items: end; width: 100%; height: 76px; padding: 0 22%; border-bottom: 1px solid var(--training-border); }
 .training-cardio-week-bar span { display: block; width: 100%; min-height: 4px; border-radius: var(--radius-tight) var(--radius-tight) 0 0; background: color-mix(in srgb, var(--cardio-accent) 38%, var(--training-border)); }
 .training-cardio-week-day.is-today .training-cardio-week-bar span { background: var(--cardio-accent); }

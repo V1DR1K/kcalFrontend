@@ -39,10 +39,10 @@
   .compact-calories { gap: 5px; }
   .compact-calories > .material-symbols-outlined { width: 28px; height: 28px; font-size: 19px; }
   .compact-calories strong { font-size: 14px; }
-  .compact-calories small, .compact-macros small { font-size: 9px; }
+  .compact-calories small, .compact-macros small { font-size: 12px; }
   .compact-macros > span { display: grid; grid-template-columns: auto auto; justify-content: center; gap: 1px 3px; padding: 3px 4px; }
-  .compact-macros b { font-size: 9px; }
-  .compact-macros strong { font-size: 11px; }
+  .compact-macros b { font-size: 12px; }
+  .compact-macros strong { font-size: 12px; }
   .compact-balance-up { display: none; }
 }
 

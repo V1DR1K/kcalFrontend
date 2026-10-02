@@ -231,7 +231,7 @@
   box-shadow: 0 0 0 3px var(--primary-hover);
 }
 .calendar-grid > button { position: relative; gap: 1px; border-bottom: 3px solid var(--plan-color); }
-.calendar-grid > button small { width: 100%; overflow: hidden; padding: 0 3px; color: var(--muted); font-size: 8px; line-height: 1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-grid > button small { width: 100%; overflow: hidden; padding: 0 3px; color: var(--muted); font-size: 12px; line-height: 1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .plan-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; }
 .plan-legend span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
 .plan-legend i { width: 9px; height: 9px; border-radius: var(--radius-pill); }

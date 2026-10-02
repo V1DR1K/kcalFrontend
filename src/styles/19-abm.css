@@ -101,7 +101,7 @@
 .abm-status-chip { flex: 0 0 auto; padding: 6px 9px; border-radius: var(--radius-pill); background: var(--primary-soft); color: var(--primary); font-size: var(--type-meta); font-weight: 800; }
 .abm-nutrition-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
 .abm-nutrition-stats span { display: grid; gap: 2px; min-width: 0; padding: 9px; border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-high); }
-.abm-nutrition-stats small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.abm-nutrition-stats small { overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .abm-nutrition-stats strong { overflow: hidden; font-size: 13px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 .day-preview-meals { display: grid; gap: 16px; }
 .day-preview-meals section { display: grid; gap: 8px; }
@@ -321,7 +321,7 @@
 .collection-preview-description { margin: 14px 0; color: var(--muted); font-size: var(--type-body-sm); }
 .collection-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin-top: 18px; }
 .collection-metrics span { display: grid; gap: 2px; min-width: 0; padding: 9px; border: 1px solid var(--outline); border-radius: var(--radius-control); background: var(--surface-high); }
-.collection-metrics small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.collection-metrics small { overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .collection-metrics strong { overflow: hidden; font-size: 13px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 .collection-preview-groups { display: grid; gap: 18px; margin-top: 20px; }
 .collection-preview-group { position: relative; padding-left: 18px; border-left: 1px solid color-mix(in srgb, var(--primary) 44%, var(--outline)); }

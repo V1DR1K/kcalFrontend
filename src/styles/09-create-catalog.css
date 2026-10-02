@@ -173,7 +173,7 @@
   color: var(--primary);
 }
 .recipe-weight-summary div { display: grid; gap: 2px; min-width: 0; }
-.recipe-weight-summary small { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.recipe-weight-summary small { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
 .recipe-weight-summary strong { font-size: 22px; line-height: 1; color: var(--text); }
 .recipe-cooked-weight {
   display: grid;
@@ -210,7 +210,7 @@
   border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--outline));
   border-radius: var(--radius-pill);
   color: var(--primary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 .ingredient-pick-recipe .ingredient-pick-kind {
