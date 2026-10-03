@@ -139,18 +139,18 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                   <div className="ai-estimate-item-detail-content">
                     {mode === "create" && <p className="ai-estimate-detail-hint">Macros para los {formatNumber(item.estimatedGrams)} g estimados. Podés corregirlos antes de guardar.</p>}
                     <div className="ai-estimate-meta-values">
-                      <span><small>Categoría</small><strong>{categoryLabel(item.category || "OTHER")}</strong></span>
-                      <span><small>Preparación</small><strong>{preparationLabel(item.preparation || "UNSPECIFIED")}</strong></span>
+                      <span className="ai-estimate-detail-category"><small>Categoría</small><strong>{categoryLabel(item.category || "OTHER")}</strong></span>
+                      <span className="ai-estimate-detail-preparation"><small>Preparación</small><strong>{preparationLabel(item.preparation || "UNSPECIFIED")}</strong></span>
                     </div>
                     {item.catalogFoodId && <small className="ai-estimate-catalog-match">Se usará el alimento del catálogo ({item.catalogMatchConfidence || 0}% de coincidencia).</small>}
                     <div className={`ai-estimate-item-nutrition ${mode === "create" ? "editable" : ""}`} aria-label={`Aporte nutricional de ${item.name || `alimento ${index + 1}`}`}>
-                      <span><small>kcal</small><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))}</strong></span>
+                      <span className="ai-estimate-nutrient-calories"><small>kcal</small><strong>{formatNumber(itemNutrition[index]?.calories ?? macroCalories(item.proteinGrams, item.carbsGrams, item.fatGrams))}</strong></span>
                       {[
-                        ["Proteínas (g)", "proteinGrams"],
-                        ["Carbohidratos (g)", "carbsGrams"],
-                        ["Grasas (g)", "fatGrams"],
-                      ].map(([label, field]) => {
-                        return <label className="ai-estimate-macro-edit" key={field}><small>{label}</small>{mode === "create" ? <input type="text" inputMode="decimal" value={item[field] ?? "0"} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)} g</strong>}</label>;
+                        ["Proteínas (g)", "proteinGrams", "protein"],
+                        ["Carbohidratos (g)", "carbsGrams", "carbs"],
+                        ["Grasas (g)", "fatGrams", "fat"],
+                      ].map(([label, field, nutrient]) => {
+                        return <label className={`ai-estimate-macro-edit ai-estimate-nutrient-${nutrient}`} key={field}><small>{label}</small>{mode === "create" ? <input type="text" inputMode="decimal" value={item[field] ?? "0"} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)} g</strong>}</label>;
                       })}
                     </div>
                   </div>

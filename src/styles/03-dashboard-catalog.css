@@ -544,6 +544,22 @@
 .ai-estimate-item-nutrition { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
 .ai-estimate-item-nutrition strong { color: var(--text); font-size: var(--type-small); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .ai-estimate-item-nutrition span:first-child strong { color: var(--primary); }
+.ai-estimate-meta-values > span,
+.ai-estimate-item-nutrition > span,
+.ai-estimate-item-nutrition > label { min-height: 62px; align-content: start; padding: var(--space-2); border: 1px solid color-mix(in srgb, var(--detail-accent, var(--primary)) 28%, var(--outline)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--detail-accent, var(--primary)) 8%, var(--surface-low)); }
+.ai-estimate-meta-values > span { --detail-accent: var(--tertiary); }
+.ai-estimate-meta-values > .ai-estimate-detail-category { --detail-accent: var(--primary); }
+.ai-estimate-item-nutrition { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ai-estimate-item-nutrition .ai-estimate-nutrient-calories { --detail-accent: var(--primary); }
+.ai-estimate-item-nutrition .ai-estimate-nutrient-protein { --detail-accent: var(--primary); }
+.ai-estimate-item-nutrition .ai-estimate-nutrient-carbs { --detail-accent: var(--tertiary); }
+.ai-estimate-item-nutrition .ai-estimate-nutrient-fat { --detail-accent: var(--warning); }
+.ai-estimate-item-nutrition > span strong,
+.ai-estimate-item-nutrition > label > strong { color: var(--detail-accent, var(--text)); }
+.ai-estimate-macro-edit input { border-color: color-mix(in srgb, var(--detail-accent, var(--primary)) 35%, var(--outline)); background: color-mix(in srgb, var(--detail-accent, var(--primary)) 8%, var(--surface)); }
+.ai-estimate-macro-edit input:focus-visible { outline-color: var(--detail-accent, var(--primary)); }
+.ai-estimate-detail-hint,
+.ai-estimate-catalog-match { grid-column: 1 / -1; }
 .ai-estimate-remove { width: 44px; min-width: 44px; min-height: 44px; color: var(--error); }
 .ai-estimate-catalog { min-height: 44px; padding-inline: var(--space-3); font-size: var(--type-meta); }
 .ai-estimate-assumptions > p { margin: 0; padding: 0 var(--space-3) var(--space-3); color: var(--muted); font-size: var(--type-small); line-height: 1.45; }
