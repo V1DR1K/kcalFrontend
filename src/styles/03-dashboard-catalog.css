@@ -326,11 +326,8 @@
 .ocr-preview-note { margin: -4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
 .ai-photo-trigger { position: relative; min-width: 0; overflow: hidden; white-space: nowrap; }
 .ai-photo-trigger.disabled { opacity: .55; pointer-events: none; }
-.ai-context-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
 .ai-context-field { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: 12px; font-weight: 800; }
 .ai-context-field textarea { box-sizing: border-box; width: 100%; min-height: 112px; max-height: min(30dvh, 220px); overflow-y: auto; resize: vertical; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; }
-.ai-note-record { min-height: 46px; white-space: nowrap; }
-.ai-note-record.recording { border-color: var(--error); color: var(--error); }
 .ai-photo-context-editor > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
 .ai-photo-context-editor > header > div { display: grid; gap: 3px; min-width: 0; }
 .ai-photo-context-editor h3 { margin: 0; font-size: 18px; }
@@ -465,8 +462,6 @@
 .ai-photo-target-option:disabled { cursor: wait; opacity: .72; }
 .ai-photo-target-check { justify-self: end; }
 .ai-photo-target-hint { margin: 0; color: var(--muted); font-size: var(--type-meta); }
-.ai-photo-context-modal .ai-context-tools { grid-template-columns: minmax(0, 1fr) minmax(170px, auto); align-items: end; }
-.ai-photo-context-modal .ai-note-record { min-height: 48px; }
 .ai-photo-context-actions,
 .ai-estimate-actions { display: grid; width: 100%; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: var(--space-2); }
 .ai-photo-context-actions button,

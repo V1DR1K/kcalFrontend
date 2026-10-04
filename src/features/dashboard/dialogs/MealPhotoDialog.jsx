@@ -1,8 +1,7 @@
 import React from "react";
-import { Icon } from "../../../components/Icon";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 
-export function MealPhotoContextEditor({ photoUrl, context, setContext, error, recording, transcribing, analyzing, onToggleRecording, onDiscard, onChangePhoto, onAnalyze }) {
+export function MealPhotoContextEditor({ photoUrl, context, setContext, error, analyzing, onDiscard, onChangePhoto, onAnalyze }) {
   return (
     <ModalShell
       title="Contanos sobre la foto"
@@ -10,13 +9,13 @@ export function MealPhotoContextEditor({ photoUrl, context, setContext, error, r
       ariaLabel="Preparar análisis de foto"
       closeLabel="Descartar foto"
       onClose={onDiscard}
-      closeDisabled={analyzing || transcribing || recording}
+      closeDisabled={analyzing}
       className="ai-photo-context-modal"
       backdropClassName="modal-backdrop ai-photo-context-backdrop"
       footer={
         <div className="ai-photo-context-actions">
           <button type="button" className="secondary" disabled={analyzing} onClick={onChangePhoto}>Cambiar foto</button>
-          <button type="button" className="primary" disabled={analyzing || recording || transcribing} onClick={onAnalyze}>{analyzing ? "Analizando..." : "Analizar foto"}</button>
+          <button type="button" className="primary" disabled={analyzing} onClick={onAnalyze}>{analyzing ? "Analizando..." : "Analizar foto"}</button>
         </div>
       }
     >
@@ -28,16 +27,10 @@ export function MealPhotoContextEditor({ photoUrl, context, setContext, error, r
             <p>La IA contará los alimentos detectados: uno se guarda como alimento; varios, como receta.</p>
           </div>
         </section>
-        <div className="ai-context-tools">
-          <label className="ai-context-field">
-            <span>Descripción opcional</span>
-            <textarea aria-label="Descripción opcional" maxLength={240} placeholder="Ej.: dos empanadas de carne con queso y gaseosa" value={context} onChange={(event) => setContext(event.target.value)} />
-          </label>
-          <button type="button" className={`secondary ai-note-record ${recording ? "recording" : ""}`} disabled={transcribing || analyzing} onClick={onToggleRecording}>
-            <Icon name={recording ? "stop_circle" : "mic"} />
-            {transcribing ? "Transcribiendo..." : recording ? "Detener dictado" : "Dictar descripción"}
-          </button>
-        </div>
+        <label className="ai-context-field">
+          <span>Descripción opcional</span>
+          <textarea aria-label="Descripción opcional" maxLength={240} placeholder="Ej.: dos empanadas de carne con queso y gaseosa" value={context} onChange={(event) => setContext(event.target.value)} />
+        </label>
         {error && <p className="ai-estimate-error" role="alert">{error}</p>}
       </div>
     </ModalShell>

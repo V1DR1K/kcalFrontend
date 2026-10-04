@@ -58,13 +58,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const [pendingMealPhotoUrl, setPendingMealPhotoUrl] = useState("");
   const [shareBracket, setShareBracket] = useState(null);
   const [reviewingBracket, setReviewingBracket] = useState(null);
-  const [audioRecording, setAudioRecording] = useState(false);
-  const [audioTranscribing, setAudioTranscribing] = useState(false);
   const galleryInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const addInFlightRef = useRef(false);
-  const audioRecorderRef = useRef(null);
-  const audioStreamRef = useRef(null);
   const availability = aiAvailability(aiUsage);
   const recentFoods = readRecents(user).items.slice(0, 20).map((item) => ({ ...item, type: "FOOD" }));
   const normalizedQuery = normalizeSearchText(query);
@@ -81,10 +77,6 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     api.request("/api/nutrition/ai-estimates/usage").then(setAiUsage).catch(() => setAiUsage(null));
     return undefined;
   }, [api, ingredientOnly]);
-  useEffect(() => () => {
-    audioRecorderRef.current?.stop?.();
-    audioStreamRef.current?.getTracks().forEach((track) => track.stop());
-  }, []);
   useEffect(() => {
     if (!pendingMealPhoto) {
       setPendingMealPhotoUrl("");
@@ -126,60 +118,12 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     return () => document.removeEventListener("paste", handleImagePaste);
   }, [ingredientOnly, aiEstimate, aiAnalyzing]);
   function discardMealPhoto() {
-    if (audioRecording) audioRecorderRef.current?.stop();
     setAiError("");
     setAiContext("");
     setAiEstimatePhoto(null);
     setAiCorrection("");
     setAiRefinementError("");
     setPendingMealPhoto(null);
-  }
-  async function toggleMealNoteRecording() {
-    if (audioRecording) return audioRecorderRef.current?.stop();
-    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-      setAiError("Tu navegador no permite dictar una descripción. Escribila manualmente.");
-      return;
-    }
-    setAiError("");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const preferredType = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"].find((type) => MediaRecorder.isTypeSupported?.(type));
-      const recorder = new MediaRecorder(stream, preferredType ? { mimeType: preferredType } : undefined);
-      const chunks = [];
-      audioStreamRef.current = stream;
-      audioRecorderRef.current = recorder;
-      recorder.ondataavailable = (event) => event.data.size && chunks.push(event.data);
-      recorder.onstop = async () => {
-        stream.getTracks().forEach((track) => track.stop());
-        audioStreamRef.current = null;
-        audioRecorderRef.current = null;
-        setAudioRecording(false);
-        if (!chunks.length) return;
-        setAudioTranscribing(true);
-        try {
-          const type = recorder.mimeType || "audio/mp4";
-          const extension = type.includes("mp4") ? "m4a" : "webm";
-          const form = new FormData();
-          form.append("audio", new File([new Blob(chunks, { type })], `descripcion.${extension}`, { type }));
-          const result = await api.runAction(
-            { title: "Transcribiendo tu descripción", description: "Estamos preparando el contexto para analizar la comida..." },
-            () => api.request("/api/nutrition/ai-estimates/transcriptions", { method: "POST", body: form }),
-          );
-          if (!result?.transcript) throw new Error("No pudimos transcribir la nota. Intentá nuevamente.");
-          setAiContext(result.transcript);
-        } catch (error) { if (error.cancelled) return;
-          const message = `${error.message || "No pudimos transcribir la nota. Intentá nuevamente."}${error.requestId ? ` Código de soporte: ${error.requestId}` : ""}`;
-          setAiError(message);
-          api.notify(message, "error");
-        } finally {
-          setAudioTranscribing(false);
-        }
-      };
-      recorder.start();
-      setAudioRecording(true);
-    } catch {
-      setAiError("No pudimos acceder al micrófono. Podés escribir una descripción manualmente.");
-    }
   }
   async function analyzeMealPhoto(file) {
     if (!file || aiAnalyzing) return;
@@ -773,7 +717,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
               {previewError && <p className="form-error" role="alert">{previewError} <button type="button" className="secondary" onClick={() => setPreviewRetry((value) => value + 1)}>Reintentar</button></p>}
           </FoodLogDialog>
         )}
-        {pendingMealPhoto && <MealPhotoContextEditorDialog photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} recording={audioRecording} transcribing={audioTranscribing} analyzing={aiAnalyzing} onToggleRecording={toggleMealNoteRecording} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
+        {pendingMealPhoto && <MealPhotoContextEditorDialog photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} analyzing={aiAnalyzing} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
         {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} saveError={aiSaveError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} targetType={aiEstimate.items.length > 1 ? "RECIPE" : "FOOD"} addToDiary={aiAddToDiary} setAddToDiary={setAiAddToDiary} registrationMealType={aiRegistrationMealType} setRegistrationMealType={setAiRegistrationMealType} registrationDate={aiRegistrationDate} setRegistrationDate={setAiRegistrationDate} mealTypes={mealTypes} />}
         {!ingredientOnly && <footer className="picker-photo-actions">
           {aiOnly && <p className="photo-availability" role="status"><strong>{availability.headline}</strong><span>{availability.detail}</span></p>}

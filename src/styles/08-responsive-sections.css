@@ -295,8 +295,7 @@
   .ai-estimate-modal .modal-shell-content { padding: 0; }
   .ai-estimate-modal .selected-editor { padding: max(12px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-left)) calc(20px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right)); }
   .ai-photo-context-editor { min-height: 0; align-content: start; }
-  .ai-photo-context-editor .ai-context-field,
-  .ai-photo-context-editor .ai-context-tools { min-width: 0; }
+  .ai-photo-context-editor .ai-context-field { min-width: 0; }
   .ai-photo-context-editor .ai-context-field textarea { min-height: clamp(104px, 18dvh, 132px); max-height: min(22dvh, 160px); }
   .ai-photo-context-actions,
   .ai-estimate-actions {
@@ -575,8 +574,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .ai-context-tools { grid-template-columns: 1fr; }
-  .ai-note-record { width: 100%; }
   .picker-modal footer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .picker-modal footer button { min-width: 0; }
   .picker-modal footer .ai-photo-trigger { width: 100%; min-height: 52px; }
@@ -630,7 +627,6 @@
   .ai-photo-context-editor { gap: var(--space-3); }
   .ai-photo-target-options { grid-template-columns: minmax(0, 1fr); }
   .ai-photo-target-option { min-height: 72px; }
-  .ai-photo-context-modal .ai-context-tools { grid-template-columns: minmax(0, 1fr); }
   .ai-photo-context-preview { max-height: min(25dvh, 190px); }
   .ai-estimate-editor { gap: var(--space-3); padding: var(--space-4); }
   .ai-estimate-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
