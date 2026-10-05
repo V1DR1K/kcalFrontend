@@ -22,6 +22,7 @@ GIT_HASH="$revision" /opt/infra/bin/deploy-service scalegrams web
 for attempt in $(seq 1 12); do
   version="$(curl --fail --silent https://scalegrams.neticar.com.ar/version.json || true)"
   if grep -Fq "$revision" <<<"$version"; then
+    /opt/infra/bin/update-repository-images || printf "Warning: repository image snapshot was not refreshed.\n" >&2
     printf 'Web published revision %s; backup %s\n' "$revision" "$backup"
     exit 0
   fi
