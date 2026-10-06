@@ -556,6 +556,8 @@
 .ai-estimate-detail-hint,
 .ai-estimate-catalog-match { grid-column: 1 / -1; }
 .ai-catalog-match { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--outline)); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--primary) 6%, var(--surface-low)); }
+.ai-estimate-match-guidance { display: grid; gap: var(--space-1); margin-block: var(--space-3); color: var(--muted); font-size: var(--type-meta); line-height: 1.45; }
+.ai-estimate-match-guidance strong { color: var(--text); font-size: var(--type-small); }
 .ai-catalog-match.needs-choice { border-color: color-mix(in srgb, var(--warning) 48%, var(--outline)); background: color-mix(in srgb, var(--warning) 7%, var(--surface-low)); }
 .ai-catalog-match-heading { display: flex; align-items: start; justify-content: space-between; gap: var(--space-2); min-width: 0; }
 .ai-catalog-match-heading > div { display: grid; gap: 2px; min-width: 0; }

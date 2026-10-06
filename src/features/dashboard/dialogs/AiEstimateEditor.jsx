@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { CATEGORY_OPTIONS, PREPARATION_OPTIONS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
 import { Input, Select } from "../../../components/FormControls";
@@ -16,6 +16,8 @@ function formatMacro(value) {
 }
 
 export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, checkingMatches = false, matchPreview = null, matchChoices = {}, setMatchChoices, onEstimateEdited, onDiscard, onConfirm, mode = "create", mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem, targetType = "RECIPE", addToDiary = false, setAddToDiary, registrationMealType, setRegistrationMealType, registrationDate, setRegistrationDate }) {
+  const matchReviewRef = useRef(null);
+  const foodReviewSectionRef = useRef(null);
   const [catalogItemIndex, setCatalogItemIndex] = useState(null);
   const [catalogCategory, setCatalogCategory] = useState("OTHER");
   const [catalogPreparation, setCatalogPreparation] = useState("UNSPECIFIED");
@@ -23,6 +25,25 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
   const [catalogMessage, setCatalogMessage] = useState("");
   const [refinementOpen, setRefinementOpen] = useState(false);
   const previewByIndex = new Map((matchPreview?.items || []).map((item) => [item.itemIndex, item.match]));
+  const matchPreviewItems = matchPreview?.items || [];
+  const pendingMatchChoices = matchPreviewItems.filter(({ itemIndex, match }) =>
+    match?.macrosDiffer && !matchChoices[itemIndex]?.choice).length;
+  const matchedItemCount = matchPreviewItems.filter(({ match }) => Boolean(match)).length;
+  const reviewTargetItemIndex = matchPreviewItems.find(({ itemIndex, match }) =>
+    match?.macrosDiffer && !matchChoices[itemIndex]?.choice)?.itemIndex
+    ?? matchPreviewItems.find(({ match }) => Boolean(match))?.itemIndex
+    ?? matchPreviewItems[0]?.itemIndex;
+
+  useEffect(() => {
+    if (!matchPreview) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const target = matchReviewRef.current || foodReviewSectionRef.current;
+      if (!target) return;
+      const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      target.scrollIntoView?.({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "center" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [matchPreview]);
   const itemNutrition = (estimate.items || []).map((item, index) => {
     if (mode === "saved") return { proteinGrams: Number(item.proteinGrams || 0), carbsGrams: Number(item.carbsGrams || 0), fatGrams: Number(item.fatGrams || 0) };
     const match = previewByIndex.get(index);
@@ -150,11 +171,19 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
           </div>}
         </section>}
 
-        <section className="ai-estimate-food-section" aria-labelledby="ai-estimate-food-heading">
+        <section ref={foodReviewSectionRef} className="ai-estimate-food-section" aria-labelledby="ai-estimate-food-heading">
           <div className="ai-estimate-items-heading">
             <h3 id="ai-estimate-food-heading">Alimentos detectados</h3>
             <span>{estimate.items.length} {estimate.items.length === 1 ? "elemento" : "elementos"}</span>
           </div>
+          {mode === "create" && matchPreview && <div className="ai-estimate-match-guidance" role="status" aria-live="polite">
+            <strong>Revisión de coincidencias</strong>
+            <span>{pendingMatchChoices > 0
+              ? `${pendingMatchChoices} ${pendingMatchChoices === 1 ? "alimento necesita" : "alimentos necesitan"} tu decisión sobre los macros. Te llevamos a la primera coincidencia.`
+              : matchedItemCount > 0
+                ? "Las coincidencias están listas. Las fichas con macros iguales se reutilizan automáticamente."
+                : "No encontramos fichas cercanas; se conservarán las estimaciones y podrás guardar alimentos nuevos."}</span>
+          </div>}
           {estimate.items.length > 0 ? <div className="ai-estimate-items">
             {estimate.items.map((item, index) => (
               <article className="ai-estimate-item" key={index}>
@@ -170,9 +199,9 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                 </div>
                 {mode === "create" && matchPreview && (() => {
                   const match = previewByIndex.get(index);
-                  if (!match) return <section className="ai-catalog-match ai-catalog-no-match" aria-label="Sin coincidencia de catálogo"><div><strong>Sin coincidencia cercana</strong><p>Se conservarán los macros de la estimación y podrás guardar un alimento nuevo.</p></div></section>;
+                  if (!match) return <section ref={index === reviewTargetItemIndex ? matchReviewRef : undefined} className="ai-catalog-match ai-catalog-no-match" aria-label="Sin coincidencia de catálogo"><div><strong>Sin coincidencia cercana</strong><p>Se conservarán los macros de la estimación y podrás guardar un alimento nuevo.</p></div></section>;
                   const selectedChoice = match.macrosDiffer ? matchChoices[index]?.choice : "USE_CATALOG";
-                  return <section className={`ai-catalog-match ${match.macrosDiffer ? "needs-choice" : "macros-equal"}`} aria-label={`Coincidencia de catálogo para ${item.name}`}>
+                  return <section ref={index === reviewTargetItemIndex ? matchReviewRef : undefined} className={`ai-catalog-match ${match.macrosDiffer ? "needs-choice" : "macros-equal"}`} aria-label={`Coincidencia de catálogo para ${item.name}`}>
                     <div className="ai-catalog-match-heading"><div><strong>{match.name}</strong>{match.brand && <span>{match.brand}</span>}</div><small>{formatNumber(Number(match.similarity || 0) * 100, 0)}% de similitud</small></div>
                     <p className="ai-catalog-match-message">{match.macrosDiffer ? "Los macros de la ficha difieren para esta cantidad. Elegí qué valores querés guardar." : "Los macros coinciden para esta cantidad; se reutilizará esta ficha."}</p>
                     <div className="ai-catalog-macros" aria-label="Comparación de macros para la cantidad estimada">
