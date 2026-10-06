@@ -8,7 +8,7 @@
 
 | ID | Hallazgo | Ámbito | Seguimiento |
 | --- | --- | --- | --- |
-| A1 | `NutritionService` y `TrainingService` concentran responsabilidades de varios dominios, demasiadas dependencias y helpers privados. Hay servicios fachada que aún delegan la implementación completa. | Backend | En curso: cardio separado (`kcalBackend` `eec03ee`); catálogo de entrenamiento, catálogo y resumen nutricional, consultas de recetas y presets separados (`7501119`, `9617358`). En relación con la auditoría, `NutritionService` pasó de 2321 a 1945 líneas y `TrainingService` de 1948 a 1481. Quedan extracciones pendientes; ver el plan debajo. |
+| A1 | `NutritionService` y `TrainingService` concentran responsabilidades de varios dominios, demasiadas dependencias y helpers privados. Hay servicios fachada que aún delegan la implementación completa. | Backend | En curso: cardio y catálogo de entrenamiento, catálogo y resumen nutricional, consultas de recetas y presets separados (`eec03ee`, `7501119`, `9617358`, `e69db2b`). La fachada pura `TrainingPlanService` se eliminó. En relación con la auditoría, `NutritionService` pasó de 2321 a 1601 líneas y `TrainingService` de 1948 a 1481. Quedan extracciones pendientes; ver el plan debajo. |
 | A2 | Hay dos DTO `PageResponse` con el mismo contrato JSON y lógica repetida para normalizar página/tamaño. Los endpoints repiten el tamaño predeterminado. | Backend | Resuelto en `kcalBackend` (`a58e008`): contrato común y límites configurables, conservando el JSON. |
 | A3 | Las rutas, etiquetas de navegación y títulos se mantienen en estructuras separadas. | Frontend | Resuelto: una tabla de metadatos genera rutas, títulos y navegación lateral/móvil. `check:frontend` y `build` pasan. |
 | A4 | Hay valores ambientales fijos en código: proxy local de Vite, zona horaria y timeouts HTTP de Auth/Gemini. | Frontend y backend | Resuelto: proxy y parámetros de backend externalizados conservando sus valores predeterminados; nombres documentados en ambos README. |
@@ -32,13 +32,14 @@ La primera etapa mantiene los contratos HTTP y movió estas responsabilidades a 
 
 - `TrainingCardioService`: registros, mantenimiento, resúmenes y métricas semanales de cardio (`kcalBackend` `eec03ee`).
 - `TrainingCatalogService`: módulos, categorías, ejercicios y sus reglas de registro (`kcalBackend` `9617358`).
+- `FoodCatalogService` y `FoodYieldPolicy`: altas, edición, enriquecimiento y reglas de preparación del catálogo (`kcalBackend` `e69db2b`).
 - `FoodCatalogSearchService` y `FoodNutrientMapper`: búsqueda del catálogo y conversión de nutrientes.
 - `RecipeService`: consultas y paginación de recetas; los flujos de escritura todavía delegan operaciones compartidas a `NutritionService`.
-- `TrainingPlanService` sigue siendo una fachada sobre `TrainingService`; la implementación de planes aún debe migrarse.
+- La fachada pura `TrainingPlanService` se eliminó; las rutas llaman a `TrainingService`, donde sigue la implementación de planes.
 - `DayPresetService` y `DayPresetCodec`: operaciones y serialización de presets; aplicar un preset todavía coordina registros de comidas desde `NutritionService`.
 - `NutritionOverviewService`: dashboard, tipos de comida e historial.
 
-El hallazgo A1 sigue abierto: ambos servicios principales conservan flujos grandes y responsabilidades pendientes. Próximas extracciones recomendadas: implementación de planes y ciclo de vida de sesiones; escrituras de recetas y registros de comidas; flujos de confirmación de IA. Hacer cada movimiento por dominio y conservar límites transaccionales y contratos.
+El hallazgo A1 sigue abierto: ambos servicios principales conservan flujos grandes y responsabilidades pendientes. Próximas extracciones recomendadas: implementación de planes y ciclo de vida de sesiones; escrituras de recetas y registros de comidas; flujos de confirmación de IA. `RecipeService` ya ejecuta sus consultas, aunque todavía delega escrituras. Hacer cada movimiento por dominio y conservar límites transaccionales y contratos.
 
 La validación de compilación de esta etapa fue `kcalBackend`: `mvnw -DskipTests compile` completó correctamente. No se ejecutó la suite de pruebas.
 
