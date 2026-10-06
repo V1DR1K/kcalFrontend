@@ -19,7 +19,7 @@ export function migrateStoredSession() {
 }
 const viteEnv = import.meta.env || {};
 export const REGISTRATION_ENABLED = viteEnv.VITE_REGISTRATION_ENABLED === "true";
-export { navItems, trainingNavItems, isNavItemActive } from "../app/page-metadata";
+export { navItems, trainingNavItems, isNavItemActive } from "../app/page-metadata.js";
 export const DEFAULT_MEALS = [
   { code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" },
   { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" },

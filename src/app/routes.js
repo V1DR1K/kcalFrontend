@@ -1,4 +1,4 @@
-import { APP_ROUTES } from "./page-metadata";
+import { APP_ROUTES } from "./page-metadata.js";
 
 export { APP_ROUTES };
 export function routeAtPath(path) {

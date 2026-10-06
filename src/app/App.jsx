@@ -1,5 +1,5 @@
 import { routeAtPath, routePath, safeReturnPath } from "./routes";
-import { pageTitle } from "./page-metadata";
+import { pageTitle } from "./page-metadata.js";
 import { requestWithArchivedAcknowledgement } from "../services/archived-foods";
 import { clearSessionDrafts } from "../features/training/session-draft";
 import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
