@@ -24,6 +24,7 @@ function dashboardPreload() {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const localHttps = env.VITE_DEV_HTTPS === "true";
+  const apiProxyTarget = env.VITE_DEV_API_TARGET || "http://localhost:8081";
   let gitHash = process.env.GIT_HASH || "unknown";
   let buildTime = new Date().toISOString();
   let commitTime = process.env.COMMIT_TIME || buildTime;
@@ -46,7 +47,7 @@ export default defineConfig(({ mode }) => {
     allowedHosts: true,
     proxy: {
       "/api": {
-        target: "http://localhost:8081",
+        target: apiProxyTarget,
         changeOrigin: true,
         secure: false,
       },
@@ -57,7 +58,7 @@ export default defineConfig(({ mode }) => {
     port: 4173,
     proxy: {
       "/api": {
-        target: "http://localhost:8081",
+        target: apiProxyTarget,
         changeOrigin: true,
         secure: false,
       },

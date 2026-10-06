@@ -131,6 +131,9 @@ npm ci
 npm run build
 ```
 
+Para desarrollo local, `VITE_DEV_API_TARGET` permite cambiar el destino del proxy de Vite en `dev` y `preview`; por defecto es `http://localhost:8081`.
+Si el backend usa otro puerto, definir ese destino en `.env` dentro de `kcalFrontend` antes de iniciar Vite.
+
 El contenido estático listo para publicar queda en `dist/`. Las credenciales demo sólo se completan automáticamente en modo desarrollo y no forman parte del bundle de producción.
 
 Para HTTPS local opcional se puede definir `VITE_DEV_HTTPS=true`; normalmente conviene usar HTTP local y terminar TLS en la infraestructura de producción.
