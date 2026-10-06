@@ -258,7 +258,7 @@ test("uses the composition row in recipe creation and editing", async ({ page })
   await createDialog.getByRole("button", { name: "Agregar alimento o receta", exact: true }).click();
   const ingredientPicker = page.locator(".picker-modal");
   await expect(ingredientPicker.getByRole("heading", { name: "Agregar ingrediente" })).toBeVisible();
-  await ingredientPicker.getByPlaceholder("Buscar alimentos...").fill("avena");
+  await ingredientPicker.getByRole("searchbox", { name: /Buscar alimentos/ }).fill("avena");
   await ingredientPicker.getByRole("button", { name: /Avena/ }).click();
   const ingredientDialog = page.locator(".edit-log-modal");
   await expect(ingredientDialog.getByLabel("Cantidad")).toBeVisible();
@@ -477,7 +477,7 @@ test("keeps photo buttons reachable while searching with the mobile keyboard ope
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
   const picker = page.locator(".picker-modal");
-  await picker.getByPlaceholder("Buscar alimentos...").focus();
+  await picker.getByRole("searchbox", { name: /Buscar alimentos/ }).focus();
   await page.evaluate(() => {
     Object.defineProperty(window.visualViewport, "height", {configurable:true, get:()=>430});
     Object.defineProperty(window.visualViewport, "offsetTop", {configurable:true, get:()=>0});
@@ -656,7 +656,7 @@ test("preselects grams when adding a food with a serving definition", async ({ p
   await seedAuthenticatedApp(page, { withServingFood: true });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
-  await page.getByPlaceholder("Buscar alimentos...").fill("Avena");
+  await page.getByRole("searchbox", { name: /Buscar alimentos/ }).fill("Avena");
   const foodRow = page.locator(".catalog-row-image").first();
   const metadata = foodRow.locator(".catalog-copy .catalog-meta");
   await expect(metadata).toHaveCSS("display", "flex");
@@ -705,7 +705,7 @@ test("keeps desktop food picker controls above long results", async ({ page }) =
   await seedAuthenticatedApp(page, { withManyPickerResults: true });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
-  await page.getByPlaceholder("Buscar alimentos...").fill("avena");
+  await page.getByRole("searchbox", { name: /Buscar alimentos/ }).fill("avena");
   await expect(page.locator(".picker-results .catalog-row")).toHaveCount(30);
   await expect(page.locator(".picker-results .catalog-row-image .catalog-copy .catalog-meta").first()).toHaveCSS("display", "flex");
   await expect(page.locator(".picker-results .catalog-row-image .catalog-copy .catalog-meta").first()).toHaveCSS("flex-direction", "column");
@@ -886,7 +886,7 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   });
   expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
   expect(layout.contentPaddingBottom).toBeGreaterThanOrEqual(layout.footerHeight - 1);
-  await expect(editor.getByRole("button", { name: "Crear receta y agregar una porción", exact: true })).toBeVisible();
+  await expect(editor.getByRole("button", { name: "Revisar coincidencias y guardar", exact: true })).toBeVisible();
   const grams = editor.getByLabel("Gramos").first();
   await grams.focus();
   await page.setViewportSize({ width: 390, height: 430 });
@@ -925,6 +925,10 @@ test("registers an AI food from the diary and keeps its meal destination", async
       items: [{ name: "Fideos secos", category: "CEREAL", preparation: "AS_SOLD", estimatedGrams: 100, proteinGrams: 12, carbsGrams: 72, fatGrams: 2 }],
     }) });
   });
+  await page.route("**/api/nutrition/ai-registrations/matches", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [{ itemIndex: 0, match: null }] }) });
+  });
   await page.route("**/api/nutrition/ai-registrations/confirm", async (route) => {
     expect(route.request().method()).toBe("POST");
     confirmation = JSON.parse(route.request().postData() || "{}");
@@ -947,11 +951,12 @@ test("registers an AI food from the diary and keeps its meal destination", async
   await expect(estimateDialog).toBeVisible();
   await expect(estimateDialog.getByRole("status")).toContainText("1 alimento detectado");
   await expect(estimateDialog.getByLabel("Agregar también a mi día")).toBeChecked();
-  await estimateDialog.getByRole("button", { name: "Guardar alimento y registrar consumo", exact: true }).click();
+  await estimateDialog.getByRole("button", { name: "Revisar coincidencias y guardar", exact: true }).click();
   await expect.poll(() => confirmation).not.toBeNull();
   expect(analyzeTarget).toBe("RECIPE_FALLBACK");
   expect(confirmation).toMatchObject({ addToDiary: true, mealType: "BREAKFAST", captureId: "capture-food-test" });
   expect(confirmation.items[0].name).toBe("Fideos secos");
+  expect(confirmation.resolutions).toEqual([{ itemIndex: 0, choice: "KEEP_ESTIMATE" }]);
 });
 
 test("automatically registers a single detected food as a food", async ({ page }) => {
@@ -969,7 +974,7 @@ test("automatically registers a single detected food as a food", async ({ page }
   const photoDialog = page.locator(".ai-photo-context-modal");
   await photoDialog.getByRole("button", { name: "Analizar foto", exact: true }).click();
   await expect.poll(() => analyzeTarget).toBe("LEGACY_RECIPE_FALLBACK");
-  await expect(page.locator(".ai-estimate-modal").getByRole("button", { name: "Guardar alimento y registrar consumo", exact: true })).toBeVisible();
+  await expect(page.locator(".ai-estimate-modal").getByRole("button", { name: "Revisar coincidencias y guardar", exact: true })).toBeVisible();
 });
 
 test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => {
@@ -1000,7 +1005,7 @@ test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => 
   const dialog = page.locator(".ai-estimate-modal");
   await expect(dialog.locator(".ai-estimate-item")).toHaveCount(3);
   await expect(dialog.getByRole("status")).toContainText("3 alimentos detectados");
-  await expect(dialog.getByRole("button", { name: "Crear receta y agregar una porción", exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Revisar coincidencias y guardar", exact: true })).toBeVisible();
   await expect(dialog.getByText("Supuestos de la estimación", { exact: true })).toBeVisible();
   const layout = await dialog.evaluate((element) => {
     const footerElement = element.querySelector(":scope > .modal-shell-footer");
@@ -1032,7 +1037,7 @@ test("keeps a multi-food AI estimate usable at 320 by 568", async ({ page }) => 
   const compactSummary = await dialog.locator(".ai-estimate-summary small").evaluateAll((labels) => labels.every((label) => label.scrollWidth <= label.clientWidth + 1));
   expect(compactSummary).toBe(true);
   await expect.poll(() => dialog.locator(":scope > .modal-shell-footer").evaluate(element => element.getBoundingClientRect().bottom <= (window.visualViewport.offsetTop + window.visualViewport.height) + 1)).toBe(true);
-  await expect(dialog.getByRole("button", { name: "Crear receta y agregar una porción", exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Revisar coincidencias y guardar", exact: true })).toBeVisible();
 });
 
 test("keeps the food search available behind only the top dialog", async ({ page }) => {
@@ -1041,7 +1046,7 @@ test("keeps the food search available behind only the top dialog", async ({ page
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
   const picker = page.locator(".picker-modal");
-  const search = picker.getByPlaceholder("Buscar alimentos...");
+  const search = picker.getByRole("searchbox", { name: /Buscar alimentos/ });
   await search.fill("Avena");
   await picker.locator(".catalog-row-image").click();
 
@@ -1239,7 +1244,7 @@ test("keeps the food draft open and rolls back the optimistic diary entry when s
   });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
-  await page.getByPlaceholder("Buscar alimentos...").fill("Avena");
+  await page.getByRole("searchbox", { name: /Buscar alimentos/ }).fill("Avena");
   await page.locator(".catalog-row-image").first().click();
   await page.locator(".edit-log-modal").getByRole("button", { name: "Agregar a Desayuno" }).click();
 
@@ -1340,7 +1345,7 @@ test("SG038 cancels archived reuse without saving and acknowledges on acceptance
   });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
-  await page.getByPlaceholder("Buscar alimentos...").fill("Avena");
+  await page.getByRole("searchbox", { name: /Buscar alimentos/ }).fill("Avena");
   await page.locator(".catalog-row-image").filter({ hasText: food.name }).first().click();
   const dialog = page.locator(".edit-log-modal");
   await dialog.getByRole("button", { name: "Agregar a Desayuno", exact: true }).click();
@@ -1365,7 +1370,7 @@ test("SG009/010 registers an existing food in the explicit date and meal", async
   await page.getByLabel("Comida del consumo", { exact: true }).selectOption("DINNER");
   await page.getByRole("button", { name: /Buscar y registrar alimento/ }).click();
   await expect(page.locator(".picker-destination")).toContainText("Cena");
-  await page.getByPlaceholder("Buscar alimentos...").fill("Avena");
+  await page.getByRole("searchbox", { name: /Buscar alimentos/ }).fill("Avena");
   await page.locator(".catalog-row-image").filter({ hasText: food.name }).first().click();
   await page.locator(".edit-log-modal").getByRole("button", { name: "Agregar a Cena", exact: true }).click();
   await expect.poll(() => saved?.logDate).toBe("2026-09-28"); expect(saved.mealType).toBe("DINNER");
