@@ -13,7 +13,7 @@
 | A3 | Las rutas, etiquetas de navegación y títulos se mantienen en estructuras separadas. | Frontend | Resuelto: una tabla de metadatos genera rutas, títulos y navegación lateral/móvil. `check:frontend` y `build` pasan. |
 | A4 | Hay valores ambientales fijos en código: proxy local de Vite, zona horaria y timeouts HTTP de Auth/Gemini. | Frontend y backend | Resuelto: proxy y parámetros de backend externalizados conservando sus valores predeterminados; nombres documentados en ambos README. |
 | A5 | Parte de la documentación describe una arquitectura anterior o enlaza a `PROJECT_STATUS.md`, que no existe. | Frontend y backend | Corregido en el commit de documentación asociado. |
-| A6 | `assets/vitality-api.js` sólo lo cargan prototipos HTML históricos; no forma parte de la aplicación React. | Frontend | Mantener con los prototipos mientras sigan siendo referencia; no mezclar con código de producción. |
+| A6 | `assets/vitality-api.js` sólo lo cargan prototipos HTML históricos; no forma parte de la aplicación React. | Frontend | Resuelto: prototipos, adaptador y diseños agrupados bajo `reference/prototypes/vitality-peak/`; enlaces actualizados y contenido preservado. |
 | A7 | Hay capturas de Playwright y un proyecto de video promocional versionados. Son artefactos grandes, pero pueden tener valor de evidencia o entrega. | Frontend | Preservar; revisar almacenamiento separado antes de mover o borrar. |
 | A8 | `recipeIngredientWeight` se llamaba recursivamente a sí mismo sin caso base al resolver el peso de ingredientes. | Backend | Corregido y publicado en `1247202`. |
 

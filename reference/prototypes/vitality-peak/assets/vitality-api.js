@@ -4,14 +4,14 @@
   const USER_KEY = "vitalityPeak.user";
 
   const routes = {
-    login: "/iniciar_sesi_n_modo_noche_vitality_peak/code.html",
-    register: "/registro_de_usuario_modo_noche_vitality_peak/code.html",
-    dashboard: "/dashboard_diario_modo_noche_vitality_peak/code.html",
-    foods: "/buscador_de_alimentos_modo_noche_vitality_peak/code.html",
-    configure: "/configurar_alimento_modo_noche_vitality_peak/code.html",
-    scanner: "/esc_ner_de_c_digo_modo_noche_vitality_peak/code.html",
-    history: "/historial_modo_noche_vitality_peak/code.html",
-    profile: "/mi_perfil_modo_noche_vitality_peak/code.html"
+    login: "/reference/prototypes/vitality-peak/iniciar_sesi_n_modo_noche_vitality_peak/code.html",
+    register: "/reference/prototypes/vitality-peak/registro_de_usuario_modo_noche_vitality_peak/code.html",
+    dashboard: "/reference/prototypes/vitality-peak/dashboard_diario_modo_noche_vitality_peak/code.html",
+    foods: "/reference/prototypes/vitality-peak/buscador_de_alimentos_modo_noche_vitality_peak/code.html",
+    configure: "/reference/prototypes/vitality-peak/configurar_alimento_modo_noche_vitality_peak/code.html",
+    scanner: "/reference/prototypes/vitality-peak/esc_ner_de_c_digo_modo_noche_vitality_peak/code.html",
+    history: "/reference/prototypes/vitality-peak/historial_modo_noche_vitality_peak/code.html",
+    profile: "/reference/prototypes/vitality-peak/mi_perfil_modo_noche_vitality_peak/code.html"
   };
 
   const mealMap = {

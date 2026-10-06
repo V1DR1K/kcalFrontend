@@ -40,7 +40,7 @@
 .scanner-fallback {
   background:
     linear-gradient(color-mix(in srgb, var(--background) 38%, transparent), color-mix(in srgb, var(--background) 48%, transparent)),
-    url("/esc_ner_de_c_digo_modo_noche_vitality_peak/screen.png") center / cover;
+    url("/reference/prototypes/vitality-peak/esc_ner_de_c_digo_modo_noche_vitality_peak/screen.png") center / cover;
   transform: scale(1.05);
 }
 
