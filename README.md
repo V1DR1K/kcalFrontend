@@ -8,6 +8,7 @@ Frontend React de **ScaleGrams**, construido con Vite.
 - `src/app/`: composicion de la aplicacion, rutas y layout.
 - `src/features/`: vistas y comportamiento organizados por dominio.
 - `src/services/`: cliente HTTP y servicios compartidos.
+- `reference/`: prototipos, capturas históricas y entregables de marketing preservados fuera del código de la app.
 - `src/styles.css`: estilos base de la app.
 - `index.html`: punto de montaje de Vite.
 - `reference/prototypes/vitality-peak/`: prototipos históricos de Google Stitch y su adaptador legado, separados de la aplicación React.

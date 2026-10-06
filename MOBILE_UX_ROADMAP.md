@@ -18,7 +18,7 @@ En una pantalla táctil, abrir un día guardado o una receta debe mostrar el det
 | P1 | **Inicio y estados de detalle** | `loadPresets()` selecciona automáticamente el primer día; `openRecipe()` espera la petición de detalle antes de mostrar contenido. | El futuro diálogo de días no debe abrirse solo; recetas necesitan respuesta de carga inmediata y error recuperable. |
 | P1 | **Cobertura de pruebas** | `e2e/day-presets-responsive.spec.js` prueba disposición de fecha y edición, pero no la apertura de un detalle. No hay prueba equivalente de detalle móvil de recetas. | El problema puede reaparecer aunque pasen las pruebas responsive actuales. |
 
-**Patrones útiles que ya existen:** `src/components/dialog/ModalShell.jsx` y `useDialogLifecycle.js` proveen portal, bloqueo del scroll, Escape, foco y restauración; Historial (`HistoryDayPreview`) y Calendario de entrenamiento (`TrainingDayDetail`) ya muestran días mediante diálogo. Reutilizar esta infraestructura. Las capturas antiguas de `output/playwright/` muestran versiones previas; no sirven como validación visual actual.
+**Patrones útiles que ya existen:** `src/components/dialog/ModalShell.jsx` y `useDialogLifecycle.js` proveen portal, bloqueo del scroll, Escape, foco y restauración; Historial (`HistoryDayPreview`) y Calendario de entrenamiento (`TrainingDayDetail`) ya muestran días mediante diálogo. Reutilizar esta infraestructura. Las capturas de `reference/evidence/playwright-archive/` muestran versiones previas; no sirven como validación visual actual.
 
 ## Contrato móvil que debe regir toda la app
 

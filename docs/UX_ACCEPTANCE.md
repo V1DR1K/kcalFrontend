@@ -1,6 +1,6 @@
 # Matriz de aceptación: 47 hallazgos
 
-Relación error → implementación → prueba. La evidencia original permanece en output/playwright/scalegrams-audit-2026-10-01 del workspace; UX_ACCEPTANCE.json conserva los criterios completos. El detalle por commit está en UX_IMPLEMENTATION.md de cada repositorio.
+Relación error → implementación → prueba. Las capturas históricas disponibles están archivadas en `reference/evidence/playwright-archive/`; `UX_ACCEPTANCE.json` conserva los criterios y los escenarios vigentes están en `e2e/`. El detalle por commit está en `UX_IMPLEMENTATION.md` de cada repositorio.
 
 Las pruebas de navegador usan respuestas HTTP controladas para aislar casos de UX. Las pruebas de backend usan peticiones reales y autenticación simulada sólo en el código de test. PostgreSQL 17 con Flyway es obligatorio en CI: el fallo de Docker local no se omite ni cuenta como aprobación. SG047 se probó mediante visualViewport; falta validación física en Chrome Android/Safari iOS.
 
