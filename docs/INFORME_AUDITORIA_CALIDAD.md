@@ -9,7 +9,7 @@
 | ID | Hallazgo | Ámbito | Seguimiento |
 | --- | --- | --- | --- |
 | A1 | `NutritionService` y `TrainingService` concentran responsabilidades de varios dominios, demasiadas dependencias y helpers privados. Hay servicios fachada que aún delegan la implementación completa. | Backend | Pendiente de extracción por límites de dominio. |
-| A2 | Hay dos DTO `PageResponse` con el mismo contrato JSON y lógica repetida para normalizar página/tamaño. Los endpoints repiten el tamaño predeterminado. | Backend | Pendiente de un contrato y política compartidos. |
+| A2 | Hay dos DTO `PageResponse` con el mismo contrato JSON y lógica repetida para normalizar página/tamaño. Los endpoints repiten el tamaño predeterminado. | Backend | Resuelto en `kcalBackend` (`a58e008`): contrato común y límites configurables, conservando el JSON. |
 | A3 | Las rutas, etiquetas de navegación y títulos se mantienen en estructuras separadas. | Frontend | Pendiente de consolidar metadatos de páginas. |
 | A4 | Hay valores ambientales fijos en código: proxy local de Vite, zona horaria y timeouts HTTP de Auth/Gemini. | Frontend y backend | Pendiente de llevarlos a configuración. |
 | A5 | Parte de la documentación describe una arquitectura anterior o enlaza a `PROJECT_STATUS.md`, que no existe. | Frontend y backend | Corregido en el commit de documentación asociado. |
