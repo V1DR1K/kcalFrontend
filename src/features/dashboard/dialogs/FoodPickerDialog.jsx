@@ -49,6 +49,9 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const [aiRegistrationDate, setAiRegistrationDate] = useState(selectedDate || today());
   const [aiError, setAiError] = useState("");
   const [aiSaveError, setAiSaveError] = useState("");
+  const [aiMatchPreview, setAiMatchPreview] = useState(null);
+  const [aiMatchChoices, setAiMatchChoices] = useState({});
+  const [aiCheckingMatches, setAiCheckingMatches] = useState(false);
   const [aiContext, setAiContext] = useState("");
   const [aiEstimatePhoto, setAiEstimatePhoto] = useState(null);
   const [aiCorrection, setAiCorrection] = useState("");
@@ -144,6 +147,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       const target = estimate.items.length > 1 ? "RECIPE" : "FOOD";
       setAiAddToDiary(target === "FOOD");
       setAiEstimate(estimate);
+      setAiMatchPreview(null);
+      setAiMatchChoices({});
       setAiUsage(result.usage);
       setAiEstimatePhoto(image);
       setAiCorrection("");
@@ -180,6 +185,8 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       const previousTarget = aiEstimate.items.length > 1 ? "RECIPE" : "FOOD";
       setAiAddToDiary((current) => target === "FOOD" && (previousTarget === "FOOD" ? current : true));
       setAiEstimate(estimate);
+      setAiMatchPreview(null);
+      setAiMatchChoices({});
       setAiUsage(result.usage);
       setAiCorrection("");
     } catch (error) { if (error.cancelled) return;
@@ -193,12 +200,15 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   function discardAiEstimate() {
     setAiEstimate(null);
     setAiSaveError("");
+    setAiMatchPreview(null);
+    setAiMatchChoices({});
+    setAiCheckingMatches(false);
     setAiEstimatePhoto(null);
     setAiContext("");
     setAiCorrection("");
     setAiRefinementError("");
   }
-  async function confirmAiEstimate(estimate) {
+  async function confirmAiEstimate(estimate, resolutions) {
     if (adding) return;
     if (draftOnly) {
       const nutrition = (estimate.items || []).reduce((sum, item) => {
@@ -224,6 +234,26 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     setAiSaveError("");
     setAdding(true);
     try {
+      let selectedResolutions = resolutions;
+      if (!aiMatchPreview) {
+        setAiCheckingMatches(true);
+        const preview = await api.request("/api/nutrition/ai-registrations/matches", {
+          method: "POST",
+          body: JSON.stringify({ captureId: estimate.captureId, items: aiEstimateDraft(estimate).items }),
+        });
+        const initialChoices = Object.fromEntries((preview?.items || []).map(({ itemIndex, match }) => [itemIndex,
+          match && !match.macrosDiffer ? { choice: "USE_CATALOG", foodId: match.foodId } :
+            match ? null : { choice: "KEEP_ESTIMATE", foodId: null }]));
+        setAiMatchPreview(preview);
+        setAiMatchChoices(initialChoices);
+        const hasMacroDifferences = (preview?.items || []).some(({ match }) => match?.macrosDiffer);
+        if (hasMacroDifferences) return;
+        selectedResolutions = (preview?.items || []).map(({ itemIndex, match }) => match
+          ? { itemIndex, choice: "USE_CATALOG", foodId: match.foodId }
+          : { itemIndex, choice: "KEEP_ESTIMATE" });
+      }
+      if (!selectedResolutions) return;
+      setAiCheckingMatches(false);
       const saved = await api.runAction(
         { title: "Agregando estimación", description: "Estamos sumando los macros revisados a tu comida..." },
         () => api.request("/api/nutrition/ai-registrations/confirm", {
@@ -237,6 +267,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
             logDate: aiRegistrationDate,
             addToDiary: target === "FOOD" ? aiAddToDiary : true,
             items: aiEstimateDraft(estimate).items,
+            resolutions: selectedResolutions,
           }),
         }),
       );
@@ -254,6 +285,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
       setAiSaveError(message);
       api.notify(message, "error");
     } finally {
+      setAiCheckingMatches(false);
       setAdding(false);
     }
   }
@@ -599,11 +631,12 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
         {!aiOnly && <div className="picker-tools">
           <div className="search-wrap">
             <Icon name="search" />
-            <input className="search" type="search" enterKeyHint="search" placeholder={`Buscar ${tab === "FOOD" ? "alimentos" : tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
+            <input className="search" type="search" enterKeyHint="search" aria-label={tab === "FOOD" ? "Buscar alimentos por nombre, marca u otros datos" : `Buscar ${tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}`} placeholder={tab === "FOOD" ? "Nombre, marca u otro dato..." : `Buscar ${tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
           </div>
           {tab === "FOOD" && <div className="picker-filters"><Select label="Categoría" value={category} onChange={event => setCategory(event.target.value)} options={[{ value: "", label: "Todas" }, ...CATEGORY_OPTIONS]} /><Select label="Preparación" value={preparation} onChange={event => setPreparation(event.target.value)} options={[{ value: "", label: "Todas" }, ...PREPARATION_OPTIONS]} /></div>}
         </div>}
         {!aiOnly && <div className="picker-scroll" data-dialog-scroll-owner="true" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
+          {tab === "FOOD" && normalizedQuery.length >= 2 && <p className="picker-search-hint">Coincidencias por nombre, marca y similitud del alimento.</p>}
           {tab === "FOOD" && !normalizedQuery && <div className="picker-results">
             {groupFoodVariants(recentFoods).map((item) => (
               <CatalogRowWithImage key={`RECENT_FOOD:${item.id}`} item={item} onPick={reviewFood} />
@@ -718,7 +751,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           </FoodLogDialog>
         )}
         {pendingMealPhoto && <MealPhotoContextEditorDialog photoUrl={pendingMealPhotoUrl} context={aiContext} setContext={setAiContext} error={aiError} analyzing={aiAnalyzing} onDiscard={discardMealPhoto} onChangePhoto={() => galleryInputRef.current?.click()} onAnalyze={() => analyzeMealPhoto(pendingMealPhoto)} />}
-        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} saveError={aiSaveError} onRefine={refineAiEstimate} saving={adding} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} targetType={aiEstimate.items.length > 1 ? "RECIPE" : "FOOD"} addToDiary={aiAddToDiary} setAddToDiary={setAiAddToDiary} registrationMealType={aiRegistrationMealType} setRegistrationMealType={setAiRegistrationMealType} registrationDate={aiRegistrationDate} setRegistrationDate={setAiRegistrationDate} mealTypes={mealTypes} />}
+        {aiEstimate && <AiEstimateEditor estimate={aiEstimate} setEstimate={setAiEstimate} correction={aiCorrection} setCorrection={setAiCorrection} refining={aiRefining} refinementError={aiRefinementError} saveError={aiSaveError} onRefine={refineAiEstimate} saving={adding} checkingMatches={aiCheckingMatches} matchPreview={aiMatchPreview} matchChoices={aiMatchChoices} setMatchChoices={setAiMatchChoices} onEstimateEdited={() => { setAiMatchPreview(null); setAiMatchChoices({}); }} onDiscard={discardAiEstimate} onConfirm={confirmAiEstimate} targetType={aiEstimate.items.length > 1 ? "RECIPE" : "FOOD"} addToDiary={aiAddToDiary} setAddToDiary={setAiAddToDiary} registrationMealType={aiRegistrationMealType} setRegistrationMealType={setAiRegistrationMealType} registrationDate={aiRegistrationDate} setRegistrationDate={setAiRegistrationDate} mealTypes={mealTypes} />}
         {!ingredientOnly && <footer className="picker-photo-actions">
           {aiOnly && <p className="photo-availability" role="status"><strong>{availability.headline}</strong><span>{availability.detail}</span></p>}
           <button type="button" className="secondary ai-photo-trigger ai-gallery-trigger" disabled={aiAnalyzing || !availability.canCapture} onClick={() => galleryInputRef.current?.click()}>

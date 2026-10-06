@@ -11,16 +11,26 @@ import { decimalNumber } from "../../../utils/decimal";
 import { resizeAiEstimateItem } from "../aiEstimateAmounts";
 import { normalizeDecimalInput } from "../../../utils/decimal";
 
-export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, onDiscard, onConfirm, mode = "create", mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem, targetType = "RECIPE", addToDiary = false, setAddToDiary, registrationMealType, setRegistrationMealType, registrationDate, setRegistrationDate }) {
+function formatMacro(value) {
+  return value == null || !Number.isFinite(Number(value)) ? "Sin dato" : `${formatNumber(value, 1)} g`;
+}
+
+export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, checkingMatches = false, matchPreview = null, matchChoices = {}, setMatchChoices, onEstimateEdited, onDiscard, onConfirm, mode = "create", mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem, targetType = "RECIPE", addToDiary = false, setAddToDiary, registrationMealType, setRegistrationMealType, registrationDate, setRegistrationDate }) {
   const [catalogItemIndex, setCatalogItemIndex] = useState(null);
   const [catalogCategory, setCatalogCategory] = useState("OTHER");
   const [catalogPreparation, setCatalogPreparation] = useState("UNSPECIFIED");
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [catalogMessage, setCatalogMessage] = useState("");
   const [refinementOpen, setRefinementOpen] = useState(false);
-  const itemNutrition = (estimate.items || []).map((item) => mode === "saved"
-    ? { proteinGrams: Number(item.proteinGrams || 0), carbsGrams: Number(item.carbsGrams || 0), fatGrams: Number(item.fatGrams || 0) }
-    : scaleFoodNutrition(aiProposalFood(item), decimalNumber(item.estimatedGrams)));
+  const previewByIndex = new Map((matchPreview?.items || []).map((item) => [item.itemIndex, item.match]));
+  const itemNutrition = (estimate.items || []).map((item, index) => {
+    if (mode === "saved") return { proteinGrams: Number(item.proteinGrams || 0), carbsGrams: Number(item.carbsGrams || 0), fatGrams: Number(item.fatGrams || 0) };
+    const match = previewByIndex.get(index);
+    if (match && matchChoices[index]?.choice === "USE_CATALOG") return {
+      proteinGrams: Number(match.proteinGrams || 0), carbsGrams: Number(match.carbsGrams || 0), fatGrams: Number(match.fatGrams || 0),
+    };
+    return scaleFoodNutrition(aiProposalFood(item), decimalNumber(item.estimatedGrams));
+  });
   const totals = itemNutrition.reduce((sum, nutrition) => ({
     proteinGrams: sum.proteinGrams + nutrition.proteinGrams,
     carbsGrams: sum.carbsGrams + nutrition.carbsGrams,
@@ -29,19 +39,39 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
   const calories = macroCalories(totals.proteinGrams, totals.carbsGrams, totals.fatGrams);
 
   function updateItem(index, value) {
+    onEstimateEdited?.();
     setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? resizeAiEstimateItem(item, value) : item) }));
   }
 
   function updateItemName(index, value) {
+    onEstimateEdited?.();
     setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, name: value, catalogFoodId: null, catalogMatchType: null, catalogMatchConfidence: null } : item) }));
   }
 
   function updateItemMacro(index, field, value) {
+    onEstimateEdited?.();
     setEstimate((current) => ({ ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: normalizeDecimalInput(value), catalogFoodId: null, catalogMatchType: null, catalogMatchConfidence: null } : item) }));
   }
 
   function removeItem(index) {
+    onEstimateEdited?.();
     setEstimate((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== index) }));
+  }
+
+  function chooseCatalogResolution(index, match, choice) {
+    setMatchChoices?.((current) => ({ ...current, [index]: { choice, foodId: choice === "USE_CATALOG" ? match.foodId : null } }));
+  }
+
+  function confirmEstimate() {
+    if (!matchPreview) return onConfirm(estimate);
+    const resolutions = (estimate.items || []).map((item, itemIndex) => {
+      const match = previewByIndex.get(itemIndex);
+      const selected = match && match.macrosDiffer
+        ? matchChoices[itemIndex]
+        : match ? { choice: "USE_CATALOG", foodId: match.foodId } : { choice: "KEEP_ESTIMATE" };
+      return { itemIndex, choice: selected?.choice || "KEEP_ESTIMATE", ...(selected?.choice === "USE_CATALOG" ? { foodId: selected.foodId || match?.foodId } : {}) };
+    });
+    onConfirm(estimate, resolutions);
   }
 
   async function saveCatalogItem() {
@@ -64,6 +94,10 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
     onRefine?.();
   }
 
+  const decisionsComplete = !matchPreview || (estimate.items || []).every((item, index) => {
+    const match = previewByIndex.get(index);
+    return !match || !match.macrosDiffer || Boolean(matchChoices[index]?.choice);
+  });
   const canConfirm = estimate.name.trim() && estimate.items.length && estimate.items.every((item) => item.name?.trim()
     && decimalNumber(item.estimatedGrams) > 0 && decimalNumber(item.estimatedGrams) <= 3000
     && decimalNumber(item.proteinGrams) >= 0 && decimalNumber(item.proteinGrams) <= 500
@@ -86,7 +120,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
       footer={
         <div className="ai-estimate-actions">
           <button type="button" className="secondary" disabled={refining || saving} onClick={onDiscard}>{mode === "saved" ? "Cancelar" : "Descartar"}</button>
-          <button type="button" className="primary" disabled={saving || refining || !canConfirm} onClick={() => onConfirm(estimate)}>{saving ? "Guardando..." : mode === "saved" ? "Guardar cambios" : targetType === "FOOD" ? addToDiary ? "Guardar alimento y registrar consumo" : "Guardar sólo en catálogo" : "Crear receta y agregar una porción"}</button>
+          <button type="button" className="primary" disabled={saving || refining || !canConfirm || !decisionsComplete} onClick={confirmEstimate}>{checkingMatches ? "Buscando coincidencias..." : saving ? "Guardando..." : mode === "saved" ? "Guardar cambios" : matchPreview ? "Confirmar y guardar" : "Revisar coincidencias y guardar"}</button>
         </div>
       }
     >
@@ -134,6 +168,23 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                   <Input label="Alimento" value={item.name} disabled={refining || saving} onChange={(event) => updateItemName(index, event.target.value)} />
                   <label className="ai-estimate-grams-field"><span>Gramos</span><span className="ai-estimate-grams-input"><input aria-label="Gramos" type="text" disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onChange={(event) => updateItem(index, event.target.value)} /><span>g</span></span></label>
                 </div>
+                {mode === "create" && matchPreview && (() => {
+                  const match = previewByIndex.get(index);
+                  if (!match) return <section className="ai-catalog-match ai-catalog-no-match" aria-label="Sin coincidencia de catálogo"><div><strong>Sin coincidencia cercana</strong><p>Se conservarán los macros de la estimación y podrás guardar un alimento nuevo.</p></div></section>;
+                  const selectedChoice = match.macrosDiffer ? matchChoices[index]?.choice : "USE_CATALOG";
+                  return <section className={`ai-catalog-match ${match.macrosDiffer ? "needs-choice" : "macros-equal"}`} aria-label={`Coincidencia de catálogo para ${item.name}`}>
+                    <div className="ai-catalog-match-heading"><div><strong>{match.name}</strong>{match.brand && <span>{match.brand}</span>}</div><small>{formatNumber(Number(match.similarity || 0) * 100, 0)}% de similitud</small></div>
+                    <p className="ai-catalog-match-message">{match.macrosDiffer ? "Los macros de la ficha difieren para esta cantidad. Elegí qué valores querés guardar." : "Los macros coinciden para esta cantidad; se reutilizará esta ficha."}</p>
+                    <div className="ai-catalog-macros" aria-label="Comparación de macros para la cantidad estimada">
+                      <span><small>Macronutriente</small><strong>Estimación</strong><strong>Catálogo</strong></span>
+                      {[["Proteínas", "proteinGrams"], ["Carbohidratos", "carbsGrams"], ["Grasas", "fatGrams"]].map(([label, field]) => <span key={field}><small>{label}</small><strong>{formatMacro(scaleFoodNutrition(aiProposalFood(item), decimalNumber(item.estimatedGrams))[field])}</strong><strong>{formatMacro(match[field])}</strong></span>)}
+                    </div>
+                    {match.macrosDiffer ? <div className="ai-catalog-match-actions" role="group" aria-label={`Elegir macros para ${item.name}`}>
+                      <button type="button" className={selectedChoice === "USE_CATALOG" ? "selected" : "secondary"} aria-pressed={selectedChoice === "USE_CATALOG"} disabled={saving || refining} onClick={() => chooseCatalogResolution(index, match, "USE_CATALOG")}>Usar ficha existente</button>
+                      <button type="button" className={selectedChoice === "KEEP_ESTIMATE" ? "selected" : "secondary"} aria-pressed={selectedChoice === "KEEP_ESTIMATE"} disabled={saving || refining} onClick={() => chooseCatalogResolution(index, match, "KEEP_ESTIMATE")}>Conservar estimación</button>
+                    </div> : <small className="ai-catalog-auto-choice">La ficha del catálogo se usará automáticamente.</small>}
+                  </section>;
+                })()}
                 <details className="ai-estimate-item-details">
                   <summary>Ver detalle nutricional</summary>
                   <div className="ai-estimate-item-detail-content">
