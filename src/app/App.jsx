@@ -1,4 +1,5 @@
 import { routeAtPath, routePath, safeReturnPath } from "./routes";
+import { pageTitle } from "./page-metadata";
 import { requestWithArchivedAcknowledgement } from "../services/archived-foods";
 import { clearSessionDrafts } from "../features/training/session-draft";
 import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -286,8 +287,7 @@ export function App() {
       document.title = "Ingresar | ScaleGrams";
       return;
     }
-    const titles = { dashboard: "Día", "my-foods": "Alimentos", recipes: "Recetas", "day-presets": "Reutilizá tu día", configure: "Configurar alimento", scanner: "Registrar", history: "Historial", plans: "Planes", profile: "Perfil", "training-dashboard": "Día", "training-calendar": "Calendario de entrenamiento", "training-cardio": "Cardio", "training-profile": "Ejercicios" };
-    document.title = `${titles[page] || "ScaleGrams"} | ScaleGrams`;
+    document.title = `${pageTitle(mode, page)} | ScaleGrams`;
   }, [authenticated, mode, page]);
 
   return (

@@ -19,30 +19,11 @@ export function migrateStoredSession() {
 }
 const viteEnv = import.meta.env || {};
 export const REGISTRATION_ENABLED = viteEnv.VITE_REGISTRATION_ENABLED === "true";
+export { navItems, trainingNavItems, isNavItemActive } from "../app/page-metadata";
 export const DEFAULT_MEALS = [
   { code: "BREAKFAST", label: "Desayuno" }, { code: "LUNCH", label: "Almuerzo" },
   { code: "AFTERNOON_SNACK", label: "Merienda" }, { code: "DINNER", label: "Cena" },
 ];
-export const navItems = [
-  { id: "dashboard", label: "Día", mobileLabel: "Día", icon: "monitoring" },
-  { id: "history", label: "Historial", icon: "calendar_month" },
-  { id: "plans", label: "Planes", icon: "view_list" },
-  { id: "day-presets", label: "Reutilizá tu día", mobileLabel: "Reutilizar", icon: "bookmark" },
-  { id: "profile", label: "Perfil", icon: "account_circle" },
-  { id: "scanner", label: "Registrar", mobileLabel: "Registrar", icon: "qr_code_scanner", activePages: ["configure", "my-foods", "recipes"] },
-  { id: "training", label: "Entrenamiento", mobileLabel: "Entreno", icon: "training_section", mode: "training" },
-];
-export const trainingNavItems = [
-  { id: "training-dashboard", label: "Día", icon: "monitoring" },
-  { id: "training-calendar", label: "Calendario", icon: "calendar_month" },
-  { id: "training-cardio", label: "Cardio", mobileLabel: "Cardio", icon: "directions_run" },
-  { id: "plans", label: "Planes", icon: "view_list", secondary: true }, { id: "profile", label: "Perfil", icon: "account_circle" },
-  { id: "training-profile", label: "Ejercicios", mobileLabel: "Ejercicios", icon: "fitness_center", secondary: true },
-  { id: "nutrition", label: "Nutrición", mobileLabel: "Nutrición", icon: "nutrition_section", mode: "nutrition" },
-];
-export function isNavItemActive(item, page) {
-  return item.id === page || item.activePages?.includes(page);
-}
 export const CATEGORY_OPTIONS = [
   { value: "PROTEIN", label: "Proteínas" }, { value: "MEAT", label: "Carnes" }, { value: "DAIRY", label: "Lácteos" }, { value: "FRUIT", label: "Frutas" },
   { value: "VEGETABLE", label: "Verduras" }, { value: "LEGUME", label: "Legumbres" }, { value: "CEREAL", label: "Cereales" }, { value: "BAKERY", label: "Panificados" },

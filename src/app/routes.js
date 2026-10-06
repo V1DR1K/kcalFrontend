@@ -1,19 +1,6 @@
-export const APP_ROUTES = [
-  ["nutrition", "dashboard", "/nutricion/dia"],
-  ["nutrition", "scanner", "/nutricion/registrar"],
-  ["nutrition", "my-foods", "/nutricion/alimentos"],
-  ["nutrition", "recipes", "/nutricion/recetas"],
-  ["nutrition", "day-presets", "/nutricion/plantillas"],
-  ["nutrition", "plans", "/nutricion/planes"],
-  ["nutrition", "history", "/nutricion/historial"],
-  ["nutrition", "profile", "/nutricion/perfil"],
-  ["training", "training-dashboard", "/entrenamiento/dia"],
-  ["training", "training-calendar", "/entrenamiento/calendario"],
-  ["training", "training-cardio", "/entrenamiento/cardio"],
-  ["training", "training-profile", "/entrenamiento/ejercicios"],
-  ["training", "plans", "/entrenamiento/planes"],
-  ["training", "profile", "/entrenamiento/perfil"],
-];
+import { APP_ROUTES } from "./page-metadata";
+
+export { APP_ROUTES };
 export function routeAtPath(path) {
   const route = APP_ROUTES.find(([, , pathname]) => pathname === path.replace(/\/$/, ""));
   if (route) return { mode: route[0], page: route[1] };
