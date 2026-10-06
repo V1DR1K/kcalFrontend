@@ -1,6 +1,6 @@
 # Frontend architecture status
 
-See `../PROJECT_STATUS.md` for the complete operational report.
+This file summarizes the current frontend architecture. The cross-repository cleanup guide is in `docs/INFORME_AUDITORIA_CALIDAD.md`.
 
 The catalog uses server pagination and progressive loading. Its hook and pure paging rules live under `src/features/catalog`; shared browser/API concerns live under `src/services`; reusable view primitives live under `src/components`; configuration and pure helpers live under `src/config` and `src/utils`.
 

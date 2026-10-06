@@ -4,7 +4,10 @@ Frontend React de **ScaleGrams**, construido con Vite.
 
 ## Estructura
 
-- `src/main.jsx`: aplicacion React, vistas y cliente HTTP.
+- `src/main.jsx`: punto de entrada que monta React.
+- `src/app/`: composicion de la aplicacion, rutas y layout.
+- `src/features/`: vistas y comportamiento organizados por dominio.
+- `src/services/`: cliente HTTP y servicios compartidos.
 - `src/styles.css`: estilos base de la app.
 - `index.html`: punto de montaje de Vite.
 - `*/code.html` y `*/screen.png`: prototipos originales de Google Stitch conservados como referencia.
@@ -48,7 +51,7 @@ Usar la IPv4 de tu adaptador WiFi, por ejemplo `192.168.0.25`.
 2. Levantar el backend escuchando en la red:
 
 ```powershell
-cd C:\Users\Tomas\Desktop\Proyectos\ScaleGrams\backend
+cd C:\Users\Tomas\Desktop\Proyectos\KCALS\kcalBackend
 $env:SERVER_ADDRESS="0.0.0.0"
 .\mvnw.cmd spring-boot:run
 ```
@@ -68,7 +71,7 @@ VITE_API_BASE_URL=http://192.168.0.25:8081
 4. Levantar el frontend para LAN:
 
 ```powershell
-cd C:\Users\Tomas\Desktop\Proyectos\ScaleGrams\frontend
+cd C:\Users\Tomas\Desktop\Proyectos\KCALS\kcalFrontend
 npm run dev:lan
 ```
 
