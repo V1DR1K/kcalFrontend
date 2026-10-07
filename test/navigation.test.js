@@ -15,8 +15,10 @@ test("mantiene Registrar como entrada única a alimentos y recetas", () => {
 
 test("separa Perfil de Ejercicios en entrenamiento", () => {
   const profileItems = trainingNavItems.filter((item) => item.id === "profile" || item.id === "training-profile");
-  assert.deepEqual(profileItems.map((item) => item.label), ["Perfil", "Ejercicios"]);
-  assert.equal(profileItems[1].mobileLabel, "Ejercicios");
+  assert.deepEqual(profileItems.map((item) => item.label), ["Ejercicios", "Perfil"]);
+  assert.equal(profileItems[0].mobileLabel, "Ejercicios");
+  assert.equal(profileItems[0].secondary, true);
+  assert.equal(profileItems[1].account, true);
 });
 
 test("usa nombres directos para las secciones propias", () => {
