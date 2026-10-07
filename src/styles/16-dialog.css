@@ -346,6 +346,29 @@
 /* A virtual keyboard reduces the visible viewport. Keep dialog chrome inside
    that area so the focused field and fixed actions remain reachable. */
 @media (max-width: 900px) {
+  /* Safari shrinks the visual viewport for its keyboard without reliably
+     changing the layout viewport used by height media queries. Keep the
+     food search and filters scrollable when that happens. */
+  html[data-keyboard-open="true"] .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] {
+    gap: 4px;
+    padding-top: 4px;
+  }
+
+  html[data-keyboard-open="true"] .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > header {
+    padding-top: max(4px, env(safe-area-inset-top, 0px));
+    padding-bottom: 4px;
+  }
+
+  html[data-keyboard-open="true"] .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > .picker-tools {
+    max-height: 56px;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+
   html[data-keyboard-open="true"] .app-modal-surface.picker-modal[class] > .picker-photo-actions {
     position: absolute;
     bottom: 0;

@@ -149,7 +149,11 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
             className="meal-menu"
             ref={menuRef}
             onBlur={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
+              const menu = event.currentTarget;
+              if (menu.contains(event.relatedTarget)) return;
+              window.setTimeout(() => {
+                if (!menu.contains(document.activeElement)) menu.open = false;
+              }, 100);
             }}
           >
             <summary aria-label={`Acciones de ${mealType.label}`}><Icon name="more_vert" /></summary>

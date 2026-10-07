@@ -477,20 +477,40 @@ test("keeps photo buttons reachable while searching with the mobile keyboard ope
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
   const picker = page.locator(".picker-modal");
-  await picker.getByRole("searchbox", { name: /Buscar alimentos/ }).focus();
+  const search = picker.getByRole("searchbox", { name: /Buscar alimentos/ });
+  await search.focus();
   await page.evaluate(() => {
-    Object.defineProperty(window.visualViewport, "height", {configurable:true, get:()=>430});
-    Object.defineProperty(window.visualViewport, "offsetTop", {configurable:true, get:()=>0});
+    window.__keyboardFrame = { height: 320, offsetTop: 92 };
+    for (const key of ["height", "offsetTop"]) {
+      Object.defineProperty(window.visualViewport, key, { configurable: true, get: () => window.__keyboardFrame[key] });
+    }
     window.visualViewport.dispatchEvent(new Event("resize"));
   });
   await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
-  const layout = await picker.locator(".picker-photo-actions").evaluate((footer) => ({
-    footer: footer.getBoundingClientRect().toJSON(),
-    buttons: [...footer.querySelectorAll(".ai-photo-trigger")].map((button) => button.getBoundingClientRect().toJSON()),
-  }));
+  await expect.poll(() => search.evaluate((input) => {
+    const rect = input.getBoundingClientRect();
+    const modal = input.closest(".picker-modal");
+    const footer = modal.querySelector(":scope > .picker-photo-actions").getBoundingClientRect();
+    const viewportTop = window.visualViewport.offsetTop;
+    const viewportBottom = viewportTop + window.visualViewport.height;
+    return rect.top >= viewportTop - 1 && rect.bottom <= footer.top + 1 && footer.bottom <= viewportBottom + 1;
+  })).toBe(true);
+  const layout = await picker.evaluate((modal) => {
+    const footer = modal.querySelector(":scope > .picker-photo-actions");
+    const tools = modal.querySelector(":scope > .picker-tools");
+    return {
+      footer: footer.getBoundingClientRect().toJSON(),
+      buttons: [...footer.querySelectorAll(".ai-photo-trigger")].map((button) => button.getBoundingClientRect().toJSON()),
+      toolsOverflowY: getComputedStyle(tools).overflowY,
+      toolsScrollHeight: tools.scrollHeight,
+      toolsClientHeight: tools.clientHeight,
+    };
+  });
   expect(layout.buttons).toHaveLength(2);
-  expect(layout.buttons.every((button) => button.width >= 44 && button.height >= 44 && button.bottom <= 430)).toBe(true);
-  expect(layout.footer.bottom).toBeLessThanOrEqual(430);
+  expect(layout.buttons.every((button) => button.width >= 44 && button.height >= 44 && button.bottom <= 413)).toBe(true);
+  expect(layout.footer.bottom).toBeLessThanOrEqual(413);
+  expect(layout.toolsOverflowY).toBe("auto");
+  expect(layout.toolsScrollHeight).toBeGreaterThan(layout.toolsClientHeight);
 });
 
 test("pins modal actions without taking a grid row on mobile", async ({ page }) => {
