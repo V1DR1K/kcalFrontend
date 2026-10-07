@@ -11,9 +11,9 @@ function MobileNavigation({ mode, page, setPage, setMode }) {
   const select = (item) => { setExpanded(false); item.mode ? setMode(item.mode) : setPage(item.id); };
   const active = (item) => !item.mode && isNavItemActive(item, page);
   return <>
-    <div className="mobile-primary-items">
+    <div className="mobile-primary-items" style={{ "--mobile-nav-columns": primary.length + 1 }}>
       {primary.map(item => <button type="button" key={item.id} className={active(item) ? "active" : ""} aria-current={active(item) ? "page" : undefined} onClick={() => select(item)}><Icon name={item.icon} />{item.mobileLabel || item.label}</button>)}
-      <button type="button" className={secondary.some(active) ? "active" : ""} aria-label="Más opciones" aria-haspopup="dialog" aria-expanded={expanded} onClick={() => setExpanded(true)}><Icon name="more_vert" />Más</button>
+      <button type="button" className={secondary.some(active) ? "active" : ""} aria-label="Más opciones" aria-haspopup="dialog" aria-expanded={expanded} onClick={() => setExpanded(true)}><Icon name="more_horiz" />Más</button>
     </div>
     {expanded && <ModalShell title={mode === "training" ? "Tu entrenamiento" : "Tu nutrición"} theme={mode} className="mobile-navigation-dialog app-modal-compact" onClose={() => setExpanded(false)}>
       <div className="mobile-secondary-items">{secondary.map(item => <button type="button" key={item.id} aria-current={active(item) ? "page" : undefined} onClick={() => select(item)}><Icon name={item.icon} /><span>{item.label}</span><Icon name="chevron_right" /></button>)}</div>
@@ -23,8 +23,9 @@ function MobileNavigation({ mode, page, setPage, setMode }) {
 
 function NavigationGroup({ mode, items, activeMode, page, mobile, setPage, setMode }) {
   const active = activeMode === mode;
-  const primaryItems = items.filter((item) => !item.secondary);
+  const primaryItems = items.filter((item) => item.primary);
   const secondaryItems = items.filter((item) => item.secondary);
+  const accountItems = items.filter((item) => item.account);
   const renderItem = (item) => {
     const itemActive = !item.mode && isNavItemActive(item, page);
     const label = mobile ? item.mobileLabel || item.label : item.label;
@@ -33,8 +34,9 @@ function NavigationGroup({ mode, items, activeMode, page, mobile, setPage, setMo
   return (
     <div className={`training-nav-group training-${mode}-nav-group`.trim()} aria-hidden={!active} inert={active ? undefined : true}>
       <div className="training-nav-group-content">
-        <div className="training-nav-items">{primaryItems.map(renderItem)}</div>
-        {secondaryItems.length > 0 && <div className="training-nav-secondary"><span>Configurar</span><div className="training-nav-items">{secondaryItems.map(renderItem)}</div></div>}
+        <div className="training-nav-items" role="group" aria-label="Accesos principales">{primaryItems.map(renderItem)}</div>
+        {secondaryItems.length > 0 && <div className="training-nav-secondary"><span>Planificación</span><div className="training-nav-items" role="group" aria-label="Planificación">{secondaryItems.map(renderItem)}</div></div>}
+        {accountItems.length > 0 && <div className="training-nav-account" role="group" aria-label="Cuenta">{accountItems.map(renderItem)}</div>}
       </div>
     </div>
   );

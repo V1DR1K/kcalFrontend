@@ -1,5 +1,6 @@
 /* Training is a separate blue operating mode; nutrition keeps its mint semantics. */
 .training-nav-group {
+  flex: 1 0 0px;
   display: grid;
   grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
@@ -10,16 +11,19 @@
 }
 
 .training-nav-group[aria-hidden="true"] {
+  flex: 0 0 auto;
   grid-template-rows: minmax(0, 0fr);
   opacity: 0;
   pointer-events: none;
   transform: scaleY(.78);
 }
 
-.training-nav-group-content { display: grid; gap: var(--space-2); min-height: 0; overflow: hidden; }
+.training-nav-group[aria-hidden="false"] { overflow: visible; }
+.training-nav-group-content { display: flex; flex-direction: column; gap: var(--space-2); min-height: 100%; overflow: visible; }
 .training-nav-items { display: grid; gap: var(--space-2); }
-.training-nav-secondary { display: grid; gap: var(--space-1); margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid color-mix(in srgb, var(--training-border) 62%, transparent); }
-.training-nav-secondary > span { padding: 0 var(--space-3); color: var(--training-muted); font-size: var(--type-micro); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.training-nav-secondary { display: grid; gap: var(--space-1); margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid color-mix(in srgb, var(--outline) 72%, transparent); }
+.training-nav-secondary > span { padding: 0 var(--space-3); color: var(--muted); font-size: var(--type-micro); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.training-nav-account { display: grid; gap: var(--space-1); margin-top: auto; padding-top: var(--space-3); border-top: 1px solid color-mix(in srgb, var(--outline) 72%, transparent); }
 
 .training-shell {
   min-height: 100dvh;
@@ -93,6 +97,10 @@
 .training-shell .training-nav-group button .material-symbols-outlined {
   transition: transform 180ms var(--ease-out), color 160ms var(--ease-out);
 }
+
+.training-shell .training-nav-secondary { border-color: color-mix(in srgb, var(--training-border) 62%, transparent); }
+.training-shell .training-nav-secondary > span { color: var(--training-muted); }
+.training-shell .training-nav-account { border-color: color-mix(in srgb, var(--training-border) 62%, transparent); }
 
 .training-shell[data-nav-mode="training"] .training-nutrition-nav-group button .material-symbols-outlined { transform: rotate(-42deg); }
 
@@ -662,6 +670,7 @@
 @keyframes training-pulse { from { opacity: .48; } to { opacity: .92; } }
 
 @media (min-width: 901px) {
+  .sidebar nav { display: flex; flex-direction: column; gap: 0; }
   .training-shell.app-shell::before { border-color: color-mix(in srgb, var(--training-border) 76%, transparent); background: var(--training-background); }
   .training-shell .sidebar { background: transparent; }
   .training-shell .sidebar nav button.active { box-shadow: inset 3px 0 var(--training-primary); }

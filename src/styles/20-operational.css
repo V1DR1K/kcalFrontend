@@ -5,7 +5,8 @@
 .app-shell :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
 .app-modal-surface :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
 .auth-card :is(input, select, textarea) { font-family: var(--font-body); font-size: var(--type-body); }
-.sidebar nav button, .mobile-nav .mobile-primary-items button, .tabs > button { font-size: var(--type-action); }
+.sidebar nav button, .tabs > button { font-size: var(--type-action); }
+.mobile-nav .mobile-primary-items button { font-size: clamp(10px, 2.8vw, 12px); }
 abbr[title] { text-decoration: none; }
 @media (max-width: 600px) {
   .page-header:not(.dashboard-page-header), .abm-page-header { align-items: stretch; flex-wrap: wrap; gap: var(--space-4); }
