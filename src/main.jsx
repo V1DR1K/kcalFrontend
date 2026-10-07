@@ -18,16 +18,18 @@ function syncViewport() {
   const viewport = window.visualViewport;
   const topOffset = viewport?.offsetTop || 0;
   const visibleHeight = Math.max(1, viewport?.height || window.innerHeight);
-  if (stableViewportWidth !== window.innerWidth) {
-    stableViewportWidth = window.innerWidth;
-    stableDialogHeight = window.innerHeight;
-  }
   const top = `${topOffset}px`;
   const keyboardInsetValue = Math.max(0, window.innerHeight - visibleHeight - topOffset);
   const hasKeyboardGeometry = keyboardInsetValue > 80 || visibleHeight < stableDialogHeight - 80;
   const keyboardOpen = (hasTextInputFocus() || document.documentElement.dataset.keyboardOpen === "true") && hasKeyboardGeometry;
+  if (stableViewportWidth !== window.innerWidth) {
+    stableViewportWidth = window.innerWidth;
+    if (!keyboardOpen) stableDialogHeight = window.innerHeight;
+  }
   if (!keyboardOpen) stableDialogHeight = visibleHeight;
-  const dialogHeight = `${visibleHeight}px`;
+  const keepMobileDialogFrame = keyboardOpen && window.matchMedia("(max-width: 900px)").matches;
+  const dialogViewportHeight = keepMobileDialogFrame ? stableDialogHeight : visibleHeight;
+  const dialogHeight = `${dialogViewportHeight}px`;
   const root = document.documentElement;
   const keyboardInset = `${keyboardInsetValue}px`;
   root.style.setProperty("--app-viewport-top", top);

@@ -343,24 +343,14 @@
   }
 }
 
-/* A virtual keyboard reduces the visible viewport. Keep dialog chrome inside
-   that area so the focused field and fixed actions remain reachable. */
+/* Keep the picker search area scrollable while the keyboard covers the footer. */
 @media (max-width: 900px) {
-  /* Safari shrinks the visual viewport for its keyboard without reliably
-     changing the layout viewport used by height media queries. Keep the
-     food search and filters scrollable when that happens. */
-  html[data-keyboard-open="true"] .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] {
-    gap: 4px;
-    padding-top: 4px;
-  }
-
-  html[data-keyboard-open="true"] .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > header {
-    padding-top: max(4px, env(safe-area-inset-top, 0px));
-    padding-bottom: 4px;
+  html[data-keyboard-open="true"] .app-modal-surface :is(.modal-shell-content, [data-dialog-scroll-owner="true"]) {
+    max-height: var(--dialog-keyboard-scroll-limit, none);
   }
 
   html[data-keyboard-open="true"] .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > .picker-tools {
-    max-height: 56px;
+    max-height: min(var(--dialog-keyboard-scroll-limit, 56px), 56px);
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
@@ -369,75 +359,15 @@
     touch-action: pan-y;
   }
 
-  html[data-keyboard-open="true"] .app-modal-surface.picker-modal[class] > .picker-photo-actions {
-    position: absolute;
-    bottom: 0;
-    z-index: 2;
-    background: var(--surface, #fff);
-    padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
-  }
-  html[data-keyboard-open="true"] .app-modal-surface.picker-modal[class] > .picker-photo-actions .ai-photo-trigger {
-    min-height: 44px;
-  }
+}
 
-  html[data-keyboard-open="true"] .app-modal-backdrop[class] {
-    top: var(--dialog-viewport-top, 0px);
-    height: var(--dialog-visible-height, 100dvh);
-    padding-top: 0;
+/* Compact dialog copy on phones while preserving readable labels and text inputs. */
+@media (max-width: 720px) {
+  [data-mobile-dialog-font-scale="true"][data-mobile-dialog-text="true"],
+  [data-mobile-dialog-font-scale="true"] [data-mobile-dialog-text="true"] {
+    font-size: var(--mobile-dialog-scaled-font-size) !important;
+    line-height: var(--mobile-dialog-scaled-line-height) !important;
   }
-
-  html[data-keyboard-open="true"] .app-modal-surface.app-modal-compact[class] {
-    margin-top: 0;
-    max-height: var(--dialog-visible-height, 100dvh);
-  }
-
-  html[data-keyboard-open="true"] .edit-log-modal.app-modal-surface.app-modal-compact[class] {
-    height: min(640px, var(--dialog-visible-height, 100dvh));
-    max-height: var(--dialog-visible-height, 100dvh);
-    border-radius: var(--radius-sheet);
-  }
-
-  html[data-keyboard-open="true"] .app-modal-surface[class] > footer,
-  html[data-keyboard-open="true"] .app-modal-surface[class] > .modal-shell-footer {
-    padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
-  }
-
-  html[data-keyboard-open="true"] .edit-log-modal .edit-log-preview,
-  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal) .modal-shell-header p {
-    display: none;
-  }
-
-  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal) .modal-shell-header {
-    padding-block: 8px;
-  }
-
-  /* AI editors reserve real rows for chrome instead of overlaying their fields. */
-  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal)[class] {
-    height: var(--dialog-visible-height, 100dvh);
-    max-height: var(--dialog-visible-height, 100dvh);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-  }
-  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal)[class] > .modal-shell-footer {
-    position: relative;
-    padding: 8px 12px;
-  }
-  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal)[class] > .modal-shell-content {
-    padding-bottom: 12px;
-    scroll-padding-block: 8px;
-  }
-  html[data-keyboard-open="true"] :is(.ai-estimate-modal, .ai-photo-context-modal) .ai-context-field textarea {
-    min-height: 48px;
-    height: clamp(48px, calc(var(--dialog-visible-height, 100dvh) * .2), 80px);
-    max-height: 80px;
-    resize: none;
-    font-size: 16px;
-  }
-  html[data-keyboard-open="true"] .ai-photo-context-preview {
-    max-height: min(72px, calc(var(--dialog-visible-height, 100dvh) * .2));
-    object-fit: contain;
-  }
-  html[data-keyboard-open="true"] .ai-photo-target-choice { display: none; }
-
 }
 
 @keyframes app-modal-backdrop-in { from { opacity: 0; } }

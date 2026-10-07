@@ -7,6 +7,74 @@ let previousScrollRootOverflow = "";
 let lockedScrollRoot = null;
 let touchStartY = 0;
 const SCROLL_OWNER_SELECTOR = '[data-dialog-scroll-owner="true"], .picker-tools';
+const MOBILE_DIALOG_TEXT_SCALE_QUERY = "(max-width: 720px)";
+
+function directTextElements(dialog) {
+  return [dialog, ...dialog.querySelectorAll("*")].filter((element) =>
+    !element.matches("input, select, textarea, option, svg, .material-symbols-outlined")
+    && !element.closest("[aria-hidden=\"true\"]")
+    && [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.nodeValue.trim()));
+}
+
+function clearMobileDialogTextScale(dialog) {
+  dialog.removeAttribute("data-mobile-dialog-font-scale");
+  const markedElements = [dialog, ...dialog.querySelectorAll('[data-mobile-dialog-text="true"]')];
+  for (const element of markedElements) {
+    element.removeAttribute("data-mobile-dialog-text");
+    element.style.removeProperty("--mobile-dialog-original-font-size");
+    element.style.removeProperty("--mobile-dialog-original-line-height");
+    element.style.removeProperty("--mobile-dialog-scaled-font-size");
+    element.style.removeProperty("--mobile-dialog-scaled-line-height");
+  }
+}
+
+function updateMobileDialogTextScale(dialog) {
+  clearMobileDialogTextScale(dialog);
+  const textElements = directTextElements(dialog);
+  for (const element of textElements) {
+    const style = getComputedStyle(element);
+    const originalFontSize = Number.parseFloat(style.fontSize);
+    if (!Number.isFinite(originalFontSize) || originalFontSize <= 0) continue;
+    const scaledFontSize = Math.min(originalFontSize, Math.max(12, originalFontSize * 0.6));
+    const originalLineHeight = Number.parseFloat(style.lineHeight);
+    const lineHeight = Number.isFinite(originalLineHeight) ? originalLineHeight : originalFontSize * 1.3;
+    const scaledLineHeight = Math.max(scaledFontSize * 1.1, lineHeight * (scaledFontSize / originalFontSize));
+    element.style.setProperty("--mobile-dialog-original-font-size", `${originalFontSize}px`);
+    element.style.setProperty("--mobile-dialog-original-line-height", `${lineHeight}px`);
+    element.style.setProperty("--mobile-dialog-scaled-font-size", `${scaledFontSize}px`);
+    element.style.setProperty("--mobile-dialog-scaled-line-height", `${scaledLineHeight}px`);
+    element.setAttribute("data-mobile-dialog-text", "true");
+  }
+  dialog.setAttribute("data-mobile-dialog-font-scale", "true");
+}
+
+function observeMobileDialogTextScale(dialog) {
+  const mediaQuery = window.matchMedia?.(MOBILE_DIALOG_TEXT_SCALE_QUERY);
+  if (!mediaQuery) return () => {};
+
+  let observer = null;
+  const syncScale = () => {
+    if (mediaQuery.matches) {
+      updateMobileDialogTextScale(dialog);
+      if (!observer && typeof MutationObserver !== "undefined") {
+        observer = new MutationObserver(() => updateMobileDialogTextScale(dialog));
+        observer.observe(dialog, { childList: true, subtree: true });
+      }
+      return;
+    }
+    observer?.disconnect();
+    observer = null;
+    clearMobileDialogTextScale(dialog);
+  };
+
+  mediaQuery.addEventListener?.("change", syncScale);
+  syncScale();
+  return () => {
+    mediaQuery.removeEventListener?.("change", syncScale);
+    observer?.disconnect();
+    clearMobileDialogTextScale(dialog);
+  };
+}
 
 function topDialog() {
   return activeDialogStack[activeDialogStack.length - 1];
@@ -96,6 +164,7 @@ function visibleFocusableElements(dialog) {
 export function useDialogLifecycle({ open = true, onClose, initialFocusRef, returnFocusRef, closeOnEscape = true, trapFocus = true, restoreFocus = true, lockScroll = true, scrollOwnerRef, footerRef }) {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
+  const keyboardScrollOwnerRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -103,6 +172,7 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
     if (!open) return undefined;
     const surface = dialogRef.current;
     const root = surface?.closest?.("[data-modal-root]") || surface;
+    const stopObservingDialogText = surface ? observeMobileDialogTextScale(surface) : () => {};
     const dialogToken = {
       dialogRef,
       scrollOwnerRef,
@@ -128,6 +198,11 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
     let revealTimer = 0;
     let revealFrame = 0;
 
+    function clearKeyboardScrollLimit() {
+      keyboardScrollOwnerRef.current?.style.removeProperty("--dialog-keyboard-scroll-limit");
+      keyboardScrollOwnerRef.current = null;
+    }
+
     function revealFocusedControl() {
       window.clearTimeout(revealTimer);
       window.cancelAnimationFrame(revealFrame);
@@ -140,26 +215,43 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
           if (topDialog() !== dialogToken || !dialog || !target || !dialog.contains(target)) return;
           const owner = target.closest?.(SCROLL_OWNER_SELECTOR) || scrollOwnerRef?.current || dialog;
           if (!owner) return;
-          const targetRect = target.getBoundingClientRect();
-          const ownerRect = owner.getBoundingClientRect();
-          const footer = footerRef?.current || dialog.querySelector(":scope > footer, :scope > .modal-shell-footer");
-          const footerRect = footer?.getBoundingClientRect();
           const viewport = window.visualViewport;
           const viewportTop = viewport?.offsetTop || 0;
-          const viewportBottom = viewport ? viewportTop + viewport.height : ownerRect.bottom;
-          const visibleTop = Math.max(ownerRect.top, viewportTop);
-          const visibleBottom = Math.min(ownerRect.bottom, viewportBottom);
-          const footerIsVisible = footerRect && footerRect.top > visibleTop && footerRect.top < visibleBottom;
-          const scrollBottom = footerIsVisible ? Math.min(visibleBottom, footerRect.top) : visibleBottom;
-          const padding = Math.min(16, Math.max(0, (scrollBottom - visibleTop - targetRect.height) / 2));
-          let delta = 0;
-          if (targetRect.top < visibleTop + padding) delta = targetRect.top - visibleTop - padding;
-          else if (targetRect.bottom > scrollBottom - padding) {
-            delta = targetRect.height > scrollBottom - visibleTop - padding * 2
-              ? targetRect.top - visibleTop - padding
-              : targetRect.bottom - scrollBottom + padding;
+          if (document.documentElement.dataset.keyboardOpen === "true" && owner !== dialog) {
+            if (keyboardScrollOwnerRef.current !== owner) clearKeyboardScrollLimit();
+            const availableHeight = Math.max(0, viewportTop + (viewport?.height || owner.clientHeight) - owner.getBoundingClientRect().top);
+            owner.style.setProperty("--dialog-keyboard-scroll-limit", `${availableHeight}px`);
+            keyboardScrollOwnerRef.current = owner;
+          } else {
+            clearKeyboardScrollLimit();
           }
-          if (delta) owner.scrollTop += delta;
+
+          revealFrame = window.requestAnimationFrame(() => {
+            const currentTarget = document.activeElement;
+            if (topDialog() !== dialogToken || !dialog.contains(currentTarget)) return;
+            const currentOwner = currentTarget.closest?.(SCROLL_OWNER_SELECTOR) || scrollOwnerRef?.current || dialog;
+            if (!currentOwner) return;
+            const targetRect = currentTarget.getBoundingClientRect();
+            const ownerRect = currentOwner.getBoundingClientRect();
+            const footer = footerRef?.current || dialog.querySelector(":scope > footer, :scope > .modal-shell-footer");
+            const footerRect = footer?.getBoundingClientRect();
+            const currentViewport = window.visualViewport;
+            const currentViewportTop = currentViewport?.offsetTop || 0;
+            const viewportBottom = currentViewport ? currentViewportTop + currentViewport.height : ownerRect.bottom;
+            const visibleTop = Math.max(ownerRect.top, currentViewportTop);
+            const visibleBottom = Math.min(ownerRect.bottom, viewportBottom);
+            const footerIsVisible = footerRect && footerRect.top > visibleTop && footerRect.top < visibleBottom;
+            const scrollBottom = footerIsVisible ? Math.min(visibleBottom, footerRect.top) : visibleBottom;
+            const padding = Math.min(16, Math.max(0, (scrollBottom - visibleTop - targetRect.height) / 2));
+            let delta = 0;
+            if (targetRect.top < visibleTop + padding) delta = targetRect.top - visibleTop - padding;
+            else if (targetRect.bottom > scrollBottom - padding) {
+              delta = targetRect.height > scrollBottom - visibleTop - padding * 2
+                ? targetRect.top - visibleTop - padding
+                : targetRect.bottom - scrollBottom + padding;
+            }
+            if (delta) currentOwner.scrollTop += delta;
+          });
         });
       }, 48);
     }
@@ -207,6 +299,8 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
       const tokenIndex = activeDialogStack.indexOf(dialogToken);
       if (tokenIndex >= 0) activeDialogStack.splice(tokenIndex, 1);
       syncDialogRoots();
+      clearKeyboardScrollLimit();
+      stopObservingDialogText();
       if (lockScroll) {
         scrollLockDepth = Math.max(0, scrollLockDepth - 1);
         if (scrollLockDepth === 0) {

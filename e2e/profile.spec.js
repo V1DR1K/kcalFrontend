@@ -71,14 +71,19 @@ test("muestra fechas y macros legibles, con acciones del plan accesibles en un m
   await expect(dialog.getByRole("button", { name: "Guardar alternativa", exact: true })).toBeVisible();
   const editable = dialog.locator(".nutrition-plan-dialog-body input").first();
   await editable.focus();
-  await page.setViewportSize({ width: 320, height: 430 });
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 320, offsetTop: 0 };
+    for (const key of ["height", "offsetTop"]) Object.defineProperty(window.visualViewport, key, { configurable: true, get: () => window.__keyboardFrame[key] });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
   await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
   await expect.poll(() => editable.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const footer = element.closest(".nutrition-plan-dialog").querySelector(":scope > .modal-shell-footer").getBoundingClientRect();
-    return rect.top >= 0 && rect.bottom <= footer.top + 1 && footer.bottom <= (window.visualViewport?.height || window.innerHeight) + 1;
+    const viewportBottom = window.visualViewport?.offsetTop + window.visualViewport?.height || window.innerHeight;
+    return rect.top >= 0 && rect.bottom <= footer.top + 1 && footer.top >= viewportBottom - 1;
   })).toBe(true);
-  await expect(dialog.getByRole("button", { name: "Guardar alternativa", exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Guardar alternativa", exact: true })).toBeAttached();
 });
 
 

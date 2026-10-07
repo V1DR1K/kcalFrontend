@@ -82,7 +82,7 @@ test("keeps the scanner form inside a reduced mobile visual viewport", async ({ 
   await expect(page.locator(".scanner-result")).toHaveCSS("overflow-y", "auto");
 });
 
-test("opens the consumed quantity editor at the top on mobile", async ({ page }) => {
+test("keeps the consumed quantity editor anchored while the mobile keyboard opens", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedAuthenticatedApp(page, { withFoodLog: true });
   await page.goto("/ingresar");
@@ -98,9 +98,17 @@ test("opens the consumed quantity editor at the top on mobile", async ({ page })
   await quantity.focus();
   await quantity.fill("42,5");
   await expect(quantity).toHaveValue("42.5");
+  const originalDialogBounds = await dialog.evaluate((element) => ({
+    bottom: element.getBoundingClientRect().bottom,
+    footerBottom: element.querySelector(":scope > footer").getBoundingClientRect().bottom,
+  }));
   const backgroundScrollBeforeKeyboard = await page.locator('[data-app-scroll-root="true"]').evaluate((element) => element.scrollTop);
   const appShellHeightBeforeKeyboard = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--app-shell-height"));
-  await page.setViewportSize({ width: 390, height: 430 });
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 320, offsetTop: 0 };
+    for (const key of ["height", "offsetTop"]) Object.defineProperty(window.visualViewport, key, { configurable: true, get: () => window.__keyboardFrame[key] });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
   await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
   await expect.poll(() => quantity.evaluate((element) => {
     const rect = element.getBoundingClientRect();
@@ -115,14 +123,19 @@ test("opens the consumed quantity editor at the top on mobile", async ({ page })
     viewport: window.visualViewport?.height || window.innerHeight,
   }));
   expect(compactBounds.top).toBeGreaterThanOrEqual(-1);
-  expect(compactBounds.bottom).toBeLessThanOrEqual(compactBounds.viewport + 1);
-  expect(compactBounds.footerBottom).toBeLessThanOrEqual(compactBounds.viewport + 1);
+  expect(compactBounds.bottom).toBeGreaterThan(compactBounds.viewport + 1);
+  expect(compactBounds.footerBottom).toBeGreaterThan(compactBounds.viewport + 1);
+  expect(compactBounds.bottom).toBeCloseTo(originalDialogBounds.bottom, 0);
+  expect(compactBounds.footerBottom).toBeCloseTo(originalDialogBounds.footerBottom, 0);
   expect(await page.locator('[data-app-scroll-root="true"]').evaluate((element) => element.scrollTop)).toBe(backgroundScrollBeforeKeyboard);
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--app-shell-height"))).toBe(appShellHeightBeforeKeyboard);
   const modalBody = dialog.locator(".edit-log-body");
   expect(await modalBody.evaluate((element) => getComputedStyle(element).overflowY)).toBe("auto");
   const modalBodyScrollBeforeRestore = await modalBody.evaluate((element) => element.scrollTop);
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 844, offsetTop: 0 };
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
   await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "false");
   await expect(dialog).toBeVisible();
   expect(await modalBody.evaluate((element) => element.scrollTop)).toBe(modalBodyScrollBeforeRestore);
@@ -471,7 +484,7 @@ test("keeps photo actions in one compact mobile row", async ({ page }) => {
   expect(layout.buttons[0].height).toBeGreaterThanOrEqual(48);
 });
 
-test("keeps photo buttons reachable while searching with the mobile keyboard open", async ({ page }) => {
+test("keeps photo actions under the mobile keyboard while the food search scrolls", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedAuthenticatedApp(page, { aiAvailable: true });
   await page.goto("/ingresar");
@@ -479,6 +492,10 @@ test("keeps photo buttons reachable while searching with the mobile keyboard ope
   const picker = page.locator(".picker-modal");
   const search = picker.getByRole("searchbox", { name: /Buscar alimentos/ });
   await search.focus();
+  const beforeKeyboard = await picker.evaluate((modal) => ({
+    top: modal.getBoundingClientRect().top,
+    footerBottom: modal.querySelector(":scope > .picker-photo-actions").getBoundingClientRect().bottom,
+  }));
   await page.evaluate(() => {
     window.__keyboardFrame = { height: 320, offsetTop: 92 };
     for (const key of ["height", "offsetTop"]) {
@@ -493,24 +510,70 @@ test("keeps photo buttons reachable while searching with the mobile keyboard ope
     const footer = modal.querySelector(":scope > .picker-photo-actions").getBoundingClientRect();
     const viewportTop = window.visualViewport.offsetTop;
     const viewportBottom = viewportTop + window.visualViewport.height;
-    return rect.top >= viewportTop - 1 && rect.bottom <= footer.top + 1 && footer.bottom <= viewportBottom + 1;
+    return rect.top >= viewportTop - 1 && rect.bottom <= viewportBottom + 1 && footer.top >= viewportBottom - 1;
   })).toBe(true);
   const layout = await picker.evaluate((modal) => {
     const footer = modal.querySelector(":scope > .picker-photo-actions");
     const tools = modal.querySelector(":scope > .picker-tools");
     return {
       footer: footer.getBoundingClientRect().toJSON(),
+      modal: modal.getBoundingClientRect().toJSON(),
       buttons: [...footer.querySelectorAll(".ai-photo-trigger")].map((button) => button.getBoundingClientRect().toJSON()),
+      visualViewportTop: window.visualViewport.offsetTop,
+      visualViewportBottom: window.visualViewport.offsetTop + window.visualViewport.height,
       toolsOverflowY: getComputedStyle(tools).overflowY,
       toolsScrollHeight: tools.scrollHeight,
       toolsClientHeight: tools.clientHeight,
     };
   });
   expect(layout.buttons).toHaveLength(2);
-  expect(layout.buttons.every((button) => button.width >= 44 && button.height >= 44 && button.bottom <= 413)).toBe(true);
-  expect(layout.footer.bottom).toBeLessThanOrEqual(413);
+  expect(layout.buttons.every((button) => button.width >= 44 && button.height >= 44 && button.top >= layout.visualViewportBottom - 1)).toBe(true);
+  expect(layout.footer.top).toBeGreaterThanOrEqual(layout.visualViewportBottom - 1);
+  expect(layout.modal.top - layout.visualViewportTop).toBeCloseTo(0, 0);
+  expect(layout.footer.bottom - layout.visualViewportTop).toBeCloseTo(beforeKeyboard.footerBottom, 0);
+  expect(layout.modal.height).toBeGreaterThanOrEqual(844);
   expect(layout.toolsOverflowY).toBe("auto");
   expect(layout.toolsScrollHeight).toBeGreaterThan(layout.toolsClientHeight);
+});
+
+test("scales all mobile dialog copy by forty percent with a readable floor", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedAuthenticatedApp(page, { withFoodLog: true });
+  await page.goto("/ingresar");
+  await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
+
+  const picker = page.locator(".picker-modal");
+  await expect(picker).toHaveAttribute("data-mobile-dialog-font-scale", "true");
+  const scaledCopy = await picker.evaluate((dialog) => [...dialog.querySelectorAll('[data-mobile-dialog-text="true"]')].map((element) => ({
+    text: element.textContent.trim(),
+    fontSize: Number.parseFloat(getComputedStyle(element).fontSize),
+    originalFontSize: Number.parseFloat(element.style.getPropertyValue("--mobile-dialog-original-font-size")),
+    scaledFontSize: Number.parseFloat(element.style.getPropertyValue("--mobile-dialog-scaled-font-size")),
+  })));
+  expect(await picker.getAttribute("data-mobile-dialog-font-scale")).toBe("true");
+  expect(scaledCopy.length).toBeGreaterThan(8);
+  expect(scaledCopy.every(({ fontSize, originalFontSize, scaledFontSize }) => fontSize >= 12 && fontSize <= originalFontSize + 0.1 && Math.abs(fontSize - scaledFontSize) < 0.1)).toBe(true);
+  expect(scaledCopy.every(({ scaledFontSize, originalFontSize }) => Math.abs(scaledFontSize - Math.min(originalFontSize, Math.max(12, originalFontSize * 0.6))) < 0.1)).toBe(true);
+  await expect(picker.locator("input").first()).toHaveCSS("font-size", "16px");
+  expect(await picker.locator(".picker-photo-actions button").first().evaluate((button) => button.getBoundingClientRect().height)).toBeGreaterThanOrEqual(48);
+
+  await page.keyboard.press("Escape");
+  const meal = page.locator(".meal-card").filter({ hasText: "Avena" }).first();
+  await meal.locator(".meal-item").click();
+  await meal.locator(".meal-item-detail-actions button").filter({ hasText: "Editar" }).click();
+  const editor = page.locator(".edit-log-modal");
+  await expect(editor.getByLabel("Cantidad")).toHaveCSS("font-size", "16px");
+  const editorCopy = editor.locator('[data-mobile-dialog-text="true"]:visible').first();
+  await expect(editorCopy).toBeVisible();
+  const editorOriginalFontSize = await editorCopy.evaluate((element) => Number.parseFloat(element.style.getPropertyValue("--mobile-dialog-original-font-size")));
+  const editorCopyHandle = await editorCopy.elementHandle();
+  expect(Number.parseFloat(await editorCopy.evaluate((element) => getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(12);
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(editor).not.toHaveAttribute("data-mobile-dialog-font-scale", "true");
+  expect(await editorCopyHandle.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(12);
+  expect(await editorCopyHandle.evaluate((element) => element.style.getPropertyValue("--mobile-dialog-original-font-size"))).toBe("");
+  expect(editorOriginalFontSize).toBeGreaterThanOrEqual(12);
 });
 
 test("pins modal actions without taking a grid row on mobile", async ({ page }) => {
@@ -909,7 +972,11 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   await expect(editor.getByRole("button", { name: "Revisar coincidencias y guardar", exact: true })).toBeVisible();
   const grams = editor.getByLabel("Gramos").first();
   await grams.focus();
-  await page.setViewportSize({ width: 390, height: 430 });
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 320, offsetTop: 0 };
+    for (const key of ["height", "offsetTop"]) Object.defineProperty(window.visualViewport, key, { configurable: true, get: () => window.__keyboardFrame[key] });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
   await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
   await expect.poll(() => grams.evaluate((element) => {
     const rect = element.getBoundingClientRect();
@@ -919,11 +986,26 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
     return {visible:rect.top >= surface.top - 1 && rect.bottom <= footerTop + 1 && rect.bottom <= viewportBottom + 1, top:rect.top, bottom:rect.bottom, surfaceTop:surface.top, footerTop, viewportBottom, focused:document.activeElement === element};
   })).toMatchObject({visible:true,focused:true});
   const aiFooterBottom = await editor.locator(":scope > .modal-shell-footer").evaluate((element) => element.getBoundingClientRect().bottom);
-  expect(aiFooterBottom).toBeLessThanOrEqual(430 + 1);
-  const editorScrollBeforeRestore = await editor.locator(".modal-shell-content").evaluate((element) => element.scrollTop);
-  await page.setViewportSize({ width: 390, height: 844 });
+  expect(aiFooterBottom).toBeGreaterThan(320 + 1);
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 844, offsetTop: 0 };
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
   await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "false");
-  expect(await editor.locator(".modal-shell-content").evaluate((element) => element.scrollTop)).toBe(editorScrollBeforeRestore);
+  const restoredScroll = await editor.evaluate((element) => {
+    const content = element.querySelector(".modal-shell-content");
+    const grams = [...element.querySelectorAll("input")].find((input) => input.getAttribute("aria-label") === "Gramos");
+    const field = grams?.getBoundingClientRect();
+    const bounds = content.getBoundingClientRect();
+    return {
+      scrollTop: content.scrollTop,
+      maxScroll: content.scrollHeight - content.clientHeight,
+      fieldVisible: Boolean(field && field.top >= bounds.top - 1 && field.bottom <= bounds.bottom + 1),
+    };
+  });
+  expect(restoredScroll.scrollTop).toBeGreaterThan(0);
+  expect(restoredScroll.scrollTop).toBeLessThanOrEqual(restoredScroll.maxScroll + 1);
+  expect(restoredScroll.fieldVisible).toBe(true);
 });
 
 test("registers an AI food from the diary and keeps its meal destination", async ({ page }) => {
@@ -1296,6 +1378,7 @@ test("SG047 keeps AI text, close and actions inside a displaced keyboard viewpor
     window.visualViewport.dispatchEvent(new Event("resize"));
   });
   await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--dialog-viewport-top").trim())).toBe("92px");
   await expect.poll(() => input.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const modal = element.closest(".ai-photo-context-modal");
@@ -1303,8 +1386,18 @@ test("SG047 keeps AI text, close and actions inside a displaced keyboard viewpor
     const footer = modal.querySelector(":scope > footer").getBoundingClientRect();
     const top = window.visualViewport.offsetTop;
     const bottom = top + window.visualViewport.height;
-    return header.top >= top - 1 && footer.bottom <= bottom + 1 && rect.top >= header.bottom - 1 && rect.bottom <= footer.top + 1;
-  })).toBe(true);
+    return {
+      headerTop: header.top,
+      viewportTop: top,
+      footerTop: footer.top,
+      viewportBottom: bottom,
+      inputTop: rect.top,
+      inputBottom: rect.bottom,
+      headerVisible: header.top >= top - 1,
+      footerBelowKeyboard: footer.top >= bottom - 1,
+      inputVisible: rect.top >= header.bottom - 1 && rect.bottom <= bottom + 1,
+    };
+  })).toMatchObject({ headerVisible: true, footerBelowKeyboard: true, inputVisible: true });
   const text = await input.inputValue();
   await input.press("End");
   await input.press("Backspace");
@@ -1449,7 +1542,8 @@ test("SG047 correction and saved description keep text and quantity across keybo
       for (const key of ["height","offsetTop"]) Object.defineProperty(window.visualViewport,key,{configurable:true,get:()=>window.__editFrame[key]});
       window.visualViewport.dispatchEvent(new Event("resize"));
     },{height,offsetTop});
-    await expect.poll(()=>editor.evaluate(el=>{const header=el.querySelector("header").getBoundingClientRect(),footer=el.querySelector(":scope > footer").getBoundingClientRect(); return header.top >= window.visualViewport.offsetTop-1 && footer.bottom <= window.visualViewport.offsetTop+window.visualViewport.height+1;})).toBe(true);
+    await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue("--dialog-viewport-top").trim())).toBe(`${offsetTop}px`);
+    await expect.poll(()=>editor.evaluate(el=>{const header=el.querySelector("header").getBoundingClientRect(),footer=el.querySelector(":scope > footer").getBoundingClientRect(); const viewportTop=window.visualViewport.offsetTop, viewportBottom=viewportTop+window.visualViewport.height; const footerScreenBottom=footer.bottom-viewportTop; const layoutHeight=Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dialog-visible-height")); const keyboardOpen=viewportBottom < layoutHeight-1; return {headerTop:header.top,viewportTop,footerTop:footer.top,viewportBottom,footerScreenBottom,layoutHeight,headerVisible:header.top>=viewportTop-1,footerBelowKeyboard:!keyboardOpen||footer.top>=viewportBottom-1,footerAnchored:Math.abs(footerScreenBottom-layoutHeight)<=1};})).toMatchObject({headerVisible:true,footerBelowKeyboard:true,footerAnchored:true});
   }
   await frame(320,92); await expect(correction).toBeFocused();
   const text=await correction.inputValue(); await correction.press("End"); await correction.press("Backspace");
