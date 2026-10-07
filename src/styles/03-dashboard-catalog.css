@@ -1719,7 +1719,6 @@ button:disabled {
 .skeleton-strip { grid-column: 1 / -1; display: grid; gap: 10px; width: 100%; }
 .skeleton-macro { height: 30px; }
 .skeleton-meal-card { min-height: 138px; }
-.skeleton-panel { height: 120px; }
 @keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
 
 .meal-item-detail-actions {

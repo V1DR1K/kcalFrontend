@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
-import { Header, Macro, Panel } from "../../components/Layout";
+import { Header, Macro } from "../../components/Layout";
 import { DatePickerDialog } from "../../components/DatePickerDialog";
 import { CatalogStatus } from "../catalog/CatalogComponents";
 import { EditFoodLog } from "../foods/FoodComponents";
-import { readRecents } from "../../services/recents";
 import { formatNumber, today } from "../../utils/format";
 import { macroValue, mealLogName, mealTotals } from "./dashboard.utils";
 import { EditAiEstimateDialog } from "./dialogs/EditAiEstimateDialog";
@@ -14,7 +13,6 @@ import { FoodPicker, AiEstimateEditor } from "./dialogs/FoodPickerDialog";
 import { MealShareDialog } from "./dialogs/MealShareDialogs";
 import { CompactBalanceBar, DateNavigator, PastMealsPreview } from "./components/DashboardSections";
 import { MealCard } from "./components/MealSections";
-import { RecentMeals } from "./components/QuickMeals";
 import { useDashboardData } from "./hooks/useDashboardData";
 import "../../styles/12-dashboard-summary.css";
 import "../../styles/15-day-presets.css";
@@ -71,7 +69,6 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
   }, [loading, selectedDate]);
   const macros = data?.macros || [];
   const mealByCode = new Map((data?.meals || []).map((meal) => [meal.mealType, meal]));
-  const recentMeals = readRecents(user).meals || [];
   const resetMealSwipes = useCallback(() => setSwipeResetSignal((signal) => signal + 1), []);
   const closeEditingLog = useCallback(() => {
     resetMealSwipes();
@@ -218,7 +215,6 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
           <div className="skeleton skeleton-meal-card" />
           <div className="skeleton skeleton-meal-card" />
           <div className="skeleton skeleton-meal-card" />
-          <div className="skeleton skeleton-panel" />
         </div>
       </section>
     );
@@ -399,11 +395,6 @@ export function Dashboard({ api, user, setPage, onOpenDayPresets }) {
             }}
           />
         ))}
-      </div>
-       <div className={`grid ${recentMeals.length ? "two" : ""}`}>
-        {Boolean(recentMeals.length) && <Panel title="Comidas recientes">
-          <RecentMeals user={user} api={api} date={selectedDate} mealTypes={mealTypes} onDone={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} onOptimisticConfirm={confirmOptimisticLogs} />
-        </Panel>}
       </div>
        <PastMealsPreview api={api} targetDate={selectedDate} targetMeals={data?.meals || []} mealTypes={mealTypes} onCopied={load} onOptimisticAdd={addOptimisticLogs} onOptimisticRollback={rollbackOptimisticLogs} onOptimisticConfirm={confirmOptimisticLogs} />
        <section className="day-presets-actions" aria-label="Presets de alimentación">
