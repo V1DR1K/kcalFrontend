@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 function compactNavigation(page) { return (page.viewportSize()?.width || 0) <= 900; }
 
 async function enterTraining(page) {
-  await page.getByRole("button", { name: compactNavigation(page) ? "Entreno" : "Entrenamiento", exact: true }).first().click();
+  await page.getByRole("button", { name: "Entreno", exact: true }).first().click();
 }
 
 async function openTrainingSection(page, label) {

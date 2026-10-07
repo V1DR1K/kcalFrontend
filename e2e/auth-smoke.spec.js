@@ -132,10 +132,10 @@ test("SG028 reports expiration after a previously authenticated session", async 
 
 test("SG008 stable routes survive reload and browser back/forward", async ({page}) => {
   await page.route("**/api/**", route => route.fulfill({json: new URL(route.request().url()).pathname === "/api/auth/me" ? {id:1,username:"test"} : {days:[],items:[],macros:[],meals:[]} }));
-  await page.goto("/nutricion/historial"); await expect(page.getByRole("heading",{name:"Historial",exact:true})).toBeVisible(); await expect(page).toHaveTitle("Historial | ScaleGrams");
-  await page.reload(); await expect(page.getByRole("heading",{name:"Historial",exact:true})).toBeVisible();
+  await page.goto("/nutricion/historial"); await expect(page.getByRole("heading",{name:"Calendario",exact:true})).toBeVisible(); await expect(page).toHaveTitle("Calendario | ScaleGrams");
+  await page.reload(); await expect(page.getByRole("heading",{name:"Calendario",exact:true})).toBeVisible();
   await page.goto("/entrenamiento/cardio"); await expect(page.getByRole("heading",{name:"Cardio",exact:true})).toBeVisible();
-  await page.goBack(); await expect(page.getByRole("heading",{name:"Historial",exact:true})).toBeVisible();
+  await page.goBack(); await expect(page.getByRole("heading",{name:"Calendario",exact:true})).toBeVisible();
   await page.goForward(); await expect(page.getByRole("heading",{name:"Cardio",exact:true})).toBeVisible();
 });
 test("SG008 returns to the protected internal destination after login", async ({page}) => {

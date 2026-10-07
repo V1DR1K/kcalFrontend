@@ -64,7 +64,7 @@ test("opens nutrition calendar day detail and exports XLS", async ({ page }) => 
   await page.goto("/ingresar");
 
   const month = currentMonth();
-  await expect(page.getByRole("heading", { name: "Historial", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Calendario", exact: true })).toBeVisible();
   await expect(page.locator(".history-calendar-surface")).toBeVisible();
   await expect(page.locator(".history-calendar-day")).toHaveCount(new Date(month.year, month.month, 0).getDate());
   await expect(page.getByText("1 día registrado", { exact: true })).toBeVisible();
