@@ -112,7 +112,7 @@ function MealCard({ mealType, mealTypes = [], meal, yesterdayMeal, targetDate, a
         { quiet: true },
       );
     }
-    catch {
+    catch (error) {
       restore();
       if (error.cancelled) { setBulkActionState("idle"); return; }
       setBulkActionState("error");
