@@ -60,7 +60,7 @@ async function seedAuthenticatedApp(page, { aiAvailable = false, withFoodLog = f
   });
 }
 
-test("keeps the scanner form inside a reduced mobile visual viewport", async ({ page, browserName }, testInfo) => {
+test("keeps the scanner input reachable while the mobile keyboard covers the dialog footer", async ({ page }) => {
   await page.setViewportSize({ width: 402, height: 874 });
   await seedAuthenticatedApp(page);
   await page.goto("/ingresar");
@@ -68,17 +68,21 @@ test("keeps the scanner form inside a reduced mobile visual viewport", async ({ 
   await page.getByRole("button", { name: /Escanear código de barras/i }).click();
   await page.getByRole("button", { name: "Código manual" }).click();
   await page.locator("#manual-barcode").fill("7791234567890");
-  // Playwright cannot resize an emulated iPhone viewport after navigation in
-  // WebKit. The short Safari project exercises the initial 390x430 contract;
-  // this flow still validates the scanner's internal scroll owner here.
-  if (!(browserName === "webkit" && testInfo.project.name.includes("iphone"))) {
-    await page.setViewportSize({ width: 402, height: 430 });
-    const viewportHeight = await page.evaluate(() => window.innerHeight);
-    const bounds = await page.locator(".scanner-result").evaluate((element) => element.getBoundingClientRect().toJSON());
-    const inputBounds = await page.locator("#manual-barcode").evaluate((element) => element.getBoundingClientRect().toJSON());
-    expect(bounds.bottom).toBeLessThanOrEqual(viewportHeight + 1);
-    expect(inputBounds.bottom).toBeLessThanOrEqual(viewportHeight + 1);
-  }
+  const dialog = page.locator(".scanner-dialog");
+  const dialogBottomBeforeKeyboard = await dialog.evaluate((element) => element.getBoundingClientRect().bottom);
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 320, offsetTop: 0 };
+    for (const key of ["height", "offsetTop"]) Object.defineProperty(window.visualViewport, key, { configurable: true, get: () => window.__keyboardFrame[key] });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
+  await expect.poll(() => page.locator("#manual-barcode").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const viewportBottom = window.visualViewport.offsetTop + window.visualViewport.height;
+    return rect.top >= window.visualViewport.offsetTop - 1 && rect.bottom <= viewportBottom + 1;
+  })).toBe(true);
+  expect(await dialog.evaluate((element) => element.getBoundingClientRect().bottom)).toBeCloseTo(dialogBottomBeforeKeyboard, 0);
+  await expect(dialog.locator(".scanner-stage")).toBeHidden();
   await expect(page.locator(".scanner-result")).toHaveCSS("overflow-y", "auto");
 });
 
@@ -640,7 +644,7 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
   expect(layout.statusOrder).toBe("-1");
 });
 
-test("keeps a long AI photo description scrollable on mobile", async ({ page, browserName }, testInfo) => {
+test("keeps a long AI photo description scrollable under the mobile keyboard", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedAuthenticatedApp(page, { aiAvailable: true });
   await page.goto("/ingresar");
@@ -702,28 +706,34 @@ test("keeps a long AI photo description scrollable on mobile", async ({ page, br
   });
   await expect.poll(() => description.evaluate((element) => element.scrollTop)).toBe(0);
 
-  // WebKit's emulated iPhone keeps the device viewport height when resized
-  // after navigation. The dedicated short-viewport Safari project covers the
-  // same contract from page creation; keep this flow focused on inner scroll.
-  if (!(browserName === "webkit" && testInfo.project.name.includes("iphone"))) {
-    await page.setViewportSize({ width: 390, height: 430 });
-    await page.evaluate(() => {
-      document.documentElement.style.setProperty("--app-viewport-height", "430px");
-      document.documentElement.style.setProperty("--dialog-viewport-height", "430px");
-      document.documentElement.style.setProperty("--dialog-visible-height", "430px");
-      document.documentElement.style.setProperty("--dialog-layout-height", "430px");
-    });
-    const reducedLayout = await dialog.evaluate((element) => ({
-      dialog: element.getBoundingClientRect().toJSON(),
-      actions: element.querySelector(".ai-photo-context-actions").getBoundingClientRect().toJSON(),
-    }));
-    expect(reducedLayout.dialog.bottom).toBeLessThanOrEqual(430 + 1);
-    expect(reducedLayout.actions.bottom).toBeLessThanOrEqual(430 + 1);
-  }
-  if (browserName === "chromium") {
-    await page.evaluate(() => {
-      ["--app-viewport-height", "--dialog-viewport-height", "--dialog-visible-height", "--dialog-layout-height"].forEach((property) => document.documentElement.style.removeProperty(property));
-    });
+  const dialogBottomBeforeKeyboard = layout.dialog.bottom;
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 320, offsetTop: 0 };
+    for (const key of ["height", "offsetTop"]) Object.defineProperty(window.visualViewport, key, { configurable: true, get: () => window.__keyboardFrame[key] });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "true");
+  await expect.poll(() => description.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const viewportTop = window.visualViewport.offsetTop;
+    const viewportBottom = viewportTop + window.visualViewport.height;
+    return rect.top >= viewportTop - 1 && rect.bottom <= viewportBottom + 1;
+  })).toBe(true);
+  const reducedLayout = await dialog.evaluate((element) => {
+    const footer = element.querySelector(":scope > .modal-shell-footer").getBoundingClientRect();
+    const viewportBottom = window.visualViewport.offsetTop + window.visualViewport.height;
+    return { dialogBottom: element.getBoundingClientRect().bottom, footerTop: footer.top, viewportBottom };
+  });
+  expect(reducedLayout.dialogBottom).toBeCloseTo(dialogBottomBeforeKeyboard, 0);
+  expect(reducedLayout.footerTop).toBeGreaterThanOrEqual(reducedLayout.viewportBottom - 1);
+
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 844, offsetTop: 0 };
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "false");
+  await description.evaluate((element) => element.blur());
+  if (test.info().project.name.includes("chromium")) {
     await page.setViewportSize({ width: 320, height: 568 });
     const footerMetrics = await dialog.evaluate((element) => {
       const footer = element.querySelector(":scope > .modal-shell-footer").getBoundingClientRect();

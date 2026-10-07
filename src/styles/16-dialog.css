@@ -349,6 +349,14 @@
     max-height: var(--dialog-keyboard-scroll-limit, none);
   }
 
+  html[data-keyboard-open="true"] .scanner-dialog > .scanner-page {
+    grid-template-rows: 0 auto;
+  }
+
+  html[data-keyboard-open="true"] .scanner-dialog .scanner-stage {
+    display: none;
+  }
+
   html[data-keyboard-open="true"] .app-modal-surface.picker-modal:not(.picker-source-sheet)[class] > .picker-tools {
     max-height: min(var(--dialog-keyboard-scroll-limit, 56px), 56px);
     min-height: 0;
