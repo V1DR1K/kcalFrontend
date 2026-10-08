@@ -7,7 +7,16 @@ let previousScrollRootOverflow = "";
 let lockedScrollRoot = null;
 let touchStartY = 0;
 const SCROLL_OWNER_SELECTOR = '[data-dialog-scroll-owner="true"], .picker-tools';
-const MOBILE_DIALOG_TEXT_SCALE_QUERY = "(max-width: 720px)";
+const MOBILE_DIALOG_TEXT_SCALE_QUERY = "(max-width: 720px), (max-width: 900px) and (max-height: 500px) and (pointer: coarse)";
+
+function minimumDialogTextSize(element) {
+  if (element.matches("h1, h2")) return 18;
+  if (element.matches("h3, h4, h5, h6")) return 15;
+  if (element.matches(".catalog-copy > strong, .edit-log-section-heading strong")) return 14;
+  if (element.matches("p")) return 14;
+  if (element.matches("strong") || element.closest("button, summary, label")) return 13;
+  return 12;
+}
 
 function directTextElements(dialog) {
   return [dialog, ...dialog.querySelectorAll("*")].filter((element) =>
@@ -35,7 +44,7 @@ function updateMobileDialogTextScale(dialog) {
     const style = getComputedStyle(element);
     const originalFontSize = Number.parseFloat(style.fontSize);
     if (!Number.isFinite(originalFontSize) || originalFontSize <= 0) continue;
-    const scaledFontSize = Math.min(originalFontSize, Math.max(12, originalFontSize * 0.6));
+    const scaledFontSize = Math.min(originalFontSize, Math.max(minimumDialogTextSize(element), originalFontSize * 0.6));
     const originalLineHeight = Number.parseFloat(style.lineHeight);
     const lineHeight = Number.isFinite(originalLineHeight) ? originalLineHeight : originalFontSize * 1.3;
     const scaledLineHeight = Math.max(scaledFontSize * 1.1, lineHeight * (scaledFontSize / originalFontSize));
@@ -164,7 +173,7 @@ function visibleFocusableElements(dialog) {
 export function useDialogLifecycle({ open = true, onClose, initialFocusRef, returnFocusRef, closeOnEscape = true, trapFocus = true, restoreFocus = true, lockScroll = true, scrollOwnerRef, footerRef }) {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
-  const keyboardScrollOwnerRef = useRef(null);
+  const keyboardScrollOwnersRef = useRef(new Set());
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -199,8 +208,27 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
     let revealFrame = 0;
 
     function clearKeyboardScrollLimit() {
-      keyboardScrollOwnerRef.current?.style.removeProperty("--dialog-keyboard-scroll-limit");
-      keyboardScrollOwnerRef.current = null;
+      for (const owner of keyboardScrollOwnersRef.current) owner.style.removeProperty("--dialog-keyboard-scroll-limit");
+      keyboardScrollOwnersRef.current.clear();
+    }
+
+    function updateKeyboardScrollLimits(dialog) {
+      if (document.documentElement.dataset.keyboardOpen !== "true") {
+        clearKeyboardScrollLimit();
+        return;
+      }
+      const viewport = window.visualViewport;
+      const viewportBottom = (viewport?.offsetTop || 0) + (viewport?.height || window.innerHeight);
+      const owners = new Set(dialog.querySelectorAll(SCROLL_OWNER_SELECTOR));
+      if (scrollOwnerRef?.current && scrollOwnerRef.current !== dialog) owners.add(scrollOwnerRef.current);
+      for (const owner of keyboardScrollOwnersRef.current) {
+        if (!owners.has(owner)) owner.style.removeProperty("--dialog-keyboard-scroll-limit");
+      }
+      for (const owner of owners) {
+        const availableHeight = Math.max(0, viewportBottom - owner.getBoundingClientRect().top);
+        owner.style.setProperty("--dialog-keyboard-scroll-limit", `${availableHeight}px`);
+      }
+      keyboardScrollOwnersRef.current = owners;
     }
 
     function revealFocusedControl() {
@@ -212,19 +240,9 @@ export function useDialogLifecycle({ open = true, onClose, initialFocusRef, retu
         revealFrame = window.requestAnimationFrame(() => {
           const target = document.activeElement;
           const dialog = dialogRef.current;
-          if (topDialog() !== dialogToken || !dialog || !target || !dialog.contains(target)) return;
-          const owner = target.closest?.(SCROLL_OWNER_SELECTOR) || scrollOwnerRef?.current || dialog;
-          if (!owner) return;
-          const viewport = window.visualViewport;
-          const viewportTop = viewport?.offsetTop || 0;
-          if (document.documentElement.dataset.keyboardOpen === "true" && owner !== dialog) {
-            if (keyboardScrollOwnerRef.current !== owner) clearKeyboardScrollLimit();
-            const availableHeight = Math.max(0, viewportTop + (viewport?.height || owner.clientHeight) - owner.getBoundingClientRect().top);
-            owner.style.setProperty("--dialog-keyboard-scroll-limit", `${availableHeight}px`);
-            keyboardScrollOwnerRef.current = owner;
-          } else {
-            clearKeyboardScrollLimit();
-          }
+          if (topDialog() !== dialogToken || !dialog) return;
+          updateKeyboardScrollLimits(dialog);
+          if (!target || !dialog.contains(target)) return;
 
           revealFrame = window.requestAnimationFrame(() => {
             const currentTarget = document.activeElement;

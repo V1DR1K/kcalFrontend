@@ -184,7 +184,7 @@
 .app-modal-surface[class] > .modal-shell-footer button { min-height: 48px; }
 
 /* Long task surfaces remain fullscreen on a phone; compact tasks remain sheets. */
-@media (max-width: 720px) {
+@media (max-width: 720px), (max-width: 900px) and (max-height: 500px) and (pointer: coarse) {
   .app-modal-backdrop[class] {
     top: var(--dialog-viewport-top, 0px);
     place-items: start center;
@@ -370,7 +370,7 @@
 }
 
 /* Compact dialog copy on phones while preserving readable labels and text inputs. */
-@media (max-width: 720px) {
+@media (max-width: 720px), (max-width: 900px) and (max-height: 500px) and (pointer: coarse) {
   [data-mobile-dialog-font-scale="true"][data-mobile-dialog-text="true"],
   [data-mobile-dialog-font-scale="true"] [data-mobile-dialog-text="true"] {
     font-size: var(--mobile-dialog-scaled-font-size) !important;

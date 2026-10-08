@@ -68,6 +68,14 @@ test("muestra fechas y macros legibles, con acciones del plan accesibles en un m
   expect(layout.bodyScrollHeight).toBeGreaterThan(layout.bodyHeight);
   expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewportHeight + 1);
   expect(layout.horizontalOverflow).toBe(false);
+  const macroCopy = await dialog.locator(".macro-control").first().evaluate((element) => {
+    const title = element.querySelector("strong").getBoundingClientRect();
+    const description = element.querySelector(".macro-control-description").getBoundingClientRect();
+    const grams = element.querySelector(".macro-control-grams").getBoundingClientRect();
+    return { titleBottom: title.bottom, descriptionTop: description.top, descriptionBottom: description.bottom, gramsTop: grams.top };
+  });
+  expect(macroCopy.descriptionTop).toBeGreaterThanOrEqual(macroCopy.titleBottom - 1);
+  expect(macroCopy.gramsTop).toBeGreaterThanOrEqual(macroCopy.descriptionBottom - 1);
   await expect(dialog.getByRole("button", { name: "Guardar alternativa", exact: true })).toBeVisible();
   const editable = dialog.locator(".nutrition-plan-dialog-body input").first();
   await editable.focus();

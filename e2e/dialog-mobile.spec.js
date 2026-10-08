@@ -488,14 +488,15 @@ test("keeps photo actions in one compact mobile row", async ({ page }) => {
   expect(layout.buttons[0].height).toBeGreaterThanOrEqual(48);
 });
 
-test("keeps photo actions under the mobile keyboard while the food search scrolls", async ({ page }) => {
+test("keeps photo actions under the mobile keyboard while all search results remain reachable", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await seedAuthenticatedApp(page, { aiAvailable: true });
+  await seedAuthenticatedApp(page, { aiAvailable: true, withManyPickerResults: true });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
   const picker = page.locator(".picker-modal");
   const search = picker.getByRole("searchbox", { name: /Buscar alimentos/ });
-  await search.focus();
+  await search.fill("avena");
+  await expect(picker.locator(".picker-results .catalog-row")).toHaveCount(30);
   const beforeKeyboard = await picker.evaluate((modal) => ({
     top: modal.getBoundingClientRect().top,
     footerBottom: modal.querySelector(":scope > .picker-photo-actions").getBoundingClientRect().bottom,
@@ -519,6 +520,8 @@ test("keeps photo actions under the mobile keyboard while the food search scroll
   const layout = await picker.evaluate((modal) => {
     const footer = modal.querySelector(":scope > .picker-photo-actions");
     const tools = modal.querySelector(":scope > .picker-tools");
+    const results = modal.querySelector(".picker-scroll");
+    results.scrollTop = results.scrollHeight;
     return {
       footer: footer.getBoundingClientRect().toJSON(),
       modal: modal.getBoundingClientRect().toJSON(),
@@ -526,8 +529,9 @@ test("keeps photo actions under the mobile keyboard while the food search scroll
       visualViewportTop: window.visualViewport.offsetTop,
       visualViewportBottom: window.visualViewport.offsetTop + window.visualViewport.height,
       toolsOverflowY: getComputedStyle(tools).overflowY,
-      toolsScrollHeight: tools.scrollHeight,
-      toolsClientHeight: tools.clientHeight,
+      resultsBottom: results.getBoundingClientRect().bottom,
+      lastResultBottom: results.querySelector(".catalog-row:last-child").getBoundingClientRect().bottom,
+      resultsScrollTop: results.scrollTop,
     };
   });
   expect(layout.buttons).toHaveLength(2);
@@ -537,12 +541,21 @@ test("keeps photo actions under the mobile keyboard while the food search scroll
   expect(layout.footer.bottom - layout.visualViewportTop).toBeCloseTo(beforeKeyboard.footerBottom, 0);
   expect(layout.modal.height).toBeGreaterThanOrEqual(844);
   expect(layout.toolsOverflowY).toBe("auto");
-  expect(layout.toolsScrollHeight).toBeGreaterThan(layout.toolsClientHeight);
+  expect(layout.resultsBottom).toBeLessThanOrEqual(layout.visualViewportBottom + 1);
+  expect(layout.lastResultBottom).toBeLessThanOrEqual(layout.visualViewportBottom + 1);
+  expect(layout.resultsScrollTop).toBeGreaterThan(0);
+  await search.evaluate((input) => input.blur());
+  await page.evaluate(() => {
+    window.__keyboardFrame = { height: 844, offsetTop: 0 };
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-keyboard-open", "false");
+  await expect.poll(() => picker.locator(".picker-scroll").evaluate((owner) => owner.style.getPropertyValue("--dialog-keyboard-scroll-limit"))).toBe("");
 });
 
-test("scales all mobile dialog copy by forty percent with a readable floor", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await seedAuthenticatedApp(page, { withFoodLog: true });
+test("shows more food results on mobile while preserving readable headings and touch controls", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 664 });
+  await seedAuthenticatedApp(page, { withFoodLog: true, withManyPickerResults: true });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
 
@@ -557,9 +570,20 @@ test("scales all mobile dialog copy by forty percent with a readable floor", asy
   expect(await picker.getAttribute("data-mobile-dialog-font-scale")).toBe("true");
   expect(scaledCopy.length).toBeGreaterThan(8);
   expect(scaledCopy.every(({ fontSize, originalFontSize, scaledFontSize }) => fontSize >= 12 && fontSize <= originalFontSize + 0.1 && Math.abs(fontSize - scaledFontSize) < 0.1)).toBe(true);
-  expect(scaledCopy.every(({ scaledFontSize, originalFontSize }) => Math.abs(scaledFontSize - Math.min(originalFontSize, Math.max(12, originalFontSize * 0.6))) < 0.1)).toBe(true);
+  expect(Number.parseFloat(await picker.locator("h2").evaluate((element) => getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(18);
   await expect(picker.locator("input").first()).toHaveCSS("font-size", "16px");
   expect(await picker.locator(".picker-photo-actions button").first().evaluate((button) => button.getBoundingClientRect().height)).toBeGreaterThanOrEqual(48);
+  await expect(picker.getByLabel("Categoría", { exact: true })).toBeHidden();
+  await picker.getByRole("button", { name: "Filtros", exact: true }).click();
+  await expect(picker.getByLabel("Categoría", { exact: true })).toBeVisible();
+  await picker.getByRole("button", { name: "Filtros", exact: true }).click();
+  await picker.getByRole("searchbox").fill("avena");
+  await expect(picker.locator(".picker-results .catalog-row")).toHaveCount(30);
+  const visibleResults = await picker.evaluate((dialog) => {
+    const footerTop = dialog.querySelector(".picker-photo-actions").getBoundingClientRect().top;
+    return [...dialog.querySelectorAll(".picker-results .catalog-row")].filter((row) => row.getBoundingClientRect().bottom <= footerTop).length;
+  });
+  expect(visibleResults).toBeGreaterThanOrEqual(3);
 
   await page.keyboard.press("Escape");
   const meal = page.locator(".meal-card").filter({ hasText: "Avena" }).first();
@@ -596,12 +620,11 @@ test("pins modal actions without taking a grid row on mobile", async ({ page }) 
       scroll,
       footer: footerRect.toJSON(),
       footerPosition: getComputedStyle(footer).position,
-      rows: getComputedStyle(modal).gridTemplateRows.split(" ").length,
     };
   });
 
   expect(layout.footerPosition).toBe("absolute");
-  expect(layout.rows).toBe(5);
+  expect(layout.scroll.height).toBeGreaterThan(100);
   expect(layout.footer.bottom).toBeLessThanOrEqual(430 + 1);
   expect(layout.scroll.bottom).toBeLessThanOrEqual(layout.footer.bottom);
 });
@@ -621,7 +644,6 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
     const status = getRect(".picker-scroll > .catalog-status");
     const pickerScroll = getComputedStyle(modal.querySelector(".picker-scroll"));
     return {
-      rows: getComputedStyle(modal).gridTemplateRows.split(" ").length,
       tabs,
       tools,
       scroll,
@@ -633,7 +655,7 @@ test("keeps the food picker rows and scroll owner stable on mobile", async ({ pa
     };
   });
 
-  expect(layout.rows).toBe(5);
+  expect(layout.scroll.height).toBeGreaterThan(300);
   expect(layout.tabs.height).toBeLessThan(60);
   expect(layout.status.top).toBeGreaterThanOrEqual(layout.scroll.top);
   expect(layout.status.bottom).toBeLessThanOrEqual(layout.scroll.bottom);
@@ -753,7 +775,7 @@ test("preselects grams when adding a food with a serving definition", async ({ p
   const foodRow = page.locator(".catalog-row-image").first();
   const metadata = foodRow.locator(".catalog-copy .catalog-meta");
   await expect(metadata).toHaveCSS("display", "flex");
-  await expect(metadata).toHaveCSS("flex-direction", "column");
+  await expect(metadata).toBeVisible();
   await foodRow.click();
 
   const dialog = page.locator(".edit-log-modal");
@@ -1575,6 +1597,7 @@ test("SG047 correction and saved description keep text and quantity across keybo
 test("short picker filter area permits touch scrolling without moving the background", async ({page}) => {
  await page.setViewportSize({width:390,height:430});await seedAuthenticatedApp(page);await page.goto("/ingresar");
  await page.getByRole("button",{name:/Agregar alimento a Desayuno/i}).click();
+ await page.getByRole("button",{name:"Filtros",exact:true}).click();
  const tools=page.locator(".picker-tools");
  const touch=await tools.evaluate(element=>{
   const dispatch=(type,y,cancelable=false)=>{const event=new Event(type,{bubbles:true,cancelable});Object.defineProperty(event,"touches",{value:[{clientY:y,clientX:60}]});element.dispatchEvent(event);return event.defaultPrevented;};

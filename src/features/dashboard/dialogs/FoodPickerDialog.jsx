@@ -31,6 +31,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [preparation, setPreparation] = useState("");
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [selected, setSelected] = useState(null);
   const [selectedPreparations, setSelectedPreparations] = useState([]);
   const [quantity, setQuantity] = useState("150");
@@ -596,7 +597,7 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
     >
         <header>
           <div>
-             <span>{ingredientOnly ? "Catálogo" : mealType.label}</span>
+             <span>{ingredientOnly ? "Catálogo" : mealType.label}{!ingredientOnly && <span className="picker-header-date"> · {readableDate(selectedDate)}</span>}</span>
             <h2 id={pickerTitleId}>{aiOnly ? "Registrar con IA" : ingredientOnly ? "Agregar ingrediente" : "Agregar comida"}</h2>
           </div>
           <button type="button" className="icon-button" aria-label="Cerrar" disabled={adding} onClick={onClose}>
@@ -629,11 +630,19 @@ function FoodPicker({ api, user, mealType, selectedDate, onClose, onDone, onOpti
           {!ingredientOnly && <button type="button" role="tab" aria-selected={tab === "RECENT"} aria-controls="picker-panel-recent" className={tab === "RECENT" ? "selected" : ""} onClick={() => changeTab("RECENT")}>Recientes</button>}
         </div>}
         {!aiOnly && <div className="picker-tools">
-          <div className="search-wrap">
-            <Icon name="search" />
-            <input className="search" type="search" enterKeyHint="search" aria-label={tab === "FOOD" ? "Buscar alimentos por nombre, marca u otros datos" : `Buscar ${tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}`} placeholder={tab === "FOOD" ? "Nombre, marca u otro dato..." : `Buscar ${tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
+          <div className="picker-search-row">
+            <div className="search-wrap">
+              <Icon name="search" />
+              <input className="search" type="search" enterKeyHint="search" aria-label={tab === "FOOD" ? "Buscar alimentos por nombre, marca u otros datos" : `Buscar ${tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}`} placeholder={tab === "FOOD" ? "Nombre, marca u otro dato..." : `Buscar ${tab === "RECIPE" ? "recetas" : tab === "MINE" ? "tus alimentos" : "comidas recientes"}...`} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
+            </div>
+            {tab === "FOOD" && (
+              <button type="button" className="icon-button picker-filter-toggle" aria-label={`Filtros${category || preparation ? " activos" : ""}`} title="Filtros de alimentos" aria-expanded={filtersExpanded} aria-controls={`${pickerTitleId}-filters`} data-active={Boolean(category || preparation)} onClick={() => setFiltersExpanded((expanded) => !expanded)}>
+                <Icon name="tune" />
+                {(category || preparation) && <span className="picker-filter-count">{Number(Boolean(category)) + Number(Boolean(preparation))}</span>}
+              </button>
+            )}
           </div>
-          {tab === "FOOD" && <div className="picker-filters"><Select label="Categoría" value={category} onChange={event => setCategory(event.target.value)} options={[{ value: "", label: "Todas" }, ...CATEGORY_OPTIONS]} /><Select label="Preparación" value={preparation} onChange={event => setPreparation(event.target.value)} options={[{ value: "", label: "Todas" }, ...PREPARATION_OPTIONS]} /></div>}
+          {tab === "FOOD" && <div className="picker-filters" id={`${pickerTitleId}-filters`} data-expanded={filtersExpanded}><Select label="Categoría" value={category} onChange={event => setCategory(event.target.value)} options={[{ value: "", label: "Todas" }, ...CATEGORY_OPTIONS]} /><Select label="Preparación" value={preparation} onChange={event => setPreparation(event.target.value)} options={[{ value: "", label: "Todas" }, ...PREPARATION_OPTIONS]} /></div>}
         </div>}
         {!aiOnly && <div className="picker-scroll" data-dialog-scroll-owner="true" id={`picker-panel-${tab.toLowerCase()}`} role="tabpanel" aria-label={tab === "FOOD" ? "Alimentos" : tab === "RECIPE" ? "Recetas" : tab === "MINE" ? "Agregados" : "Recientes"}>
           {tab === "FOOD" && normalizedQuery.length >= 2 && <p className="picker-search-hint">Coincidencias por nombre, marca y similitud del alimento.</p>}
