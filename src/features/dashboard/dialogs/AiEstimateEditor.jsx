@@ -7,12 +7,17 @@ import { categoryLabel, preparationLabel } from "../../catalog/CatalogComponents
 import { formatNumber } from "../../../utils/format";
 import { aiProposalFood, macroCalories } from "../dashboard.utils";
 import { scaleFoodNutrition } from "../../recipes/recipe.utils";
-import { decimalNumber } from "../../../utils/decimal";
+import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
 import { resizeAiEstimateItem } from "../aiEstimateAmounts";
-import { normalizeDecimalInput } from "../../../utils/decimal";
 
 function formatMacro(value) {
   return value == null || !Number.isFinite(Number(value)) ? "Sin dato" : `${formatNumber(value, 1)} g`;
+}
+
+function isValidMacro(value, max) {
+  // Resizing grams can calculate numeric macros with more precision than manual text input allows.
+  const amount = typeof value === "number" ? value : decimalNumber(value);
+  return Number.isFinite(amount) && amount >= 0 && amount <= max;
 }
 
 export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, checkingMatches = false, matchPreview = null, matchChoices = {}, setMatchChoices, onEstimateEdited, onDiscard, onConfirm, mode = "create", mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem, targetType = "RECIPE", addToDiary = false, setAddToDiary, registrationMealType, setRegistrationMealType, registrationDate, setRegistrationDate }) {
@@ -121,9 +126,9 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
   });
   const canConfirm = estimate.name.trim() && estimate.items.length && estimate.items.every((item) => item.name?.trim()
     && decimalNumber(item.estimatedGrams) > 0 && decimalNumber(item.estimatedGrams) <= 3000
-    && decimalNumber(item.proteinGrams) >= 0 && decimalNumber(item.proteinGrams) <= 500
-    && decimalNumber(item.carbsGrams) >= 0 && decimalNumber(item.carbsGrams) <= 1000
-    && decimalNumber(item.fatGrams) >= 0 && decimalNumber(item.fatGrams) <= 500)
+    && isValidMacro(item.proteinGrams, 500)
+    && isValidMacro(item.carbsGrams, 1000)
+    && isValidMacro(item.fatGrams, 500))
     && (mode === "saved" ? Boolean(mealType && logDate) : targetType === "FOOD" && !addToDiary || Boolean(registrationMealType && registrationDate));
   const title = mode === "saved" ? "Revisar estimación guardada" : estimate.name || "Revisar estimación";
   const ariaLabel = mode === "saved" ? "Revisar estimación guardada" : "Revisar estimación por foto";

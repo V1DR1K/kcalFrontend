@@ -971,10 +971,15 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   await seedAuthenticatedApp(page, { aiAvailable: true });
   let analyzeMethod = "";
   let analyzeTarget = "";
+  let reviewRequest = null;
   await page.route("**/api/nutrition/ai-estimates", async (route) => {
     analyzeMethod = route.request().method();
     analyzeTarget = (route.request().postData() || "").includes("RECIPE") ? "RECIPE" : "";
-  await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ targetType: "RECIPE", name: "Comida estimada", confidence: 86, description: "Una comida simple", assumptions: [], items: [{ name: "Avena", category: "OTHER", preparation: "UNSPECIFIED", estimatedGrams: 100, proteinGrams: 13, carbsGrams: 68, fatGrams: 7 }, { name: "Leche", category: "DAIRY", preparation: "UNSPECIFIED", estimatedGrams: 100, proteinGrams: 3, carbsGrams: 5, fatGrams: 2 }] }) });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ captureId: "capture-weight-edit", targetType: "RECIPE", name: "Comida estimada", confidence: 86, description: "Una comida simple", assumptions: [], items: [{ name: "Avena", category: "OTHER", preparation: "UNSPECIFIED", estimatedGrams: 100, proteinGrams: 13.7, carbsGrams: 68.4, fatGrams: 7.3 }, { name: "Leche", category: "DAIRY", preparation: "UNSPECIFIED", estimatedGrams: 100, proteinGrams: 3, carbsGrams: 5, fatGrams: 2 }] }) });
+  });
+  await page.route("**/api/nutrition/ai-registrations/matches", async (route) => {
+    reviewRequest = JSON.parse(route.request().postData() || "{}");
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: (reviewRequest.items || []).map((_, itemIndex) => ({ itemIndex, match: null })) }) });
   });
   await page.goto("/ingresar");
   await page.getByRole("button", { name: /Agregar alimento a Desayuno/i }).click();
@@ -1038,6 +1043,12 @@ test("keeps AI estimate actions in the editor flow on mobile", async ({ page }) 
   expect(restoredScroll.scrollTop).toBeGreaterThan(0);
   expect(restoredScroll.scrollTop).toBeLessThanOrEqual(restoredScroll.maxScroll + 1);
   expect(restoredScroll.fieldVisible).toBe(true);
+
+  await grams.fill("125");
+  const reviewButton = editor.getByRole("button", { name: "Revisar coincidencias y guardar", exact: true });
+  await expect(reviewButton).toBeEnabled();
+  await reviewButton.click();
+  await expect.poll(() => reviewRequest?.items?.[0]).toMatchObject({ estimatedGrams: 125, proteinGrams: 17.125, carbsGrams: 85.5, fatGrams: 9.125 });
 });
 
 test("registers an AI food from the diary and keeps its meal destination", async ({ page }) => {
