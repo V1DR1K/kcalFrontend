@@ -277,14 +277,39 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .history-calendar-weekdays, .history-calendar-grid { gap: var(--space-0-5); }
   .history-calendar-day { min-height: 48px; padding: var(--space-1); border-radius: var(--radius-tight); }
   .history-calendar-day small { display: none; }
+  .history-calendar-day .history-day-state,
+  .history-calendar-day .history-day-today-label,
+  .history-calendar-day > .material-symbols-outlined { display: none; }
+  .history-calendar-day { align-content: space-between; }
+  .history-calendar-day::after { content: ""; display: block; justify-self: center; width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+  .history-calendar-day[data-calendar-state="recorded"]::after { background: var(--primary); }
+  .history-calendar-day[data-calendar-state="partial"]::after { border-radius: 2px; background: #f2bd55; transform: rotate(45deg); }
+  .history-calendar-day[data-calendar-state="empty"]::after { width: 8px; height: 2px; border-radius: 1px; background: var(--muted); }
+  .history-calendar-day[data-goal-reached="true"]::after { content: "✓"; width: auto; height: auto; background: none; color: var(--primary); font-size: 9px; font-weight: 900; line-height: 1; }
+  .history-calendar-heading > div { min-width: 0; }
+  .history-calendar-heading h2 { font-size: 16px; white-space: nowrap; }
+  .history-state-legend { gap: 7px 12px; font-size: 12px; }
   .history-calendar-icon-action { width: 44px; min-height: 45px; }
 }
 
 .history-calendar-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
 .history-calendar-toolbar p,.history-state-legend,.history-data-notice { font-size:14px; color:var(--muted); }
+.history-state-legend { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:12px 0 0; }
+.history-state-legend > span { display:inline-flex; align-items:center; gap:5px; }
+.history-state-marker { display:inline-block; flex:none; width:8px; height:8px; border:1px solid var(--outline); border-radius:50%; }
+.history-state-marker-recorded { border-color:var(--primary); background:var(--primary); }
+.history-state-marker-partial { border-color:#f2bd55; border-radius:2px; background:#f2bd55; transform:rotate(45deg); }
+.history-state-marker-empty { width:8px; height:2px; border:0; border-radius:1px; background:var(--muted); }
+.history-state-marker-future { border-style:dashed; }
+.history-state-marker-today { border:2px solid var(--primary); }
+.history-state-legend .material-symbols-outlined { color:var(--primary); font-size:16px; }
 .history-page .calendar-export { min-height:44px; }
 .history-day-state,.history-day-today-label { font-size:12px; line-height:1.3; }
 .history-page .history-calendar-day { min-width:0; padding-inline:2px; gap:3px; }
 .history-calendar-day-today { outline:2px solid var(--primary); outline-offset:-2px; }
 .history-calendar-day-future { border-style:dashed; }
 .history-day-today-label { color:var(--primary); }
+
+@media (max-width: 560px) {
+  .history-state-legend { gap: 7px 12px; font-size: 12px; }
+}

@@ -90,7 +90,7 @@ export function TrainingPlanManager({ api, plans, exercises, onChanged }) {
       </div>
       <button type="button" className="training-primary training-plan-add" onClick={() => setDialog({ plan: null })}><Icon name="add" />Agregar plan</button>
       <div className="training-plan-history">
-        <div className="training-section-heading"><div><h3>Historial de planes</h3><span>Activos y archivados, separados de tus ejercicios.</span></div><span>{plans.length} planes</span></div>
+        <div className="training-section-heading"><div><h3>Historial de planes</h3><span>Activos y archivados, separados de tus ejercicios.</span></div><span>{plans.length} plan{plans.length === 1 ? "" : "es"}</span></div>
         {plans.length ? plans.map((plan) => (
           <article key={plan.id} className={plan.active ? "training-plan-history-item is-active" : "training-plan-history-item"}>
             <div><TrainingModuleBadge module={plan.module} /><strong>{plan.name}</strong><span>{plan.startDate ? readableDate(plan.startDate) : "Sin fecha de inicio"} {plan.endDate ? `· hasta ${readableDate(plan.endDate)}` : "· vigente"}</span><small>{plan.targetSessionsPerWeek} sesiones/semana · {plan.frequencyMode === "FIXED" ? "fijo" : "dinámico"}</small></div>

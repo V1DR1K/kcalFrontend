@@ -105,17 +105,36 @@ No asumir que toda expansión inline es un defecto. Corregir las que alejan el r
 
 Las causas P0 están verificadas por estructura JSX y reglas responsive. Los puntos transversales de fases 0 y 4 requieren observación visual fresca de una sesión autenticada; las imágenes históricas del repositorio no representan necesariamente la versión actual. Este plan no requiere cambios de backend ni de datos para resolver el patrón de detalle descrito.
 
-## Estado de implementación al 24-09-2026
+## Estado de implementación al 08-10-2026
 
 | Fase | Estado | Evidencia |
 | --- | --- | --- |
-| 0 | Parcial | Se revisó la estructura de las secciones, las pruebas responsive existentes y capturas actuales con datos simulados de los diálogos de Día y Recetas en iPhone y iPad emulados. Falta la matriz visual exhaustiva de todas las secciones y anchos indicada arriba. |
+| 0 | Matriz emulada completada | Playwright/WebKit revisó 14 vistas en 8 anchos (320, 390, 430, 768, 900, 901, 1024 y 1280 px), con datos simulados. Se guardaron capturas de página completa a 320 y 1024 px por vista. |
 | 1 | Implementada | `CollectionDetailDialog` usa `ModalShell`; el detalle restaura foco y posición de la lista, muestra cabecera, contenido desplazable y cierre. |
 | 2 | Implementada | Día 1 y día 20 abren el mismo diálogo; aplicar mantiene la elección Sumar/Reemplazar y editar conserva sus datos. |
 | 3 | Implementada | Recetas propias y exploradas abren detalle modal sin salto de página, con carga inmediata, error recuperable y acciones en el propio diálogo. |
-| 4 | Parcial | Se corrigió el ancho de tarjeta entre 901 y 1200 px y el texto de estado vacío. Pasan las pruebas de Historial, Cardio, Perfil, Entrenamiento y formularios móviles con datos simulados; queda la inspección visual completa de cada pantalla y sus casos densos. |
-| 5 | Parcial | Pasan las pruebas nuevas de Día/Recetas en Chromium, iPhone y iPad emulados, 71 pruebas unitarias, la compilación, el chequeo de referencias y el detector de interfaz sin hallazgos. Se verificaron visualmente cuatro capturas actuales. Falta validar en dispositivos físicos y completar la matriz visual de todos los anchos. |
+| 4 | Corregida según los defectos encontrados | Se ajustaron navegación inferior, calendarios, botones de planes de nutrición y ancho de la tarjeta de plan de entrenamiento a 320 px. Los demás flujos revisados no mostraron defectos reproducibles en esta matriz. |
+| 5 | Verificación automatizada completada | 90 verificaciones móviles pasaron y 2 casos exclusivos de escritorio se omitieron; 91 pruebas unitarias, chequeo de referencias y build pasaron. La matriz de 112 combinaciones pasó en WebKit. No se probó en un iPhone físico. |
 
-**Commits de implementación:** `3211cc9` (Día), `1e95224` (Recetas), `9ed0549` (ancho intermedio), `5cb9afa` (texto de preview), `13cc435`, `d9dc14e` y `57e1031` (pruebas transversales).
+### Resultado por vista
 
-**Para continuar:** ejecutar la matriz visual pendiente de las fases 0 y 4 con datos simulados representativos y registrar por pantalla el defecto observado, el cambio, la captura posterior y el resultado. Las pruebas en WebKit/Playwright son emulación; no equivalen a una verificación en un iPhone o Android físico.
+| Vista | Revisión y ajuste | Capturas |
+| --- | --- | --- |
+| Día de nutrición | Sin desborde; formulario y controles visibles. | `nutrition-day-320.png`, `nutrition-day-1024.png` |
+| Reutilizá tu día | Sin desborde; plurales de elementos y comidas corregidos. | `day-presets-320.png`, `day-presets-1024.png` |
+| Recetas | Sin desborde; sin cambio necesario en esta pasada. | `recipes-320.png`, `recipes-1024.png` |
+| Calendario de nutrición | Estados compactos legibles con leyenda y título mensual dentro del ancho. | `nutrition-calendar-320.png`, `nutrition-calendar-1024.png` |
+| Planes de nutrición | Acciones apiladas, sin superposición y con objetivos táctiles de 44 px. | `nutrition-plans-320.png`, `nutrition-plans-1024.png` |
+| Alimentos | Sin desborde; sin cambio necesario en esta pasada. | `foods-320.png`, `foods-1024.png` |
+| Registrar | Sin desborde; sin cambio necesario en esta pasada. | `register-320.png`, `register-1024.png` |
+| Perfil de nutrición | Sin desborde; sin cambio necesario en esta pasada. | `nutrition-profile-320.png`, `nutrition-profile-1024.png` |
+| Día de entrenamiento | Sin desborde; sin cambio necesario en esta pasada. | `training-day-320.png`, `training-day-1024.png` |
+| Calendario de entrenamiento | Título mensual dentro del ancho y contador con singular correcto. | `training-calendar-320.png`, `training-calendar-1024.png` |
+| Cardio | Sin desborde; sin cambio necesario en esta pasada. | `cardio-320.png`, `cardio-1024.png` |
+| Ejercicios | Sin desborde; sin cambio necesario en esta pasada. | `exercises-320.png`, `exercises-1024.png` |
+| Planes de entrenamiento | La tarjeta activa ahora queda dentro del panel a 320 px. | `training-plans-320.png`, `training-plans-1024.png` |
+| Perfil de entrenamiento | Sin desborde; sin cambio necesario en esta pasada. | `training-profile-320.png`, `training-profile-1024.png` |
+
+Las capturas están en `output/playwright/test-results/mobile-visual-matrix-authe-e4065-the-responsive-width-matrix-webkit-iphone/`; Playwright conserva esa carpeta como artefacto local ignorado por Git. La emulación WebKit sirve como verificación reproducible, pero no equivale a Safari en un iPhone físico. El teclado y las safe areas reales también dependen del dispositivo.
+
+**Commits de implementación previos:** `3211cc9` (Día), `1e95224` (Recetas), `9ed0549` (ancho intermedio), `5cb9afa` (texto de preview), `13cc435`, `d9dc14e` y `57e1031` (pruebas transversales). La pasada móvil posterior quedó registrada en el commit de este cambio.

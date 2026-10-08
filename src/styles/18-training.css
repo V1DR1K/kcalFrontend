@@ -710,6 +710,7 @@
 }
 
 @media (max-width: 560px) {
+  .training-plan-current { grid-template-columns: minmax(0, 1fr); }
   .training-page-intro { margin-top: -14px; }
   .training-day-focus { grid-template-columns: 1fr; gap: var(--space-4); padding: var(--space-4); }
   .training-day-focus-actions { min-width: 0; }
@@ -736,6 +737,8 @@
   .training-session-header-status { justify-content: flex-start; }
   .training-calendar-weekdays, .training-calendar-grid { gap: var(--space-0-5); }
   .training-calendar-day { min-height: 48px; padding: var(--space-1); border-radius: var(--radius-tight); }
+  .training-calendar-heading > div { min-width: 0; }
+  .training-calendar-heading h2 { font-size: 16px; white-space: nowrap; }
   .training-calendar-day > span { justify-content: center; }
   .training-calendar-day i { min-width: 16px; height: 16px; }
   .training-detail-exercises article { grid-template-columns: 1fr; gap: var(--space-1); }

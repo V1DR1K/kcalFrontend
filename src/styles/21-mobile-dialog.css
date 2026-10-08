@@ -208,5 +208,12 @@
 }
 
 @media (max-width: 360px) {
+  .mobile-nav .mobile-primary-items button { font-size: 13px; }
   .ai-estimate-item-fields { grid-template-columns: minmax(0, 1fr) 104px; }
+}
+
+@media (max-width: 560px) {
+  .plans-page .current-plan-actions { grid-column: 1 / -1; width: 100%; min-width: 0; padding-left: 0; }
+  .plans-page .current-plan-actions > .plan-history-actions { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; }
+  .plans-page .current-plan-actions .plan-history-actions > button { width: 100%; min-width: 0; min-height: 44px; white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
 }
