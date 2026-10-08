@@ -94,11 +94,22 @@ test("keeps the history calendar usable on a narrow viewport", async ({ page }) 
   const layout = await page.locator(".history-calendar-surface").evaluate((surface) => {
     const grid = surface.querySelector(".history-calendar-grid");
     const rect = surface.getBoundingClientRect();
-    return { surfaceRight: rect.right, viewport: window.innerWidth, gridOverflow: grid.scrollWidth > grid.clientWidth, actionSize: surface.querySelector(".history-calendar-icon-action").getBoundingClientRect().height };
+    const history = surface.closest(".history-page");
+    return {
+      surfaceRight: rect.right,
+      viewport: window.innerWidth,
+      gridOverflow: grid.scrollWidth > grid.clientWidth,
+      actionSize: surface.querySelector(".history-calendar-icon-action").getBoundingClientRect().height,
+      daySize: surface.querySelector(".history-calendar-day").getBoundingClientRect().height,
+      calendarTop: rect.top,
+      summaryTop: history.querySelector(".history-summary").getBoundingClientRect().top,
+    };
   });
   expect(layout.surfaceRight).toBeLessThanOrEqual(layout.viewport + 1);
   expect(layout.gridOverflow).toBe(false);
   expect(layout.actionSize).toBeGreaterThanOrEqual(44);
+  expect(layout.daySize).toBeGreaterThanOrEqual(44);
+  expect(layout.calendarTop).toBeLessThan(layout.summaryTop);
 });
 
 test("SG019–021 distinguishes zero, partial and missing records and preserves unknown exported values", async ({ page }) => {

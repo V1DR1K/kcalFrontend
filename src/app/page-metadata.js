@@ -4,7 +4,7 @@ const PAGE_METADATA = [
   { mode: "nutrition", page: "my-foods", path: "/nutricion/alimentos", title: "Alimentos", activeNavId: "scanner" },
   { mode: "nutrition", page: "recipes", path: "/nutricion/recetas", title: "Recetas", activeNavId: "scanner" },
   { mode: "nutrition", page: "configure", title: "Configurar alimento", activeNavId: "scanner" },
-  { mode: "nutrition", page: "day-presets", path: "/nutricion/plantillas", title: "Reutilizá tu día", nav: { group: "nutrition", order: 2, id: "day-presets", label: "Reutilizá tu día", mobileLabel: "Reutilizar", icon: "bookmark", primary: true, mobilePrimary: true } },
+  { mode: "nutrition", page: "day-presets", path: "/nutricion/plantillas", title: "Reutilizá tu día", nav: { group: "nutrition", order: 2, id: "day-presets", label: "Reutilizá tu día", mobileLabel: "Reutilizar", icon: "bookmark", primary: true, mobilePrimary: false } },
   { mode: "nutrition", page: "plans", path: "/nutricion/planes", title: "Planes", nav: { group: "nutrition", order: 5, id: "plans", label: "Planes", icon: "view_list", secondary: true } },
   { mode: "nutrition", page: "history", path: "/nutricion/historial", title: "Calendario", nav: { group: "nutrition", order: 1, id: "history", label: "Calendario", icon: "calendar_month", primary: true, mobilePrimary: true } },
   { mode: "nutrition", page: "profile", path: "/nutricion/perfil", title: "Perfil", nav: { group: "nutrition", order: 6, id: "profile", label: "Perfil", icon: "account_circle", account: true } },

@@ -4,6 +4,24 @@
 .picker-search-row { display: grid; min-width: 0; }
 
 @media (max-width: 720px), (max-width: 900px) and (max-height: 500px) and (pointer: coarse) {
+  .mobile-nav .mobile-primary-items button {
+    font-size: clamp(11px, 3vw, 12px);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  .history-page > .history-calendar-surface { order: 1; }
+  .history-page > .history-calendar-toolbar { order: 2; }
+  .history-page > .history-summary { order: 3; }
+  .history-calendar-surface { gap: 12px; padding: 12px; }
+  .history-calendar-heading { gap: 6px; }
+  .history-calendar-heading h2 { font-size: 18px; }
+  .history-calendar-weekdays,
+  .history-calendar-grid { gap: 2px; }
+  .history-calendar-day { min-height: 44px; padding: 2px; }
+  .history-state-legend { margin: 0; font-size: 12px; line-height: 1.4; }
+
   .app-modal-surface[class] {
     --space-1: 2.4px;
     --space-2: 4.8px;

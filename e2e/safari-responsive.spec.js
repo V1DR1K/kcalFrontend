@@ -90,6 +90,18 @@ test.describe("Safari responsive contract", () => {
       const shell = element.closest(".app-shell").getBoundingClientRect();
       const nav = element.getBoundingClientRect();
       const button = element.querySelector("button").getBoundingClientRect();
+      const buttonLabelsFit = [...element.querySelectorAll(".mobile-primary-items button")].every((control) => {
+        const text = control.lastChild;
+        if (text?.nodeType !== Node.TEXT_NODE) return true;
+        const range = document.createRange();
+        range.selectNodeContents(text);
+        const label = range.getBoundingClientRect();
+        const bounds = control.getBoundingClientRect();
+        const style = getComputedStyle(control);
+        return style.whiteSpace === "nowrap"
+          && label.left >= bounds.left + parseFloat(style.paddingLeft) - 1
+          && label.right <= bounds.right - parseFloat(style.paddingRight) + 1;
+      });
       const navStyle = getComputedStyle(element);
       const appShellHeight = getComputedStyle(document.documentElement).getPropertyValue("--app-shell-height").trim();
       const viewportBottom = window.visualViewport?.height || window.innerHeight;
@@ -100,6 +112,8 @@ test.describe("Safari responsive contract", () => {
         buttonHeight: button.height,
         navContentHeight: nav.height - parseFloat(navStyle.paddingTop) - parseFloat(navStyle.paddingBottom),
         appShellHeight,
+        buttonLabelsFit,
+        buttonCount: element.querySelectorAll(".mobile-primary-items button").length,
       };
     });
 
@@ -109,5 +123,23 @@ test.describe("Safari responsive contract", () => {
     expect(layout.buttonHeight).toBeLessThanOrEqual(48);
     expect(layout.navContentHeight).toBeLessThanOrEqual(48);
     expect(layout.appShellHeight).toBe("100vh");
+    expect(layout.buttonLabelsFit).toBe(true);
+    expect(layout.buttonCount).toBe(5);
+
+    await page.setViewportSize({ width: 320, height: 568 });
+    await expect.poll(() => mobileNav.evaluate((element) => {
+      const labels = [...element.querySelectorAll(".mobile-primary-items button")];
+      return labels.every((control) => {
+        const text = control.lastChild;
+        if (text?.nodeType !== Node.TEXT_NODE) return true;
+        const range = document.createRange();
+        range.selectNodeContents(text);
+        const label = range.getBoundingClientRect();
+        const bounds = control.getBoundingClientRect();
+        return label.left >= bounds.left - 1 && label.right <= bounds.right + 1;
+      });
+    })).toBe(true);
+    await mobileNav.getByRole("button", { name: "Más opciones" }).click();
+    await expect(page.locator(".mobile-secondary-items").getByRole("button", { name: "Reutilizá tu día", exact: true })).toBeVisible();
   });
 });
