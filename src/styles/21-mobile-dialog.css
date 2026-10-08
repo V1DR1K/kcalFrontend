@@ -21,6 +21,16 @@
   .history-calendar-grid { gap: 2px; }
   .history-calendar-day { min-height: 44px; padding: 2px; }
   .history-state-legend { margin: 0; font-size: 12px; line-height: 1.4; }
+  .history-calendar-toolbar .calendar-export { min-height: 44px; }
+  .app-modal-surface[class] .history-preview-scroll { gap: 10px; padding: 12px max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .app-modal-surface[class] .history-preview-scroll .history-calorie-summary { gap: 10px; padding: 10px; }
+  .app-modal-surface[class] .history-preview-scroll .history-calorie-ring { width: 88px; }
+  .app-modal-surface[class] .history-preview-scroll .history-macros { gap: 4px; }
+  .app-modal-surface[class] .history-preview-scroll .history-macros article { gap: 2px; padding: 8px 5px; }
+  .app-modal-surface[class] .history-preview-scroll .history-food { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 8px; padding: 8px; }
+  .app-modal-surface[class] .history-preview-scroll .history-food .food-thumb.compact { width: 32px; height: 32px; }
+  .app-modal-surface[class] .history-preview-header-actions button { min-height: 44px; }
+  .app-modal-surface[class] .history-preview-close { width: 44px; min-height: 44px; }
 
   .app-modal-surface[class] {
     --space-1: 2.4px;
@@ -77,6 +87,23 @@
   .app-modal-surface[class] textarea { font-size: 16px; }
   .app-modal-surface[class] :is(.form-grid, .nutrition-plan-dialog-body) { gap: var(--space-4); }
   .app-modal-surface[class] .nutrition-summary > span { min-height: 32px; gap: 2px; padding: 4px 5px; }
+  .ai-estimate-item-fields { grid-template-columns: minmax(0, 1fr) minmax(104px, 112px); }
+  .ai-estimate-grams-done {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    min-height: 44px;
+    padding: 0 8px;
+    border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--outline));
+    border-radius: var(--radius-control);
+    background: var(--primary-soft);
+    color: var(--primary);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+  }
 
   .app-modal-surface.picker-modal[class] {
     gap: 6px;
@@ -178,4 +205,8 @@
   html[data-keyboard-open="true"] .app-modal-surface :is(.modal-shell-content, [data-dialog-scroll-owner="true"]) {
     padding-bottom: var(--space-3);
   }
+}
+
+@media (max-width: 360px) {
+  .ai-estimate-item-fields { grid-template-columns: minmax(0, 1fr) 104px; }
 }

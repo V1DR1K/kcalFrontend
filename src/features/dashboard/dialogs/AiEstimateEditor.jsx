@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { CATEGORY_OPTIONS, PREPARATION_OPTIONS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
 import { Input, Select } from "../../../components/FormControls";
@@ -23,12 +23,14 @@ function isValidMacro(value, max) {
 export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, checkingMatches = false, matchPreview = null, matchChoices = {}, setMatchChoices, onEstimateEdited, onDiscard, onConfirm, mode = "create", mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem, targetType = "RECIPE", addToDiary = false, setAddToDiary, registrationMealType, setRegistrationMealType, registrationDate, setRegistrationDate }) {
   const matchReviewRef = useRef(null);
   const foodReviewSectionRef = useRef(null);
+  const gramsInputPrefix = useId().replace(/:/g, "");
   const [catalogItemIndex, setCatalogItemIndex] = useState(null);
   const [catalogCategory, setCatalogCategory] = useState("OTHER");
   const [catalogPreparation, setCatalogPreparation] = useState("UNSPECIFIED");
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [catalogMessage, setCatalogMessage] = useState("");
   const [refinementOpen, setRefinementOpen] = useState(false);
+  const [focusedGramsIndex, setFocusedGramsIndex] = useState(null);
   const previewByIndex = new Map((matchPreview?.items || []).map((item) => [item.itemIndex, item.match]));
   const matchPreviewItems = matchPreview?.items || [];
   const pendingMatchChoices = matchPreviewItems.filter(({ itemIndex, match }) =>
@@ -200,7 +202,13 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                 </div>
                 <div className="ai-estimate-item-fields">
                   <Input label="Alimento" value={item.name} disabled={refining || saving} onChange={(event) => updateItemName(index, event.target.value)} />
-                  <label className="ai-estimate-grams-field"><span>Gramos</span><span className="ai-estimate-grams-input"><input aria-label="Gramos" type="text" disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onChange={(event) => updateItem(index, event.target.value)} /><span>g</span></span></label>
+                  <div className={`ai-estimate-grams-field ${focusedGramsIndex === index ? "is-editing" : ""}`}>
+                    <span className="ai-estimate-grams-label">
+                      <label htmlFor={`${gramsInputPrefix}-grams-${index}`}>Gramos</label>
+                      {focusedGramsIndex === index && <button type="button" className="ai-estimate-grams-done" aria-label="Listo, ocultar teclado" onPointerDown={(event) => event.preventDefault()} onClick={() => document.activeElement?.blur()}>Listo</button>}
+                    </span>
+                    <span className="ai-estimate-grams-input"><input id={`${gramsInputPrefix}-grams-${index}`} aria-label="Gramos" type="text" disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={() => setFocusedGramsIndex(index)} onBlur={() => setFocusedGramsIndex((current) => current === index ? null : current)} onChange={(event) => updateItem(index, event.target.value)} /><span>g</span></span>
+                  </div>
                 </div>
                 {mode === "create" && matchPreview && (() => {
                   const match = previewByIndex.get(index);

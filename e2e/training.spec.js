@@ -15,7 +15,7 @@ async function openTrainingSection(page, label) {
   }
 }
 
-async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = false, hasPlan = true, totalMinutes = 90 } = {}) {
+async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = false, hasPlan = true, totalMinutes = 90, calendarDays = [] } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -27,7 +27,7 @@ async function seedTrainingApp(page, { planned = false, exerciseOnSecondPage = f
     let body = {};
     if (url.includes("/api/auth/me")) body = { id: 1, fullName: "Persona E2E", email: "e2e@example.com" };
     if (url.includes("/api/training/dashboard")) body = { date: "2026-08-26", plans: hasPlan ? [{ id: 1, name: "Fuerza base", module: "GYM", frequencyMode: "FIXED", targetSessionsPerWeek: 3, active: true }] : [], recentSession: { id: 1, module: "GYM", date: "2026-08-26", title: "Fuerza base", durationMinutes: 45, exercises: [{ exerciseName: "Sentadilla", sets: [{ repetitions: 5, weightKg: 80 }] }] }, weeklySummary: { sessionCount: 2, totalMinutes, totalSets: 18 }, exercises: [{ id: 1, name: "Sentadilla", module: "GYM", global: true, editable: false, active: true }], plannedPlans: planned ? [{ planId: 1, planDayId: 11, module: "GYM", planDayName: "Fuerza", recommended: true }] : [] };
-    if (url.includes("/api/training/calendar")) body = [];
+    if (url.includes("/api/training/calendar")) body = calendarDays;
     if (url.endsWith("/api/training/sessions")) body = { id: 20, version: 1, status: "IN_PROGRESS", module: "GYM", date: "2026-08-26", exercises: [] };
     if (url.includes("/api/training/sessions/20/complete")) body = { id: 20, version: 2, status: "COMPLETED", module: "GYM", date: "2026-08-26", exercises: [] };
     if (url.includes("/api/training/plans/1")) body = { id: 1, name: "Fuerza base", module: "GYM", frequencyMode: "FIXED", targetSessionsPerWeek: 3, days: [{ id: 11, name: "Fuerza", dayOfWeek: "WEDNESDAY", exercises: [{ id: 101, exerciseId: 1, exerciseName: "Sentadilla", targetSets: 4, targetRepetitions: 5, targetWeightKg: 80 }] }] };
@@ -72,7 +72,8 @@ test("swaps the nutrition shell for training and restores nutrition with browser
   await page.goto("/ingresar");
   await enterTraining(page);
   await expect(page.getByRole("heading", { name: "Día", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Nutrición", exact: true }).first()).toBeVisible();
+  const nutritionSwitchLabel = compactNavigation(page) ? "Nutri" : "Nutrición";
+  await expect(page.getByRole("button", { name: nutritionSwitchLabel, exact: true }).first()).toBeVisible();
   if (compactNavigation(page)) {
     await page.getByRole("button", { name: "Más opciones" }).click();
     await expect(page.locator(".mobile-secondary-items").getByRole("button", { name: "Ejercicios", exact: true })).toBeVisible();
@@ -85,12 +86,62 @@ test("swaps the nutrition shell for training and restores nutrition with browser
   await expect(page.getByText("Planes guardados", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Últimos 7 días", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Última sesión", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Nutrición", exact: true }).first().click();
+  await page.getByRole("button", { name: nutritionSwitchLabel, exact: true }).first().click();
   await expect(page.locator(".app-shell")).toHaveAttribute("data-app-mode", "nutrition");
   await expect(page.locator(".dashboard-page")).toBeVisible();
   await page.goBack();
   await expect(page.locator(".app-shell")).toHaveAttribute("data-app-mode", "training");
   await expect(page.getByRole("heading", { name: "Últimos 7 días", exact: true })).toBeVisible();
+});
+
+test("keeps training calendar states and day details readable on a narrow iPhone", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "webkit-iphone", "Narrow mobile calendar contract");
+  await page.setViewportSize({ width: 320, height: 568 });
+  const now = new Date();
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  await seedTrainingApp(page, { calendarDays: [{ date, sessions: [], plannedPlans: [{ planId: 1, planDayId: 11, module: "GYM", planName: "Fuerza base", planDayName: "Fuerza", sessionStatus: "IN_PROGRESS" }] }] });
+  await page.goto("/ingresar");
+  await enterTraining(page);
+  await page.getByRole("button", { name: "Agenda", exact: true }).click();
+
+  const calendar = page.locator(".training-calendar-surface");
+  await expect(calendar).toBeVisible();
+  await expect(calendar.locator(".training-calendar-legend")).toBeVisible();
+  const metrics = await calendar.evaluate((surface) => {
+    const grid = surface.querySelector(".training-calendar-grid");
+    const day = surface.querySelector('[data-calendar-state="in-progress"]');
+    const legend = surface.querySelector(".training-calendar-legend");
+    return {
+      viewportWidth: document.documentElement.clientWidth,
+      pageWidth: document.documentElement.scrollWidth,
+      gridWidth: grid.scrollWidth,
+      gridClientWidth: grid.clientWidth,
+      dayHeight: day.getBoundingClientRect().height,
+      legendFontSize: Number.parseFloat(getComputedStyle(legend.firstElementChild).fontSize),
+      labels: [...legend.children].map((item) => item.textContent.trim()),
+    };
+  });
+  expect(metrics.pageWidth).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.gridWidth).toBeLessThanOrEqual(metrics.gridClientWidth + 1);
+  expect(metrics.dayHeight).toBeGreaterThanOrEqual(44);
+  expect(metrics.legendFontSize).toBeGreaterThanOrEqual(12);
+  expect(metrics.labels).toEqual(["En proceso", "Finalizado", "Planificado", "Registrado"]);
+
+  await calendar.getByRole("button", { name: /En proceso/ }).click();
+  const detail = page.locator(".training-session-detail");
+  await expect(detail).toBeVisible();
+  await expect(detail).toHaveAttribute("data-mobile-dialog-font-scale", "true");
+  await expect(detail.locator(".modal-shell-header .icon-button")).toBeVisible();
+  const dialogMetrics = await detail.evaluate((dialog) => ({
+    width: dialog.getBoundingClientRect().width,
+    scrollWidth: dialog.scrollWidth,
+    viewportWidth: document.documentElement.clientWidth,
+    footerBottom: dialog.querySelector(":scope > footer").getBoundingClientRect().bottom,
+    viewportHeight: window.visualViewport?.height || window.innerHeight,
+  }));
+  expect(dialogMetrics.scrollWidth).toBeLessThanOrEqual(dialogMetrics.width + 1);
+  expect(dialogMetrics.width).toBeLessThanOrEqual(dialogMetrics.viewportWidth + 1);
+  expect(dialogMetrics.footerBottom).toBeLessThanOrEqual(dialogMetrics.viewportHeight + 1);
 });
 
 test("opens a gym session editor from the training dashboard", async ({ page }) => {

@@ -367,6 +367,18 @@
 .training-calendar-day > span { display: flex; align-items: end; justify-content: space-between; gap: var(--space-1); }
 .training-calendar-day i { display: grid; place-items: center; min-width: 18px; height: 18px; border-radius: var(--radius-pill); background: var(--training-primary); color: var(--training-on-primary); font-size: var(--type-caption); font-style: normal; font-weight: 900; }
 .training-calendar-day small { overflow: hidden; color: var(--training-primary-hover); font-size: var(--type-caption); font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.training-calendar-day[data-calendar-state="in-progress"] { --training-calendar-state: var(--training-primary); }
+.training-calendar-day[data-calendar-state="completed"] { --training-calendar-state: var(--training-primary-hover); }
+.training-calendar-day[data-calendar-state="planned"] { --training-calendar-state: var(--warning); }
+.training-calendar-day[data-calendar-state="recorded"] { --training-calendar-state: var(--training-muted); }
+.training-calendar-day[data-calendar-state]:not([data-calendar-state="empty"]) { border-bottom-color: var(--training-calendar-state); }
+.training-calendar-day small { color: var(--training-calendar-state, var(--training-muted)); }
+.training-calendar-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2) var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--training-border); color: var(--training-muted); }
+.training-calendar-legend > span { display: inline-flex; align-items: center; gap: var(--space-1-5); min-height: 24px; font-size: var(--type-meta); line-height: 1.3; }
+.training-calendar-legend i { width: 9px; height: 9px; flex: 0 0 auto; border-radius: var(--radius-pill); background: var(--training-muted); }
+.training-calendar-legend i[data-state="in-progress"] { background: var(--training-primary); }
+.training-calendar-legend i[data-state="completed"] { background: var(--training-primary-hover); }
+.training-calendar-legend i[data-state="planned"] { background: var(--warning); }
 .training-calendar-day-active { border-color: color-mix(in srgb, var(--training-primary) 54%, var(--training-border)); background: color-mix(in srgb, var(--training-primary) 11%, var(--training-surface)); }
 
 .training-session-detail { width: min(560px, 100%); }
@@ -691,7 +703,8 @@
   .training-start-card { min-height: 0; }
   .training-calendar-surface, .training-week-summary, .training-recent-surface, .training-routines-surface { padding: var(--space-4); }
   .training-calendar-day { min-height: 62px; padding: var(--space-1-5); }
-  .training-calendar-day small { display: none; }
+  .training-calendar-day small { display: grid; place-items: center; width: 8px; height: 8px; border-radius: var(--radius-pill); font-size: 0; line-height: 0; }
+  .training-calendar-day small::before { width: 100%; height: 100%; border-radius: inherit; background: currentColor; content: ""; }
   .training-session-editor .modal-shell-content, .training-routine-editor .modal-shell-content, .training-exercise-editor .modal-shell-content, .training-session-detail .modal-shell-content { min-height: 0; }
   .training-editor-form, .training-session-detail-content { padding: var(--space-4); }
 }

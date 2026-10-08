@@ -11,7 +11,7 @@ function dateKey(day) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-async function seedHistoryApp(page, { startOnHistory = false } = {}) {
+async function seedHistoryApp(page, { startOnHistory = false, withManyHistoryItems = false } = {}) {
   await page.addInitScript(() => {
     localStorage.removeItem("scalegrams.token");
     localStorage.removeItem("scalegrams.refreshToken");
@@ -41,20 +41,25 @@ async function seedHistoryApp(page, { startOnHistory = false } = {}) {
         })),
       };
     }
-    if (requestUrl.pathname === "/api/nutrition/dashboard") body = {
-      date: requestUrl.searchParams.get("date"),
-      caloriesConsumed: 1850,
-      calorieGoal: 2000,
-      macros: [
-        { key: "PROTEIN", label: "Proteínas", consumed: 120, goal: 140 },
-        { key: "CARBS", label: "Carbohidratos", consumed: 180, goal: 220 },
-        { key: "FAT", label: "Grasas", consumed: 55, goal: 65 },
-      ],
-      meals: [{ mealType: "BREAKFAST", label: "Desayuno", calories: 400, items: [{ id: 101, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 20, carbsGrams: 50, fatGrams: 8, food: { name: "Avena", category: "CEREAL" } }] }],
-      waterConsumed: 1.5,
-      waterGoal: 2,
-      plan: { name: "Plan base" },
-    };
+    if (requestUrl.pathname === "/api/nutrition/dashboard") {
+      const items = withManyHistoryItems
+        ? Array.from({ length: 20 }, (_, index) => ({ id: 101 + index, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 20, carbsGrams: 50, fatGrams: 8, food: { name: `Avena ${index + 1}`, category: "CEREAL" } }))
+        : [{ id: 101, itemType: "FOOD", quantity: 100, unit: "GRAM", calories: 400, proteinGrams: 20, carbsGrams: 50, fatGrams: 8, food: { name: "Avena", category: "CEREAL" } }];
+      body = {
+        date: requestUrl.searchParams.get("date"),
+        caloriesConsumed: 1850,
+        calorieGoal: 2000,
+        macros: [
+          { key: "PROTEIN", label: "Proteínas", consumed: 120, goal: 140 },
+          { key: "CARBS", label: "Carbohidratos", consumed: 180, goal: 220 },
+          { key: "FAT", label: "Grasas", consumed: 55, goal: 65 },
+        ],
+        meals: [{ mealType: "BREAKFAST", label: "Desayuno", calories: 400, items }],
+        waterConsumed: 1.5,
+        waterGoal: 2,
+        plan: { name: "Plan base" },
+      };
+    }
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
 }
@@ -110,6 +115,58 @@ test("keeps the history calendar usable on a narrow viewport", async ({ page }) 
   expect(layout.actionSize).toBeGreaterThanOrEqual(44);
   expect(layout.daySize).toBeGreaterThanOrEqual(44);
   expect(layout.calendarTop).toBeLessThan(layout.summaryTop);
+});
+
+test("keeps the mobile history detail compact while its meal list scrolls independently", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "webkit-iphone", "Narrow iPhone dialog contract");
+  await page.setViewportSize({ width: 320, height: 568 });
+  await seedHistoryApp(page, { startOnHistory: true, withManyHistoryItems: true });
+  await page.goto("/ingresar");
+  const detailRequest = page.waitForRequest((request) => request.url().includes(`/api/nutrition/dashboard?date=${dateKey(3)}`));
+  await page.locator(`[data-history-date="${dateKey(3)}"]`).click();
+  await detailRequest;
+
+  const dialog = page.locator(".history-preview");
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute("data-mobile-dialog-font-scale", "true");
+  const scroll = dialog.locator(".history-preview-scroll");
+  await expect(scroll).toHaveCSS("overflow-y", "auto");
+  const beforeScroll = await dialog.evaluate((surface) => {
+    const body = surface.querySelector(".history-preview-scroll");
+    return {
+      viewportWidth: document.documentElement.clientWidth,
+      pageWidth: document.documentElement.scrollWidth,
+      width: surface.getBoundingClientRect().width,
+      scrollWidth: surface.scrollWidth,
+      contentWidth: body.clientWidth,
+      contentScrollWidth: body.scrollWidth,
+      contentHeight: body.clientHeight,
+      contentScrollHeight: body.scrollHeight,
+      contentPadding: Number.parseFloat(getComputedStyle(body).paddingLeft),
+      titleSize: Number.parseFloat(getComputedStyle(surface.querySelector("h2")).fontSize),
+      closeHeight: surface.querySelector(".history-preview-close").getBoundingClientRect().height,
+      exportHeight: surface.querySelector(".history-day-export").getBoundingClientRect().height,
+    };
+  });
+  expect(beforeScroll.pageWidth).toBeLessThanOrEqual(beforeScroll.viewportWidth + 1);
+  expect(beforeScroll.scrollWidth).toBeLessThanOrEqual(beforeScroll.width + 1);
+  expect(beforeScroll.contentScrollWidth).toBeLessThanOrEqual(beforeScroll.contentWidth + 1);
+  expect(beforeScroll.contentScrollHeight).toBeGreaterThan(beforeScroll.contentHeight);
+  expect(beforeScroll.contentPadding).toBe(12);
+  expect(beforeScroll.titleSize).toBeGreaterThanOrEqual(18);
+  expect(beforeScroll.closeHeight).toBeGreaterThanOrEqual(44);
+  expect(beforeScroll.exportHeight).toBeGreaterThanOrEqual(44);
+
+  const end = await scroll.evaluate((body) => {
+    body.scrollTop = body.scrollHeight;
+    return {
+      scrollTop: body.scrollTop,
+      bodyBottom: body.getBoundingClientRect().bottom,
+      lastFoodBottom: body.querySelector(".history-meal:last-child .history-food:last-child").getBoundingClientRect().bottom,
+    };
+  });
+  expect(end.scrollTop).toBeGreaterThan(0);
+  expect(end.lastFoodBottom).toBeLessThanOrEqual(end.bodyBottom + 1);
 });
 
 test("SG019–021 distinguishes zero, partial and missing records and preserves unknown exported values", async ({ page }) => {

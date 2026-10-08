@@ -141,5 +141,19 @@ test.describe("Safari responsive contract", () => {
     })).toBe(true);
     await mobileNav.getByRole("button", { name: "Más opciones" }).click();
     await expect(page.locator(".mobile-secondary-items").getByRole("button", { name: "Reutilizá tu día", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await mobileNav.getByRole("button", { name: "Entreno", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Día", exact: true })).toBeVisible();
+    await expect(mobileNav.getByRole("button", { name: "Nutri", exact: true })).toBeVisible();
+    await page.setViewportSize({ width: 320, height: 568 });
+    await expect.poll(() => mobileNav.evaluate((element) => [...element.querySelectorAll(".mobile-primary-items button")].every((control) => {
+      const text = control.lastChild;
+      if (text?.nodeType !== Node.TEXT_NODE) return true;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      const label = range.getBoundingClientRect();
+      const bounds = control.getBoundingClientRect();
+      return label.left >= bounds.left - 1 && label.right <= bounds.right + 1;
+    }))).toBe(true);
   });
 });

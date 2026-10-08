@@ -15,7 +15,7 @@ const PAGE_METADATA = [
   { mode: "training", page: "plans", path: "/entrenamiento/planes", title: "Planes", nav: { group: "training", order: 4, id: "plans", label: "Planes", icon: "view_list", secondary: true } },
   { mode: "training", page: "profile", path: "/entrenamiento/perfil", title: "Perfil", nav: { group: "training", order: 6, id: "profile", label: "Perfil", icon: "account_circle", account: true } },
   { mode: "nutrition", nav: { group: "nutrition", order: 4, id: "training", label: "Entreno", mobileLabel: "Entreno", icon: "training_section", mode: "training", primary: true, mobilePrimary: true } },
-  { mode: "training", nav: { group: "training", order: 3, id: "nutrition", label: "Nutrición", mobileLabel: "Nutrición", icon: "nutrition_section", mode: "nutrition", primary: true, mobilePrimary: true } },
+  { mode: "training", nav: { group: "training", order: 3, id: "nutrition", label: "Nutrición", mobileLabel: "Nutri", icon: "nutrition_section", mode: "nutrition", primary: true, mobilePrimary: true } },
 ];
 
 export const APP_ROUTES = PAGE_METADATA

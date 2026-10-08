@@ -1619,3 +1619,50 @@ test("short picker filter area permits touch scrolling without moving the backgr
  const category=page.locator(".picker-modal").getByLabel("Categoría",{exact:true});await category.focus();
  await expect.poll(()=>category.evaluate(element=>{const control=element.getBoundingClientRect(),owner=element.closest(".picker-tools").getBoundingClientRect();return control.top>=owner.top-1&&control.bottom<=owner.bottom+1;})).toBe(true);
 });
+
+test("keeps the date picker scrollable and its controls tappable on a short iPhone", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "webkit-iphone", "Short iPhone date-picker contract");
+  await page.setViewportSize({ width: 320, height: 430 });
+  await seedAuthenticatedApp(page);
+  await page.goto("/ingresar");
+  await page.locator(".date-picker-trigger").click();
+
+  const dialog = page.locator(".date-picker-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute("data-mobile-dialog-font-scale", "true");
+  const layout = await dialog.evaluate((surface) => {
+    const bounds = surface.getBoundingClientRect();
+    const days = [...surface.querySelectorAll(".date-picker-grid button")];
+    const monthControls = [...surface.querySelectorAll(".date-picker-month-actions button")];
+    const grid = surface.querySelector(".date-picker-grid");
+    return {
+      viewportWidth: document.documentElement.clientWidth,
+      pageWidth: document.documentElement.scrollWidth,
+      left: bounds.left,
+      right: bounds.right,
+      bottom: bounds.bottom,
+      visibleHeight: window.visualViewport?.height || window.innerHeight,
+      gridWidth: grid.scrollWidth,
+      gridClientWidth: grid.clientWidth,
+      dayTargetHeight: Math.min(...days.map((day) => day.getBoundingClientRect().height)),
+      monthTargetHeight: Math.min(...monthControls.map((button) => button.getBoundingClientRect().height)),
+    };
+  });
+  expect(layout.pageWidth).toBeLessThanOrEqual(layout.viewportWidth + 1);
+  expect(layout.left).toBeGreaterThanOrEqual(-1);
+  expect(layout.right).toBeLessThanOrEqual(layout.viewportWidth + 1);
+  expect(layout.bottom).toBeLessThanOrEqual(layout.visibleHeight + 1);
+  expect(layout.gridWidth).toBeLessThanOrEqual(layout.gridClientWidth + 1);
+  expect(layout.dayTargetHeight).toBeGreaterThanOrEqual(44);
+  expect(layout.monthTargetHeight).toBeGreaterThanOrEqual(44);
+
+  const lastDay = dialog.locator(".date-picker-grid button").last();
+  await lastDay.scrollIntoViewIfNeeded();
+  const lastDayBounds = await lastDay.evaluate((button) => {
+    const bounds = button.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    return { top: bounds.top, bottom: bounds.bottom, viewportTop: viewport?.offsetTop || 0, viewportBottom: (viewport?.offsetTop || 0) + (viewport?.height || window.innerHeight) };
+  });
+  expect(lastDayBounds.top).toBeGreaterThanOrEqual(lastDayBounds.viewportTop - 1);
+  expect(lastDayBounds.bottom).toBeLessThanOrEqual(lastDayBounds.viewportBottom + 1);
+});
