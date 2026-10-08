@@ -24,6 +24,7 @@ async function seedProfileApp(page, { withPlanHistory = false } = {}) {
 }
 
 test("permite modificar la altura desde Perfil", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await seedProfileApp(page);
   await page.addInitScript(() => history.replaceState({ scalegramsMode: "nutrition", scalegramsPage: "profile" }, ""));
   await page.goto("/ingresar");
@@ -31,7 +32,15 @@ test("permite modificar la altura desde Perfil", async ({ page }) => {
 
   const height = page.getByLabel("Altura (cm)");
   await expect(height).toHaveValue("175");
-  await height.fill("182.5");
+  await expect(height).toHaveAttribute("type", "text");
+  await expect(height).toHaveAttribute("inputmode", "decimal");
+  await height.focus();
+  await expect.poll(() => height.evaluate((element) => [element.selectionStart, element.selectionEnd])).toEqual([0, 3]);
+  await height.fill("0");
+  expect(await height.evaluate((element) => element.checkValidity())).toBe(false);
+  await height.fill("182,5");
+  await expect(height).toHaveValue("182.5");
+  expect(await height.evaluate((element) => element.checkValidity())).toBe(true);
   const request = page.waitForRequest((value) => value.method() === "PATCH" && new URL(value.url()).pathname === "/api/profile");
   await page.getByRole("button", { name: "Guardar altura", exact: true }).click();
 
@@ -115,6 +124,17 @@ test("SG003/039 permite porcentajes transitorios y exige confirmar el impacto", 
   await page.addInitScript(() => history.replaceState({ scalegramsMode: "nutrition", scalegramsPage: "plans" }, ""));
   await page.goto("/ingresar");
   await page.getByRole("button", { name: "Agregar plan", exact: true }).click();
+  const dailyCalories = page.getByLabel("Calorías por día", { exact: true });
+  await expect(dailyCalories).toHaveAttribute("type", "text");
+  await expect(dailyCalories).toHaveAttribute("inputmode", "numeric");
+  await dailyCalories.focus();
+  const caloriesLength = (await dailyCalories.inputValue()).length;
+  await expect.poll(() => dailyCalories.evaluate((element) => [element.selectionStart, element.selectionEnd])).toEqual([0, caloriesLength]);
+  const originalCalories = await dailyCalories.inputValue();
+  await dailyCalories.fill(`${Number(originalCalories) + 0.5}`);
+  expect(await dailyCalories.evaluate((element) => element.checkValidity())).toBe(false);
+  await dailyCalories.fill(originalCalories);
+  expect(await dailyCalories.evaluate((element) => element.checkValidity())).toBe(true);
   await page.getByLabel("Proteínas (%)", { exact: true }).fill("35");
   await expect(page.getByRole("button", { name: "Guardar alternativa", exact: true })).toBeDisabled();
   await expect(page.getByLabel("Proteínas (%)", { exact: true })).toHaveValue("35");

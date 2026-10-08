@@ -100,6 +100,10 @@ test("keeps the consumed quantity editor anchored while the mobile keyboard open
 
   const quantity = dialog.getByLabel("Cantidad");
   await quantity.focus();
+  await expect(quantity).toHaveAttribute("type", "text");
+  await expect(quantity).toHaveAttribute("inputmode", "decimal");
+  const originalQuantityLength = (await quantity.inputValue()).length;
+  await expect.poll(() => quantity.evaluate((element) => [element.selectionStart, element.selectionEnd])).toEqual([0, originalQuantityLength]);
   await quantity.fill("42,5");
   await expect(quantity).toHaveValue("42.5");
   const originalDialogBounds = await dialog.evaluate((element) => ({
