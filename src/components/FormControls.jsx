@@ -1,16 +1,48 @@
 import React from "react";
 import { normalizeDecimalInput } from "../utils/decimal";
 
-export function Input({ label, selectOnFocus = false, numericOnly = false, decimal = false, error, onFocus, ...props }) {
+export function useSelectAllOnFocus(enabled = true) {
+  const pointerStartedFocused = React.useRef(false);
+  const onPointerDown = React.useCallback((event) => {
+    pointerStartedFocused.current = document.activeElement === event.currentTarget;
+  }, []);
+  const onFocus = React.useCallback((event) => {
+    if (!enabled) return;
+    const target = event.currentTarget;
+    if (typeof target.select !== "function") return;
+    window.requestAnimationFrame(() => {
+      if (!target.isConnected || document.activeElement !== target) return;
+      try { target.select(); } catch { /* Some native input types do not expose a text selection. */ }
+    });
+  }, [enabled]);
+  const onPointerUp = React.useCallback((event) => {
+    if (!enabled || pointerStartedFocused.current) return;
+    const target = event.currentTarget;
+    if (typeof target.select !== "function") return;
+    event.preventDefault();
+    try { target.select(); } catch { /* Some native input types do not expose a text selection. */ }
+  }, [enabled]);
+  return { onFocus, onPointerDown, onPointerUp };
+}
+
+function hasFractionalStep(step) {
+  if (step === "any") return true;
+  if (step == null || step === "") return false;
+  const value = Number(step);
+  return Number.isFinite(value) && !Number.isInteger(value);
+}
+
+export function Input({ label, selectOnFocus, numericOnly = false, decimal = false, error, onFocus, onPointerDown, onPointerUp, ...props }) {
   const errorId = React.useId();
-  const isNumeric = numericOnly || decimal || props.type === "number";
+  const isNumeric = numericOnly || decimal || props.type === "number" || props.name === "barcode" || ["numeric", "decimal"].includes(props.inputMode);
+  const supportsDecimals = decimal || props.inputMode === "decimal" || hasFractionalStep(props.step);
   const effectiveType = decimal ? "text" : props.type;
-  const inputMode = props.inputMode || (props.name === "barcode" ? "numeric" : isNumeric ? "decimal" : undefined);
-  const shouldSelect = selectOnFocus && !["file", "checkbox", "radio", "date", "datetime-local", "time", "month", "week", "range", "color"].includes(effectiveType);
+  const inputMode = props.inputMode || (props.name === "barcode" ? "numeric" : isNumeric ? (supportsDecimals ? "decimal" : "numeric") : undefined);
+  const shouldSelect = selectOnFocus ?? isNumeric;
+  const selectionHandlers = useSelectAllOnFocus(shouldSelect && !["file", "checkbox", "radio", "date", "datetime-local", "time", "month", "week", "range", "color"].includes(effectiveType));
   const selectValue = (event) => {
     onFocus?.(event);
-    const target = event.currentTarget;
-    if (shouldSelect) requestAnimationFrame(() => target?.select());
+    selectionHandlers.onFocus(event);
   };
   const blockNonNumericKeys = (event) => {
     if (isNumeric && !decimal && ["e", "E"].includes(event.key)) event.preventDefault();
@@ -22,7 +54,7 @@ export function Input({ label, selectOnFocus = false, numericOnly = false, decim
     }
     props.onInput?.(event);
   };
-  return <label className="field"><span>{label}</span><input {...props} aria-label={props["aria-label"] || label} aria-describedby={[props["aria-describedby"], error ? errorId : null].filter(Boolean).join(" ") || undefined} aria-invalid={Boolean(error)} type={effectiveType} inputMode={inputMode} onFocus={selectValue} onKeyDown={blockNonNumericKeys} onInput={cleanNumericInput} onPointerUp={(event) => { if (shouldSelect) { event.preventDefault(); event.currentTarget.select(); } props.onPointerUp?.(event); }} />{error && <span id={errorId} className="form-error" role="alert">{error}</span>}</label>;
+  return <label className="field"><span>{label}</span><input {...props} aria-label={props["aria-label"] || label} aria-describedby={[props["aria-describedby"], error ? errorId : null].filter(Boolean).join(" ") || undefined} aria-invalid={Boolean(error)} type={effectiveType} inputMode={inputMode} onFocus={selectValue} onPointerDown={(event) => { selectionHandlers.onPointerDown(event); onPointerDown?.(event); }} onPointerUp={(event) => { selectionHandlers.onPointerUp(event); onPointerUp?.(event); }} onKeyDown={blockNonNumericKeys} onInput={cleanNumericInput} />{error && <span id={errorId} className="form-error" role="alert">{error}</span>}</label>;
 }
 
 export function Select({ label, options, error, ...props }) {

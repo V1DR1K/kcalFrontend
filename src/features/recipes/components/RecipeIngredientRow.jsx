@@ -1,5 +1,6 @@
 import React from "react";
 import { Icon } from "../../../components/Icon";
+import { useSelectAllOnFocus } from "../../../components/FormControls";
 import { NutritionSummary } from "../../../components/NutritionSummary";
 import { decimalNumber, normalizeDecimalInput } from "../../../utils/decimal";
 import { formatNumber, formatQuantity, formatNutrient } from "../../../utils/format";
@@ -7,6 +8,7 @@ import { foodPreparationSuffix, scaleFoodNutrition, scaleRecipeNutrition } from 
 import { FoodThumb } from "../../catalog/CatalogComponents";
 
 export function RecipeIngredientRow({ ingredient, index, locked = false, onChange, onRemove }) {
+  const quantityInputSelection = useSelectAllOnFocus();
   const referencedItem = ingredient?.food || ingredient?.recipe || ingredient || {};
   const isRecipe = Boolean(ingredient?.recipe || ingredient?.recipeId || ingredient?.type === "RECIPE");
   const name = ingredient?.name || referencedItem.name || (isRecipe ? "Receta" : "Alimento");
@@ -31,6 +33,7 @@ export function RecipeIngredientRow({ ingredient, index, locked = false, onChang
           <label className="daily-recipe-ingredient-quantity">
             <span className="sr-only">Cantidad de {name} en gramos</span>
             <input
+              {...quantityInputSelection}
               aria-label={`Cantidad de ${name} en gramos`}
               type="text"
               inputMode="decimal"

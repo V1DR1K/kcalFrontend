@@ -1,4 +1,4 @@
-import { Select } from "../../components/FormControls";
+import { Select, useSelectAllOnFocus } from "../../components/FormControls";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_MEALS } from "../../config/app";
 import { Icon } from "../../components/Icon";
@@ -47,6 +47,7 @@ function DayPresetApplyDialog({ preset, currentItems, selectedDate, onClose, onA
 }
 
 function PresetEditorDialog({ api, user, editor, mealTypes, onClose, onSaved }) {
+  const quantityInputSelection = useSelectAllOnFocus();
   const [draft, setDraft] = useState(() => ({ description: "", ...editor, items: (editor.items || []).map((item) => ({ ...item })) }));
   const [pickerMeal, setPickerMeal] = useState(null); const [saving, setSaving] = useState(false); const [error, setError] = useState(""); const isNew = !draft.id;
   function updateItem(index, field, value) {
@@ -76,7 +77,7 @@ function PresetEditorDialog({ api, user, editor, mealTypes, onClose, onSaved }) 
           <div className="day-editor-bracket-items">
             {meal.items.map((item) => <article className="day-editor-item" key={`${item.itemId || item.displayName}-${item.draftIndex}`}>
               <div className="day-editor-item-main"><div className="day-editor-thumb"><img src={item.imageUrl || "/category-assets/other.webp"} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/category-assets/other.webp"; }} /></div><div><strong>{item.displayName || "Alimento"}</strong><small>{formatMeasure(item.quantity, item.unit)} · {formatNutrient(item.calories, 0, "kcal")}</small></div></div>
-              <div className="day-editor-controls"><label><span>Cantidad</span><input inputMode="decimal" value={item.quantity} onChange={(event) => updateItem(item.draftIndex, "quantity", normalizeDecimalInput(event.target.value))} /></label><label><span>Unidad</span><select value={item.unit} onChange={(event) => updateItem(item.draftIndex, "unit", event.target.value)}><option value="GRAM">Gramos</option><option value="MILLILITER">Mililitros</option><option value="UNIT">Unidades</option><option value="PORTION">Porciones</option></select></label><label className="day-editor-move"><span>Mover a…</span><select value={item.mealType} aria-label={`Mover ${item.displayName || "elemento"} a otra comida`} onChange={(event) => updateItem(item.draftIndex, "mealType", event.target.value)}>{mealTypes.map((option) => <option key={option.code} value={option.code}>{option.label}</option>)}</select></label><button type="button" className="icon-button danger-text" aria-label={`Quitar ${item.displayName || "elemento"}`} onClick={() => setDraft((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== item.draftIndex) }))}><Icon name="delete" /></button></div>
+              <div className="day-editor-controls"><label><span>Cantidad</span><input {...quantityInputSelection} inputMode="decimal" value={item.quantity} onChange={(event) => updateItem(item.draftIndex, "quantity", normalizeDecimalInput(event.target.value))} /></label><label><span>Unidad</span><select value={item.unit} onChange={(event) => updateItem(item.draftIndex, "unit", event.target.value)}><option value="GRAM">Gramos</option><option value="MILLILITER">Mililitros</option><option value="UNIT">Unidades</option><option value="PORTION">Porciones</option></select></label><label className="day-editor-move"><span>Mover a…</span><select value={item.mealType} aria-label={`Mover ${item.displayName || "elemento"} a otra comida`} onChange={(event) => updateItem(item.draftIndex, "mealType", event.target.value)}>{mealTypes.map((option) => <option key={option.code} value={option.code}>{option.label}</option>)}</select></label><button type="button" className="icon-button danger-text" aria-label={`Quitar ${item.displayName || "elemento"}`} onClick={() => setDraft((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== item.draftIndex) }))}><Icon name="delete" /></button></div>
             </article>)}
           </div>
           <button type="button" className="day-editor-add" onClick={() => setPickerMeal(meal)}><Icon name="add" />Agregar alimento o receta</button>

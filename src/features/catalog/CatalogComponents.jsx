@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { CATEGORY_OPTIONS, PREPARATION_OPTIONS, CATEGORY_ART, RECIPE_ART } from "../../config/app";
+import { useSelectAllOnFocus } from "../../components/FormControls";
 import { Icon } from "../../components/Icon";
 import { formatNumber, formatQuantity } from "../../utils/format";
 import { NutritionSummary } from "../../components/NutritionSummary";
@@ -149,6 +150,7 @@ export function NutrientDetails({ nutrients = [], label = "Información nutricio
 }
 
 export function NutrientEditor({ api, food, onSaved }) {
+  const nutrientInputSelection = useSelectAllOnFocus();
   const [open, setOpen] = useState(false);
   const [definitions, setDefinitions] = useState([]);
   const [values, setValues] = useState({});
@@ -176,7 +178,7 @@ export function NutrientEditor({ api, food, onSaved }) {
   }
   return <section className="nutrient-editor">
     <button type="button" className="secondary" onClick={start}>{open ? "Cerrar edición" : "Editar nutrientes"}</button>
-    {open && <div className="nutrient-editor-fields" data-dialog-scroll-owner="true">{definitions.map((item) => <label key={item.code}><span>{item.name} <small>({item.unit})</small></span><input inputMode="decimal" min="0" step="0.1" value={values[item.code] ?? ""} onChange={(event) => setValues((current) => ({ ...current, [item.code]: event.target.value.replace(",", ".").replace(/[^\d.]/g, "") }))} placeholder="Sin dato" /></label>)}<button type="button" className="primary" disabled={saving} onClick={save}>{saving ? "Guardando…" : "Guardar nutrientes"}</button></div>}
+    {open && <div className="nutrient-editor-fields" data-dialog-scroll-owner="true">{definitions.map((item) => <label key={item.code}><span>{item.name} <small>({item.unit})</small></span><input {...nutrientInputSelection} inputMode="decimal" min="0" step="0.1" value={values[item.code] ?? ""} onChange={(event) => setValues((current) => ({ ...current, [item.code]: event.target.value.replace(",", ".").replace(/[^\d.]/g, "") }))} placeholder="Sin dato" /></label>)}<button type="button" className="primary" disabled={saving} onClick={save}>{saving ? "Guardando…" : "Guardar nutrientes"}</button></div>}
     {message && <small className="nutrient-editor-message" role="status">{message}</small>}
   </section>;
 }

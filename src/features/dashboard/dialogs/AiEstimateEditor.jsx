@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { CATEGORY_OPTIONS, PREPARATION_OPTIONS } from "../../../config/app";
 import { Icon } from "../../../components/Icon";
-import { Input, Select } from "../../../components/FormControls";
+import { Input, Select, useSelectAllOnFocus } from "../../../components/FormControls";
 import { ModalShell } from "../../../components/dialog/ModalShell";
 import { categoryLabel, preparationLabel } from "../../catalog/CatalogComponents";
 import { formatNumber } from "../../../utils/format";
@@ -23,6 +23,7 @@ function isValidMacro(value, max) {
 export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCorrection, refining = false, refinementError = "", saveError = "", onRefine, saving, checkingMatches = false, matchPreview = null, matchChoices = {}, setMatchChoices, onEstimateEdited, onDiscard, onConfirm, mode = "create", mealType, setMealType, logDate, setLogDate, mealTypes, onCatalogItem, targetType = "RECIPE", addToDiary = false, setAddToDiary, registrationMealType, setRegistrationMealType, registrationDate, setRegistrationDate }) {
   const matchReviewRef = useRef(null);
   const foodReviewSectionRef = useRef(null);
+  const numericInputSelection = useSelectAllOnFocus();
   const gramsInputPrefix = useId().replace(/:/g, "");
   const [catalogItemIndex, setCatalogItemIndex] = useState(null);
   const [catalogCategory, setCatalogCategory] = useState("OTHER");
@@ -207,7 +208,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                       <label htmlFor={`${gramsInputPrefix}-grams-${index}`}>Gramos</label>
                       {focusedGramsIndex === index && <button type="button" className="ai-estimate-grams-done" aria-label="Listo, ocultar teclado" onPointerDown={(event) => event.preventDefault()} onClick={() => document.activeElement?.blur()}>Listo</button>}
                     </span>
-                    <span className="ai-estimate-grams-input"><input id={`${gramsInputPrefix}-grams-${index}`} aria-label="Gramos" type="text" disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={() => setFocusedGramsIndex(index)} onBlur={() => setFocusedGramsIndex((current) => current === index ? null : current)} onChange={(event) => updateItem(index, event.target.value)} /><span>g</span></span>
+                    <span className="ai-estimate-grams-input"><input {...numericInputSelection} id={`${gramsInputPrefix}-grams-${index}`} aria-label="Gramos" type="text" disabled={refining || saving} inputMode="decimal" value={item.estimatedGrams ?? ""} onFocus={(event) => { numericInputSelection.onFocus(event); setFocusedGramsIndex(index); }} onBlur={() => setFocusedGramsIndex((current) => current === index ? null : current)} onChange={(event) => updateItem(index, event.target.value)} /><span>g</span></span>
                   </div>
                 </div>
                 {mode === "create" && matchPreview && (() => {
@@ -243,7 +244,7 @@ export function AiEstimateEditor({ estimate, setEstimate, correction = "", setCo
                         ["Carbohidratos (g)", "carbsGrams", "carbs"],
                         ["Grasas (g)", "fatGrams", "fat"],
                       ].map(([label, field, nutrient]) => {
-                        return <label className={`ai-estimate-macro-edit ai-estimate-nutrient-${nutrient}`} key={field}><small>{label}</small>{mode === "create" ? <input type="text" inputMode="decimal" value={item[field] ?? "0"} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)} g</strong>}</label>;
+                        return <label className={`ai-estimate-macro-edit ai-estimate-nutrient-${nutrient}`} key={field}><small>{label}</small>{mode === "create" ? <input {...numericInputSelection} type="text" inputMode="decimal" value={item[field] ?? "0"} disabled={refining || saving} onChange={(event) => updateItemMacro(index, field, event.target.value)} /> : <strong>{formatNumber(itemNutrition[index]?.[field] ?? item[field], 1)} g</strong>}</label>;
                       })}
                     </div>
                   </div>

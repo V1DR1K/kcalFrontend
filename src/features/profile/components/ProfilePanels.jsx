@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Input } from "../../../components/FormControls";
+import { Input, useSelectAllOnFocus } from "../../../components/FormControls";
 import { Icon } from "../../../components/Icon";
 import { Panel, Stat } from "../../../components/Layout";
 import { formatNumber, readableDate, today } from "../../../utils/format";
@@ -95,8 +95,9 @@ export function ChangePasswordForm({ api }) {
 }
 
 export function MacroControl({ label, description, value, grams, onChange, tone }) {
+  const numericInputSelection = useSelectAllOnFocus();
   const numeric = Number(String(value).replace(",", "."));
-  return <div className={`macro-control ${tone}`}><span><strong>{label}</strong>{description && <small className="macro-control-description">{description}</small>}<small className="macro-control-grams">{grams} g por día</small></span><label className="macro-percentage"><span className="sr-only">{label} (%)</span><input type="text" inputMode="decimal" value={value} onChange={event => onChange(event.target.value)} aria-label={`${label} (%)`} /><span aria-hidden="true">%</span></label><input type="range" min="0" max="100" step="0.5" value={Number.isFinite(numeric) ? Math.max(0, Math.min(100, numeric)) : 0} aria-label={`${label} porcentaje`} onChange={event => onChange(event.target.value)} /></div>;
+  return <div className={`macro-control ${tone}`}><span><strong>{label}</strong>{description && <small className="macro-control-description">{description}</small>}<small className="macro-control-grams">{grams} g por día</small></span><label className="macro-percentage"><span className="sr-only">{label} (%)</span><input {...numericInputSelection} type="text" inputMode="decimal" value={value} onChange={event => onChange(event.target.value)} aria-label={`${label} (%)`} /><span aria-hidden="true">%</span></label><input type="range" min="0" max="100" step="0.5" value={Number.isFinite(numeric) ? Math.max(0, Math.min(100, numeric)) : 0} aria-label={`${label} porcentaje`} onChange={event => onChange(event.target.value)} /></div>;
 }
 
 export function NutritionTutorial() { const items = [["Calorías", "Son tu presupuesto diario de energía. Si el objetivo no se sostiene en la vida real, conviene ajustar antes que abandonar."], ["Proteínas", "Ayudan con saciedad y mantenimiento muscular. Pensalas como una base diaria, no como algo solo para deportistas."], ["Carbohidratos", "Son una fuente práctica de energía. Su cantidad puede subir si entrenás más o bajar si preferís comidas más grasas."], ["Grasas", "Son importantes para hormonas, absorción de vitaminas y adherencia. Priorizá fuentes de calidad."], ["Cómo elegir", "Empezá balanceado, medí adherencia y progreso dos semanas, y ajustá de a poco. Si tenés patologías, consultá a un profesional."]]; return <Panel title="Mini guía para pensar tu alimentación"><div className="tutorial-list">{items.map(([title, body]) => <details key={title}><summary>{title}</summary><p>{body}</p></details>)}</div></Panel>; }

@@ -1,9 +1,11 @@
 import React from "react";
 import { Icon } from "../../../components/Icon";
+import { useSelectAllOnFocus } from "../../../components/FormControls";
 import { formatNumber } from "../../../utils/format";
 import { macroCalories, normalizeNumericInput, OCR_MACRO_FIELDS } from "../utils/catalog.utils";
 
 export function OcrNutritionPreview({ data, setData, onAccept, onDiscard }) {
+  const numericInputSelection = useSelectAllOnFocus();
   const missingMacros = OCR_MACRO_FIELDS.filter((field) => data[field] == null);
   const hasBaseQuantity = Number(data.baseQuantity) > 0;
   const derivedCalories = missingMacros.length ? null : macroCalories(data.proteinGrams, data.carbsGrams, data.fatGrams);
@@ -23,7 +25,7 @@ export function OcrNutritionPreview({ data, setData, onAccept, onDiscard }) {
       <header><div><span>Vista previa</span><strong>Información detectada{data.baseQuantity ? ` · por ${formatNumber(data.baseQuantity, 1)} g` : ""}</strong></div><Icon name="document_scanner" /></header>
       <div className="ocr-preview-grid">
         {fields.map(({ key, label, unit, min = "0" }) => (
-          <label key={key}><span>{label}</span><div><input type="text" inputMode="decimal" min={min} step="0.1" value={data[key] ?? ""} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onChange={(event) => updateNumericField(key, event.target.value)} /><small>{unit}</small></div></label>
+          <label key={key}><span>{label}</span><div><input {...numericInputSelection} type="text" inputMode="decimal" min={min} step="0.1" value={data[key] ?? ""} onKeyDown={(event) => { if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault(); }} onChange={(event) => updateNumericField(key, event.target.value)} /><small>{unit}</small></div></label>
         ))}
         <span className="derived-calories-card"><small>{derivedCalories == null ? "Completá los macros" : "Kcal calculadas"}</small><strong>{derivedCalories == null ? "—" : formatNumber(derivedCalories)}</strong></span>
       </div>
