@@ -1229,6 +1229,10 @@ summary:focus-visible {
 .yesterday-suggestion > .material-symbols-outlined { color: var(--primary); transition: transform 180ms ease, color 180ms ease; }
 .yesterday-suggestion > span:nth-child(2) { display: grid; line-height: 1.2; }
 .yesterday-suggestion small { color: var(--muted); }
+.yesterday-suggestion .copy-accept { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: var(--radius-control); appearance: none; background: transparent; color: var(--color-success); transition: background-color 160ms ease, color 160ms ease; }
+.yesterday-suggestion .copy-accept:not(:disabled):hover { background: var(--primary-soft); color: var(--primary); }
+.yesterday-suggestion .copy-accept:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.yesterday-suggestion .copy-accept:disabled { opacity: .72; }
 .yesterday-suggestion.copied { animation: yesterday-copied 650ms ease both; }
 .yesterday-suggestion.copied > .material-symbols-outlined:first-child { color: var(--warning); animation: copy-icon-pop 520ms cubic-bezier(.2,.8,.2,1); }
 .yesterday-suggestion.copied .copy-accept { color: var(--primary); animation: copy-button-pop 520ms cubic-bezier(.2,.8,.2,1); }

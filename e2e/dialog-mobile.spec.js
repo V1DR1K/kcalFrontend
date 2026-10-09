@@ -185,6 +185,13 @@ test("allows copying yesterday again after deleting its last meal item", async (
   const meal = page.locator('.meal-card[data-meal-type="BREAKFAST"]');
   const copyButton = meal.getByRole("button", { name: "Copiar Desayuno de ayer" });
   await expect(copyButton).toBeVisible();
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 800 });
+    await expect(copyButton).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(copyButton).toHaveCSS("color", "rgb(46, 204, 113)");
+    expect((await copyButton.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  }
+  await page.setViewportSize({ width: 1280, height: 800 });
   await copyButton.click();
   await expect(meal.locator(".meal-item")).toHaveCount(1);
   await expect(page.getByText("Desayuno copiado de ayer.", { exact: true })).toBeVisible();
